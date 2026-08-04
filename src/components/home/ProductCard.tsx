@@ -1,0 +1,47 @@
+import { ShoppingCart, Star } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import type { Product } from "@/types";
+
+export function ProductCard({ product }: { product: Product }) {
+  const lowStock = product.stock < 25;
+
+  return (
+    <Card className="group h-full overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
+      <div className="relative flex h-36 items-center justify-center bg-muted text-5xl">
+        <span className="transition-transform group-hover:scale-110">{product.emoji}</span>
+        {product.tag ? (
+          <Badge className="absolute left-3 top-3 rounded-full">{product.tag}</Badge>
+        ) : null}
+      </div>
+      <CardContent className="space-y-2 p-4">
+        <p className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+          {product.category}
+        </p>
+        <h3 className="line-clamp-2 font-display text-sm font-semibold leading-snug">
+          {product.name}
+        </h3>
+        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+          <Star className="size-3.5 fill-warning text-warning" />
+          {product.rating.toFixed(1)}
+          <span className="mx-1">·</span>
+          <span className={lowStock ? "font-semibold text-destructive" : ""}>
+            {lowStock ? `Only ${product.stock} left` : "In stock"}
+          </span>
+        </div>
+        <div className="flex items-end justify-between gap-2 pt-1">
+          <div>
+            <p className="font-display text-lg font-semibold">
+              ₹{product.price.toLocaleString("en-IN")}
+            </p>
+            <p className="text-xs text-muted-foreground">per {product.unit}</p>
+          </div>
+          <Button size="icon" className="rounded-full" aria-label={`Add ${product.name} to cart`}>
+            <ShoppingCart className="size-4" />
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
