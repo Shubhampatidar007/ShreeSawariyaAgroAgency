@@ -15,6 +15,7 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminActivityLogsRouteImport } from './routes/admin.activity-logs'
 import { Route as AdminAdvertisementsRouteImport } from './routes/admin.advertisements'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
+import { Route as AdminSearchRouteImport } from './routes/admin.search'
 import { Route as AdminSecurityLogsRouteImport } from './routes/admin.security-logs'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
   path: '/backups',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSearchRoute = AdminSearchRouteImport.update({
+  id: '/search',
+  path: '/search',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminSecurityLogsRoute = AdminSecurityLogsRouteImport.update({
   id: '/security-logs',
   path: '/security-logs',
@@ -59,6 +65,7 @@ export interface FileRoutesByFullPath {
   '/admin/activity-logs': typeof AdminActivityLogsRoute
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/admin/activity-logs': typeof AdminActivityLogsRoute
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin': typeof AdminIndexRoute
 }
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/admin/activity-logs': typeof AdminActivityLogsRoute
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/': typeof AdminIndexRoute
 }
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/admin/activity-logs'
     | '/admin/advertisements'
     | '/admin/backups'
+    | '/admin/search'
     | '/admin/security-logs'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/admin/activity-logs'
     | '/admin/advertisements'
     | '/admin/backups'
+    | '/admin/search'
     | '/admin/security-logs'
     | '/admin'
   id:
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/admin/activity-logs'
     | '/admin/advertisements'
     | '/admin/backups'
+    | '/admin/search'
     | '/admin/security-logs'
     | '/admin/'
   fileRoutesById: FileRoutesById
@@ -158,6 +170,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBackupsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/search': {
+      id: '/admin/search'
+      path: '/search'
+      fullPath: '/admin/search'
+      preLoaderRoute: typeof AdminSearchRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/security-logs': {
       id: '/admin/security-logs'
       path: '/security-logs'
@@ -172,6 +191,7 @@ interface AdminRouteChildren {
   AdminActivityLogsRoute: typeof AdminActivityLogsRoute
   AdminAdvertisementsRoute: typeof AdminAdvertisementsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
+  AdminSearchRoute: typeof AdminSearchRoute
   AdminSecurityLogsRoute: typeof AdminSecurityLogsRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
@@ -180,6 +200,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminActivityLogsRoute: AdminActivityLogsRoute,
   AdminAdvertisementsRoute: AdminAdvertisementsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
+  AdminSearchRoute: AdminSearchRoute,
   AdminSecurityLogsRoute: AdminSecurityLogsRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
