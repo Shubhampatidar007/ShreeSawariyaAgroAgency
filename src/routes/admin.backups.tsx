@@ -161,7 +161,7 @@ function ToggleRow({
         </Label>
         <p className="text-xs text-muted-foreground">{helper}</p>
       </div>
-      <Switch id={id} defaultChecked={defaultChecked} />
+      <Switch id={id} defaultChecked={defaultChecked ?? false} />
     </div>
   );
 }
