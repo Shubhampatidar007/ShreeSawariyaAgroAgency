@@ -227,9 +227,8 @@ function CustomerListPage() {
                         </Button>
                         <Button variant="ghost" size="icon" asChild aria-label="Edit customer">
                           <Link
-                            to="/admin/customers/$customerId"
+                            to="/admin/customers/$customerId/edit"
                             params={{ customerId: customer.id }}
-                            search={{ edit: true }}
                           >
                             <Pencil className="size-4" />
                           </Link>
