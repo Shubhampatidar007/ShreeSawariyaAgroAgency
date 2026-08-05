@@ -16,15 +16,23 @@ import { Route as AdminActivityLogsRouteImport } from './routes/admin.activity-l
 import { Route as AdminAdvertisementsRouteImport } from './routes/admin.advertisements'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
-import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
-import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
-import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
 import { Route as AdminSearchRouteImport } from './routes/admin.search'
 import { Route as AdminSecurityLogsRouteImport } from './routes/admin.security-logs'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminSuppliersRouteImport } from './routes/admin.suppliers'
+import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
+import { Route as AdminCustomersNewRouteImport } from './routes/admin.customers.new'
+import { Route as AdminInventoryIndexRouteImport } from './routes/admin.inventory.index'
+import { Route as AdminInventoryNewRouteImport } from './routes/admin.inventory.new'
+import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.index'
+import { Route as AdminProductsPublishRouteImport } from './routes/admin.products.publish'
+import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
+import { Route as AdminSuppliersSupplierIdRouteImport } from './routes/admin.suppliers.$supplierId'
+import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
+import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
+import { Route as AdminKhataCustomersCustomerIdRouteImport } from './routes/admin.khata.customers.$customerId'
+import { Route as AdminLedgerSuppliersSupplierIdRouteImport } from './routes/admin.ledger.suppliers.$supplierId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,21 +69,6 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
   path: '/backups',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCustomersRoute = AdminCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminInventoryRoute = AdminInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminProductsRoute = AdminProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -101,11 +94,71 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSuppliersRoute = AdminSuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
+const AdminCustomersIndexRoute = AdminCustomersIndexRouteImport.update({
+  id: '/customers/',
+  path: '/customers/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCustomersNewRoute = AdminCustomersNewRouteImport.update({
+  id: '/customers/new',
+  path: '/customers/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInventoryIndexRoute = AdminInventoryIndexRouteImport.update({
+  id: '/inventory/',
+  path: '/inventory/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInventoryNewRoute = AdminInventoryNewRouteImport.update({
+  id: '/inventory/new',
+  path: '/inventory/new',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsIndexRoute = AdminProductsIndexRouteImport.update({
+  id: '/products/',
+  path: '/products/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductsPublishRoute = AdminProductsPublishRouteImport.update({
+  id: '/products/publish',
+  path: '/products/publish',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSuppliersIndexRoute = AdminSuppliersIndexRouteImport.update({
+  id: '/suppliers/',
+  path: '/suppliers/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminSuppliersSupplierIdRoute =
+  AdminSuppliersSupplierIdRouteImport.update({
+    id: '/suppliers/$supplierId',
+    path: '/suppliers/$supplierId',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminCustomersCustomerIdIndexRoute =
+  AdminCustomersCustomerIdIndexRouteImport.update({
+    id: '/customers/$customerId/',
+    path: '/customers/$customerId/',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminCustomersCustomerIdEditRoute =
+  AdminCustomersCustomerIdEditRouteImport.update({
+    id: '/customers/$customerId/edit',
+    path: '/customers/$customerId/edit',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminKhataCustomersCustomerIdRoute =
+  AdminKhataCustomersCustomerIdRouteImport.update({
+    id: '/khata/customers/$customerId',
+    path: '/khata/customers/$customerId',
+    getParentRoute: () => AdminRoute,
+  } as any)
+const AdminLedgerSuppliersSupplierIdRoute =
+  AdminLedgerSuppliersSupplierIdRouteImport.update({
+    id: '/ledger/suppliers/$supplierId',
+    path: '/ledger/suppliers/$supplierId',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,16 +167,24 @@ export interface FileRoutesByFullPath {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
+  '/admin/inventory/new': typeof AdminInventoryNewRoute
+  '/admin/products/publish': typeof AdminProductsPublishRoute
+  '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/customers/': typeof AdminCustomersIndexRoute
+  '/admin/inventory/': typeof AdminInventoryIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
+  '/admin/suppliers/': typeof AdminSuppliersIndexRoute
+  '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
+  '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
+  '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -131,16 +192,24 @@ export interface FileRoutesByTo {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
+  '/admin/inventory/new': typeof AdminInventoryNewRoute
+  '/admin/products/publish': typeof AdminProductsPublishRoute
+  '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/customers': typeof AdminCustomersIndexRoute
+  '/admin/inventory': typeof AdminInventoryIndexRoute
+  '/admin/products': typeof AdminProductsIndexRoute
+  '/admin/suppliers': typeof AdminSuppliersIndexRoute
+  '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
+  '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
+  '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/customers/$customerId': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -150,16 +219,24 @@ export interface FileRoutesById {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
+  '/admin/inventory/new': typeof AdminInventoryNewRoute
+  '/admin/products/publish': typeof AdminProductsPublishRoute
+  '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/customers/': typeof AdminCustomersIndexRoute
+  '/admin/inventory/': typeof AdminInventoryIndexRoute
+  '/admin/products/': typeof AdminProductsIndexRoute
+  '/admin/suppliers/': typeof AdminSuppliersIndexRoute
+  '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
+  '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
+  '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -170,16 +247,24 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin/'
+    | '/admin/customers/new'
+    | '/admin/inventory/new'
+    | '/admin/products/publish'
+    | '/admin/suppliers/$supplierId'
+    | '/admin/customers/'
+    | '/admin/inventory/'
+    | '/admin/products/'
+    | '/admin/suppliers/'
+    | '/admin/customers/$customerId/edit'
+    | '/admin/khata/customers/$customerId'
+    | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/customers/$customerId/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -187,16 +272,24 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin'
+    | '/admin/customers/new'
+    | '/admin/inventory/new'
+    | '/admin/products/publish'
+    | '/admin/suppliers/$supplierId'
+    | '/admin/customers'
+    | '/admin/inventory'
+    | '/admin/products'
+    | '/admin/suppliers'
+    | '/admin/customers/$customerId/edit'
+    | '/admin/khata/customers/$customerId'
+    | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/customers/$customerId'
   id:
     | '__root__'
     | '/'
@@ -205,16 +298,24 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin/'
+    | '/admin/customers/new'
+    | '/admin/inventory/new'
+    | '/admin/products/publish'
+    | '/admin/suppliers/$supplierId'
+    | '/admin/customers/'
+    | '/admin/inventory/'
+    | '/admin/products/'
+    | '/admin/suppliers/'
+    | '/admin/customers/$customerId/edit'
+    | '/admin/khata/customers/$customerId'
+    | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/customers/$customerId/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -273,27 +374,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBackupsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/customers': {
-      id: '/admin/customers'
-      path: '/customers'
-      fullPath: '/admin/customers'
-      preLoaderRoute: typeof AdminCustomersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/inventory': {
-      id: '/admin/inventory'
-      path: '/inventory'
-      fullPath: '/admin/inventory'
-      preLoaderRoute: typeof AdminInventoryRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/products': {
-      id: '/admin/products'
-      path: '/products'
-      fullPath: '/admin/products'
-      preLoaderRoute: typeof AdminProductsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -329,11 +409,88 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/suppliers': {
-      id: '/admin/suppliers'
+    '/admin/customers/': {
+      id: '/admin/customers/'
+      path: '/customers'
+      fullPath: '/admin/customers/'
+      preLoaderRoute: typeof AdminCustomersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customers/new': {
+      id: '/admin/customers/new'
+      path: '/customers/new'
+      fullPath: '/admin/customers/new'
+      preLoaderRoute: typeof AdminCustomersNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/inventory/': {
+      id: '/admin/inventory/'
+      path: '/inventory'
+      fullPath: '/admin/inventory/'
+      preLoaderRoute: typeof AdminInventoryIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/inventory/new': {
+      id: '/admin/inventory/new'
+      path: '/inventory/new'
+      fullPath: '/admin/inventory/new'
+      preLoaderRoute: typeof AdminInventoryNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products/': {
+      id: '/admin/products/'
+      path: '/products'
+      fullPath: '/admin/products/'
+      preLoaderRoute: typeof AdminProductsIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/products/publish': {
+      id: '/admin/products/publish'
+      path: '/products/publish'
+      fullPath: '/admin/products/publish'
+      preLoaderRoute: typeof AdminProductsPublishRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/suppliers/': {
+      id: '/admin/suppliers/'
       path: '/suppliers'
-      fullPath: '/admin/suppliers'
-      preLoaderRoute: typeof AdminSuppliersRouteImport
+      fullPath: '/admin/suppliers/'
+      preLoaderRoute: typeof AdminSuppliersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/suppliers/$supplierId': {
+      id: '/admin/suppliers/$supplierId'
+      path: '/suppliers/$supplierId'
+      fullPath: '/admin/suppliers/$supplierId'
+      preLoaderRoute: typeof AdminSuppliersSupplierIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customers/$customerId/': {
+      id: '/admin/customers/$customerId/'
+      path: '/customers/$customerId'
+      fullPath: '/admin/customers/$customerId/'
+      preLoaderRoute: typeof AdminCustomersCustomerIdIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/customers/$customerId/edit': {
+      id: '/admin/customers/$customerId/edit'
+      path: '/customers/$customerId/edit'
+      fullPath: '/admin/customers/$customerId/edit'
+      preLoaderRoute: typeof AdminCustomersCustomerIdEditRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/khata/customers/$customerId': {
+      id: '/admin/khata/customers/$customerId'
+      path: '/khata/customers/$customerId'
+      fullPath: '/admin/khata/customers/$customerId'
+      preLoaderRoute: typeof AdminKhataCustomersCustomerIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/ledger/suppliers/$supplierId': {
+      id: '/admin/ledger/suppliers/$supplierId'
+      path: '/ledger/suppliers/$supplierId'
+      fullPath: '/admin/ledger/suppliers/$supplierId'
+      preLoaderRoute: typeof AdminLedgerSuppliersSupplierIdRouteImport
       parentRoute: typeof AdminRoute
     }
   }
@@ -344,16 +501,24 @@ interface AdminRouteChildren {
   AdminAdvertisementsRoute: typeof AdminAdvertisementsRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
-  AdminCustomersRoute: typeof AdminCustomersRoute
-  AdminInventoryRoute: typeof AdminInventoryRoute
-  AdminProductsRoute: typeof AdminProductsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminSearchRoute: typeof AdminSearchRoute
   AdminSecurityLogsRoute: typeof AdminSecurityLogsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminSuppliersRoute: typeof AdminSuppliersRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminCustomersNewRoute: typeof AdminCustomersNewRoute
+  AdminInventoryNewRoute: typeof AdminInventoryNewRoute
+  AdminProductsPublishRoute: typeof AdminProductsPublishRoute
+  AdminSuppliersSupplierIdRoute: typeof AdminSuppliersSupplierIdRoute
+  AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
+  AdminInventoryIndexRoute: typeof AdminInventoryIndexRoute
+  AdminProductsIndexRoute: typeof AdminProductsIndexRoute
+  AdminSuppliersIndexRoute: typeof AdminSuppliersIndexRoute
+  AdminCustomersCustomerIdEditRoute: typeof AdminCustomersCustomerIdEditRoute
+  AdminKhataCustomersCustomerIdRoute: typeof AdminKhataCustomersCustomerIdRoute
+  AdminLedgerSuppliersSupplierIdRoute: typeof AdminLedgerSuppliersSupplierIdRoute
+  AdminCustomersCustomerIdIndexRoute: typeof AdminCustomersCustomerIdIndexRoute
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
@@ -361,16 +526,24 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAdvertisementsRoute: AdminAdvertisementsRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
-  AdminCustomersRoute: AdminCustomersRoute,
-  AdminInventoryRoute: AdminInventoryRoute,
-  AdminProductsRoute: AdminProductsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminSearchRoute: AdminSearchRoute,
   AdminSecurityLogsRoute: AdminSecurityLogsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminSuppliersRoute: AdminSuppliersRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminCustomersNewRoute: AdminCustomersNewRoute,
+  AdminInventoryNewRoute: AdminInventoryNewRoute,
+  AdminProductsPublishRoute: AdminProductsPublishRoute,
+  AdminSuppliersSupplierIdRoute: AdminSuppliersSupplierIdRoute,
+  AdminCustomersIndexRoute: AdminCustomersIndexRoute,
+  AdminInventoryIndexRoute: AdminInventoryIndexRoute,
+  AdminProductsIndexRoute: AdminProductsIndexRoute,
+  AdminSuppliersIndexRoute: AdminSuppliersIndexRoute,
+  AdminCustomersCustomerIdEditRoute: AdminCustomersCustomerIdEditRoute,
+  AdminKhataCustomersCustomerIdRoute: AdminKhataCustomersCustomerIdRoute,
+  AdminLedgerSuppliersSupplierIdRoute: AdminLedgerSuppliersSupplierIdRoute,
+  AdminCustomersCustomerIdIndexRoute: AdminCustomersCustomerIdIndexRoute,
 }
 
 const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)

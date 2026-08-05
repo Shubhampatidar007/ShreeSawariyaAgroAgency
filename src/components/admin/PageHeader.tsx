@@ -1,10 +1,10 @@
 import type { ReactNode } from "react";
 
 type PageHeaderProps = {
-  eyebrow?: string;
+  eyebrow?: string | undefined;
   title: string;
-  description?: string;
-  actions?: ReactNode;
+  description?: string | undefined;
+  actions?: ReactNode | undefined;
 };
 
 export function PageHeader({ eyebrow, title, description, actions }: PageHeaderProps) {

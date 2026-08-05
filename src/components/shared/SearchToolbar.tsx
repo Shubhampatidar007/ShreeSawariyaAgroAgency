@@ -1,0 +1,27 @@
+import type { ReactNode } from "react";
+import { Search } from "lucide-react";
+import { Input } from "@/components/ui/input";
+
+type SearchToolbarProps = {
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  children?: ReactNode;
+};
+
+export function SearchToolbar({ value, onChange, placeholder = "Search…", children }: SearchToolbarProps) {
+  return (
+    <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-soft sm:flex-row sm:items-center">
+      <div className="relative flex-1">
+        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={placeholder}
+          className="rounded-full bg-muted pl-9"
+        />
+      </div>
+      {children ? <div className="flex flex-wrap items-center gap-2">{children}</div> : null}
+    </div>
+  );
+}
