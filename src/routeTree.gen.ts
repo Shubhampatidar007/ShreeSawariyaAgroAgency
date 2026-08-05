@@ -16,15 +16,11 @@ import { Route as AdminActivityLogsRouteImport } from './routes/admin.activity-l
 import { Route as AdminAdvertisementsRouteImport } from './routes/admin.advertisements'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
-import { Route as AdminCustomersRouteImport } from './routes/admin.customers'
-import { Route as AdminInventoryRouteImport } from './routes/admin.inventory'
-import { Route as AdminProductsRouteImport } from './routes/admin.products'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
 import { Route as AdminSearchRouteImport } from './routes/admin.search'
 import { Route as AdminSecurityLogsRouteImport } from './routes/admin.security-logs'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
-import { Route as AdminSuppliersRouteImport } from './routes/admin.suppliers'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -61,21 +57,6 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
   path: '/backups',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminCustomersRoute = AdminCustomersRouteImport.update({
-  id: '/customers',
-  path: '/customers',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminInventoryRoute = AdminInventoryRouteImport.update({
-  id: '/inventory',
-  path: '/inventory',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminProductsRoute = AdminProductsRouteImport.update({
-  id: '/products',
-  path: '/products',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminReportsRoute = AdminReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
@@ -101,11 +82,6 @@ const AdminSettingsRoute = AdminSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSuppliersRoute = AdminSuppliersRouteImport.update({
-  id: '/suppliers',
-  path: '/suppliers',
-  getParentRoute: () => AdminRoute,
-} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -114,15 +90,11 @@ export interface FileRoutesByFullPath {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRoutesByTo {
@@ -131,15 +103,11 @@ export interface FileRoutesByTo {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin': typeof AdminIndexRoute
 }
 export interface FileRoutesById {
@@ -150,15 +118,11 @@ export interface FileRoutesById {
   '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
-  '/admin/customers': typeof AdminCustomersRoute
-  '/admin/inventory': typeof AdminInventoryRoute
-  '/admin/products': typeof AdminProductsRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
-  '/admin/suppliers': typeof AdminSuppliersRoute
   '/admin/': typeof AdminIndexRoute
 }
 export interface FileRouteTypes {
@@ -170,15 +134,11 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -187,15 +147,11 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin'
   id:
     | '__root__'
@@ -205,15 +161,11 @@ export interface FileRouteTypes {
     | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
-    | '/admin/customers'
-    | '/admin/inventory'
-    | '/admin/products'
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
     | '/admin/security-logs'
     | '/admin/settings'
-    | '/admin/suppliers'
     | '/admin/'
   fileRoutesById: FileRoutesById
 }
@@ -273,27 +225,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBackupsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/customers': {
-      id: '/admin/customers'
-      path: '/customers'
-      fullPath: '/admin/customers'
-      preLoaderRoute: typeof AdminCustomersRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/inventory': {
-      id: '/admin/inventory'
-      path: '/inventory'
-      fullPath: '/admin/inventory'
-      preLoaderRoute: typeof AdminInventoryRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/products': {
-      id: '/admin/products'
-      path: '/products'
-      fullPath: '/admin/products'
-      preLoaderRoute: typeof AdminProductsRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/reports': {
       id: '/admin/reports'
       path: '/reports'
@@ -329,13 +260,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSettingsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/suppliers': {
-      id: '/admin/suppliers'
-      path: '/suppliers'
-      fullPath: '/admin/suppliers'
-      preLoaderRoute: typeof AdminSuppliersRouteImport
-      parentRoute: typeof AdminRoute
-    }
   }
 }
 
@@ -344,15 +268,11 @@ interface AdminRouteChildren {
   AdminAdvertisementsRoute: typeof AdminAdvertisementsRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
-  AdminCustomersRoute: typeof AdminCustomersRoute
-  AdminInventoryRoute: typeof AdminInventoryRoute
-  AdminProductsRoute: typeof AdminProductsRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminSearchRoute: typeof AdminSearchRoute
   AdminSecurityLogsRoute: typeof AdminSecurityLogsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
-  AdminSuppliersRoute: typeof AdminSuppliersRoute
   AdminIndexRoute: typeof AdminIndexRoute
 }
 
@@ -361,15 +281,11 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAdvertisementsRoute: AdminAdvertisementsRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
-  AdminCustomersRoute: AdminCustomersRoute,
-  AdminInventoryRoute: AdminInventoryRoute,
-  AdminProductsRoute: AdminProductsRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminSearchRoute: AdminSearchRoute,
   AdminSecurityLogsRoute: AdminSecurityLogsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
-  AdminSuppliersRoute: AdminSuppliersRoute,
   AdminIndexRoute: AdminIndexRoute,
 }
 
