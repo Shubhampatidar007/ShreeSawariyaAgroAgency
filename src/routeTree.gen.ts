@@ -23,6 +23,7 @@ import { Route as AdminSecurityLogsRouteImport } from './routes/admin.security-l
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
 import { Route as AdminCustomersNewRouteImport } from './routes/admin.customers.new'
+import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
 import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
 import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
 import { Route as AdminKhataCustomersCustomerIdRouteImport } from './routes/admin.khata.customers.$customerId'
@@ -97,6 +98,11 @@ const AdminCustomersNewRoute = AdminCustomersNewRouteImport.update({
   path: '/customers/new',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSuppliersIndexRoute = AdminSuppliersIndexRouteImport.update({
+  id: '/suppliers/',
+  path: '/suppliers/',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminCustomersCustomerIdIndexRoute =
   AdminCustomersCustomerIdIndexRouteImport.update({
     id: '/customers/$customerId/',
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/admin/': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
+  '/admin/suppliers/': typeof AdminSuppliersIndexRoute
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
+  '/admin/suppliers': typeof AdminSuppliersIndexRoute
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/customers/$customerId': typeof AdminCustomersCustomerIdIndexRoute
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/admin/': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
+  '/admin/suppliers/': typeof AdminSuppliersIndexRoute
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/customers/new'
     | '/admin/customers/'
+    | '/admin/suppliers/'
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/customers/$customerId/'
@@ -208,6 +218,7 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/customers/new'
     | '/admin/customers'
+    | '/admin/suppliers'
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/customers/$customerId'
@@ -227,6 +238,7 @@ export interface FileRouteTypes {
     | '/admin/'
     | '/admin/customers/new'
     | '/admin/customers/'
+    | '/admin/suppliers/'
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/customers/$customerId/'
@@ -337,6 +349,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCustomersNewRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/suppliers/': {
+      id: '/admin/suppliers/'
+      path: '/suppliers'
+      fullPath: '/admin/suppliers/'
+      preLoaderRoute: typeof AdminSuppliersIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers/$customerId/': {
       id: '/admin/customers/$customerId/'
       path: '/customers/$customerId'
@@ -374,6 +393,7 @@ interface AdminRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCustomersNewRoute: typeof AdminCustomersNewRoute
   AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
+  AdminSuppliersIndexRoute: typeof AdminSuppliersIndexRoute
   AdminCustomersCustomerIdEditRoute: typeof AdminCustomersCustomerIdEditRoute
   AdminKhataCustomersCustomerIdRoute: typeof AdminKhataCustomersCustomerIdRoute
   AdminCustomersCustomerIdIndexRoute: typeof AdminCustomersCustomerIdIndexRoute
@@ -392,6 +412,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminCustomersNewRoute: AdminCustomersNewRoute,
   AdminCustomersIndexRoute: AdminCustomersIndexRoute,
+  AdminSuppliersIndexRoute: AdminSuppliersIndexRoute,
   AdminCustomersCustomerIdEditRoute: AdminCustomersCustomerIdEditRoute,
   AdminKhataCustomersCustomerIdRoute: AdminKhataCustomersCustomerIdRoute,
   AdminCustomersCustomerIdIndexRoute: AdminCustomersCustomerIdIndexRoute,
