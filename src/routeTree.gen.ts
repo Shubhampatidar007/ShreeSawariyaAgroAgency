@@ -22,6 +22,7 @@ import { Route as AdminSearchRouteImport } from './routes/admin.search'
 import { Route as AdminSecurityLogsRouteImport } from './routes/admin.security-logs'
 import { Route as AdminSettingsRouteImport } from './routes/admin.settings'
 import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
+import { Route as AdminCustomersNewRouteImport } from './routes/admin.customers.new'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const AdminCustomersIndexRoute = AdminCustomersIndexRouteImport.update({
   path: '/customers/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminCustomersNewRoute = AdminCustomersNewRouteImport.update({
+  id: '/customers/new',
+  path: '/customers/new',
+  getParentRoute: () => AdminRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -102,6 +108,7 @@ export interface FileRoutesByFullPath {
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
 }
 export interface FileRoutesByTo {
@@ -116,6 +123,7 @@ export interface FileRoutesByTo {
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
 }
 export interface FileRoutesById {
@@ -132,6 +140,7 @@ export interface FileRoutesById {
   '/admin/security-logs': typeof AdminSecurityLogsRoute
   '/admin/settings': typeof AdminSettingsRoute
   '/admin/': typeof AdminIndexRoute
+  '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
 }
 export interface FileRouteTypes {
@@ -149,6 +158,7 @@ export interface FileRouteTypes {
     | '/admin/security-logs'
     | '/admin/settings'
     | '/admin/'
+    | '/admin/customers/new'
     | '/admin/customers/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -163,6 +173,7 @@ export interface FileRouteTypes {
     | '/admin/security-logs'
     | '/admin/settings'
     | '/admin'
+    | '/admin/customers/new'
     | '/admin/customers'
   id:
     | '__root__'
@@ -178,6 +189,7 @@ export interface FileRouteTypes {
     | '/admin/security-logs'
     | '/admin/settings'
     | '/admin/'
+    | '/admin/customers/new'
     | '/admin/customers/'
   fileRoutesById: FileRoutesById
 }
@@ -279,6 +291,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCustomersIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/customers/new': {
+      id: '/admin/customers/new'
+      path: '/customers/new'
+      fullPath: '/admin/customers/new'
+      preLoaderRoute: typeof AdminCustomersNewRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -293,6 +312,7 @@ interface AdminRouteChildren {
   AdminSecurityLogsRoute: typeof AdminSecurityLogsRoute
   AdminSettingsRoute: typeof AdminSettingsRoute
   AdminIndexRoute: typeof AdminIndexRoute
+  AdminCustomersNewRoute: typeof AdminCustomersNewRoute
   AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
 }
 
@@ -307,6 +327,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminSecurityLogsRoute: AdminSecurityLogsRoute,
   AdminSettingsRoute: AdminSettingsRoute,
   AdminIndexRoute: AdminIndexRoute,
+  AdminCustomersNewRoute: AdminCustomersNewRoute,
   AdminCustomersIndexRoute: AdminCustomersIndexRoute,
 }
 

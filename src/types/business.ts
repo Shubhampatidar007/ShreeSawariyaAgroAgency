@@ -12,7 +12,7 @@ export type Customer = {
   currentDue: number;
   lastPurchase: string;
   status: EntityStatus;
-  notes?: string;
+  notes?: string | undefined;
 };
 
 export type Supplier = {
@@ -57,7 +57,7 @@ export type PublishedProduct = {
   title: string;
   category: string;
   sellingPrice: number;
-  discountPrice?: number;
+  discountPrice?: number | undefined;
   stock: number;
   description: string;
   tags: string[];
@@ -81,7 +81,7 @@ export type CustomerLedgerEntry = {
   payment: number;
   remainingDue: number;
   method: PaymentMethod;
-  remarks?: string;
+  remarks?: string | undefined;
 };
 
 export type SupplierLedgerEntry = {
@@ -93,5 +93,5 @@ export type SupplierLedgerEntry = {
   amount: number;
   balance: number;
   method: PaymentMethod;
-  remarks?: string;
+  remarks?: string | undefined;
 };
