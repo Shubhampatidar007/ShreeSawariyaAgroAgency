@@ -1,0 +1,165 @@
+import type { ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { Card, CardContent } from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { StatusBadge } from "@/components/shared/StatusBadge";
+import { formatCurrency, formatDate } from "@/lib/shop-store";
+import type {
+  Customer,
+  InventoryItem,
+  PublishedProduct,
+  Supplier,
+} from "@/types/business";
+
+const initials = (name: string) =>
+  name
+    .split(" ")
+    .map((part) => part[0])
+    .slice(0, 2)
+    .join("")
+    .toUpperCase();
+
+function Row({ label, value }: { label: string; value: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-2 text-xs">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+export function CustomerCard({ customer }: { customer: Customer }) {
+  return (
+    <Card className="shadow-soft transition-shadow hover:shadow-lg">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <Avatar className="size-10">
+              <AvatarFallback className="bg-primary/10 text-xs text-primary">
+                {initials(customer.name)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <Link
+                to="/admin/customers/$customerId"
+                params={{ customerId: customer.id }}
+                className="font-display text-sm font-semibold hover:text-primary"
+              >
+                {customer.name}
+              </Link>
+              <p className="text-xs text-muted-foreground">{customer.mobile}</p>
+            </div>
+          </div>
+          <StatusBadge status={customer.status} />
+        </div>
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+          <Row label="Village" value={customer.village} />
+          <Row label="Total purchases" value={formatCurrency(customer.totalPurchases)} />
+          <Row
+            label="Current due"
+            value={
+              <span className={customer.currentDue > 0 ? "text-destructive" : "text-success"}>
+                {formatCurrency(customer.currentDue)}
+              </span>
+            }
+          />
+          <Row label="Last purchase" value={formatDate(customer.lastPurchase)} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function SupplierCard({ supplier }: { supplier: Supplier }) {
+  return (
+    <Card className="shadow-soft transition-shadow hover:shadow-lg">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <Link
+              to="/admin/suppliers/$supplierId"
+              params={{ supplierId: supplier.id }}
+              className="font-display text-sm font-semibold hover:text-primary"
+            >
+              {supplier.company}
+            </Link>
+            <p className="text-xs text-muted-foreground">
+              {supplier.name} · {supplier.mobile}
+            </p>
+          </div>
+          <StatusBadge status={supplier.status} />
+        </div>
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+          <Row label="Supplies" value={supplier.productsSupplied.slice(0, 2).join(", ")} />
+          <Row label="Purchases" value={formatCurrency(supplier.totalPurchases)} />
+          <Row
+            label="Due balance"
+            value={
+              <span className={supplier.dueBalance > 0 ? "text-destructive" : "text-success"}>
+                {formatCurrency(supplier.dueBalance)}
+              </span>
+            }
+          />
+          <Row label="Last order" value={formatDate(supplier.lastOrder)} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function InventoryCard({ item }: { item: InventoryItem }) {
+  return (
+    <Card className="shadow-soft transition-shadow hover:shadow-lg">
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="font-display text-sm font-semibold">{item.productName}</p>
+            <p className="text-xs text-muted-foreground">{item.supplierName}</p>
+          </div>
+          <StatusBadge status={item.status} />
+        </div>
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+          <Row label="Quantity" value={`${item.quantity} ${item.unit}`} />
+          <Row label="Purchase price" value={formatCurrency(item.purchasePrice)} />
+          <Row label="Updated" value={formatDate(item.lastUpdated)} />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+export function AdminProductCard({
+  product,
+  actions,
+}: {
+  product: PublishedProduct;
+  actions?: ReactNode;
+}) {
+  return (
+    <Card className="overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
+      <div className="flex h-28 items-center justify-center bg-muted text-4xl">{product.emoji}</div>
+      <CardContent className="space-y-3 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <p className="font-display text-sm font-semibold leading-snug">{product.title}</p>
+            <p className="text-xs text-muted-foreground">{product.category}</p>
+          </div>
+          <StatusBadge status={product.status} />
+        </div>
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+          <Row
+            label="Price"
+            value={
+              product.discountPrice
+                ? `${formatCurrency(product.discountPrice)} (MRP ${formatCurrency(product.sellingPrice)})`
+                : formatCurrency(product.sellingPrice)
+            }
+          />
+          <Row label="Stock" value={product.stock} />
+          <Row label="Visibility" value={product.visibility} />
+        </div>
+        {actions ? <div className="flex flex-wrap gap-2">{actions}</div> : null}
+      </CardContent>
+    </Card>
+  );
+}
