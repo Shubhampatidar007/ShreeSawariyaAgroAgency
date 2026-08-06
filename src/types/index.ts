@@ -2,6 +2,7 @@ import type { LucideIcon } from "lucide-react";
 
 export type NavItem = {
   label: string;
+  labelKey?: string;
   to: string;
   icon: LucideIcon;
   badge?: string;
@@ -9,6 +10,7 @@ export type NavItem = {
 
 export type NavSection = {
   title: string;
+  titleKey?: string;
   items: NavItem[];
 };
 
