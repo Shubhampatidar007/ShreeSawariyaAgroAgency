@@ -44,7 +44,7 @@ const pages = [
 ];
 
 const quickActions = [
-  { label: "New offline sale", to: "/admin/sales/offline" },
+  { label: "New offline sale", to: "/admin/sales" },
   { label: "Add customer", to: "/admin/customers/new" },
   { label: "New stock entry", to: "/admin/inventory/new" },
   { label: "Publish product", to: "/admin/products/publish" },
@@ -104,7 +104,7 @@ export function CommandPalette({
       }
       onOpenChange(false);
       setQuery("");
-      void navigate({ to });
+      void navigate({ to } as never);
     },
     [navigate, onOpenChange, recents],
   );
