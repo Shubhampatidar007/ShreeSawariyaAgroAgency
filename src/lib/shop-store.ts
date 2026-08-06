@@ -2,6 +2,20 @@ import { useSyncExternalStore } from "react";
 import { customerLedgerSeed, customersSeed } from "@/data/customers";
 import { inventorySeed, publishedProductsSeed } from "@/data/inventory";
 import { supplierLedgerSeed, suppliersSeed } from "@/data/suppliers";
+import {
+  cmsSectionsSeed,
+  ordersSeed,
+  paymentsSeed,
+  reminderLogsSeed,
+  remindersSeed,
+} from "@/data/operations";
+import type {
+  CmsSection,
+  Order,
+  PaymentRecord,
+  Reminder,
+  ReminderLog,
+} from "@/types/operations";
 import type {
   Customer,
   CustomerLedgerEntry,
@@ -19,6 +33,11 @@ type ShopState = {
   customerLedger: CustomerLedgerEntry[];
   supplierLedger: SupplierLedgerEntry[];
   draftProduct: PublishedProduct | null;
+  orders: Order[];
+  payments: PaymentRecord[];
+  reminders: Reminder[];
+  reminderLogs: ReminderLog[];
+  cmsSections: CmsSection[];
 };
 
 let state: ShopState = {
@@ -29,6 +48,11 @@ let state: ShopState = {
   customerLedger: customerLedgerSeed,
   supplierLedger: supplierLedgerSeed,
   draftProduct: null,
+  orders: ordersSeed,
+  payments: paymentsSeed,
+  reminders: remindersSeed,
+  reminderLogs: reminderLogsSeed,
+  cmsSections: cmsSectionsSeed,
 };
 
 const listeners = new Set<() => void>();
@@ -117,6 +141,48 @@ export const shopStore = {
   },
   deleteProduct(id: string) {
     setState({ products: state.products.filter((p) => p.id !== id) });
+  },
+
+  addOrder(order: Omit<Order, "id">) {
+    const created: Order = { ...order, id: `o${Date.now()}` };
+    setState({ orders: [created, ...state.orders] });
+    return created;
+  },
+  updateOrder(id: string, patch: Partial<Order>) {
+    setState({ orders: state.orders.map((o) => (o.id === id ? { ...o, ...patch } : o)) });
+  },
+
+  addPayment(payment: Omit<PaymentRecord, "id">) {
+    const created: PaymentRecord = { ...payment, id: `p${Date.now()}` };
+    setState({ payments: [created, ...state.payments] });
+    return created;
+  },
+
+  updateReminder(id: string, patch: Partial<Reminder>) {
+    setState({ reminders: state.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
+  },
+
+  updateCmsSection(id: string, patch: Partial<CmsSection>) {
+    setState({
+      cmsSections: state.cmsSections.map((c) => (c.id === id ? { ...c, ...patch } : c)),
+    });
+  },
+  moveCmsSection(id: string, direction: -1 | 1) {
+    const sorted = [...state.cmsSections].sort((a, b) => a.order - b.order);
+    const index = sorted.findIndex((c) => c.id === id);
+    const target = index + direction;
+    if (index < 0 || target < 0 || target >= sorted.length) return;
+    const current = sorted[index]!;
+    const swap = sorted[target]!;
+    setState({
+      cmsSections: state.cmsSections.map((c) =>
+        c.id === current.id
+          ? { ...c, order: swap.order }
+          : c.id === swap.id
+            ? { ...c, order: current.order }
+            : c,
+      ),
+    });
   },
 };
 

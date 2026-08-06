@@ -3,12 +3,14 @@ import { LifeBuoy } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { adminNavSections } from "@/data/navigation";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 type AdminSidebarProps = {
   onNavigate?: () => void;
 };
 
 export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
+  const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
   const isActive = (to: string) =>
@@ -24,7 +26,7 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         {adminNavSections.map((section) => (
           <div key={section.title}>
             <p className="px-3 pb-2 text-[11px] font-semibold uppercase tracking-widest text-sidebar-foreground/45">
-              {section.title}
+              {section.titleKey ? t(section.titleKey, section.title) : section.title}
             </p>
             <ul className="space-y-1">
               {section.items.map((item) => (
@@ -40,7 +42,9 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
                     )}
                   >
                     <item.icon className="size-4 shrink-0" />
-                    <span className="truncate">{item.label}</span>
+                    <span className="truncate">
+                      {item.labelKey ? t(item.labelKey, item.label) : item.label}
+                    </span>
                   </Link>
                 </li>
               ))}
