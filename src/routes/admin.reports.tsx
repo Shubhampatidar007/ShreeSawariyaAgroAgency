@@ -200,7 +200,7 @@ function ReportsPage() {
                   .map((c) => [c.name, "Customer", formatCurrency(c.currentDue), formatDate(c.lastPurchase)]),
                 ...store.suppliers
                   .filter((s) => s.dueBalance > 0 && match(s.name))
-                  .map((s) => [s.name, "Supplier", formatCurrency(s.dueBalance), formatDate(s.lastPurchase)]),
+                  .map((s) => [s.name, "Supplier", formatCurrency(s.dueBalance), formatDate(s.lastOrder)]),
               ]}
             />
           ) : null}
