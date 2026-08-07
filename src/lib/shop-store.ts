@@ -70,11 +70,8 @@ function subscribe(listener: () => void) {
 const getSnapshot = () => state;
 
 export function useShopStore<T>(selector: (s: ShopState) => T): T {
-  return useSyncExternalStore(
-    subscribe,
-    () => selector(getSnapshot()),
-    () => selector(getSnapshot()),
-  );
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+  return selector(snapshot);
 }
 
 export const shopStore = {

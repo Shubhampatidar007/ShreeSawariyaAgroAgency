@@ -15,15 +15,15 @@ const companyLinks = ["About our shop", "Licences & certifications", "Careers", 
 
 export function SiteFooter() {
   return (
-    <footer id="contact" className="border-t border-border bg-sidebar text-sidebar-foreground">
+    <footer id="contact" className="border-t border-border bg-card text-card-foreground">
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div>
-          <Logo inverted />
-          <p className="mt-4 max-w-xs text-sm text-sidebar-foreground/70">
+          <Logo />
+          <p className="mt-4 max-w-xs text-sm text-muted-foreground">
             Serving farmers since 1998 with certified seeds, fertilizers, crop protection and
             irrigation supplies — backed by honest billing and field-level advice.
           </p>
-          <ul className="mt-5 space-y-2.5 text-sm text-sidebar-foreground/70">
+          <ul className="mt-5 space-y-2.5 text-sm text-muted-foreground">
             <li className="flex gap-2">
               <MapPin className="mt-0.5 size-4 shrink-0" /> {shopInfo.address}
             </li>
@@ -44,8 +44,8 @@ export function SiteFooter() {
         <FooterColumn title="Our business" links={companyLinks} />
       </div>
 
-      <div className="border-t border-sidebar-border">
-        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-sidebar-foreground/60 sm:flex-row sm:items-center sm:justify-between">
+      <div className="border-t border-border">
+        <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p>© {new Date().getFullYear()} {shopInfo.name}. Seed Licence HR/SD/2211 · Fertilizer Licence HR/FT/8842.</p>
           <p>GSTIN 06ABCDE1234F1Z5 · Prices inclusive of applicable taxes.</p>
         </div>
@@ -57,13 +57,13 @@ export function SiteFooter() {
 function FooterColumn({ title, links }: { title: string; links: string[] }) {
   return (
     <div>
-      <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-sidebar-foreground">
+      <h3 className="font-display text-sm font-semibold uppercase tracking-wide text-foreground">
         {title}
       </h3>
-      <ul className="mt-4 space-y-2.5 text-sm text-sidebar-foreground/70">
+      <ul className="mt-4 space-y-2.5 text-sm text-muted-foreground">
         {links.map((link) => (
           <li key={link}>
-            <a href="#products" className="transition-colors hover:text-sidebar-primary">
+            <a href="#products" className="transition-colors hover:text-primary">
               {link}
             </a>
           </li>
