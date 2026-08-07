@@ -16,11 +16,10 @@ export function FeaturedProducts() {
       name: p.title,
       category: p.category,
       price: p.discountPrice ?? p.sellingPrice,
-      mrp: p.sellingPrice,
-      unit: p.unit ?? "unit",
-      badge: p.featured ? "Featured" : undefined,
+      unit: "unit",
+      ...(p.featured ? { tag: "Featured" } : {}),
       rating: 4.6,
-      emoji: "🌾",
+      emoji: p.emoji || "🌾",
       stock: p.stock,
     }));
 
