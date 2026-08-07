@@ -19,7 +19,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { shopInfo } from "@/data/storefront";
 
 export const Route = createFileRoute("/admin/settings")({

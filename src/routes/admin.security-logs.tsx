@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { securityLogs } from "@/data/admin";
 import type { LogSeverity } from "@/types";
 

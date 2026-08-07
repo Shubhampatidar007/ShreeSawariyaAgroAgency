@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { activityLogs } from "@/data/admin";
 import type { LogSeverity } from "@/types";
 
