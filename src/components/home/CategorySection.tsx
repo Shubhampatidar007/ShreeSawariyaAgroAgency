@@ -3,14 +3,16 @@ import { ArrowUpRight } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { categories } from "@/data/storefront";
+import { useI18n } from "@/lib/i18n";
 
 export function CategorySection() {
+  const { t } = useI18n();
   return (
     <section id="categories" className="mx-auto max-w-7xl px-6 py-16">
       <SectionHeading
-        eyebrow="Shop by category"
-        title="Everything a farm needs, season after season"
-        description="Stocked from IFFCO, Bayer, Mahyco, Coromandel and other licensed suppliers. Prices updated daily against company rate lists."
+        eyebrow={t("home.category.eyebrow")}
+        title={t("home.category.title")}
+        description={t("home.category.description")}
       />
 
       <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

@@ -1,0 +1,146 @@
+import { useState } from "react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authStore, demoAccounts } from "@/lib/auth-store";
+import { useI18n } from "@/lib/i18n";
+
+export type AuthMode = "login" | "register";
+
+type AuthDialogProps = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  mode: AuthMode;
+  onModeChange: (mode: AuthMode) => void;
+};
+
+export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialogProps) {
+  const { t } = useI18n();
+  const [error, setError] = useState<string | null>(null);
+
+  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const result = authStore.login(
+      String(form.get("mobile") ?? "").trim(),
+      String(form.get("password") ?? ""),
+    );
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
+    setError(null);
+    onOpenChange(false);
+    toast.success(`${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`);
+  };
+
+  const handleRegister = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const form = new FormData(event.currentTarget);
+    const name = String(form.get("name") ?? "").trim();
+    const mobile = String(form.get("mobile") ?? "").trim();
+    if (name.length < 2 || mobile.length < 10) {
+      setError("Enter your full name and a valid 10-digit mobile number.");
+      return;
+    }
+    const result = authStore.register({
+      name,
+      mobile,
+      village: String(form.get("village") ?? "").trim(),
+      email: String(form.get("email") ?? "").trim(),
+    });
+    setError(null);
+    onOpenChange(false);
+    toast.success(`${t("auth.accountCreated", "Account created")} — ${result.user.name}`);
+  };
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setError(null);
+        onOpenChange(next);
+      }}
+    >
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>{t("auth.title", "AgriKisan account")}</DialogTitle>
+          <DialogDescription>
+            {t(
+              "auth.subtitle",
+              "Sign in to track khata dues, orders and delivery status. Demo data only.",
+            )}
+          </DialogDescription>
+        </DialogHeader>
+
+        <Tabs value={mode} onValueChange={(value) => onModeChange(value as AuthMode)}>
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="login">{t("auth.login", "Login")}</TabsTrigger>
+            <TabsTrigger value="register">{t("auth.register", "Register")}</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login">
+            <form className="space-y-3 pt-3" onSubmit={handleLogin}>
+              <div className="space-y-1.5">
+                <Label htmlFor="login-mobile">{t("auth.mobile", "Mobile number")}</Label>
+                <Input id="login-mobile" name="mobile" defaultValue={demoAccounts[0]!.mobile} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="login-password">{t("auth.password", "Password")}</Label>
+                <Input
+                  id="login-password"
+                  name="password"
+                  type="password"
+                  defaultValue="kisan123"
+                />
+              </div>
+              {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+              <Button type="submit" className="w-full rounded-full">
+                {t("auth.login", "Login")}
+              </Button>
+              <p className="text-center text-xs text-muted-foreground">
+                Demo login: {demoAccounts[0]!.mobile} / kisan123
+              </p>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="register">
+            <form className="space-y-3 pt-3" onSubmit={handleRegister}>
+              <div className="space-y-1.5">
+                <Label htmlFor="reg-name">{t("auth.name", "Full name")}</Label>
+                <Input id="reg-name" name="name" placeholder="Ramesh Yadav" />
+              </div>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-mobile">{t("auth.mobile", "Mobile number")}</Label>
+                  <Input id="reg-mobile" name="mobile" placeholder="98765 43210" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="reg-village">{t("auth.village", "Village")}</Label>
+                  <Input id="reg-village" name="village" placeholder="Barwala" />
+                </div>
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reg-email">{t("auth.email", "Email (optional)")}</Label>
+                <Input id="reg-email" name="email" type="email" placeholder="you@example.com" />
+              </div>
+              {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+              <Button type="submit" className="w-full rounded-full">
+                {t("auth.register", "Register")}
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+}

@@ -4,7 +4,7 @@ import { PageCrumbs, type Crumb } from "@/components/shared/PageCrumbs";
 import { PageHeader } from "@/components/admin/PageHeader";
 
 type ModulePageHeaderProps = {
-  crumbs: Crumb[];
+  crumbs?: Crumb[];
   eyebrow?: string;
   title: string;
   description?: string;
@@ -23,7 +23,7 @@ export function ModulePageHeader({
   return (
     <div className="space-y-3">
       {showBack ? <BackButton /> : null}
-      <PageCrumbs items={crumbs} />
+      {crumbs ? <PageCrumbs items={crumbs} /> : null}
       <PageHeader eyebrow={eyebrow} title={title} description={description} actions={actions} />
     </div>
   );

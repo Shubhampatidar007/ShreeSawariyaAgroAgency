@@ -14,7 +14,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { backups } from "@/data/admin";
 
 export const Route = createFileRoute("/admin/backups")({

@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { PageHeader } from "@/components/admin/PageHeader";
+import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { advertisements } from "@/data/admin";
 
 export const Route = createFileRoute("/admin/advertisements")({
