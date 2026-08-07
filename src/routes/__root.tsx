@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
+import { initAuth } from "@/lib/auth-store";
 
 function NotFoundComponent() {
   return (
@@ -134,6 +135,7 @@ function RootComponent() {
   useEffect(() => {
     initTheme();
     initLanguage();
+    initAuth();
   }, []);
 
   return (
