@@ -33,10 +33,12 @@ function AddCustomerPage() {
       <CustomerForm
         submitLabel="Save customer"
         onCancel={() => navigate({ to: "/admin/customers" })}
-        onSubmit={(values) => {
-          const created = shopStore.addCustomer({
+        onSubmit={async (values) => {
+          const created = await shopStore.addCustomer({
             ...values,
             joinedOn: new Date().toISOString().slice(0, 10),
+            creditLimit: 0,
+            creditBalance: 0,
             totalPurchases: 0,
             totalPaid: 0,
             currentDue: 0,
