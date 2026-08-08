@@ -42,8 +42,11 @@ function InventoryEntryPage() {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("bags");
   const [price, setPrice] = useState("");
+  const [minStock, setMinStock] = useState("10");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
+
+  const totalPrice = (Number(quantity) || 0) * (Number(price) || 0);
 
   const submit = () => {
     const supplier = suppliers.find((s) => s.id === supplierId);
@@ -58,6 +61,7 @@ function InventoryEntryPage() {
       quantity: Number(quantity),
       unit,
       purchasePrice: Number(price),
+      minStockLevel: Number(minStock) || 10,
       status: "inventory-only",
       lastUpdated: new Date().toISOString().slice(0, 10),
     });
@@ -127,12 +131,12 @@ function InventoryEntryPage() {
                   </div>
                   <DialogFooter>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!newSupplier.company) {
                           toast.error("Company name is required");
                           return;
                         }
-                        const created = shopStore.addSupplier({
+                        const created = await shopStore.addSupplier({
                           name: newSupplier.name || newSupplier.company,
                           company: newSupplier.company,
                           mobile: newSupplier.mobile,

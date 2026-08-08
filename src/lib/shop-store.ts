@@ -344,7 +344,7 @@ export const shopStore = {
     return after(toCustomer(data));
   },
   async updateCustomer(id: string, patch: Partial<Customer>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.name !== undefined) payload["name"] = patch.name;
     if (patch.mobile !== undefined) payload["mobile"] = patch.mobile;
     if (patch.village !== undefined) payload["village"] = patch.village;
@@ -409,7 +409,7 @@ export const shopStore = {
     return after(toSupplier(data));
   },
   async updateSupplier(id: string, patch: Partial<Supplier>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.name !== undefined) payload["name"] = patch.name;
     if (patch.company !== undefined) payload["company"] = patch.company;
     if (patch.mobile !== undefined) payload["mobile"] = patch.mobile;
@@ -448,7 +448,7 @@ export const shopStore = {
     return after(toInventory(data));
   },
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
-    const payload: Record<string, any> = { last_updated: new Date().toISOString().slice(0, 10) };
+    const payload: any = { last_updated: new Date().toISOString().slice(0, 10) };
     if (patch.productName !== undefined) payload["product_name"] = patch.productName;
     if (patch.quantity !== undefined) payload["quantity"] = patch.quantity;
     if (patch.unit !== undefined) payload["unit"] = patch.unit;
@@ -495,7 +495,7 @@ export const shopStore = {
     return after(undefined);
   },
   async updateProduct(id: string, patch: Partial<PublishedProduct>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.title !== undefined) payload["title"] = patch.title;
     if (patch.category !== undefined) payload["category"] = patch.category;
     if (patch.sellingPrice !== undefined) payload["selling_price"] = patch.sellingPrice;
@@ -557,7 +557,7 @@ export const shopStore = {
     return after(toOrder(data));
   },
   async updateOrder(id: string, patch: Partial<Order>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.orderStatus !== undefined) payload["order_status"] = patch.orderStatus;
     if (patch.paymentStatus !== undefined) payload["payment_status"] = patch.paymentStatus;
     if (patch.deliveryStatus !== undefined) payload["delivery_status"] = patch.deliveryStatus;
@@ -586,7 +586,7 @@ export const shopStore = {
   },
 
   async updateReminder(id: string, patch: Partial<Reminder>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.status !== undefined) payload["status"] = patch.status;
     if (patch.message !== undefined) payload["message"] = patch.message;
     if (patch.schedule !== undefined) payload["schedule"] = patch.schedule;
@@ -597,7 +597,7 @@ export const shopStore = {
   },
 
   async updateCmsSection(id: string, patch: Partial<CmsSection>) {
-    const payload: Record<string, any> = {};
+    const payload: any = {};
     if (patch.headline !== undefined) payload["headline"] = patch.headline;
     if (patch.body !== undefined) payload["body"] = patch.body;
     if (patch.enabled !== undefined) payload["enabled"] = patch.enabled;
