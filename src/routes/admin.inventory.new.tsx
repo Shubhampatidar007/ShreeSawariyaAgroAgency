@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
-import { shopStore, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
