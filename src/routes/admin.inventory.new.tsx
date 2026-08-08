@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
-import { shopStore, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
@@ -42,8 +42,11 @@ function InventoryEntryPage() {
   const [quantity, setQuantity] = useState("");
   const [unit, setUnit] = useState("bags");
   const [price, setPrice] = useState("");
+  const [minStock, setMinStock] = useState("10");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
+
+  const totalPrice = (Number(quantity) || 0) * (Number(price) || 0);
 
   const submit = () => {
     const supplier = suppliers.find((s) => s.id === supplierId);
@@ -58,6 +61,7 @@ function InventoryEntryPage() {
       quantity: Number(quantity),
       unit,
       purchasePrice: Number(price),
+      minStockLevel: Number(minStock) || 10,
       status: "inventory-only",
       lastUpdated: new Date().toISOString().slice(0, 10),
     });
@@ -127,12 +131,12 @@ function InventoryEntryPage() {
                   </div>
                   <DialogFooter>
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (!newSupplier.company) {
                           toast.error("Company name is required");
                           return;
                         }
-                        const created = shopStore.addSupplier({
+                        const created = await shopStore.addSupplier({
                           name: newSupplier.name || newSupplier.company,
                           company: newSupplier.company,
                           mobile: newSupplier.mobile,
@@ -172,9 +176,22 @@ function InventoryEntryPage() {
             <Label>Unit</Label>
             <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="bags" />
           </div>
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
             <Label>Purchase price (per unit)</Label>
             <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="266" />
+          </div>
+          <div className="space-y-2">
+            <Label>Minimum stock level</Label>
+            <Input value={minStock} onChange={(e) => setMinStock(e.target.value)} inputMode="numeric" placeholder="10" />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Total price</Label>
+            <div className="flex h-10 items-center rounded-md border border-border bg-muted/50 px-3 text-sm font-semibold">
+              {formatCurrency(totalPrice)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Quantity × unit price, updated as you type.
+            </p>
           </div>
 
           <div className="flex gap-2 sm:col-span-2">

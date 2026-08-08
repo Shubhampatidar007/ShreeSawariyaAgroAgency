@@ -1,16 +1,18 @@
 import { useSyncExternalStore } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type ShopUser = {
+  id: string;
   name: string;
-  mobile: string;
-  email?: string;
+  email: string;
+  mobile?: string;
   village?: string;
+  role: "admin" | "staff" | "customer";
 };
 
-const STORAGE_KEY = "agrikisan-user";
-
 let user: ShopUser | null = null;
-let hydrated = false;
+let ready = false;
+let started = false;
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((l) => l());
@@ -22,50 +24,90 @@ function subscribe(listener: () => void) {
 
 const getSnapshot = () => user;
 const getServerSnapshot = () => null;
+const getReady = () => ready;
+const getReadyServer = () => false;
 
-export function initAuth() {
-  if (typeof window === "undefined" || hydrated) return;
-  hydrated = true;
-  const raw = window.localStorage.getItem(STORAGE_KEY);
-  if (raw) {
-    try {
-      user = JSON.parse(raw) as ShopUser;
-      emit();
-    } catch {
-      window.localStorage.removeItem(STORAGE_KEY);
-    }
-  }
+async function hydrate(userId: string, email: string) {
+  const [{ data: profile }, { data: roles }] = await Promise.all([
+    supabase.from("profiles").select("full_name, mobile, village").eq("id", userId).maybeSingle(),
+    supabase.from("user_roles").select("role").eq("user_id", userId),
+  ]);
+  const roleList = (roles ?? []).map((r) => r.role);
+  user = {
+    id: userId,
+    email,
+    name: profile?.full_name || email.split("@")[0] || "User",
+    ...(profile?.mobile ? { mobile: profile.mobile } : {}),
+    ...(profile?.village ? { village: profile.village } : {}),
+    role: roleList.includes("admin") ? "admin" : roleList.includes("staff") ? "staff" : "customer",
+  };
+  emit();
 }
 
-/** Mock demo accounts — replaced by real auth in the backend phase. */
-export const demoAccounts: (ShopUser & { password: string })[] = [
-  { name: "Ramesh Yadav", mobile: "9876543210", password: "kisan123", village: "Barwala" },
-  { name: "Sunita Devi", mobile: "9812345678", password: "kisan123", village: "Adampur" },
-];
+export function initAuth() {
+  if (typeof window === "undefined" || started) return;
+  started = true;
+
+  supabase.auth.onAuthStateChange((_event, session) => {
+    if (session?.user) {
+      void hydrate(session.user.id, session.user.email ?? "");
+    } else {
+      user = null;
+      emit();
+    }
+  });
+
+  void supabase.auth.getSession().then(async ({ data }) => {
+    if (data.session?.user) {
+      await hydrate(data.session.user.id, data.session.user.email ?? "");
+    }
+    ready = true;
+    emit();
+  });
+}
 
 export const authStore = {
-  login(mobile: string, password: string) {
-    const match = demoAccounts.find((a) => a.mobile === mobile && a.password === password);
-    if (!match) return { ok: false as const, error: "Mobile number or password is incorrect." };
-    const { password: _pw, ...profile } = match;
-    user = profile;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    emit();
-    return { ok: true as const, user: profile };
+  async login(email: string, password: string) {
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error || !data.user) {
+      return { ok: false as const, error: error?.message ?? "Unable to sign in." };
+    }
+    await hydrate(data.user.id, data.user.email ?? email);
+    return { ok: true as const, user: user! };
   },
-  register(profile: ShopUser) {
-    user = profile;
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-    emit();
-    return { ok: true as const, user: profile };
+  async register(input: {
+    email: string;
+    password: string;
+    name: string;
+    mobile?: string;
+    village?: string;
+  }) {
+    const { data, error } = await supabase.auth.signUp({
+      email: input.email,
+      password: input.password,
+      options: {
+        emailRedirectTo: window.location.origin,
+        data: { full_name: input.name, mobile: input.mobile, village: input.village },
+      },
+    });
+    if (error) return { ok: false as const, error: error.message };
+    if (!data.session) {
+      return { ok: false as const, error: "Check your email to confirm the account." };
+    }
+    await hydrate(data.user!.id, data.user!.email ?? input.email);
+    return { ok: true as const, user: user! };
   },
-  logout() {
+  async logout() {
+    await supabase.auth.signOut();
     user = null;
-    window.localStorage.removeItem(STORAGE_KEY);
     emit();
   },
 };
 
 export function useAuth() {
   return useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
+}
+
+export function useAuthReady() {
+  return useSyncExternalStore(subscribe, getReady, getReadyServer);
 }
