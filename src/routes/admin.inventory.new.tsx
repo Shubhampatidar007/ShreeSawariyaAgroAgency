@@ -176,9 +176,22 @@ function InventoryEntryPage() {
             <Label>Unit</Label>
             <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="bags" />
           </div>
-          <div className="space-y-2 sm:col-span-2">
+          <div className="space-y-2">
             <Label>Purchase price (per unit)</Label>
             <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="266" />
+          </div>
+          <div className="space-y-2">
+            <Label>Minimum stock level</Label>
+            <Input value={minStock} onChange={(e) => setMinStock(e.target.value)} inputMode="numeric" placeholder="10" />
+          </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label>Total price</Label>
+            <div className="flex h-10 items-center rounded-md border border-border bg-muted/50 px-3 text-sm font-semibold">
+              {formatCurrency(totalPrice)}
+            </div>
+            <p className="text-xs text-muted-foreground">
+              Quantity × unit price, updated as you type.
+            </p>
           </div>
 
           <div className="flex gap-2 sm:col-span-2">
