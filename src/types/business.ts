@@ -7,6 +7,8 @@ export type Customer = {
   village: string;
   address: string;
   joinedOn: string;
+  creditLimit: number;
+  creditBalance: number;
   totalPurchases: number;
   totalPaid: number;
   currentDue: number;
@@ -47,6 +49,8 @@ export type InventoryItem = {
   quantity: number;
   unit: string;
   purchasePrice: number;
+  totalPrice: number;
+  minStockLevel: number;
   status: InventoryStatus;
   lastUpdated: string;
 };
@@ -75,6 +79,7 @@ export type CustomerLedgerEntry = {
   id: string;
   customerId: string;
   date: string;
+  entryType: "purchase" | "payment" | "credit" | "adjustment";
   product: string;
   quantity: number;
   amount: number;

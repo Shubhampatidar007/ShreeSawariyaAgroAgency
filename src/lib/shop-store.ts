@@ -1,14 +1,5 @@
 import { useSyncExternalStore } from "react";
-import { customerLedgerSeed, customersSeed } from "@/data/customers";
-import { inventorySeed, publishedProductsSeed } from "@/data/inventory";
-import { supplierLedgerSeed, suppliersSeed } from "@/data/suppliers";
-import {
-  cmsSectionsSeed,
-  ordersSeed,
-  paymentsSeed,
-  reminderLogsSeed,
-  remindersSeed,
-} from "@/data/operations";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   CmsSection,
   Order,
@@ -38,21 +29,23 @@ type ShopState = {
   reminders: Reminder[];
   reminderLogs: ReminderLog[];
   cmsSections: CmsSection[];
+  loading: boolean;
 };
 
 let state: ShopState = {
-  customers: customersSeed,
-  suppliers: suppliersSeed,
-  inventory: inventorySeed,
-  products: publishedProductsSeed,
-  customerLedger: customerLedgerSeed,
-  supplierLedger: supplierLedgerSeed,
+  customers: [],
+  suppliers: [],
+  inventory: [],
+  products: [],
+  customerLedger: [],
+  supplierLedger: [],
   draftProduct: null,
-  orders: ordersSeed,
-  payments: paymentsSeed,
-  reminders: remindersSeed,
-  reminderLogs: reminderLogsSeed,
-  cmsSections: cmsSectionsSeed,
+  orders: [],
+  payments: [],
+  reminders: [],
+  reminderLogs: [],
+  cmsSections: [],
+  loading: true,
 };
 
 const listeners = new Set<() => void>();
@@ -74,112 +67,558 @@ export function useShopStore<T>(selector: (s: ShopState) => T): T {
   return selector(snapshot);
 }
 
+/* ---------------- row mappers ---------------- */
+
+const num = (value: unknown) => Number(value ?? 0);
+
+const toCustomer = (r: any): Customer => ({
+  id: r.id,
+  name: r.name,
+  mobile: r.mobile,
+  village: r.village ?? "",
+  address: r.address ?? "",
+  joinedOn: r.joined_on,
+  creditLimit: num(r.credit_limit),
+  creditBalance: num(r.credit_balance),
+  totalPurchases: num(r.total_purchases),
+  totalPaid: num(r.total_paid),
+  currentDue: num(r.current_due),
+  lastPurchase: r.last_purchase ?? r.joined_on,
+  status: r.status,
+  notes: r.notes ?? undefined,
+});
+
+const toSupplier = (r: any): Supplier => ({
+  id: r.id,
+  name: r.name,
+  company: r.company ?? "",
+  mobile: r.mobile ?? "",
+  email: r.email ?? "",
+  gstin: r.gstin ?? "",
+  address: r.address ?? "",
+  productsSupplied: r.products_supplied ?? [],
+  totalPurchases: num(r.total_purchases),
+  totalPaid: num(r.total_paid),
+  advance: num(r.advance),
+  dueBalance: num(r.due_balance),
+  lastOrder: r.last_order ?? "",
+  status: r.status,
+});
+
+const toInventory = (r: any): InventoryItem => ({
+  id: r.id,
+  productName: r.product_name,
+  supplierId: r.supplier_id ?? "",
+  supplierName: r.supplier_name ?? "",
+  quantity: num(r.quantity),
+  unit: r.unit,
+  purchasePrice: num(r.purchase_price),
+  totalPrice: num(r.total_price),
+  minStockLevel: num(r.min_stock_level),
+  status: r.status,
+  lastUpdated: r.last_updated,
+});
+
+const toProduct = (r: any): PublishedProduct => ({
+  id: r.id,
+  inventoryId: r.inventory_id ?? "",
+  title: r.title,
+  category: r.category,
+  sellingPrice: num(r.selling_price),
+  discountPrice: r.discount_price == null ? undefined : num(r.discount_price),
+  stock: num(r.stock),
+  description: r.description ?? "",
+  tags: r.tags ?? [],
+  images: r.images ?? [],
+  emoji: r.emoji ?? "🌾",
+  visibility: r.visibility,
+  featured: !!r.featured,
+  status: r.status,
+  publishedOn: r.published_on,
+});
+
+const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
+  id: r.id,
+  customerId: r.customer_id,
+  date: r.entry_date,
+  entryType: r.entry_type,
+  product: r.product ?? "",
+  quantity: num(r.quantity),
+  amount: num(r.amount),
+  payment: num(r.payment),
+  remainingDue: num(r.remaining_due),
+  method: r.method,
+  remarks: r.remarks ?? undefined,
+});
+
+const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
+  id: r.id,
+  supplierId: r.supplier_id,
+  date: r.entry_date,
+  type: r.entry_type,
+  reference: r.reference ?? "",
+  amount: num(r.amount),
+  balance: num(r.balance),
+  method: r.method,
+  remarks: r.remarks ?? undefined,
+});
+
+const toOrder = (r: any): Order => ({
+  id: r.id,
+  code: r.code,
+  channel: r.channel,
+  customerId: r.customer_id ?? undefined,
+  customerName: r.customer_name ?? "",
+  customerType: r.customer_type,
+  village: r.village ?? "",
+  mobile: r.mobile ?? "",
+  placedOn: r.placed_on,
+  items: (r.order_items ?? []).map((i: any) => ({
+    id: i.id,
+    product: i.product,
+    quantity: num(i.quantity),
+    unit: i.unit,
+    rate: num(i.rate),
+    amount: num(i.amount),
+  })),
+  subtotal: num(r.subtotal),
+  discount: num(r.discount),
+  tax: num(r.tax),
+  total: num(r.total),
+  paid: num(r.paid),
+  paymentMethod: r.payment_method,
+  paymentStatus: r.payment_status,
+  deliveryStatus: r.delivery_status,
+  orderStatus: r.order_status,
+  invoiceStatus: r.invoice_status,
+  remarks: r.remarks ?? undefined,
+  timeline: r.timeline ?? [],
+});
+
+const toPayment = (r: any): PaymentRecord => ({
+  id: r.id,
+  reference: r.reference,
+  direction: r.direction,
+  partyId: r.party_id ?? "",
+  partyName: r.party_name ?? "",
+  date: r.entry_date,
+  amount: num(r.amount),
+  method: r.method,
+  status: r.status,
+  orderCode: r.order_code ?? undefined,
+  remarks: r.remarks ?? undefined,
+});
+
+const toReminder = (r: any): Reminder => ({
+  id: r.id,
+  title: r.title,
+  audience: r.audience ?? "",
+  target: r.target,
+  filterSummary: r.filter_summary ?? "",
+  schedule: r.schedule,
+  channel: r.channel,
+  dueAmount: num(r.due_amount),
+  status: r.status,
+  nextRun: r.next_run,
+  message: r.message ?? "",
+});
+
+const toReminderLog = (r: any): ReminderLog => ({
+  id: r.id,
+  reminderTitle: r.reminder_title,
+  recipient: r.recipient ?? "",
+  channel: r.channel,
+  sentAt: r.sent_at,
+  delivery: r.delivery,
+  retries: r.retries ?? 0,
+});
+
+const toCms = (r: any): CmsSection => ({
+  id: r.id,
+  name: r.name,
+  type: r.type,
+  enabled: !!r.enabled,
+  visibility: r.visibility,
+  order: r.sort_order,
+  headline: r.headline ?? "",
+  body: r.body ?? "",
+  scheduledFrom: r.scheduled_from ?? undefined,
+  scheduledTo: r.scheduled_to ?? undefined,
+  imageLabel: r.image_label ?? "",
+});
+
+/* ---------------- loading ---------------- */
+
+let loadPromise: Promise<void> | null = null;
+
+export async function loadShopData() {
+  const [
+    customers,
+    suppliers,
+    inventory,
+    products,
+    customerLedger,
+    supplierLedger,
+    orders,
+    payments,
+    reminders,
+    reminderLogs,
+    cmsSections,
+  ] = await Promise.all([
+    supabase.from("customers").select("*").order("name"),
+    supabase.from("suppliers").select("*").order("name"),
+    supabase.from("inventory_items").select("*").order("product_name"),
+    supabase.from("products").select("*").order("published_on", { ascending: false }),
+    supabase.from("customer_transactions").select("*").order("entry_date"),
+    supabase.from("supplier_transactions").select("*").order("entry_date"),
+    supabase
+      .from("orders")
+      .select("*, order_items(*)")
+      .order("placed_on", { ascending: false }),
+    supabase.from("payments").select("*").order("entry_date", { ascending: false }),
+    supabase.from("reminders").select("*").order("created_at", { ascending: false }),
+    supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
+    supabase.from("cms_sections").select("*").order("sort_order"),
+  ]);
+
+  setState({
+    customers: (customers.data ?? []).map(toCustomer),
+    suppliers: (suppliers.data ?? []).map(toSupplier),
+    inventory: (inventory.data ?? []).map(toInventory),
+    products: (products.data ?? []).map(toProduct),
+    customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+    orders: (orders.data ?? []).map(toOrder),
+    payments: (payments.data ?? []).map(toPayment),
+    reminders: (reminders.data ?? []).map(toReminder),
+    reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
+    cmsSections: (cmsSections.data ?? []).map(toCms),
+    loading: false,
+  });
+}
+
+/** Loads once per session and refreshes whenever any table changes. */
+export function initShopData() {
+  if (typeof window === "undefined" || loadPromise) return loadPromise;
+  loadPromise = loadShopData();
+
+  let timer: ReturnType<typeof setTimeout> | null = null;
+  const refresh = () => {
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(() => void loadShopData(), 250);
+  };
+
+  supabase
+    .channel("shop-data")
+    .on("postgres_changes", { event: "*", schema: "public" }, refresh)
+    .subscribe();
+
+  return loadPromise;
+}
+
+const after = async <T,>(value: T) => {
+  await loadShopData();
+  return value;
+};
+
 export const shopStore = {
   get: getSnapshot,
+  reload: loadShopData,
 
-  addCustomer(customer: Omit<Customer, "id">) {
-    const created: Customer = { ...customer, id: `c${Date.now()}` };
-    setState({ customers: [created, ...state.customers] });
-    return created;
+  async addCustomer(customer: Omit<Customer, "id">) {
+    const { data, error } = await supabase
+      .from("customers")
+      .insert({
+        name: customer.name,
+        mobile: customer.mobile,
+        village: customer.village,
+        address: customer.address,
+        joined_on: customer.joinedOn,
+        credit_limit: customer.creditLimit ?? 0,
+        status: customer.status,
+        notes: customer.notes ?? null,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return after(toCustomer(data));
   },
-  updateCustomer(id: string, patch: Partial<Customer>) {
-    setState({
-      customers: state.customers.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-    });
+  async updateCustomer(id: string, patch: Partial<Customer>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.name !== undefined) payload["name"] = patch.name;
+    if (patch.mobile !== undefined) payload["mobile"] = patch.mobile;
+    if (patch.village !== undefined) payload["village"] = patch.village;
+    if (patch.address !== undefined) payload["address"] = patch.address;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    if (patch.notes !== undefined) payload["notes"] = patch.notes ?? null;
+    if (patch.creditLimit !== undefined) payload["credit_limit"] = patch.creditLimit;
+    if (patch.joinedOn !== undefined) payload["joined_on"] = patch.joinedOn;
+    const { error } = await supabase.from("customers").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
   },
-  deleteCustomer(id: string) {
-    setState({ customers: state.customers.filter((c) => c.id !== id) });
+  async deleteCustomer(id: string) {
+    await supabase.from("customers").delete().eq("id", id);
+    return after(undefined);
   },
 
-  addSupplier(supplier: Omit<Supplier, "id">) {
-    const created: Supplier = { ...supplier, id: `s${Date.now()}` };
-    setState({ suppliers: [created, ...state.suppliers] });
-    return created;
-  },
-  updateSupplier(id: string, patch: Partial<Supplier>) {
-    setState({
-      suppliers: state.suppliers.map((s) => (s.id === id ? { ...s, ...patch } : s)),
+  /** Records a khata purchase or repayment; balances update automatically. */
+  async addCustomerTransaction(entry: {
+    customerId: string;
+    date: string;
+    entryType: CustomerLedgerEntry["entryType"];
+    product: string;
+    quantity: number;
+    amount: number;
+    payment: number;
+    method: CustomerLedgerEntry["method"];
+    remarks?: string;
+  }) {
+    const { error } = await supabase.from("customer_transactions").insert({
+      customer_id: entry.customerId,
+      entry_date: entry.date,
+      entry_type: entry.entryType,
+      product: entry.product,
+      quantity: entry.quantity,
+      amount: entry.amount,
+      payment: entry.payment,
+      method: entry.method,
+      remarks: entry.remarks ?? null,
     });
-  },
-  deleteSupplier(id: string) {
-    setState({ suppliers: state.suppliers.filter((s) => s.id !== id) });
+    if (error) throw error;
+    return after(undefined);
   },
 
-  addInventoryItem(item: Omit<InventoryItem, "id">) {
-    const created: InventoryItem = { ...item, id: `i${Date.now()}` };
-    setState({ inventory: [created, ...state.inventory] });
-    return created;
+  async addSupplier(supplier: Omit<Supplier, "id">) {
+    const { data, error } = await supabase
+      .from("suppliers")
+      .insert({
+        name: supplier.name,
+        company: supplier.company,
+        mobile: supplier.mobile,
+        email: supplier.email,
+        gstin: supplier.gstin,
+        address: supplier.address,
+        products_supplied: supplier.productsSupplied,
+        last_order: supplier.lastOrder || null,
+        status: supplier.status,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return after(toSupplier(data));
   },
-  updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
-    setState({
-      inventory: state.inventory.map((i) => (i.id === id ? { ...i, ...patch } : i)),
-    });
+  async updateSupplier(id: string, patch: Partial<Supplier>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.name !== undefined) payload["name"] = patch.name;
+    if (patch.company !== undefined) payload["company"] = patch.company;
+    if (patch.mobile !== undefined) payload["mobile"] = patch.mobile;
+    if (patch.email !== undefined) payload["email"] = patch.email;
+    if (patch.gstin !== undefined) payload["gstin"] = patch.gstin;
+    if (patch.address !== undefined) payload["address"] = patch.address;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    if (patch.productsSupplied !== undefined)
+      payload["products_supplied"] = patch.productsSupplied;
+    const { error } = await supabase.from("suppliers").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
   },
-  deleteInventoryItem(id: string) {
-    setState({ inventory: state.inventory.filter((i) => i.id !== id) });
+  async deleteSupplier(id: string) {
+    await supabase.from("suppliers").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async addInventoryItem(item: Omit<InventoryItem, "id" | "totalPrice">) {
+    const { data, error } = await supabase
+      .from("inventory_items")
+      .insert({
+        product_name: item.productName,
+        supplier_id: item.supplierId || null,
+        supplier_name: item.supplierName,
+        quantity: item.quantity,
+        unit: item.unit,
+        purchase_price: item.purchasePrice,
+        min_stock_level: item.minStockLevel ?? 10,
+        status: item.status,
+        last_updated: item.lastUpdated,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    return after(toInventory(data));
+  },
+  async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
+    const payload: Record<string, unknown> = { last_updated: new Date().toISOString().slice(0, 10) };
+    if (patch.productName !== undefined) payload["product_name"] = patch.productName;
+    if (patch.quantity !== undefined) payload["quantity"] = patch.quantity;
+    if (patch.unit !== undefined) payload["unit"] = patch.unit;
+    if (patch.purchasePrice !== undefined) payload["purchase_price"] = patch.purchasePrice;
+    if (patch.minStockLevel !== undefined) payload["min_stock_level"] = patch.minStockLevel;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    const { error } = await supabase.from("inventory_items").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteInventoryItem(id: string) {
+    await supabase.from("inventory_items").delete().eq("id", id);
+    return after(undefined);
   },
 
   setDraftProduct(draft: PublishedProduct | null) {
     setState({ draftProduct: draft });
   },
-  publishProduct(product: PublishedProduct) {
-    setState({
-      products: [product, ...state.products.filter((p) => p.id !== product.id)],
-      inventory: state.inventory.map((i) =>
-        i.id === product.inventoryId ? { ...i, status: "published" } : i,
-      ),
-      draftProduct: null,
+  async publishProduct(product: PublishedProduct) {
+    const { error } = await supabase.from("products").insert({
+      inventory_id: product.inventoryId || null,
+      title: product.title,
+      category: product.category,
+      selling_price: product.sellingPrice,
+      discount_price: product.discountPrice ?? null,
+      stock: product.stock,
+      description: product.description,
+      tags: product.tags,
+      images: product.images,
+      emoji: product.emoji,
+      visibility: product.visibility,
+      featured: product.featured,
+      status: product.status,
+      published_on: product.publishedOn,
     });
+    if (error) throw error;
+    if (product.inventoryId) {
+      await supabase
+        .from("inventory_items")
+        .update({ status: "published" })
+        .eq("id", product.inventoryId);
+    }
+    setState({ draftProduct: null });
+    return after(undefined);
   },
-  updateProduct(id: string, patch: Partial<PublishedProduct>) {
-    setState({
-      products: state.products.map((p) => (p.id === id ? { ...p, ...patch } : p)),
+  async updateProduct(id: string, patch: Partial<PublishedProduct>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.title !== undefined) payload["title"] = patch.title;
+    if (patch.category !== undefined) payload["category"] = patch.category;
+    if (patch.sellingPrice !== undefined) payload["selling_price"] = patch.sellingPrice;
+    if (patch.discountPrice !== undefined) payload["discount_price"] = patch.discountPrice ?? null;
+    if (patch.stock !== undefined) payload["stock"] = patch.stock;
+    if (patch.description !== undefined) payload["description"] = patch.description;
+    if (patch.visibility !== undefined) payload["visibility"] = patch.visibility;
+    if (patch.featured !== undefined) payload["featured"] = patch.featured;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    const { error } = await supabase.from("products").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteProduct(id: string) {
+    await supabase.from("products").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async addOrder(order: Omit<Order, "id">) {
+    const { data, error } = await supabase
+      .from("orders")
+      .insert({
+        code: order.code,
+        channel: order.channel,
+        customer_id: order.customerId ?? null,
+        customer_name: order.customerName,
+        customer_type: order.customerType,
+        village: order.village,
+        mobile: order.mobile,
+        placed_on: order.placedOn,
+        subtotal: order.subtotal,
+        discount: order.discount,
+        tax: order.tax,
+        total: order.total,
+        paid: order.paid,
+        payment_method: order.paymentMethod,
+        payment_status: order.paymentStatus,
+        delivery_status: order.deliveryStatus,
+        order_status: order.orderStatus,
+        invoice_status: order.invoiceStatus,
+        remarks: order.remarks ?? null,
+        timeline: order.timeline,
+      })
+      .select()
+      .single();
+    if (error) throw error;
+    if (order.items.length) {
+      await supabase.from("order_items").insert(
+        order.items.map((item) => ({
+          order_id: data.id,
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+          amount: item.amount,
+        })),
+      );
+    }
+    return after(toOrder(data));
+  },
+  async updateOrder(id: string, patch: Partial<Order>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.orderStatus !== undefined) payload["order_status"] = patch.orderStatus;
+    if (patch.paymentStatus !== undefined) payload["payment_status"] = patch.paymentStatus;
+    if (patch.deliveryStatus !== undefined) payload["delivery_status"] = patch.deliveryStatus;
+    if (patch.invoiceStatus !== undefined) payload["invoice_status"] = patch.invoiceStatus;
+    if (patch.paid !== undefined) payload["paid"] = patch.paid;
+    if (patch.timeline !== undefined) payload["timeline"] = patch.timeline;
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
+  },
+
+  async addPayment(payment: Omit<PaymentRecord, "id">) {
+    const { error } = await supabase.from("payments").insert({
+      reference: payment.reference,
+      direction: payment.direction,
+      party_name: payment.partyName,
+      entry_date: payment.date,
+      amount: payment.amount,
+      method: payment.method,
+      status: payment.status,
+      order_code: payment.orderCode ?? null,
+      remarks: payment.remarks ?? null,
     });
-  },
-  deleteProduct(id: string) {
-    setState({ products: state.products.filter((p) => p.id !== id) });
-  },
-
-  addOrder(order: Omit<Order, "id">) {
-    const created: Order = { ...order, id: `o${Date.now()}` };
-    setState({ orders: [created, ...state.orders] });
-    return created;
-  },
-  updateOrder(id: string, patch: Partial<Order>) {
-    setState({ orders: state.orders.map((o) => (o.id === id ? { ...o, ...patch } : o)) });
+    if (error) throw error;
+    return after(undefined);
   },
 
-  addPayment(payment: Omit<PaymentRecord, "id">) {
-    const created: PaymentRecord = { ...payment, id: `p${Date.now()}` };
-    setState({ payments: [created, ...state.payments] });
-    return created;
+  async updateReminder(id: string, patch: Partial<Reminder>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    if (patch.message !== undefined) payload["message"] = patch.message;
+    if (patch.schedule !== undefined) payload["schedule"] = patch.schedule;
+    if (patch.channel !== undefined) payload["channel"] = patch.channel;
+    const { error } = await supabase.from("reminders").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
   },
 
-  updateReminder(id: string, patch: Partial<Reminder>) {
-    setState({ reminders: state.reminders.map((r) => (r.id === id ? { ...r, ...patch } : r)) });
+  async updateCmsSection(id: string, patch: Partial<CmsSection>) {
+    const payload: Record<string, unknown> = {};
+    if (patch.headline !== undefined) payload["headline"] = patch.headline;
+    if (patch.body !== undefined) payload["body"] = patch.body;
+    if (patch.enabled !== undefined) payload["enabled"] = patch.enabled;
+    if (patch.visibility !== undefined) payload["visibility"] = patch.visibility;
+    if (patch.order !== undefined) payload["sort_order"] = patch.order;
+    const { error } = await supabase.from("cms_sections").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
   },
-
-  updateCmsSection(id: string, patch: Partial<CmsSection>) {
-    setState({
-      cmsSections: state.cmsSections.map((c) => (c.id === id ? { ...c, ...patch } : c)),
-    });
-  },
-  moveCmsSection(id: string, direction: -1 | 1) {
+  async moveCmsSection(id: string, direction: -1 | 1) {
     const sorted = [...state.cmsSections].sort((a, b) => a.order - b.order);
     const index = sorted.findIndex((c) => c.id === id);
     const target = index + direction;
     if (index < 0 || target < 0 || target >= sorted.length) return;
     const current = sorted[index]!;
     const swap = sorted[target]!;
-    setState({
-      cmsSections: state.cmsSections.map((c) =>
-        c.id === current.id
-          ? { ...c, order: swap.order }
-          : c.id === swap.id
-            ? { ...c, order: current.order }
-            : c,
-      ),
-    });
+    await Promise.all([
+      supabase.from("cms_sections").update({ sort_order: swap.order }).eq("id", current.id),
+      supabase.from("cms_sections").update({ sort_order: current.order }).eq("id", swap.id),
+    ]);
+    return after(undefined);
   },
 };
 

@@ -11,7 +11,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { authStore, demoAccounts } from "@/lib/auth-store";
+import { authStore } from "@/lib/auth-store";
 import { useI18n } from "@/lib/i18n";
 
 export type AuthMode = "login" | "register";
@@ -26,14 +26,17 @@ type AuthDialogProps = {
 export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialogProps) {
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleLogin = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const result = authStore.login(
-      String(form.get("mobile") ?? "").trim(),
+    setBusy(true);
+    const result = await authStore.login(
+      String(form.get("email") ?? "").trim(),
       String(form.get("password") ?? ""),
     );
+    setBusy(false);
     if (!result.ok) {
       setError(result.error);
       return;
@@ -43,21 +46,29 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
     toast.success(`${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`);
   };
 
-  const handleRegister = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
     const name = String(form.get("name") ?? "").trim();
-    const mobile = String(form.get("mobile") ?? "").trim();
-    if (name.length < 2 || mobile.length < 10) {
-      setError("Enter your full name and a valid 10-digit mobile number.");
+    const email = String(form.get("email") ?? "").trim();
+    const password = String(form.get("password") ?? "");
+    if (name.length < 2 || !email.includes("@") || password.length < 6) {
+      setError(t("auth.invalid", "Enter your name, a valid email and a 6+ character password."));
       return;
     }
-    const result = authStore.register({
+    setBusy(true);
+    const result = await authStore.register({
       name,
-      mobile,
+      email,
+      password,
+      mobile: String(form.get("mobile") ?? "").trim(),
       village: String(form.get("village") ?? "").trim(),
-      email: String(form.get("email") ?? "").trim(),
     });
+    setBusy(false);
+    if (!result.ok) {
+      setError(result.error);
+      return;
+    }
     setError(null);
     onOpenChange(false);
     toast.success(`${t("auth.accountCreated", "Account created")} — ${result.user.name}`);
@@ -75,10 +86,7 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
         <DialogHeader>
           <DialogTitle>{t("auth.title", "AgriKisan account")}</DialogTitle>
           <DialogDescription>
-            {t(
-              "auth.subtitle",
-              "Sign in to track khata dues, orders and delivery status. Demo data only.",
-            )}
+            {t("auth.subtitle", "Sign in to track khata dues, orders and delivery status.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -91,25 +99,17 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
           <TabsContent value="login">
             <form className="space-y-3 pt-3" onSubmit={handleLogin}>
               <div className="space-y-1.5">
-                <Label htmlFor="login-mobile">{t("auth.mobile", "Mobile number")}</Label>
-                <Input id="login-mobile" name="mobile" defaultValue={demoAccounts[0]!.mobile} />
+                <Label htmlFor="login-email">{t("auth.email", "Email")}</Label>
+                <Input id="login-email" name="email" type="email" placeholder="you@example.com" />
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="login-password">{t("auth.password", "Password")}</Label>
-                <Input
-                  id="login-password"
-                  name="password"
-                  type="password"
-                  defaultValue="kisan123"
-                />
+                <Input id="login-password" name="password" type="password" />
               </div>
               {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full rounded-full">
+              <Button type="submit" className="w-full rounded-full" disabled={busy}>
                 {t("auth.login", "Login")}
               </Button>
-              <p className="text-center text-xs text-muted-foreground">
-                Demo login: {demoAccounts[0]!.mobile} / kisan123
-              </p>
             </form>
           </TabsContent>
 
@@ -133,8 +133,12 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
                 <Label htmlFor="reg-email">{t("auth.email", "Email (optional)")}</Label>
                 <Input id="reg-email" name="email" type="email" placeholder="you@example.com" />
               </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="reg-password">{t("auth.password", "Password")}</Label>
+                <Input id="reg-password" name="password" type="password" />
+              </div>
               {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
-              <Button type="submit" className="w-full rounded-full">
+              <Button type="submit" className="w-full rounded-full" disabled={busy}>
                 {t("auth.register", "Register")}
               </Button>
             </form>
