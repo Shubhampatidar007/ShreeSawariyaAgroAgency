@@ -17,6 +17,7 @@ import { LanguageToggle } from "@/components/layout/LanguageToggle";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { CommandPalette, useCommandPalette } from "@/components/shared/CommandPalette";
 import { useI18n } from "@/lib/i18n";
+import { authStore, useAuth } from "@/lib/auth-store";
 
 type AdminHeaderProps = {
   onToggleSidebar: () => void;
@@ -25,6 +26,14 @@ type AdminHeaderProps = {
 export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
   const { t } = useI18n();
   const { open, setOpen } = useCommandPalette();
+  const user = useAuth();
+  const displayName = user?.name ?? t("common.guest", "Guest");
+  const initials = displayName
+    .split(" ")
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-border bg-card/85 px-4 backdrop-blur-xl md:px-6">
@@ -118,19 +127,19 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             >
               <Avatar className="size-8">
                 <AvatarFallback className="bg-primary text-xs text-primary-foreground">
-                  AV
+                  {initials || "AK"}
                 </AvatarFallback>
               </Avatar>
               <div className="hidden text-left leading-tight sm:block">
-                <p className="text-xs font-semibold">Anil Verma</p>
+                <p className="text-xs font-semibold">{displayName}</p>
                 <Badge variant="secondary" className="h-4 px-1.5 text-[10px]">
-                  Owner
+                  {user?.role === "admin" ? "Owner" : (user?.role ?? "Guest")}
                 </Badge>
               </div>
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
-            <DropdownMenuLabel>Anil Verma</DropdownMenuLabel>
+            <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/admin/settings">{t("common.profile")}</Link>
@@ -139,7 +148,9 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
               <Link to="/admin/settings">{t("common.settings")}</Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem disabled>{t("common.logout")}</DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => void authStore.logout()}>
+              {t("common.logout")}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
