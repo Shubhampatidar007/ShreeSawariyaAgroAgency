@@ -685,6 +685,57 @@ export const shopStore = {
     ]);
     return after(undefined);
   },
+
+  async addAdvertisement(ad: Omit<Advertisement, "id" | "impressions" | "clicks">) {
+    const { error } = await supabase.from("advertisements").insert({
+      title: ad.title,
+      placement: ad.placement,
+      audience: ad.audience,
+      status: ad.status,
+      starts_on: ad.startsOn,
+      runs_until: ad.runsUntil,
+    });
+    if (error) throw error;
+    return after(undefined);
+  },
+  async updateAdvertisement(id: string, patch: Partial<Advertisement>) {
+    const payload: any = {};
+    if (patch.title !== undefined) payload["title"] = patch.title;
+    if (patch.placement !== undefined) payload["placement"] = patch.placement;
+    if (patch.audience !== undefined) payload["audience"] = patch.audience;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    if (patch.startsOn !== undefined) payload["starts_on"] = patch.startsOn;
+    if (patch.runsUntil !== undefined) payload["runs_until"] = patch.runsUntil;
+    const { error } = await supabase.from("advertisements").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteAdvertisement(id: string) {
+    await supabase.from("advertisements").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async addBackup(name: string, destination = "Cloud vault") {
+    const { error } = await supabase
+      .from("backups")
+      .insert({ name, type: "manual", destination, status: "completed", size: "—" });
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteBackup(id: string) {
+    await supabase.from("backups").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async logActivity(entry: { actor: string; action: string; entity?: string; detail?: string }) {
+    await supabase.from("activity_logs").insert({
+      actor: entry.actor,
+      action: entry.action,
+      entity: entry.entity ?? "",
+      detail: entry.detail ?? "",
+    });
+    return after(undefined);
+  },
 };
 
 export const formatCurrency = (value: number) =>
