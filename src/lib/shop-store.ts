@@ -15,6 +15,7 @@ import type {
   Supplier,
   SupplierLedgerEntry,
 } from "@/types/business";
+import type { ActivityLog, Advertisement, Backup, SecurityLog } from "@/types";
 
 type ShopState = {
   customers: Customer[];
@@ -29,6 +30,10 @@ type ShopState = {
   reminders: Reminder[];
   reminderLogs: ReminderLog[];
   cmsSections: CmsSection[];
+  advertisements: Advertisement[];
+  activityLogs: ActivityLog[];
+  securityLogs: SecurityLog[];
+  backups: Backup[];
   loading: boolean;
 };
 
@@ -45,6 +50,10 @@ let state: ShopState = {
   reminders: [],
   reminderLogs: [],
   cmsSections: [],
+  advertisements: [],
+  activityLogs: [],
+  securityLogs: [],
+  backups: [],
   loading: true,
 };
 

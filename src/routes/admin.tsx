@@ -1,7 +1,10 @@
 import { useState } from "react";
-import { Outlet, createFileRoute } from "@tanstack/react-router";
+import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
+import { ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { useAuth, useAuthReady } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -20,6 +23,35 @@ export const Route = createFileRoute("/admin")({
 
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const user = useAuth();
+  const ready = useAuthReady();
+
+  if (!ready) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <p className="text-sm text-muted-foreground">Checking your access…</p>
+      </div>
+    );
+  }
+
+  if (!user || (user.role !== "admin" && user.role !== "staff")) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-sm text-center">
+          <ShieldAlert className="mx-auto size-10 text-destructive" />
+          <h1 className="mt-4 font-display text-xl font-semibold">Staff access only</h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            {user
+              ? "This account does not have shop management permissions. Ask the shop owner for staff access."
+              : "Please sign in with your shop owner or staff account to open the management panel."}
+          </p>
+          <Button asChild className="mt-6 rounded-full">
+            <Link to="/">Back to the shop</Link>
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
