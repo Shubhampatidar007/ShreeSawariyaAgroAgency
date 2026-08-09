@@ -78,6 +78,7 @@ export type Advertisement = {
   status: "live" | "scheduled" | "paused" | "expired";
   impressions: number;
   clicks: number;
+  startsOn: string;
   runsUntil: string;
 };
 

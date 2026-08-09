@@ -256,6 +256,50 @@ const toCms = (r: any): CmsSection => ({
   imageLabel: r.image_label ?? "",
 });
 
+const toAd = (r: any): Advertisement => ({
+  id: r.id,
+  title: r.title,
+  placement: r.placement,
+  audience: r.audience,
+  status: r.status,
+  impressions: r.impressions ?? 0,
+  clicks: r.clicks ?? 0,
+  startsOn: r.starts_on,
+  runsUntil: r.runs_until,
+});
+
+const toActivityLog = (r: any): ActivityLog => ({
+  id: r.id,
+  actor: r.actor,
+  action: r.action,
+  target: r.detail ?? "",
+  module: r.entity ?? "",
+  timestamp: r.created_at,
+  severity: "info",
+});
+
+const toSecurityLog = (r: any): SecurityLog => ({
+  id: r.id,
+  event: r.event,
+  account: r.account ?? "",
+  ip: r.ip ?? "",
+  device: r.device ?? "",
+  location: r.location ?? "",
+  timestamp: r.created_at,
+  severity: r.severity,
+  status: r.status,
+});
+
+const toBackup = (r: any): Backup => ({
+  id: r.id,
+  name: r.name,
+  type: r.type,
+  size: r.size,
+  createdAt: r.created_at,
+  status: r.status,
+  destination: r.destination,
+});
+
 /* ---------------- loading ---------------- */
 
 let loadPromise: Promise<void> | null = null;
@@ -273,6 +317,10 @@ export async function loadShopData() {
     reminders,
     reminderLogs,
     cmsSections,
+    ads,
+    activity,
+    security,
+    backupRows,
   ] = await Promise.all([
     supabase.from("customers").select("*").order("name"),
     supabase.from("suppliers").select("*").order("name"),
@@ -288,6 +336,10 @@ export async function loadShopData() {
     supabase.from("reminders").select("*").order("created_at", { ascending: false }),
     supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
     supabase.from("cms_sections").select("*").order("sort_order"),
+    supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
+    supabase.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(200),
+    supabase.from("security_logs").select("*").order("created_at", { ascending: false }).limit(200),
+    supabase.from("backups").select("*").order("created_at", { ascending: false }),
   ]);
 
   setState({
@@ -302,6 +354,10 @@ export async function loadShopData() {
     reminders: (reminders.data ?? []).map(toReminder),
     reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
     cmsSections: (cmsSections.data ?? []).map(toCms),
+    advertisements: (ads.data ?? []).map(toAd),
+    activityLogs: (activity.data ?? []).map(toActivityLog),
+    securityLogs: (security.data ?? []).map(toSecurityLog),
+    backups: (backupRows.data ?? []).map(toBackup),
     loading: false,
   });
 }
