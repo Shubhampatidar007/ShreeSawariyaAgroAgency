@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { recentBills } from "@/data/admin";
+import { formatCurrency, useShopStore } from "@/lib/shop-store";
 import { featuredProducts } from "@/data/storefront";
 
 export const Route = createFileRoute("/admin/search")({
@@ -30,6 +30,7 @@ const suggestions = ["Urea", "INV-24817", "Ramesh Yadav", "Neem oil", "Sprayer"]
 
 function AdminSearchPage() {
   const [query, setQuery] = useState("");
+  const orders = useShopStore((s) => s.orders);
 
   const form = useForm<SearchValues>({
     resolver: zodResolver(schema),
@@ -49,17 +50,17 @@ function AdminSearchPage() {
         type: "Product",
       }));
 
-    const billHits: Result[] = recentBills
-      .filter((b) => `${b.id} ${b.customer} ${b.village}`.toLowerCase().includes(q))
+    const billHits: Result[] = orders
+      .filter((b) => `${b.code} ${b.customerName} ${b.village}`.toLowerCase().includes(q))
       .map((b) => ({
         id: b.id,
-        title: `${b.id} · ${b.customer}`,
-        subtitle: `${b.village} · ${b.amount} · ${b.status}`,
+        title: `${b.code} · ${b.customerName || "Walk-in"}`,
+        subtitle: `${b.village} · ${formatCurrency(b.total)} · ${b.paymentStatus}`,
         type: "Invoice",
       }));
 
     return [...productHits, ...billHits];
-  }, [query]);
+  }, [query, orders]);
 
   return (
     <div className="space-y-6">

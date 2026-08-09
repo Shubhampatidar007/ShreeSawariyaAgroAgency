@@ -15,6 +15,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
 import { initAuth } from "@/lib/auth-store";
+import { initCart } from "@/lib/cart-store";
 import { initShopData } from "@/lib/shop-store";
 
 function NotFoundComponent() {
@@ -137,6 +138,7 @@ function RootComponent() {
     initTheme();
     initLanguage();
     initAuth();
+    initCart();
     void initShopData();
   }, []);
 

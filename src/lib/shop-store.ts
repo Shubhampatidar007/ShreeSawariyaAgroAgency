@@ -15,6 +15,7 @@ import type {
   Supplier,
   SupplierLedgerEntry,
 } from "@/types/business";
+import type { ActivityLog, Advertisement, Backup, SecurityLog } from "@/types";
 
 type ShopState = {
   customers: Customer[];
@@ -29,6 +30,10 @@ type ShopState = {
   reminders: Reminder[];
   reminderLogs: ReminderLog[];
   cmsSections: CmsSection[];
+  advertisements: Advertisement[];
+  activityLogs: ActivityLog[];
+  securityLogs: SecurityLog[];
+  backups: Backup[];
   loading: boolean;
 };
 
@@ -45,6 +50,10 @@ let state: ShopState = {
   reminders: [],
   reminderLogs: [],
   cmsSections: [],
+  advertisements: [],
+  activityLogs: [],
+  securityLogs: [],
+  backups: [],
   loading: true,
 };
 
@@ -247,6 +256,50 @@ const toCms = (r: any): CmsSection => ({
   imageLabel: r.image_label ?? "",
 });
 
+const toAd = (r: any): Advertisement => ({
+  id: r.id,
+  title: r.title,
+  placement: r.placement,
+  audience: r.audience,
+  status: r.status,
+  impressions: r.impressions ?? 0,
+  clicks: r.clicks ?? 0,
+  startsOn: r.starts_on,
+  runsUntil: r.runs_until,
+});
+
+const toActivityLog = (r: any): ActivityLog => ({
+  id: r.id,
+  actor: r.actor,
+  action: r.action,
+  target: r.detail ?? "",
+  module: r.entity ?? "",
+  timestamp: r.created_at,
+  severity: "info",
+});
+
+const toSecurityLog = (r: any): SecurityLog => ({
+  id: r.id,
+  event: r.event,
+  account: r.account ?? "",
+  ip: r.ip ?? "",
+  device: r.device ?? "",
+  location: r.location ?? "",
+  timestamp: r.created_at,
+  severity: r.severity,
+  status: r.status,
+});
+
+const toBackup = (r: any): Backup => ({
+  id: r.id,
+  name: r.name,
+  type: r.type,
+  size: r.size,
+  createdAt: r.created_at,
+  status: r.status,
+  destination: r.destination,
+});
+
 /* ---------------- loading ---------------- */
 
 let loadPromise: Promise<void> | null = null;
@@ -264,6 +317,10 @@ export async function loadShopData() {
     reminders,
     reminderLogs,
     cmsSections,
+    ads,
+    activity,
+    security,
+    backupRows,
   ] = await Promise.all([
     supabase.from("customers").select("*").order("name"),
     supabase.from("suppliers").select("*").order("name"),
@@ -279,6 +336,10 @@ export async function loadShopData() {
     supabase.from("reminders").select("*").order("created_at", { ascending: false }),
     supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
     supabase.from("cms_sections").select("*").order("sort_order"),
+    supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
+    supabase.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(200),
+    supabase.from("security_logs").select("*").order("created_at", { ascending: false }).limit(200),
+    supabase.from("backups").select("*").order("created_at", { ascending: false }),
   ]);
 
   setState({
@@ -293,6 +354,10 @@ export async function loadShopData() {
     reminders: (reminders.data ?? []).map(toReminder),
     reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
     cmsSections: (cmsSections.data ?? []).map(toCms),
+    advertisements: (ads.data ?? []).map(toAd),
+    activityLogs: (activity.data ?? []).map(toActivityLog),
+    securityLogs: (security.data ?? []).map(toSecurityLog),
+    backups: (backupRows.data ?? []).map(toBackup),
     loading: false,
   });
 }
@@ -618,6 +683,57 @@ export const shopStore = {
       supabase.from("cms_sections").update({ sort_order: swap.order }).eq("id", current.id),
       supabase.from("cms_sections").update({ sort_order: current.order }).eq("id", swap.id),
     ]);
+    return after(undefined);
+  },
+
+  async addAdvertisement(ad: Omit<Advertisement, "id" | "impressions" | "clicks">) {
+    const { error } = await supabase.from("advertisements").insert({
+      title: ad.title,
+      placement: ad.placement,
+      audience: ad.audience,
+      status: ad.status,
+      starts_on: ad.startsOn,
+      runs_until: ad.runsUntil,
+    });
+    if (error) throw error;
+    return after(undefined);
+  },
+  async updateAdvertisement(id: string, patch: Partial<Advertisement>) {
+    const payload: any = {};
+    if (patch.title !== undefined) payload["title"] = patch.title;
+    if (patch.placement !== undefined) payload["placement"] = patch.placement;
+    if (patch.audience !== undefined) payload["audience"] = patch.audience;
+    if (patch.status !== undefined) payload["status"] = patch.status;
+    if (patch.startsOn !== undefined) payload["starts_on"] = patch.startsOn;
+    if (patch.runsUntil !== undefined) payload["runs_until"] = patch.runsUntil;
+    const { error } = await supabase.from("advertisements").update(payload).eq("id", id);
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteAdvertisement(id: string) {
+    await supabase.from("advertisements").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async addBackup(name: string, destination = "Cloud vault") {
+    const { error } = await supabase
+      .from("backups")
+      .insert({ name, type: "manual", destination, status: "completed", size: "—" });
+    if (error) throw error;
+    return after(undefined);
+  },
+  async deleteBackup(id: string) {
+    await supabase.from("backups").delete().eq("id", id);
+    return after(undefined);
+  },
+
+  async logActivity(entry: { actor: string; action: string; entity?: string; detail?: string }) {
+    await supabase.from("activity_logs").insert({
+      actor: entry.actor,
+      action: entry.action,
+      entity: entry.entity ?? "",
+      detail: entry.detail ?? "",
+    });
     return after(undefined);
   },
 };

@@ -44,6 +44,78 @@ export type Database = {
         }
         Relationships: []
       }
+      advertisements: {
+        Row: {
+          audience: string
+          clicks: number
+          created_at: string
+          id: string
+          impressions: number
+          placement: string
+          runs_until: string
+          starts_on: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          audience?: string
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          placement?: string
+          runs_until?: string
+          starts_on?: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          audience?: string
+          clicks?: number
+          created_at?: string
+          id?: string
+          impressions?: number
+          placement?: string
+          runs_until?: string
+          starts_on?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      backups: {
+        Row: {
+          created_at: string
+          destination: string
+          id: string
+          name: string
+          size: string
+          status: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          destination?: string
+          id?: string
+          name: string
+          size?: string
+          status?: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          destination?: string
+          id?: string
+          name?: string
+          size?: string
+          status?: string
+          type?: string
+        }
+        Relationships: []
+      }
       cms_sections: {
         Row: {
           body: string
@@ -667,6 +739,42 @@ export type Database = {
           target?: string
           title?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      security_logs: {
+        Row: {
+          account: string
+          created_at: string
+          device: string
+          event: string
+          id: string
+          ip: string
+          location: string
+          severity: string
+          status: string
+        }
+        Insert: {
+          account?: string
+          created_at?: string
+          device?: string
+          event: string
+          id?: string
+          ip?: string
+          location?: string
+          severity?: string
+          status?: string
+        }
+        Update: {
+          account?: string
+          created_at?: string
+          device?: string
+          event?: string
+          id?: string
+          ip?: string
+          location?: string
+          severity?: string
+          status?: string
         }
         Relationships: []
       }

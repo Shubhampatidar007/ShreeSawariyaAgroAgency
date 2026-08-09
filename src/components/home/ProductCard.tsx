@@ -1,11 +1,26 @@
 import { ShoppingCart, Star } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { cartStore } from "@/lib/cart-store";
+import { useI18n } from "@/lib/i18n";
 import type { Product } from "@/types";
 
 export function ProductCard({ product }: { product: Product }) {
   const lowStock = product.stock < 25;
+  const { t } = useI18n();
+
+  const addToCart = () => {
+    cartStore.add({
+      id: product.id,
+      title: product.name,
+      price: product.price,
+      unit: product.unit,
+      emoji: product.emoji,
+    });
+    toast.success(t("cart.added", "Added to cart"), { description: product.name });
+  };
 
   return (
     <Card className="group h-full overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
@@ -37,7 +52,12 @@ export function ProductCard({ product }: { product: Product }) {
             </p>
             <p className="text-xs text-muted-foreground">per {product.unit}</p>
           </div>
-          <Button size="icon" className="rounded-full" aria-label={`Add ${product.name} to cart`}>
+          <Button
+            size="icon"
+            className="rounded-full"
+            aria-label={`Add ${product.name} to cart`}
+            onClick={addToCart}
+          >
             <ShoppingCart className="size-4" />
           </Button>
         </div>

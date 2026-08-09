@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
-import { activityLogs } from "@/data/admin";
+import { useShopStore } from "@/lib/shop-store";
 import type { LogSeverity } from "@/types";
 
 export const Route = createFileRoute("/admin/activity-logs")({
@@ -20,6 +20,7 @@ const severityStyles: Record<LogSeverity, string> = {
 };
 
 function ActivityLogsPage() {
+  const activityLogs = useShopStore((s) => s.activityLogs);
   return (
     <div className="space-y-6">
       <PageHeader

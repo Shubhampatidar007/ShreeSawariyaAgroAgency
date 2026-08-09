@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
-import { securityLogs } from "@/data/admin";
+import { useShopStore } from "@/lib/shop-store";
 import type { LogSeverity } from "@/types";
 
 export const Route = createFileRoute("/admin/security-logs")({
@@ -27,6 +27,7 @@ const severityStyles: Record<LogSeverity, string> = {
 };
 
 function SecurityLogsPage() {
+  const securityLogs = useShopStore((s) => s.securityLogs);
   return (
     <div className="space-y-6">
       <PageHeader

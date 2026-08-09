@@ -15,7 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
-import { backups } from "@/data/admin";
+import { useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/backups")({
   component: BackupsPage,
@@ -28,6 +28,7 @@ const statusStyles: Record<string, string> = {
 };
 
 function BackupsPage() {
+  const backups = useShopStore((s) => s.backups);
   return (
     <div className="space-y-6">
       <PageHeader

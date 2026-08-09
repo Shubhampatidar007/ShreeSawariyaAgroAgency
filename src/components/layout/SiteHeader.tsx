@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Clock, LogOut, Mail, Menu, Phone, Search, ShoppingCart, User } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Clock, LogOut, Mail, Menu, Phone, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -17,6 +16,7 @@ import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
 import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
+import { CartSheet } from "@/components/cart/CartSheet";
 import { authStore, useAuth } from "@/lib/auth-store";
 import { useI18n } from "@/lib/i18n";
 import { storefrontNav } from "@/data/navigation";
@@ -28,6 +28,7 @@ export function SiteHeader() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const user = useAuth();
   const { t } = useI18n();
+  const isStaff = user?.role === "admin" || user?.role === "staff";
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -81,9 +82,11 @@ export function SiteHeader() {
                     <span className="text-xs font-normal text-muted-foreground">{user.mobile}</span>
                   </DropdownMenuLabel>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin">{t("storefront.adminPanel", "Shop admin panel")}</Link>
-                  </DropdownMenuItem>
+                  {isStaff ? (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin">{t("storefront.adminPanel", "Shop admin panel")}</Link>
+                    </DropdownMenuItem>
+                  ) : null}
                   <DropdownMenuItem onClick={() => authStore.logout()}>
                     <LogOut className="size-4" /> {t("common.logout", "Logout")}
                   </DropdownMenuItem>
@@ -106,12 +109,7 @@ export function SiteHeader() {
                 </Button>
               </>
             )}
-            <Button variant="ghost" size="icon" className="relative rounded-full" aria-label="Cart">
-              <ShoppingCart className="size-5" />
-              <Badge className="absolute -right-0.5 -top-0.5 size-5 justify-center rounded-full p-0 text-[10px]">
-                3
-              </Badge>
-            </Button>
+            <CartSheet />
 
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -144,13 +142,15 @@ export function SiteHeader() {
                       {t("auth.login", "Login")} / {t("auth.register", "Register")}
                     </button>
                   ) : null}
-                  <Link
-                    to="/admin"
-                    onClick={() => setOpen(false)}
-                    className="rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-muted"
-                  >
-                    {t("storefront.adminPanel", "Shop admin panel")}
-                  </Link>
+                  {isStaff ? (
+                    <Link
+                      to="/admin"
+                      onClick={() => setOpen(false)}
+                      className="rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-muted"
+                    >
+                      {t("storefront.adminPanel", "Shop admin panel")}
+                    </Link>
+                  ) : null}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -169,12 +169,14 @@ export function SiteHeader() {
               {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
             </a>
           ))}
-          <Link
-            to="/admin"
-            className="ml-auto py-3 text-sm font-semibold text-primary underline-offset-4 hover:underline"
-          >
-            {t("storefront.adminPanel", "Shop admin panel")} →
-          </Link>
+          {isStaff ? (
+            <Link
+              to="/admin"
+              className="ml-auto py-3 text-sm font-semibold text-primary underline-offset-4 hover:underline"
+            >
+              {t("storefront.adminPanel", "Shop admin panel")} →
+            </Link>
+          ) : null}
         </div>
       </nav>
 
