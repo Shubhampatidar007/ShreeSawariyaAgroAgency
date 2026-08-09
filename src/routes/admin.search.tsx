@@ -30,6 +30,7 @@ const suggestions = ["Urea", "INV-24817", "Ramesh Yadav", "Neem oil", "Sprayer"]
 
 function AdminSearchPage() {
   const [query, setQuery] = useState("");
+  const orders = useShopStore((s) => s.orders);
 
   const form = useForm<SearchValues>({
     resolver: zodResolver(schema),
@@ -59,7 +60,7 @@ function AdminSearchPage() {
       }));
 
     return [...productHits, ...billHits];
-  }, [query]);
+  }, [query, orders]);
 
   return (
     <div className="space-y-6">
