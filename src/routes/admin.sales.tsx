@@ -35,12 +35,13 @@ import { Timeline } from "@/components/shared/Timeline";
 import { ExportMenu } from "@/components/shared/ExportMenu";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import { useI18n } from "@/lib/i18n";
 import type { Order, OrderStatus } from "@/types/operations";
 
 export const Route = createFileRoute("/admin/sales")({
   head: () => ({
     meta: [
-      { title: "Orders & Sales — AgriKisan Admin" },
+      { title: "Orders & Sales — Admin" },
       {
         name: "description",
         content: "Track online orders, counter sales, invoices and delivery status.",
@@ -62,6 +63,7 @@ const orderStatuses: OrderStatus[] = [
 ];
 
 function SalesPage() {
+  const { t } = useI18n();
   const orders = useShopStore((s) => s.orders);
   const [channel, setChannel] = useState<"all" | "online" | "offline">("all");
   const [status, setStatus] = useState<string>("all");
@@ -94,30 +96,30 @@ function SalesPage() {
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Orders & Sales" }]}
-        eyebrow="Operations"
-        title="Orders & sales"
-        description="Online orders, counter sales, invoices, payments and delivery tracking."
+        crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.ordersSales") }]}
+        eyebrow={t("common.operations")}
+        title={t("sales.title")}
+        description={t("sales.description")}
         actions={<ExportMenu />}
       />
 
       <SummaryCards
         items={[
-          { label: "Order value", value: formatCurrency(revenue), icon: IndianRupee },
+          { label: t("sales.orderValue"), value: formatCurrency(revenue), icon: IndianRupee },
           {
-            label: "Payments collected",
+            label: t("sales.paymentsCollected"),
             value: formatCurrency(collected),
             icon: Receipt,
             tone: "success",
           },
           {
-            label: "Outstanding",
+            label: t("sales.outstanding"),
             value: formatCurrency(revenue - collected),
             icon: IndianRupee,
             tone: "warning",
           },
           {
-            label: "Pending deliveries",
+            label: t("sales.pendingDeliveries"),
             value: String(pendingDeliveries),
             icon: Truck,
             tone: "default",
@@ -127,23 +129,23 @@ function SalesPage() {
 
       <Tabs value={channel} onValueChange={(value) => setChannel(value as typeof channel)}>
         <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="online">Online orders</TabsTrigger>
-          <TabsTrigger value="offline">Offline / counter</TabsTrigger>
+          <TabsTrigger value="all">{t("sales.all")}</TabsTrigger>
+          <TabsTrigger value="online">{t("sales.onlineOrders")}</TabsTrigger>
+          <TabsTrigger value="offline">{t("sales.offlineCounter")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
       <SearchToolbar
         value={query}
         onChange={setQuery}
-        placeholder="Search by order code, customer or village…"
+        placeholder={t("sales.placeholder")}
       >
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-44 rounded-full">
-            <SelectValue placeholder="Status" />
+            <SelectValue placeholder={t("sales.statusPlaceholder")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All statuses</SelectItem>
+            <SelectItem value="all">{t("sales.allStatuses")}</SelectItem>
             {orderStatuses.map((s) => (
               <SelectItem key={s} value={s} className="capitalize">
                 {s}
@@ -156,8 +158,8 @@ function SalesPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
-          title="No orders match these filters"
-          description="Try clearing the search or switching the channel tab."
+          title={t("sales.noOrders")}
+          description={t("sales.noOrdersDescription")}
         />
       ) : (
         <Card className="shadow-soft">
@@ -165,14 +167,14 @@ function SalesPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-right">Items</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Payment</TableHead>
-                  <TableHead>Delivery</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("sales.order")}</TableHead>
+                  <TableHead>{t("sales.customer")}</TableHead>
+                  <TableHead className="text-right">{t("sales.items")}</TableHead>
+                  <TableHead className="text-right">{t("sales.amount")}</TableHead>
+                  <TableHead>{t("sales.payment")}</TableHead>
+                  <TableHead>{t("sales.delivery")}</TableHead>
+                  <TableHead>{t("sales.status")}</TableHead>
+                  <TableHead className="text-right">{t("sales.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -211,7 +213,7 @@ function SalesPage() {
                           className="rounded-full"
                           onClick={() => setActive(order)}
                         >
-                          View
+                          {t("sales.view")}
                         </Button>
                         <Button
                           size="sm"
@@ -219,7 +221,7 @@ function SalesPage() {
                           className="rounded-full"
                           onClick={() => setInvoiceFor(order)}
                         >
-                          Invoice
+                          {t("sales.invoice")}
                         </Button>
                       </div>
                     </TableCell>
@@ -333,7 +335,7 @@ function SalesPage() {
               <div className="space-y-4 rounded-xl border border-border p-5 text-sm">
                 <div className="flex flex-wrap justify-between gap-3">
                   <div>
-                    <p className="font-display text-lg font-semibold">AgriKisan Krishi Kendra</p>
+                    <p className="font-display text-lg font-semibold">Your shop</p>
                     <p className="text-xs text-muted-foreground">GSTIN 06ABCDE1234F1Z5</p>
                   </div>
                   <div className="text-right text-xs text-muted-foreground">

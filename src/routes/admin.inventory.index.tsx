@@ -21,7 +21,7 @@ import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/inventory/")({
   head: () => ({
     meta: [
-      { title: "Inventory — AgriKisan Admin" },
+      { title: "Inventory — Admin" },
       { name: "description", content: "Stock entries with supplier, quantity and purchase price." },
       { name: "robots", content: "noindex" },
     ],

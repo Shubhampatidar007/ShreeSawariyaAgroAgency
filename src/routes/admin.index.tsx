@@ -34,6 +34,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { quickActions } from "@/data/quick-actions";
 import { useAuth } from "@/lib/auth-store";
 import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { useI18n } from "@/lib/i18n";
 import type { StatItem } from "@/types";
 
 export const Route = createFileRoute("/admin/")({
@@ -42,15 +43,16 @@ export const Route = createFileRoute("/admin/")({
 
 const isoDay = (value: string) => new Date(value).toISOString().slice(0, 10);
 
-function greeting() {
+function greeting(t: (key: string) => string) {
   const hour = new Date().getHours();
-  if (hour < 12) return "Good morning";
-  if (hour < 17) return "Good afternoon";
-  return "Good evening";
+  if (hour < 12) return t("common.greeting.morning");
+  if (hour < 17) return t("common.greeting.afternoon");
+  return t("common.greeting.evening");
 }
 
 function AdminOverview() {
   const user = useAuth();
+  const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const { orders, customers, inventory, supplierLedger, activityLogs, payments, loading } =
     useShopStore((s) => s);
@@ -66,37 +68,37 @@ function AdminOverview() {
   const stats: StatItem[] = [
     {
       id: "sales",
-      label: "Today's sales",
+      label: t("admin.overview.stats.sales"),
       value: formatCurrency(todaysSales),
-      helper: `${todaysOrders.length} bills generated`,
-      change: formatCurrency(todaysCollected) + " collected",
+      helper: t("admin.overview.stats.salesHelper", { count: todaysOrders.length }),
+      change: t("admin.overview.stats.collected", { amount: formatCurrency(todaysCollected) }),
       trend: "up",
       icon: IndianRupee,
     },
     {
       id: "stock",
-      label: "Stock value",
+      label: t("admin.overview.stats.stock"),
       value: formatCurrency(stockValue),
-      helper: `${inventory.length} items tracked`,
-      change: `${inventory.reduce((s, i) => s + i.quantity, 0)} units`,
+      helper: t("admin.overview.stats.stockHelper", { count: inventory.length }),
+      change: t("admin.overview.stats.units", { count: inventory.reduce((s, i) => s + i.quantity, 0) }),
       trend: "flat",
       icon: Package,
     },
     {
       id: "customers",
-      label: "Active customers",
+      label: t("admin.overview.stats.customers"),
       value: String(activeCustomers.length),
-      helper: `${customers.length} total in khata`,
-      change: formatCurrency(customers.reduce((s, c) => s + c.currentDue, 0)) + " due",
+      helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
+      change: t("admin.overview.stats.due", { amount: formatCurrency(customers.reduce((s, c) => s + c.currentDue, 0)) }),
       trend: "flat",
       icon: Users,
     },
     {
       id: "alerts",
-      label: "Low stock alerts",
+      label: t("admin.overview.stats.alerts"),
       value: String(lowStockItems.length),
-      helper: "At or below reorder level",
-      change: lowStockItems.length ? "Action needed" : "All healthy",
+      helper: t("admin.overview.stats.alertsHelper"),
+      change: lowStockItems.length ? t("admin.overview.stats.actionNeeded") : t("admin.overview.stats.allHealthy"),
       trend: lowStockItems.length ? "down" : "up",
       icon: AlertTriangle,
     },
@@ -131,17 +133,17 @@ function AdminOverview() {
   return (
     <div className="space-y-6">
       <PageHeader
-        eyebrow="Shop overview"
-        title={`${greeting()}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
-        description="Counter and online activity for AgriKisan Krishi Kendra, Hisar."
+        eyebrow={t("admin.overview.title")}
+        title={`${greeting(t)}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
+        description={t("admin.overview.description")}
         actions={
           <>
             <Button variant="outline" className="rounded-full" onClick={() => setDayCloseOpen(true)}>
-              Day close summary
+              {t("admin.overview.dayCloseSummary")}
             </Button>
             <Button className="rounded-full" asChild>
               <Link to="/admin/sales">
-                <Plus className="size-4" /> New sale bill
+                <Plus className="size-4" /> {t("admin.overview.newSaleBill")}
               </Link>
             </Button>
           </>
@@ -158,10 +160,10 @@ function AdminOverview() {
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle className="text-base">Sales vs purchases</CardTitle>
-              <p className="text-xs text-muted-foreground">Last six months, in rupees</p>
+              <CardTitle className="text-base">{t("admin.overview.salesVsPurchases")}</CardTitle>
+              <p className="text-xs text-muted-foreground">{t("admin.overview.salesVsPurchasesSubtitle")}</p>
             </div>
-            <Badge variant="secondary">Live data</Badge>
+            <Badge variant="secondary">{t("common.liveData")}</Badge>
           </CardHeader>
           <CardContent className="h-72">
             <ResponsiveContainer width="100%" height="100%">
@@ -203,7 +205,7 @@ function AdminOverview() {
 
         <Card className="shadow-soft">
           <CardHeader>
-            <CardTitle className="text-base">Quick actions</CardTitle>
+            <CardTitle className="text-base">{t("admin.overview.quickActions")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {quickActions.map((action) => (
@@ -226,9 +228,9 @@ function AdminOverview() {
       <div className="grid gap-4 lg:grid-cols-3">
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
-            <CardTitle className="text-base">Recent bills</CardTitle>
+            <CardTitle className="text-base">{t("admin.overview.recentBills")}</CardTitle>
             <Button variant="ghost" size="sm" asChild>
-              <Link to="/admin/sales">View all</Link>
+              <Link to="/admin/sales">{t("admin.overview.viewAll")}</Link>
             </Button>
           </CardHeader>
           <CardContent className="px-0">
@@ -248,14 +250,14 @@ function AdminOverview() {
                   {recentBills.length === 0 ? (
                     <TableRow>
                       <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">
-                        {loading ? "Loading bills…" : "No bills recorded yet."}
+                        {loading ? t("admin.overview.loadingBills") : t("admin.overview.noBills")}
                       </TableCell>
                     </TableRow>
                   ) : (
                     recentBills.map((bill) => (
                       <TableRow key={bill.id}>
                         <TableCell className="font-medium">{bill.code}</TableCell>
-                        <TableCell>{bill.customerName || "Walk-in"}</TableCell>
+                        <TableCell>{bill.customerName || t("admin.overview.walkIn")}</TableCell>
                         <TableCell className="hidden md:table-cell text-muted-foreground">
                           {bill.village}
                         </TableCell>
@@ -289,7 +291,7 @@ function AdminOverview() {
         <div className="space-y-4">
           <Card className="shadow-soft">
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Low stock alerts</CardTitle>
+              <CardTitle className="text-base">{t("admin.overview.lowStockAlerts")}</CardTitle>
               <Button variant="ghost" size="sm" asChild>
                 <Link to="/admin/inventory">Inventory</Link>
               </Button>
@@ -297,7 +299,7 @@ function AdminOverview() {
             <CardContent className="space-y-4">
               {lowStockItems.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  Every item is above its reorder level.
+                  {t("admin.overview.everythingHealthy")}
                 </p>
               ) : (
                 lowStockItems.slice(0, 5).map((item) => (
@@ -322,14 +324,14 @@ function AdminOverview() {
 
           <Card className="shadow-soft">
             <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">Recent activity</CardTitle>
+              <CardTitle className="text-base">{t("admin.overview.recentActivity")}</CardTitle>
               <Button variant="ghost" size="sm" asChild>
-                <Link to="/admin/activity-logs">All logs</Link>
+                <Link to="/admin/activity-logs">{t("admin.overview.allLogs")}</Link>
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {activityLogs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No activity recorded yet.</p>
+                <p className="text-sm text-muted-foreground">{t("admin.overview.noActivity")}</p>
               ) : (
                 activityLogs.slice(0, 4).map((log) => (
                   <div key={log.id} className="flex gap-3">
@@ -352,7 +354,7 @@ function AdminOverview() {
       <Dialog open={dayCloseOpen} onOpenChange={setDayCloseOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Day close summary</DialogTitle>
+            <DialogTitle>{t("admin.overview.dayCloseSummary")}</DialogTitle>
             <DialogDescription>
               {new Date().toLocaleDateString("en-IN", {
                 day: "2-digit",
@@ -362,21 +364,21 @@ function AdminOverview() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <SummaryRow label="Bills generated" value={String(todaysOrders.length)} />
-            <SummaryRow label="Total sales" value={formatCurrency(todaysSales)} />
-            <SummaryRow label="Amount collected" value={formatCurrency(todaysCollected)} />
+            <SummaryRow label={t("admin.overview.dayCloseBillsGenerated")} value={String(todaysOrders.length)} />
+            <SummaryRow label={t("admin.overview.dayCloseTotalSales")} value={formatCurrency(todaysSales)} />
+            <SummaryRow label={t("admin.overview.dayCloseAmountCollected")} value={formatCurrency(todaysCollected)} />
             <SummaryRow
-              label="Outstanding on today's bills"
+              label={t("admin.overview.dayCloseOutstanding")}
               value={formatCurrency(Math.max(todaysSales - todaysCollected, 0))}
             />
             <SummaryRow
-              label="Payments recorded today"
+              label={t("admin.overview.dayClosePaymentsRecorded")}
               value={String(payments.filter((p) => isoDay(p.date) === today).length)}
             />
-            <SummaryRow label="Low stock items" value={String(lowStockItems.length)} />
+            <SummaryRow label={t("admin.overview.dayCloseLowStockItems")} value={String(lowStockItems.length)} />
           </div>
           <Button className="w-full rounded-full" onClick={() => window.print()}>
-            Print summary
+            {t("admin.overview.printSummary")}
           </Button>
         </DialogContent>
       </Dialog>

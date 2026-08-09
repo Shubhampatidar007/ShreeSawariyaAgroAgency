@@ -29,25 +29,25 @@ import { useI18n } from "@/lib/i18n";
 const RECENTS_KEY = "agrikisan-recent-searches";
 
 const pages = [
-  { label: "Dashboard", to: "/admin", icon: LayoutDashboard },
-  { label: "Customers", to: "/admin/customers", icon: Users },
-  { label: "Suppliers", to: "/admin/suppliers", icon: Truck },
-  { label: "Inventory", to: "/admin/inventory", icon: Boxes },
-  { label: "Products", to: "/admin/products", icon: Package },
-  { label: "Orders & Sales", to: "/admin/sales", icon: ReceiptText },
-  { label: "Payments", to: "/admin/payments", icon: Wallet },
-  { label: "Reports", to: "/admin/reports", icon: FileBarChart },
-  { label: "Analytics", to: "/admin/analytics", icon: FileBarChart },
-  { label: "Reminders", to: "/admin/reminders", icon: Clock },
-  { label: "Homepage CMS", to: "/admin/cms", icon: BookOpen },
-  { label: "Settings", to: "/admin/settings", icon: Settings },
+  { labelKey: "commandPalette.dashboard", defaultLabel: "Dashboard", to: "/admin", icon: LayoutDashboard },
+  { labelKey: "commandPalette.customers", defaultLabel: "Customers", to: "/admin/customers", icon: Users },
+  { labelKey: "commandPalette.suppliers", defaultLabel: "Suppliers", to: "/admin/suppliers", icon: Truck },
+  { labelKey: "commandPalette.inventory", defaultLabel: "Inventory", to: "/admin/inventory", icon: Boxes },
+  { labelKey: "commandPalette.products", defaultLabel: "Products", to: "/admin/products", icon: Package },
+  { labelKey: "commandPalette.ordersSales", defaultLabel: "Orders & Sales", to: "/admin/sales", icon: ReceiptText },
+  { labelKey: "commandPalette.payments", defaultLabel: "Payments", to: "/admin/payments", icon: Wallet },
+  { labelKey: "commandPalette.reports", defaultLabel: "Reports", to: "/admin/reports", icon: FileBarChart },
+  { labelKey: "commandPalette.analytics", defaultLabel: "Analytics", to: "/admin/analytics", icon: FileBarChart },
+  { labelKey: "commandPalette.reminders", defaultLabel: "Reminders", to: "/admin/reminders", icon: Clock },
+  { labelKey: "commandPalette.homepageCms", defaultLabel: "Homepage CMS", to: "/admin/cms", icon: BookOpen },
+  { labelKey: "commandPalette.settings", defaultLabel: "Settings", to: "/admin/settings", icon: Settings },
 ];
 
 const quickActions = [
-  { label: "New offline sale", to: "/admin/sales" },
-  { label: "Add customer", to: "/admin/customers/new" },
-  { label: "New stock entry", to: "/admin/inventory/new" },
-  { label: "Publish product", to: "/admin/products/publish" },
+  { labelKey: "commandPalette.newOfflineSale", defaultLabel: "New offline sale", to: "/admin/sales" },
+  { labelKey: "commandPalette.addCustomer", defaultLabel: "Add customer", to: "/admin/customers/new" },
+  { labelKey: "commandPalette.newStockEntry", defaultLabel: "New stock entry", to: "/admin/inventory/new" },
+  { labelKey: "commandPalette.publishProduct", defaultLabel: "Publish product", to: "/admin/products/publish" },
 ];
 
 export function useCommandPalette() {
@@ -139,7 +139,7 @@ export function CommandPalette({
 
         {!query && recents.length > 0 ? (
           <>
-            <CommandGroup heading="Recent searches">
+            <CommandGroup heading={t("commandPalette.recentSearches", "Recent searches")}>
               {recents.map((term) => (
                 <CommandItem key={term} value={term} onSelect={() => setQuery(term)}>
                   <Clock className="size-4" /> {term}
@@ -150,28 +150,30 @@ export function CommandPalette({
           </>
         ) : null}
 
-        <CommandGroup heading={t("common.quickActions")}>
-          {quickActions.map((action) => (
-            <CommandItem
-              key={action.to}
-              value={action.label}
-              onSelect={() => go(action.to, action.label)}
-            >
-              <Plus className="size-4" /> {action.label}
-            </CommandItem>
-          ))}
+        <CommandGroup heading={t("common.quickActions", "Quick actions")}>
+          {quickActions.map((action) => {
+            const label = t(action.labelKey, action.defaultLabel);
+            return (
+              <CommandItem key={action.to} value={label} onSelect={() => go(action.to, label)}>
+                <Plus className="size-4" /> {label}
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
 
-        <CommandGroup heading="Pages">
-          {pages.map((page) => (
-            <CommandItem key={page.to} value={page.label} onSelect={() => go(page.to, page.label)}>
-              <page.icon className="size-4" /> {page.label}
-            </CommandItem>
-          ))}
+        <CommandGroup heading={t("commandPalette.pages", "Pages")}>
+          {pages.map((page) => {
+            const label = t(page.labelKey, page.defaultLabel);
+            return (
+              <CommandItem key={page.to} value={label} onSelect={() => go(page.to, label)}>
+                <page.icon className="size-4" /> {label}
+              </CommandItem>
+            );
+          })}
         </CommandGroup>
 
         {matches.customers.length > 0 ? (
-          <CommandGroup heading="Customers">
+          <CommandGroup heading={t("commandPalette.customers", "Customers")}>
             {matches.customers.map((c) => (
               <CommandItem
                 key={c.id}
@@ -186,7 +188,7 @@ export function CommandPalette({
         ) : null}
 
         {matches.suppliers.length > 0 ? (
-          <CommandGroup heading="Suppliers">
+          <CommandGroup heading={t("commandPalette.suppliers", "Suppliers")}>
             {matches.suppliers.map((s) => (
               <CommandItem
                 key={s.id}
@@ -201,7 +203,7 @@ export function CommandPalette({
         ) : null}
 
         {matches.inventory.length > 0 ? (
-          <CommandGroup heading="Inventory">
+          <CommandGroup heading={t("commandPalette.inventory", "Inventory")}>
             {matches.inventory.map((i) => (
               <CommandItem
                 key={i.id}
@@ -218,7 +220,7 @@ export function CommandPalette({
         ) : null}
 
         {matches.products.length > 0 ? (
-          <CommandGroup heading="Products">
+          <CommandGroup heading={t("commandPalette.products", "Products")}>
             {matches.products.map((p) => (
               <CommandItem
                 key={p.id}

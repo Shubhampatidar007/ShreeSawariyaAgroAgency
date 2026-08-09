@@ -28,7 +28,6 @@ export function SiteHeader() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const user = useAuth();
   const { t } = useI18n();
-  const isStaff = user?.role === "admin" || user?.role === "staff";
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -60,7 +59,7 @@ export function SiteHeader() {
           <div className="relative ml-4 hidden flex-1 lg:block">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={t("storefront.searchPlaceholder", "Search seeds, fertilizers, sprayers…")}
+              placeholder={t("storefront.searchPlaceholder", "Search products, invoices, customers…")}
               className="h-11 rounded-full bg-muted pl-10"
             />
           </div>
@@ -68,46 +67,49 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center gap-1.5">
             <LanguageToggle className="rounded-full" />
             <ThemeToggle className="rounded-full" />
-            {user ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="rounded-full">
-                    <User className="size-4" />
-                    <span className="hidden sm:inline">{user.name.split(" ")[0]}</span>
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-52">
-                  <DropdownMenuLabel className="flex flex-col">
-                    <span>{user.name}</span>
-                    <span className="text-xs font-normal text-muted-foreground">{user.mobile}</span>
-                  </DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {isStaff ? (
-                    <DropdownMenuItem asChild>
-                      <Link to="/admin">{t("storefront.adminPanel", "Shop admin panel")}</Link>
-                    </DropdownMenuItem>
-                  ) : null}
-                  <DropdownMenuItem onClick={() => authStore.logout()}>
-                    <LogOut className="size-4" /> {t("common.logout", "Logout")}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : (
-              <>
-                <Button
-                  variant="ghost"
-                  className="hidden rounded-full sm:inline-flex"
-                  onClick={() => openAuth("login")}
-                >
-                  <User className="size-4" /> {t("auth.login", "Login")}
-                </Button>
-                <Button
-                  className="hidden rounded-full sm:inline-flex"
-                  onClick={() => openAuth("register")}
-                >
-                  {t("auth.register", "Register")}
-                </Button>
-              </>
+           {user ? (
+  <DropdownMenu>
+    <DropdownMenuTrigger asChild>
+      <Button variant="ghost" className="rounded-full">
+        <User className="size-4" />
+        <span className="hidden sm:inline">
+          {user.name.split(" ")[0]}
+        </span>
+      </Button>
+    </DropdownMenuTrigger>
+
+    <DropdownMenuContent align="end" className="w-52">
+      <DropdownMenuLabel className="flex flex-col">
+        <span>{user.name}</span>
+        <span className="text-xs font-normal text-muted-foreground">
+          {user.mobile}
+        </span>
+      </DropdownMenuLabel>
+
+      <DropdownMenuSeparator />
+
+      <DropdownMenuItem asChild>
+        <Link to="/admin">
+          <User className="size-4" />
+          Admin Panel
+        </Link>
+      </DropdownMenuItem>
+
+      <DropdownMenuItem onClick={() => authStore.logout()}>
+        <LogOut className="size-4" />
+        {t("common.logout", "Logout")}
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+) : (
+             <Button
+  variant="ghost"
+  className="hidden rounded-full sm:inline-flex"
+  onClick={() => openAuth("login")}
+>
+  <User className="size-4" />
+  {t("auth.login", "Login")}
+</Button>
             )}
             <CartSheet />
 
@@ -118,7 +120,7 @@ export function SiteHeader() {
                 </Button>
               </SheetTrigger>
               <SheetContent side="right" className="w-72">
-                <SheetTitle>Menu</SheetTitle>
+                <SheetTitle>{t("common.menu", "Menu")}</SheetTitle>
                 <nav className="mt-6 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
                     <a
@@ -139,17 +141,8 @@ export function SiteHeader() {
                       }}
                       className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
                     >
-                      {t("auth.login", "Login")} / {t("auth.register", "Register")}
+                     {t("auth.login", "Login")}
                     </button>
-                  ) : null}
-                  {isStaff ? (
-                    <Link
-                      to="/admin"
-                      onClick={() => setOpen(false)}
-                      className="rounded-lg px-3 py-2.5 text-sm font-medium text-primary hover:bg-muted"
-                    >
-                      {t("storefront.adminPanel", "Shop admin panel")}
-                    </Link>
                   ) : null}
                 </nav>
               </SheetContent>
@@ -169,14 +162,6 @@ export function SiteHeader() {
               {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
             </a>
           ))}
-          {isStaff ? (
-            <Link
-              to="/admin"
-              className="ml-auto py-3 text-sm font-semibold text-primary underline-offset-4 hover:underline"
-            >
-              {t("storefront.adminPanel", "Shop admin panel")} →
-            </Link>
-          ) : null}
         </div>
       </nav>
 

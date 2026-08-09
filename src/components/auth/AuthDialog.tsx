@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -27,6 +28,8 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
   const { t } = useI18n();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showRegisterPassword, setShowRegisterPassword] = useState(false);
 
   const handleLogin = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -84,9 +87,9 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
     >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{t("auth.title", "AgriKisan account")}</DialogTitle>
+          <DialogTitle>{t("auth.title", "Account")}</DialogTitle>
           <DialogDescription>
-            {t("auth.subtitle", "Sign in to track khata dues, orders and delivery status.")}
+            {t("auth.subtitle", "Sign in to manage your shop.")}
           </DialogDescription>
         </DialogHeader>
 
@@ -104,7 +107,26 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="login-password">{t("auth.password", "Password")}</Label>
-                <Input id="login-password" name="password" type="password" />
+                <div className="relative">
+                  <Input
+                    id="login-password"
+                    name="password"
+                    type={showLoginPassword ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                    onClick={() => setShowLoginPassword((value) => !value)}
+                    aria-label={
+                      showLoginPassword
+                        ? t("auth.hidePassword", "Hide password")
+                        : t("auth.showPassword", "Show password")
+                    }
+                  >
+                    {showLoginPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
               {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
               <Button type="submit" className="w-full rounded-full" disabled={busy}>
@@ -117,7 +139,7 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
             <form className="space-y-3 pt-3" onSubmit={handleRegister}>
               <div className="space-y-1.5">
                 <Label htmlFor="reg-name">{t("auth.name", "Full name")}</Label>
-                <Input id="reg-name" name="name" placeholder="Ramesh Yadav" />
+                <Input id="reg-name" name="name" placeholder="Your name" />
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
                 <div className="space-y-1.5">
@@ -126,7 +148,7 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
                 </div>
                 <div className="space-y-1.5">
                   <Label htmlFor="reg-village">{t("auth.village", "Village")}</Label>
-                  <Input id="reg-village" name="village" placeholder="Barwala" />
+                  <Input id="reg-village" name="village" placeholder="Your village" />
                 </div>
               </div>
               <div className="space-y-1.5">
@@ -135,7 +157,26 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
               </div>
               <div className="space-y-1.5">
                 <Label htmlFor="reg-password">{t("auth.password", "Password")}</Label>
-                <Input id="reg-password" name="password" type="password" />
+                <div className="relative">
+                  <Input
+                    id="reg-password"
+                    name="password"
+                    type={showRegisterPassword ? "text" : "password"}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground"
+                    onClick={() => setShowRegisterPassword((value) => !value)}
+                    aria-label={
+                      showRegisterPassword
+                        ? t("auth.hidePassword", "Hide password")
+                        : t("auth.showPassword", "Show password")
+                    }
+                  >
+                    {showRegisterPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                  </button>
+                </div>
               </div>
               {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
               <Button type="submit" className="w-full rounded-full" disabled={busy}>

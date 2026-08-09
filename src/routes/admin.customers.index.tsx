@@ -42,7 +42,7 @@ import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-
 export const Route = createFileRoute("/admin/customers/")({
   head: () => ({
     meta: [
-      { title: "Customers — AgriKisan Admin" },
+      { title: "Customers — Admin" },
       { name: "description", content: "Farmer directory with khata dues, purchases and status." },
       { name: "robots", content: "noindex" },
     ],

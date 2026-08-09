@@ -11,7 +11,7 @@ import { shopStore, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/cms")({
   head: () => ({
     meta: [
-      { title: "Homepage CMS — AgriKisan Admin" },
+      { title: "Homepage CMS — Admin" },
       { name: "description", content: "Manage hero banners, posters, offers and homepage sections." },
       { name: "robots", content: "noindex" },
     ],

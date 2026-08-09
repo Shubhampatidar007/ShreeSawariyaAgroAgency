@@ -39,11 +39,12 @@ import {
   topProducts,
 } from "@/data/operations";
 import { formatCurrency, useShopStore } from "@/lib/shop-store";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/analytics")({
   head: () => ({
     meta: [
-      { title: "Analytics — AgriKisan Admin" },
+      { title: "Analytics — Admin" },
       {
         name: "description",
         content: "Revenue trends, product movement, category mix and customer analytics.",
@@ -63,6 +64,7 @@ const pieColors = [
 ];
 
 function AnalyticsPage() {
+  const { t } = useI18n();
   const orders = useShopStore((s) => s.orders);
   const customers = useShopStore((s) => s.customers);
   const [range, setRange] = useState<DateRangeKey>("monthly");
@@ -75,10 +77,10 @@ function AnalyticsPage() {
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Analytics" }]}
-        eyebrow="Insights"
-        title="Business analytics"
-        description="Revenue, product movement, category mix and customer performance."
+        crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.analytics") }]}
+        eyebrow={t("common.insights")}
+        title={t("analytics.title")}
+        description={t("analytics.description")}
         actions={
           <div className="flex flex-wrap items-center gap-2">
             <RangeFilter
@@ -94,15 +96,15 @@ function AnalyticsPage() {
 
       <SummaryCards
         items={[
-          { label: "Revenue (6 mo)", value: formatCurrency(revenue), icon: IndianRupee, tone: "success" },
-          { label: "Gross profit", value: formatCurrency(profit), icon: TrendingUp },
-          { label: "Avg. order value", value: formatCurrency(avgOrder), icon: ShoppingBag },
-          { label: "Active customers", value: String(customers.length), icon: Users },
+          { label: t("analytics.revenue6m"), value: formatCurrency(revenue), icon: IndianRupee, tone: "success" },
+          { label: t("analytics.grossProfit"), value: formatCurrency(profit), icon: TrendingUp },
+          { label: t("analytics.avgOrderValue"), value: formatCurrency(avgOrder), icon: ShoppingBag },
+          { label: t("analytics.activeCustomers"), value: String(customers.length), icon: Users },
         ]}
       />
 
       <div className="grid gap-5 xl:grid-cols-2">
-        <ChartCard title="Revenue vs purchases" description="Monthly trend with profit overlay">
+        <ChartCard title={t("analytics.revenueVsPurchases")} description={t("analytics.revenueVsPurchasesDescription")}>
           <ResponsiveContainer width="100%" height={280}>
             <AreaChart data={revenueTrend}>
               <defs>
@@ -135,7 +137,7 @@ function AnalyticsPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Stock movement" description="Inward vs outward quantity by product">
+        <ChartCard title={t("analytics.stockMovement")} description={t("analytics.stockMovementDescription")}>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={productMovement}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
@@ -149,7 +151,7 @@ function AnalyticsPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Category mix" description="Share of revenue by category">
+        <ChartCard title={t("analytics.categoryMix")} description={t("analytics.categoryMixDescription")}>
           <ResponsiveContainer width="100%" height={280}>
             <PieChart>
               <Pie
@@ -170,14 +172,14 @@ function AnalyticsPage() {
           </ResponsiveContainer>
         </ChartCard>
 
-        <ChartCard title="Sales heatmap" description="Busiest days and time slots at the counter">
+        <ChartCard title={t("analytics.salesHeatmap")} description={t("analytics.salesHeatmapDescription")}>
           <div className="space-y-2">
             <div className="grid grid-cols-[3rem_repeat(4,1fr)] gap-2 text-[11px] text-muted-foreground">
               <span />
-              <span>Morning</span>
-              <span>Midday</span>
-              <span>Evening</span>
-              <span>Night</span>
+              <span>{t("analytics.morning")}</span>
+              <span>{t("analytics.midday")}</span>
+              <span>{t("analytics.evening")}</span>
+              <span>{t("analytics.night")}</span>
             </div>
             {salesHeatmap.map((row) => (
               <div key={row.day} className="grid grid-cols-[3rem_repeat(4,1fr)] items-center gap-2">
@@ -208,10 +210,10 @@ function AnalyticsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Top product</TableHead>
-                  <TableHead className="text-right">Units</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Growth</TableHead>
+                  <TableHead>{t("analytics.topProduct")}</TableHead>
+                  <TableHead className="text-right">{t("analytics.units")}</TableHead>
+                  <TableHead className="text-right">{t("reports.revenue")}</TableHead>
+                  <TableHead className="text-right">{t("analytics.growth")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -239,10 +241,10 @@ function AnalyticsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Best customer</TableHead>
-                  <TableHead>Village</TableHead>
-                  <TableHead className="text-right">Orders</TableHead>
-                  <TableHead className="text-right">Spend</TableHead>
+                  <TableHead>{t("analytics.bestCustomer")}</TableHead>
+                  <TableHead>{t("reports.village")}</TableHead>
+                  <TableHead className="text-right">{t("analytics.orders")}</TableHead>
+                  <TableHead className="text-right">{t("analytics.spend")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

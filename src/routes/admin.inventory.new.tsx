@@ -26,7 +26,7 @@ import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
     meta: [
-      { title: "Add Stock Entry — AgriKisan Admin" },
+      { title: "Add Stock Entry — Admin" },
       { name: "description", content: "Record supplier stock with quantity and purchase price." },
       { name: "robots", content: "noindex" },
     ],
@@ -166,7 +166,7 @@ function InventoryEntryPage() {
 
           <div className="space-y-2 sm:col-span-2">
             <Label>Product name</Label>
-            <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Urea 45 kg bag" />
+            <Input value={productName} onChange={(e) => setProductName(e.target.value)} placeholder="Product name" />
           </div>
           <div className="space-y-2">
             <Label>Quantity</Label>

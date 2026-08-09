@@ -7,7 +7,7 @@ import { shopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/customers/new")({
   head: () => ({
     meta: [
-      { title: "Add Customer — AgriKisan Admin" },
+      { title: "Add Customer — Admin" },
       { name: "description", content: "Register a new farmer in the shop khata book." },
       { name: "robots", content: "noindex" },
     ],

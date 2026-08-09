@@ -18,11 +18,12 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { ExportMenu } from "@/components/shared/ExportMenu";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/payments")({
   head: () => ({
     meta: [
-      { title: "Payments — AgriKisan Admin" },
+      { title: "Payments — Admin" },
       { name: "description", content: "Customer and supplier payments with method filters and status." },
       { name: "robots", content: "noindex" },
     ],
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/admin/payments")({
 const methods = ["all", "cash", "credit", "upi", "card", "bank", "cheque", "online"];
 
 function PaymentsPage() {
+  const { t } = useI18n();
   const payments = useShopStore((s) => s.payments);
   const [query, setQuery] = useState("");
   const [method, setMethod] = useState("all");
@@ -58,19 +60,19 @@ function PaymentsPage() {
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Payments" }]}
-        eyebrow="Money movement"
-        title="Payments"
-        description="Track every customer receipt and supplier payout. Razorpay-ready UI."
+        crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.payments") }]}
+        eyebrow={t("common.moneyMovement")}
+        title={t("payments.title")}
+        description={t("payments.description")}
         actions={<ExportMenu />}
       />
 
       <SummaryCards
         items={[
-          { label: "Received", value: formatCurrency(sum(incoming)), icon: ArrowDownLeft, tone: "success" },
-          { label: "Paid out", value: formatCurrency(sum(outgoing)), icon: ArrowUpRight, tone: "warning" },
+          { label: t("payments.received"), value: formatCurrency(sum(incoming)), icon: ArrowDownLeft, tone: "success" },
+          { label: t("payments.paidOut"), value: formatCurrency(sum(outgoing)), icon: ArrowUpRight, tone: "warning" },
           {
-            label: "Pending",
+            label: t("payments.pending"),
             value: formatCurrency(sum(payments.filter((p) => p.status === "pending"))),
             icon: Wallet,
             tone: "warning",
@@ -81,9 +83,9 @@ function PaymentsPage() {
 
       <Tabs value={direction} onValueChange={setDirection}>
         <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="incoming">Customer receipts</TabsTrigger>
-          <TabsTrigger value="outgoing">Supplier payouts</TabsTrigger>
+          <TabsTrigger value="all">{t("payments.all")}</TabsTrigger>
+          <TabsTrigger value="incoming">{t("payments.customerReceipts")}</TabsTrigger>
+          <TabsTrigger value="outgoing">{t("payments.supplierPayouts")}</TabsTrigger>
         </TabsList>
       </Tabs>
 
@@ -107,8 +109,8 @@ function PaymentsPage() {
       {filtered.length === 0 ? (
         <EmptyState
           icon={Wallet}
-          title="No payments found"
-          description="Adjust the filters or search with another reference number."
+          title={t("payments.noPayments")}
+          description={t("payments.noPaymentsDescription")}
         />
       ) : (
         <Card className="overflow-hidden shadow-soft">
@@ -117,14 +119,14 @@ function PaymentsPage() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Reference</TableHead>
-                    <TableHead>Party</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Method</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Remarks</TableHead>
+                    <TableHead>{t("payments.reference")}</TableHead>
+                    <TableHead>{t("payments.party")}</TableHead>
+                    <TableHead>{t("payments.date")}</TableHead>
+                    <TableHead>{t("payments.type")}</TableHead>
+                    <TableHead>{t("payments.method")}</TableHead>
+                    <TableHead className="text-right">{t("payments.amount")}</TableHead>
+                    <TableHead>{t("payments.status")}</TableHead>
+                    <TableHead>{t("payments.remarks")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>

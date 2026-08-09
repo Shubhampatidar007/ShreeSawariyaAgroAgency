@@ -7,9 +7,8 @@ import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
 import { AboutSection } from "@/components/home/AboutSection";
 
-const title = "AgriKisan Krishi Kendra — Seeds, Fertilizers & Farm Supplies";
-const description =
-  "Buy certified seeds, fertilizers, crop protection and irrigation equipment from a licensed krishi kendra, with free advisory and village delivery.";
+const title = "Your Shop";
+const description = "Add your own products, offers, and story to this storefront.";
 
 export const Route = createFileRoute("/")({
   head: () => ({

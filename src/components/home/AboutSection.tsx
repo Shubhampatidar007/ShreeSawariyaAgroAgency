@@ -8,15 +8,15 @@ export function AboutSection() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 lg:grid-cols-2 lg:items-center">
         <div>
           <SectionHeading
-            eyebrow="About our shop"
-            title="A krishi kendra farmers have trusted since 1998"
-            description={`${shopInfo.name} started as a single seed counter on Mandi Road and now supplies inputs to more than 180 villages. Every sale is billed, every batch is traceable, and every customer gets straight advice on what their crop actually needs.`}
+            eyebrow="About your shop"
+            title="Tell customers what makes your business special"
+            description={`${shopInfo.name} can share its story, services, and contact details here once the real content is ready.`}
           />
           <dl className="mt-8 grid gap-4 sm:grid-cols-3">
             {[
-              { label: "Years in business", value: "27" },
-              { label: "Registered societies", value: "34" },
-              { label: "Field advisors", value: "6" },
+              { label: "Years in business", value: "—" },
+              { label: "Customers served", value: "—" },
+              { label: "Services offered", value: "—" },
             ].map((item) => (
               <div key={item.label} className="rounded-xl border border-border bg-muted/50 p-4">
                 <dt className="text-xs text-muted-foreground">{item.label}</dt>

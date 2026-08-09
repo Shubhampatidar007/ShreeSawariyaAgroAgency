@@ -26,7 +26,7 @@ type SearchValues = z.infer<typeof schema>;
 
 type Result = { id: string; title: string; subtitle: string; type: string };
 
-const suggestions = ["Urea", "INV-24817", "Ramesh Yadav", "Neem oil", "Sprayer"];
+const suggestions = ["Product", "Invoice", "Customer", "Stock", "Supplier"];
 
 function AdminSearchPage() {
   const [query, setQuery] = useState("");

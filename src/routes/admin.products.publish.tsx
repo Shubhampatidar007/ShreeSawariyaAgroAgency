@@ -22,7 +22,7 @@ import type { PublishedProduct } from "@/types/business";
 export const Route = createFileRoute("/admin/products/publish")({
   head: () => ({
     meta: [
-      { title: "Publish Product — AgriKisan Admin" },
+      { title: "Publish Product — Admin" },
       { name: "description", content: "Turn an inventory item into a customer-facing product." },
       { name: "robots", content: "noindex" },
     ],
@@ -126,7 +126,7 @@ function PublishProductPage() {
             </div>
             <div className="space-y-2">
               <Label>Tags (comma separated)</Label>
-              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="kharif, urea" />
+              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags, categories" />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>

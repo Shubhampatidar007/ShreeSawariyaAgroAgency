@@ -282,7 +282,7 @@ function AdvertisementsPage() {
                 id="ad-title"
                 value={form.title}
                 onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="Kharif seed festival — 15% off"
+                placeholder="Your offer title"
               />
             </div>
             <div className="grid gap-4 sm:grid-cols-2">

@@ -35,8 +35,8 @@ export function ExportMenu({ label, size = "sm" }: { label?: string; size?: "sm"
           <DropdownMenuItem
             key={format.key}
             onClick={() =>
-              toast.info(`${format.key} export queued`, {
-                description: "File generation will be enabled with the backend in Phase 4.",
+              toast.info(t("common.exportQueued"), {
+                description: t("common.exportDescription"),
               })
             }
           >

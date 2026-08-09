@@ -100,20 +100,20 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link to="/admin/reminders" className="flex-col items-start gap-0.5">
-                <span className="text-sm font-medium">3 khata reminders due today</span>
-                <span className="text-xs text-muted-foreground">₹42,300 across 3 farmers</span>
+                <span className="text-sm font-medium">No reminders yet</span>
+                <span className="text-xs text-muted-foreground">Add follow-ups once your workflow is ready</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/admin/inventory" className="flex-col items-start gap-0.5">
-                <span className="text-sm font-medium">4 products below reorder level</span>
-                <span className="text-xs text-muted-foreground">DAP, PR-126 seed and 2 more</span>
+                <span className="text-sm font-medium">Stock view is ready</span>
+                <span className="text-xs text-muted-foreground">Add inventory items to see live updates</span>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/admin/sales" className="flex-col items-start gap-0.5">
-                <span className="text-sm font-medium">2 online orders awaiting packing</span>
-                <span className="text-xs text-muted-foreground">Placed in the last 4 hours</span>
+                <span className="text-sm font-medium">Sales tracking is ready</span>
+                <span className="text-xs text-muted-foreground">Create bills and orders to populate this area</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>

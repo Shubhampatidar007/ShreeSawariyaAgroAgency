@@ -20,7 +20,7 @@ import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/reminders")({
   head: () => ({
     meta: [
-      { title: "Reminders — AgriKisan Admin" },
+      { title: "Reminders — Admin" },
       { name: "description", content: "Automated khata and payment reminders with delivery history." },
       { name: "robots", content: "noindex" },
     ],

@@ -11,7 +11,7 @@ import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/suppliers/$supplierId")({
   head: () => ({
     meta: [
-      { title: "Supplier Details — AgriKisan Admin" },
+      { title: "Supplier Details — Admin" },
       { name: "description", content: "Supplier profile with products supplied, purchases and dues." },
       { name: "robots", content: "noindex" },
     ],

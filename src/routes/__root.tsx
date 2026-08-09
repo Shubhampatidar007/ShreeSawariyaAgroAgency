@@ -83,16 +83,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "AgriKisan — Agriculture Shop & Management System" },
+      { title: "Shree Sawariya Agro Agency" },
       {
         name: "description",
-        content:
-          "Seeds, fertilizers, pesticides and farm tools with a complete shop management panel for agri retailers.",
+        content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
       },
-      { property: "og:title", content: "AgriKisan — Agriculture Shop & Management" },
+      { property: "og:title", content: "Shree Sawariya Agro Agency" },
       {
         property: "og:description",
-        content: "Agri retail storefront and shop management platform.",
+        content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -102,7 +101,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
-      { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+      { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {

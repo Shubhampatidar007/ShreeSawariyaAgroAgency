@@ -12,7 +12,7 @@ import { shopStore, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/products/")({
   head: () => ({
     meta: [
-      { title: "Published Products — AgriKisan Admin" },
+      { title: "Published Products — Admin" },
       { name: "description", content: "Manage storefront products, visibility and stock." },
       { name: "robots", content: "noindex" },
     ],

@@ -68,7 +68,7 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
                 <FormItem>
                   <FormLabel>Full name</FormLabel>
                   <FormControl>
-                    <Input placeholder="Ramesh Patil" {...field} />
+                    <Input placeholder="Customer name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -94,7 +94,7 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
                 <FormItem>
                   <FormLabel>Village</FormLabel>
                   <FormControl>
-                    <Input placeholder="Shirur" {...field} />
+                    <Input placeholder="Village name" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -129,7 +129,7 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
                 <FormItem className="md:col-span-2">
                   <FormLabel>Address</FormLabel>
                   <FormControl>
-                    <Textarea rows={2} placeholder="Plot 12, Near Krishi Mandi, Shirur, Pune" {...field} />
+                    <Textarea rows={2} placeholder="Add the full address" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -142,7 +142,7 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
                 <FormItem className="md:col-span-2">
                   <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="Crop pattern, credit terms, preferred brands…" {...field} />
+                    <Textarea rows={3} placeholder="Add notes about the customer or account" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

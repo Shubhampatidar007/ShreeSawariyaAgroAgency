@@ -67,7 +67,6 @@ export const adminNavSections: NavSection[] = [
         icon: ShieldAlert,
       },
       { label: "Search", labelKey: "nav.search", to: "/admin/search", icon: Search },
-      { label: "Settings", labelKey: "nav.settings", to: "/admin/settings", icon: Settings },
     ],
   },
 ];

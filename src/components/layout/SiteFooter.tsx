@@ -20,8 +20,7 @@ export function SiteFooter() {
         <div>
           <Logo />
           <p className="mt-4 max-w-xs text-sm text-muted-foreground">
-            Serving farmers since 1998 with certified seeds, fertilizers, crop protection and
-            irrigation supplies — backed by honest billing and field-level advice.
+            Add your own shop story, service details, and business information here.
           </p>
           <ul className="mt-5 space-y-2.5 text-sm text-muted-foreground">
             <li className="flex gap-2">
@@ -46,8 +45,8 @@ export function SiteFooter() {
 
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {shopInfo.name}. Seed Licence HR/SD/2211 · Fertilizer Licence HR/FT/8842.</p>
-          <p>GSTIN 06ABCDE1234F1Z5 · Prices inclusive of applicable taxes.</p>
+          <p>© {new Date().getFullYear()} {shopInfo.name}. Update your legal and business details here.</p>
+          <p>Customize this footer with your own contact and policy information.</p>
         </div>
       </div>
     </footer>

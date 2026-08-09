@@ -2,6 +2,8 @@ import { useCallback, useSyncExternalStore } from "react";
 import { en, type TranslationKey } from "./en";
 import { hi } from "./hi";
 
+export type TranslateParams = Record<string, string | number | boolean>;
+
 export type Language = "en" | "hi";
 
 export const languages: { code: Language; label: string; short: string }[] = [
@@ -48,9 +50,15 @@ export function initLanguage() {
   else document.documentElement.lang = language;
 }
 
-export function translate(key: TranslationKey | string, lang: Language = language) {
+function interpolate(value: string, params?: TranslateParams) {
+  if (!params) return value;
+  return value.replace(/\{(\w+)\}/g, (_, key: string) => String(params[key] ?? `{${key}}`));
+}
+
+export function translate(key: TranslationKey | string, lang: Language = language, params?: TranslateParams) {
   const dict = dictionaries[lang] as Record<string, string | undefined>;
-  return dict[key] ?? (en as Record<string, string | undefined>)[key] ?? key;
+  const value = dict[key] ?? (en as Record<string, string | undefined>)[key] ?? key;
+  return interpolate(value, params);
 }
 
 export function useI18n() {
@@ -61,9 +69,13 @@ export function useI18n() {
   );
 
   const t = useCallback(
-    (key: TranslationKey | string, fallback?: string) => {
-      const value = translate(key, current);
-      return value === key && fallback ? fallback : value;
+    (key: TranslationKey | string, fallbackOrParams?: string | TranslateParams) => {
+      if (typeof fallbackOrParams === "string") {
+        const value = translate(key, current);
+        return value === key ? fallbackOrParams : value;
+      }
+
+      return translate(key, current, fallbackOrParams);
     },
     [current],
   );

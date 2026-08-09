@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Admin Panel — AgriKisan Shop Management" },
+      { title: "Admin Panel — Shop Management" },
       {
         name: "description",
         content: "Manage inventory, sales, customers and shop operations from one panel.",

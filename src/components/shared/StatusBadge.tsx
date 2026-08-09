@@ -1,4 +1,5 @@
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 
 const tones: Record<string, string> = {
@@ -16,12 +17,23 @@ const tones: Record<string, string> = {
   archived: "bg-destructive/10 text-destructive border-destructive/25",
 };
 
-const labels: Record<string, string> = {
-  "inventory-only": "Inventory only",
-  "out-of-stock": "Out of stock",
-};
-
 export function StatusBadge({ status, className }: { status: string; className?: string }) {
+  const { t } = useI18n();
+  const labels: Record<string, string> = {
+    "inventory-only": t("common.statuses.inventoryOnly"),
+    "out-of-stock": t("common.statuses.outOfStock"),
+    active: t("common.statuses.active"),
+    published: t("common.statuses.published"),
+    paid: t("common.statuses.paid"),
+    inactive: t("common.statuses.inactive"),
+    draft: t("common.statuses.draft"),
+    hidden: t("common.statuses.hidden"),
+    pending: t("common.statuses.pending"),
+    due: t("common.statuses.due"),
+    blocked: t("common.statuses.blocked"),
+    archived: t("common.statuses.archived"),
+  };
+
   return (
     <Badge
       variant="outline"

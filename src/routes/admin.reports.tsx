@@ -18,11 +18,12 @@ import { ExportMenu } from "@/components/shared/ExportMenu";
 import { RangeFilter, type CustomRange, type DateRangeKey } from "@/components/shared/RangeFilter";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/reports")({
   head: () => ({
     meta: [
-      { title: "Reports & Export — AgriKisan Admin" },
+      { title: "Reports & Export — Admin" },
       {
         name: "description",
         content: "Customer, supplier, inventory, sales and profit reports with export options.",
@@ -42,17 +43,8 @@ type ReportKey =
   | "dues"
   | "profit";
 
-const reportTabs: { key: ReportKey; label: string }[] = [
-  { key: "sales", label: "Sales & orders" },
-  { key: "customers", label: "Customers" },
-  { key: "suppliers", label: "Suppliers" },
-  { key: "inventory", label: "Inventory" },
-  { key: "payments", label: "Payments" },
-  { key: "dues", label: "Dues" },
-  { key: "profit", label: "Profit & loss" },
-];
-
 function ReportsPage() {
+  const { t } = useI18n();
   const store = useShopStore((s) => s);
   const [report, setReport] = useState<ReportKey>("sales");
   const [range, setRange] = useState<DateRangeKey>("monthly");
@@ -67,26 +59,36 @@ function ReportsPage() {
     return { sales, purchases, customerDue, supplierDue };
   }, [store]);
 
+  const reportTabs: { key: ReportKey; label: string }[] = [
+    { key: "sales", label: t("reports.salesOrders") },
+    { key: "customers", label: t("reports.customers") },
+    { key: "suppliers", label: t("reports.suppliers") },
+    { key: "inventory", label: t("reports.inventory") },
+    { key: "payments", label: t("reports.payments") },
+    { key: "dues", label: t("reports.dues") },
+    { key: "profit", label: t("reports.profitLoss") },
+  ];
+
   const q = query.trim().toLowerCase();
   const match = (value: string) => !q || value.toLowerCase().includes(q);
 
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Reports" }]}
-        eyebrow="Insights"
-        title="Reports & export"
-        description="Filterable business reports across sales, stock, parties and payments."
+        crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.reports") }]}
+        eyebrow={t("common.insights")}
+        title={t("reports.title")}
+        description={t("reports.description")}
         actions={<ExportMenu />}
       />
 
       <SummaryCards
         items={[
-          { label: "Total sales", value: formatCurrency(totals.sales), icon: IndianRupee, tone: "success" },
-          { label: "Total purchases", value: formatCurrency(totals.purchases), icon: Layers },
-          { label: "Customer dues", value: formatCurrency(totals.customerDue), icon: Users, tone: "warning" },
+          { label: t("reports.totalSales"), value: formatCurrency(totals.sales), icon: IndianRupee, tone: "success" },
+          { label: t("reports.totalPurchases"), value: formatCurrency(totals.purchases), icon: Layers },
+          { label: t("reports.customerDues"), value: formatCurrency(totals.customerDue), icon: Users, tone: "warning" },
           {
-            label: "Supplier dues",
+            label: t("reports.supplierDues"),
             value: formatCurrency(totals.supplierDue),
             icon: TrendingDown,
             tone: "danger",
@@ -107,13 +109,13 @@ function ReportsPage() {
         <RangeFilter value={range} onChange={setRange} custom={custom} onCustomChange={setCustom} />
       </div>
 
-      <SearchToolbar value={query} onChange={setQuery} placeholder="Filter rows…" />
+      <SearchToolbar value={query} onChange={setQuery} placeholder={t("reports.placeholder")} />
 
       <Card className="shadow-soft">
         <CardContent className="overflow-x-auto p-0">
           {report === "sales" ? (
             <ReportTable
-              headers={["Order", "Customer", "Date", "Amount", "Paid", "Status"]}
+              headers={[t("reports.order"), t("reports.customer"), t("reports.date"), t("reports.amount"), t("reports.paid"), t("reports.status")]}
               rows={store.orders
                 .filter((o) => match(`${o.code} ${o.customerName}`))
                 .map((o) => [
@@ -129,7 +131,7 @@ function ReportsPage() {
 
           {report === "customers" ? (
             <ReportTable
-              headers={["Customer", "Village", "Purchases", "Paid", "Due", "Status"]}
+              headers={[t("reports.customer"), t("reports.village"), t("reports.purchases"), t("reports.paid"), t("reports.due"), t("reports.status")]}
               rows={store.customers
                 .filter((c) => match(`${c.name} ${c.village}`))
                 .map((c) => [
@@ -145,7 +147,7 @@ function ReportsPage() {
 
           {report === "suppliers" ? (
             <ReportTable
-              headers={["Supplier", "Company", "Purchases", "Paid", "Due", "Status"]}
+              headers={[t("reports.supplier"), t("reports.company"), t("reports.purchases"), t("reports.paid"), t("reports.due"), t("reports.status")]}
               rows={store.suppliers
                 .filter((s) => match(`${s.name} ${s.company}`))
                 .map((s) => [
@@ -161,7 +163,7 @@ function ReportsPage() {
 
           {report === "inventory" ? (
             <ReportTable
-              headers={["Product", "Supplier", "Qty", "Purchase price", "Stock value", "Status"]}
+              headers={[t("reports.product"), t("reports.supplier"), t("reports.qty"), t("reports.purchasePrice"), t("reports.stockValue"), t("reports.status")]}
               rows={store.inventory
                 .filter((i) => match(`${i.productName} ${i.supplierName}`))
                 .map((i) => [
@@ -177,7 +179,7 @@ function ReportsPage() {
 
           {report === "payments" ? (
             <ReportTable
-              headers={["Reference", "Party", "Date", "Method", "Amount", "Status"]}
+              headers={[t("reports.reference"), t("reports.party"), t("reports.date"), t("reports.method"), t("reports.amount"), t("reports.status")]}
               rows={store.payments
                 .filter((p) => match(`${p.reference} ${p.partyName}`))
                 .map((p) => [
@@ -193,7 +195,7 @@ function ReportsPage() {
 
           {report === "dues" ? (
             <ReportTable
-              headers={["Party", "Type", "Outstanding", "Last activity"]}
+              headers={[t("reports.party"), t("reports.type"), t("reports.outstanding"), t("reports.lastActivity")]}
               rows={[
                 ...store.customers
                   .filter((c) => c.currentDue > 0 && match(c.name))
@@ -207,15 +209,15 @@ function ReportsPage() {
 
           {report === "profit" ? (
             <ReportTable
-              headers={["Metric", "Value"]}
+              headers={[t("reports.metric"), t("reports.value")]}
               rows={[
-                ["Revenue", formatCurrency(totals.sales)],
-                ["Cost of goods (stock purchased)", formatCurrency(totals.purchases)],
-                ["Gross profit", formatCurrency(totals.sales - totals.purchases)],
-                ["Receivables", formatCurrency(totals.customerDue)],
-                ["Payables", formatCurrency(totals.supplierDue)],
+                [t("reports.revenue"), formatCurrency(totals.sales)],
+                [t("reports.costGoods"), formatCurrency(totals.purchases)],
+                [t("reports.grossProfit"), formatCurrency(totals.sales - totals.purchases)],
+                [t("reports.receivables"), formatCurrency(totals.customerDue)],
+                [t("reports.payables"), formatCurrency(totals.supplierDue)],
                 [
-                  "Net position",
+                  t("reports.netPosition"),
                   formatCurrency(totals.sales - totals.purchases + totals.customerDue - totals.supplierDue),
                 ],
               ]}
@@ -237,7 +239,7 @@ function ReportTable({
   if (rows.length === 0) {
     return (
       <p className="px-6 py-12 text-center text-sm text-muted-foreground">
-        No records for the selected filters.
+        {t("reports.noRecords")}
       </p>
     );
   }

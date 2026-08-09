@@ -20,7 +20,7 @@ import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/ledger/suppliers/$supplierId")({
   head: () => ({
     meta: [
-      { title: "Supplier Ledger — AgriKisan Admin" },
+      { title: "Supplier Ledger — Admin" },
       { name: "description", content: "Supplier purchases, payments, advances and running balance." },
       { name: "robots", content: "noindex" },
     ],

@@ -7,9 +7,9 @@ import heroField from "@/assets/hero-field.jpg.asset.json";
 export function HeroSection() {
   const { t } = useI18n();
   const heroStats = [
-    { label: t("home.hero.farmers"), value: "12,000+" },
-    { label: t("home.hero.products"), value: "1,200+" },
-    { label: t("home.hero.villages"), value: "180+" },
+    { label: t("home.hero.farmers"), value: "—" },
+    { label: t("home.hero.products"), value: "—" },
+    { label: t("home.hero.villages"), value: "—" },
   ];
 
   return (
@@ -74,15 +74,14 @@ export function HeroSection() {
           <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">
             Offer of the week
           </p>
-          <h2 className="mt-2 font-display text-2xl font-semibold">Kharif Seed Festival</h2>
+          <h2 className="mt-2 font-display text-2xl font-semibold">Your featured offer</h2>
           <p className="mt-2 text-sm text-muted-foreground">
-            Flat 15% off on paddy, maize and bajra seed packs. Free soil testing coupon on every
-            purchase above ₹5,000.
+            Add your first promotion, seasonal deal, or service highlight here.
           </p>
           <div className="mt-5 space-y-3">
-            <HeroPoint icon={BadgeCheck} title="Genuine batch numbers" text="Printed on your GST invoice" />
-            <HeroPoint icon={Truck} title="Free delivery above ₹2,000" text="Within 25 km of the mandi" />
-            <HeroPoint icon={Leaf} title="Advisory included" text="Spray schedule shared on WhatsApp" />
+            <HeroPoint icon={BadgeCheck} title="Custom content" text="Replace this with your own offer details" />
+            <HeroPoint icon={Truck} title="Flexible delivery" text="Show your service area or delivery terms" />
+            <HeroPoint icon={Leaf} title="Real brand voice" text="Use your own language and customer message" />
           </div>
           <Button className="mt-6 w-full rounded-full" asChild>
             <a href="#offers">View all offers</a>

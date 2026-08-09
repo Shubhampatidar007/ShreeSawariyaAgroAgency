@@ -32,7 +32,7 @@ import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/customers/$customerId/")({
   head: () => ({
     meta: [
-      { title: "Customer Profile — AgriKisan Admin" },
+      { title: "Customer Profile — Admin" },
       { name: "description", content: "Farmer profile with purchases, payments and khata summary." },
       { name: "robots", content: "noindex" },
     ],

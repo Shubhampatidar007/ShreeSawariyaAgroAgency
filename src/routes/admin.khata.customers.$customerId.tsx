@@ -21,7 +21,7 @@ import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 export const Route = createFileRoute("/admin/khata/customers/$customerId")({
   head: () => ({
     meta: [
-      { title: "Customer Khata — AgriKisan Admin" },
+      { title: "Customer Khata — Admin" },
       { name: "description", content: "Complete farmer ledger with purchases, payments and dues." },
       { name: "robots", content: "noindex" },
     ],
