@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import { Eye, EyeOff } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,6 +27,7 @@ type AuthDialogProps = {
 
 export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialogProps) {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [showLoginPassword, setShowLoginPassword] = useState(false);
@@ -44,9 +46,16 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
       setError(result.error);
       return;
     }
-    setError(null);
-    onOpenChange(false);
-    toast.success(`${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`);
+  setError(null);
+onOpenChange(false);
+
+toast.success(
+  `${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`,
+);
+
+if (result.user.role === "admin" || result.user.role === "staff") {
+  void navigate({ to: "/admin" });
+}
   };
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -152,7 +161,7 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="reg-email">{t("auth.email", "Email (optional)")}</Label>
+                <Label htmlFor="reg-email">{t("auth.email", "Email ")}</Label>
                 <Input id="reg-email" name="email" type="email" placeholder="you@example.com" />
               </div>
               <div className="space-y-1.5">

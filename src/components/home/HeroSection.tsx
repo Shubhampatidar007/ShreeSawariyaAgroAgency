@@ -2,7 +2,7 @@ import { motion } from "motion/react";
 import { ArrowRight, BadgeCheck, Leaf, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import heroField from "@/assets/hero-field.jpg.asset.json";
+import heroField from "@/assets/hero-field.jpg";
 
 export function HeroSection() {
   const { t } = useI18n();
@@ -15,7 +15,7 @@ export function HeroSection() {
   return (
     <section className="relative overflow-hidden text-white">
       <img
-        src={heroField.url}
+        src={heroField}
         alt="Green wheat field at sunrise on an Indian farm"
         className="absolute inset-0 size-full object-cover"
         loading="eager"

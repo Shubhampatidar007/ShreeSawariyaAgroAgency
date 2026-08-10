@@ -284,7 +284,7 @@ export const en = {
   "auth.password": "Password",
   "auth.name": "Full name",
   "auth.village": "Village",
-  "auth.email": "Email (optional)",
+  "auth.email": "Email",
   "auth.welcomeBack": "Welcome back",
   "auth.accountCreated": "Account created",
   "storefront.searchPlaceholder": "Search products, invoices, customers…",
