@@ -220,6 +220,57 @@ export type Database = {
           },
         ]
       }
+      customer_transaction_items: {
+        Row: {
+          amount: number | null
+          created_at: string
+          id: string
+          product: string
+          product_id: string | null
+          quantity: number
+          rate: number
+          transaction_id: string
+          unit: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          product: string
+          product_id?: string | null
+          quantity: number
+          rate?: number
+          transaction_id: string
+          unit?: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          id?: string
+          product?: string
+          product_id?: string | null
+          quantity?: number
+          rate?: number
+          transaction_id?: string
+          unit?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_transaction_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_transaction_items_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "customer_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customers: {
         Row: {
           address: string
@@ -922,6 +973,27 @@ export type Database = {
       recalc_customer_balance: {
         Args: { _customer_id: string }
         Returns: undefined
+      }
+      create_khata_sale: {
+        Args: {
+          _customer_id: string
+          _items: Json
+          _paid?: number
+          _method?: string
+          _entry_date?: string
+          _remarks?: string
+        }
+        Returns: string
+      }
+      record_khata_payment: {
+        Args: {
+          _customer_id: string
+          _amount: number
+          _method?: string
+          _entry_date?: string
+          _remarks?: string
+        }
+        Returns: string
       }
     }
     Enums: {
