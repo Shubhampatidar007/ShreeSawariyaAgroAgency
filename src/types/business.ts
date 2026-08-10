@@ -88,7 +88,24 @@ export type CustomerLedgerEntry = {
   method: PaymentMethod;
   remarks?: string | undefined;
 };
+export type CustomerSaleItem = {
+  id: string;
+  transactionId: string;
+  productId?: string | undefined;
+  product: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  amount: number;
+};
 
+export type KhataSaleItemInput = {
+  productId?: string | undefined;
+  product: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+};
 export type SupplierLedgerEntry = {
   id: string;
   supplierId: string;
