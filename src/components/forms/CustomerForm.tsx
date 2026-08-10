@@ -53,9 +53,18 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
     },
   });
 
+  const isSubmitting = form.formState.isSubmitting;
+
+  // Guards against duplicate inserts if a second click sneaks in before
+  // isSubmitting flips (slow network + impatient admin clicking 3-4x).
+  const handleFormSubmit = form.handleSubmit(async (values) => {
+    if (isSubmitting) return;
+    await onSubmit(values);
+  });
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={handleFormSubmit} className="space-y-6">
         <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-base">Customer details</CardTitle>
@@ -152,10 +161,16 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
         </Card>
 
         <div className="flex flex-wrap gap-2">
-          <Button type="submit" className="rounded-full">
-            {submitLabel}
+          <Button type="submit" className="rounded-full" disabled={isSubmitting}>
+            {isSubmitting ? "Saving…" : submitLabel}
           </Button>
-          <Button type="button" variant="outline" className="rounded-full" onClick={onCancel}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
             Cancel
           </Button>
         </div>

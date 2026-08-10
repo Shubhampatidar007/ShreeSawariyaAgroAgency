@@ -45,28 +45,37 @@ function InventoryEntryPage() {
   const [minStock, setMinStock] = useState("10");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
+  const [submitting, setSubmitting] = useState(false);
+  const [savingSupplier, setSavingSupplier] = useState(false);
 
   const totalPrice = (Number(quantity) || 0) * (Number(price) || 0);
 
-  const submit = () => {
+  const submit = async () => {
+    if (submitting) return;
     const supplier = suppliers.find((s) => s.id === supplierId);
     if (!supplier || !productName || !quantity || !price) {
       toast.error("Fill supplier, product, quantity and purchase price");
       return;
     }
-    shopStore.addInventoryItem({
-      productName,
-      supplierId: supplier.id,
-      supplierName: supplier.company,
-      quantity: Number(quantity),
-      unit,
-      purchasePrice: Number(price),
-      minStockLevel: Number(minStock) || 10,
-      status: "inventory-only",
-      lastUpdated: new Date().toISOString().slice(0, 10),
-    });
-    toast.success("Stock entry recorded");
-    navigate({ to: "/admin/inventory" });
+    setSubmitting(true);
+    try {
+      await shopStore.addInventoryItem({
+        productName,
+        supplierId: supplier.id,
+        supplierName: supplier.company,
+        quantity: Number(quantity),
+        unit,
+        purchasePrice: Number(price),
+        minStockLevel: Number(minStock) || 10,
+        status: "inventory-only",
+        lastUpdated: new Date().toISOString().slice(0, 10),
+      });
+      toast.success("Stock entry recorded");
+      navigate({ to: "/admin/inventory" });
+    } catch (err) {
+      toast.error("Failed to save entry. Please try again.");
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -131,32 +140,41 @@ function InventoryEntryPage() {
                   </div>
                   <DialogFooter>
                     <Button
+                      disabled={savingSupplier}
                       onClick={async () => {
+                        if (savingSupplier) return;
                         if (!newSupplier.company) {
                           toast.error("Company name is required");
                           return;
                         }
-                        const created = await shopStore.addSupplier({
-                          name: newSupplier.name || newSupplier.company,
-                          company: newSupplier.company,
-                          mobile: newSupplier.mobile,
-                          email: "",
-                          gstin: "",
-                          address: "",
-                          productsSupplied: [],
-                          totalPurchases: 0,
-                          totalPaid: 0,
-                          advance: 0,
-                          dueBalance: 0,
-                          lastOrder: new Date().toISOString().slice(0, 10),
-                          status: "active",
-                        });
-                        setSupplierId(created.id);
-                        setDialogOpen(false);
-                        toast.success("Supplier added — continue the stock entry");
+                        setSavingSupplier(true);
+                        try {
+                          const created = await shopStore.addSupplier({
+                            name: newSupplier.name || newSupplier.company,
+                            company: newSupplier.company,
+                            mobile: newSupplier.mobile,
+                            email: "",
+                            gstin: "",
+                            address: "",
+                            productsSupplied: [],
+                            totalPurchases: 0,
+                            totalPaid: 0,
+                            advance: 0,
+                            dueBalance: 0,
+                            lastOrder: new Date().toISOString().slice(0, 10),
+                            status: "active",
+                          });
+                          setSupplierId(created.id);
+                          setDialogOpen(false);
+                          toast.success("Supplier added — continue the stock entry");
+                        } catch (err) {
+                          toast.error("Failed to add supplier. Please try again.");
+                        } finally {
+                          setSavingSupplier(false);
+                        }
                       }}
                     >
-                      Save supplier
+                      {savingSupplier ? "Saving…" : "Save supplier"}
                     </Button>
                   </DialogFooter>
                 </DialogContent>
@@ -195,10 +213,15 @@ function InventoryEntryPage() {
           </div>
 
           <div className="flex gap-2 sm:col-span-2">
-            <Button className="rounded-full" onClick={submit}>
-              Save entry
+            <Button className="rounded-full" onClick={submit} disabled={submitting}>
+              {submitting ? "Saving…" : "Save entry"}
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/inventory" })}>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => navigate({ to: "/admin/inventory" })}
+              disabled={submitting}
+            >
               Cancel
             </Button>
           </div>
