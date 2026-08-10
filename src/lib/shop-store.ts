@@ -1,12 +1,15 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type {
-  CmsSection,
-  Order,
-  PaymentRecord,
-  Reminder,
-  ReminderLog,
-} from "@/types/operations";
+  Customer,
+  CustomerLedgerEntry,
+  CustomerSaleItem,
+  InventoryItem,
+  KhataSaleItemInput,
+  PublishedProduct,
+  Supplier,
+  SupplierLedgerEntry,
+} from "@/types/business";
 import type {
   Customer,
   CustomerLedgerEntry,
@@ -159,7 +162,16 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   method: r.method,
   remarks: r.remarks ?? undefined,
 });
-
+const toSaleItem = (r: any): CustomerSaleItem => ({
+  id: r.id,
+  transactionId: r.transaction_id,
+  productId: r.product_id ?? undefined,
+  product: r.product,
+  quantity: num(r.quantity),
+  unit: r.unit,
+  rate: num(r.rate),
+  amount: num(r.amount),
+});
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
   supplierId: r.supplier_id,
@@ -453,7 +465,62 @@ export const shopStore = {
     if (error) throw error;
     return after(undefined);
   },
+/** Records a multi-item khata sale atomically (validates & decrements stock server-side). */
+  async createKhataSale(input: {
+    customerId: string;
+    items: KhataSaleItemInput[];
+    paid: number;
+    method: CustomerLedgerEntry["method"];
+    date?: string;
+    remarks?: string;
+  }) {
+    const { data, error } = await supabase.rpc("create_khata_sale", {
+      _customer_id: input.customerId,
+      _items: input.items.map((i) => ({
+        product_id: i.productId ?? null,
+        product: i.product,
+        quantity: i.quantity,
+        unit: i.unit,
+        rate: i.rate,
+      })),
+      _paid: input.paid,
+      _method: input.method,
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _remarks: input.remarks ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
 
+  /** Records a khata payment against a customer's account. Never touches inventory. */
+  async recordKhataPayment(input: {
+    customerId: string;
+    amount: number;
+    method: CustomerLedgerEntry["method"];
+    date?: string;
+    remarks?: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_khata_payment", {
+      _customer_id: input.customerId,
+      _amount: input.amount,
+      _method: input.method,
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _remarks: input.remarks ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
+
+  /** Loads the line items for one khata sale (for the ledger drill-down view). */
+  async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
+    const { data, error } = await supabase
+      .from("customer_transaction_items")
+      .select("*")
+      .eq("transaction_id", transactionId)
+      .order("created_at");
+    if (error) throw error;
+    return (data ?? []).map(toSaleItem);
+  },
   async addSupplier(supplier: Omit<Supplier, "id">) {
     const { data, error } = await supabase
       .from("suppliers")
