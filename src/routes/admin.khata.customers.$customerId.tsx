@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Fragment } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   BookOpen,
@@ -171,14 +172,14 @@ function CustomerKhataPage() {
                       <TableHead>Remarks</TableHead>
                     </TableRow>
                   </TableHeader>
-                  <TableBody>
+               <TableBody>
                     {sorted.map((entry) => {
                       const canExpand = entry.entryType === "purchase";
                       const isOpen = expanded.has(entry.id);
                       const items = itemsByTx[entry.id];
                       return (
-                        <>
-                          <TableRow key={entry.id}>
+                        <Fragment key={entry.id}>
+                          <TableRow>
                             <TableCell>
                               {canExpand && (
                                 <button
@@ -205,7 +206,7 @@ function CustomerKhataPage() {
                             <TableCell className="text-muted-foreground">{entry.remarks ?? "—"}</TableCell>
                           </TableRow>
                           {canExpand && isOpen && (
-                            <TableRow key={`${entry.id}-items`}>
+                            <TableRow>
                               <TableCell />
                               <TableCell colSpan={8} className="bg-muted/40 py-3">
                                 {items === "loading" || items === undefined ? (
@@ -215,10 +216,7 @@ function CustomerKhataPage() {
                                 ) : (
                                   <div className="space-y-1">
                                     {items.map((item) => (
-                                      <div
-                                        key={item.id}
-                                        className="flex items-center justify-between text-sm"
-                                      >
+                                      <div key={item.id} className="flex items-center justify-between text-sm">
                                         <span>
                                           {item.product}{" "}
                                           <span className="text-muted-foreground">
@@ -233,7 +231,7 @@ function CustomerKhataPage() {
                               </TableCell>
                             </TableRow>
                           )}
-                        </>
+                        </Fragment>
                       );
                     })}
                   </TableBody>
