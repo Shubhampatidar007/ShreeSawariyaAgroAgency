@@ -207,9 +207,7 @@ function InventoryEntryPage() {
             <div className="flex h-10 items-center rounded-md border border-border bg-muted/50 px-3 text-sm font-semibold">
               {formatCurrency(totalPrice)}
             </div>
-            <p className="text-xs text-muted-foreground">
-              Quantity × unit price, updated as you type.
-            </p>
+
           </div>
 
           <div className="flex gap-2 sm:col-span-2">

@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { IndianRupee, Truck, Wallet } from "lucide-react";
+import { IndianRupee, Pencil, Trash2, Truck, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -16,8 +16,9 @@ import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { SearchToolbar } from "@/components/shared/SearchToolbar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
+import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SupplierCard } from "@/components/shared/EntityCards";
-import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/suppliers/")({
   head: () => ({

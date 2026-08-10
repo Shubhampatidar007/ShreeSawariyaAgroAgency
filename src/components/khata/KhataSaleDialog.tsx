@@ -185,7 +185,9 @@ export function KhataSaleDialog({
           .includes(q);
       })
       .slice(0, 8);
+      
   }, [inventory, products, productQuery]);
+  
 
   const reset = () => {
     setCustomerMode("select");
@@ -216,7 +218,10 @@ export function KhataSaleDialog({
     const product = products.find(
       (p) => p.inventoryId === inv.id,
     );
-
+if (inv.quantity <= 0) {
+  toast.error(`${inv.productName} is out of stock`);
+  return;
+}
     setItems((prev): CartItem[] => {
       const existing = prev.find(
         (i) =>
@@ -384,15 +389,18 @@ export function KhataSaleDialog({
       const txId =
         await shopStore.createKhataSale({
           customerId,
-          items: items.map((item) => ({
-            ...(item.productId
-              ? { productId: item.productId }
-              : {}),
-            product: item.product,
-            quantity: item.quantity,
-            unit: item.unit,
-            rate: item.rate,
-          })),
+         items: items.map((item) => ({
+  ...(item.inventoryId
+    ? { inventoryId: item.inventoryId }
+    : {}),
+  ...(item.productId
+    ? { productId: item.productId }
+    : {}),
+  product: item.product,
+  quantity: item.quantity,
+  unit: item.unit,
+  rate: item.rate,
+})),
           paid: paidNum,
           method,
           date: entryDate,
@@ -709,37 +717,34 @@ export function KhataSaleDialog({
                       </TableCell>
 
                       <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          className="h-8 w-16"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateItem(item.key, {
-                              quantity:
-                                Number(
-                                  e.target.value,
-                                ) || 0,
-                            })
-                          }
-                        />
+<Input
+  type="text"
+  inputMode="numeric"
+  minLength={1}
+  className="h-8 w-16"
+  value={item.quantity}
+  onFocus={(e) => e.currentTarget.select()}
+  onChange={(e) =>
+    updateItem(item.key, {
+      quantity: Number(e.target.value) || 0,
+    })
+  }
+/>
                       </TableCell>
 
                       <TableCell>
-                        <Input
-                          type="number"
-                          min="0"
-                          className="h-8 w-20"
-                          value={item.rate}
-                          onChange={(e) =>
-                            updateItem(item.key, {
-                              rate:
-                                Number(
-                                  e.target.value,
-                                ) || 0,
-                            })
-                          }
-                        />
+                <Input
+  type="text"
+  inputMode="decimal"
+  className="h-8 w-20"
+  value={item.rate}
+  onFocus={(e) => e.currentTarget.select()}
+  onChange={(e) =>
+    updateItem(item.key, {
+      rate: Number(e.target.value) || 0,
+    })
+  }
+/>
                       </TableCell>
 
                       <TableCell className="text-right">
@@ -776,15 +781,15 @@ export function KhataSaleDialog({
               />
 
               <Input
-                className="w-32"
-                type="number"
-                min="0"
-                placeholder="Price"
-                value={customRate}
-                onChange={(e) =>
-                  setCustomRate(e.target.value)
-                }
-              />
+  className="w-32"
+  type="text"
+  inputMode="decimal"
+  min="0"
+  placeholder="Price"
+  value={customRate}
+  onFocus={(e) => e.currentTarget.select()}
+  onChange={(e) => setCustomRate(e.target.value)}
+/>
 
               <Button
                 type="button"
@@ -802,14 +807,14 @@ export function KhataSaleDialog({
             <div className="space-y-1.5">
               <Label>Amount paid now</Label>
 
-              <Input
-                type="number"
-                min="0"
-                value={paid}
-                onChange={(e) =>
-                  setPaid(e.target.value)
-                }
-              />
+            <Input
+  type="text"
+  inputMode="decimal"
+  min="0"
+  value={paid}
+  onFocus={(e) => e.currentTarget.select()}
+  onChange={(e) => setPaid(e.target.value)}
+/>
             </div>
 
             <div className="space-y-1.5">
