@@ -7,6 +7,7 @@ import {
   IndianRupee,
   Pencil,
   Plus,
+  ShoppingCart,
   Trash2,
   UserCheck,
   Users,
@@ -37,6 +38,7 @@ import { SummaryCards } from "@/components/shared/SummaryCards";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { CustomerCard } from "@/components/shared/EntityCards";
+import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/customers/")({
@@ -101,12 +103,21 @@ function CustomerListPage() {
         title="Customers"
         description="Farmer profiles, village mapping, purchase history and khata dues."
         actions={
-          <Button className="rounded-full" asChild>
-            <Link to="/admin/customers/new">
-              <Plus className="size-4" /> Add customer
-            </Link>
-          </Button>
-        }
+  <div className="flex items-center gap-2">
+    <KhataSaleDialog
+      trigger={
+        <Button variant="outline" className="rounded-full">
+          <ShoppingCart className="size-4" /> New khata sale
+        </Button>
+      }
+    />
+    <Button className="rounded-full" asChild>
+      <Link to="/admin/customers/new">
+        <Plus className="size-4" /> Add customer
+      </Link>
+    </Button>
+  </div>
+}
       />
 
       <SummaryCards

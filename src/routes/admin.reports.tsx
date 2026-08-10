@@ -228,7 +228,6 @@ function ReportsPage() {
     </div>
   );
 }
-
 function ReportTable({
   headers,
   rows,
@@ -236,6 +235,8 @@ function ReportTable({
   headers: string[];
   rows: React.ReactNode[][];
 }) {
+  const { t } = useI18n();
+
   if (rows.length === 0) {
     return (
       <p className="px-6 py-12 text-center text-sm text-muted-foreground">
@@ -243,6 +244,7 @@ function ReportTable({
       </p>
     );
   }
+
   return (
     <Table>
       <TableHeader>
