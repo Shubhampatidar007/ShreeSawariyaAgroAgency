@@ -4,6 +4,7 @@ import { IndianRupee, Printer, Receipt, ShoppingBag, Truck } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import {
   Dialog,
   DialogContent,
@@ -100,7 +101,20 @@ function SalesPage() {
         eyebrow={t("common.operations")}
         title={t("sales.title")}
         description={t("sales.description")}
-        actions={<ExportMenu />}
+       actions={
+  <div className="flex flex-wrap items-center gap-2">
+    <KhataSaleDialog
+      trigger={
+        <Button className="rounded-full">
+          <ShoppingBag className="size-4" />
+          New Khata Sale
+        </Button>
+      }
+    />
+
+    <ExportMenu />
+  </div>
+}            
       />
 
       <SummaryCards
