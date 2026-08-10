@@ -230,17 +230,27 @@ if (inv.quantity <= 0) {
             i.productId === product.id),
       );
 
-      if (existing) {
-        return prev.map((i) =>
-          i.key === existing.key
-            ? {
-                ...i,
-                quantity: i.quantity + 1,
-              }
-            : i,
-        );
-      }
+     if (existing) {
+  if (
+    existing.maxStock !== undefined &&
+    existing.quantity >= existing.maxStock
+  ) {
+    toast.error(
+      `Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`,
+    );
 
+    return prev;
+  }
+
+  return prev.map((i) =>
+    i.key === existing.key
+      ? {
+          ...i,
+          quantity: i.quantity + 1,
+        }
+      : i,
+  );
+}
       const newItem: CartItem = {
         key: crypto.randomUUID(),
         inventoryId: inv.id,
@@ -724,11 +734,28 @@ if (inv.quantity <= 0) {
   className="h-8 w-16"
   value={item.quantity}
   onFocus={(e) => e.currentTarget.select()}
-  onChange={(e) =>
+  onChange={(e) => {
+  const nextQuantity = Number(e.target.value) || 0;
+
+  if (
+    item.maxStock !== undefined &&
+    nextQuantity > item.maxStock
+  ) {
+    toast.error(
+      `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
+    );
+
     updateItem(item.key, {
-      quantity: Number(e.target.value) || 0,
-    })
+      quantity: item.maxStock,
+    });
+
+    return;
   }
+
+  updateItem(item.key, {
+    quantity: nextQuantity,
+  });
+}}
 />
                       </TableCell>
 
