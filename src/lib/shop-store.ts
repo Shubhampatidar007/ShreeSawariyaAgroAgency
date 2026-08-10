@@ -10,14 +10,6 @@ import type {
   Supplier,
   SupplierLedgerEntry,
 } from "@/types/business";
-import type {
-  Customer,
-  CustomerLedgerEntry,
-  InventoryItem,
-  PublishedProduct,
-  Supplier,
-  SupplierLedgerEntry,
-} from "@/types/business";
 import type { ActivityLog, Advertisement, Backup, SecurityLog } from "@/types";
 
 type ShopState = {
