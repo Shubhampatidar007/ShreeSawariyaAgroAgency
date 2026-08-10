@@ -1,6 +1,17 @@
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BookOpen, Download, IndianRupee, Printer, Receipt, UserX, Wallet } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  Download,
+  IndianRupee,
+  Printer,
+  Receipt,
+  ShoppingCart,
+  UserX,
+  Wallet,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -16,7 +27,10 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { Timeline } from "@/components/shared/Timeline";
-import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
+import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
+import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import type { CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/khata/customers/$customerId")({
   head: () => ({
@@ -33,6 +47,8 @@ function CustomerKhataPage() {
   const { customerId } = Route.useParams();
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
   const ledger = useShopStore((s) => s.customerLedger.filter((e) => e.customerId === customerId));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [itemsByTx, setItemsByTx] = useState<Record<string, CustomerSaleItem[] | "loading">>({});
 
   const sorted = useMemo(() => [...ledger].sort((a, b) => b.date.localeCompare(a.date)), [ledger]);
   const totals = useMemo(
@@ -42,6 +58,24 @@ function CustomerKhataPage() {
     }),
     [ledger],
   );
+
+  const toggleExpand = async (entryId: string) => {
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (next.has(entryId)) next.delete(entryId);
+      else next.add(entryId);
+      return next;
+    });
+    if (!itemsByTx[entryId]) {
+      setItemsByTx((prev) => ({ ...prev, [entryId]: "loading" }));
+      try {
+        const items = await shopStore.fetchTransactionItems(entryId);
+        setItemsByTx((prev) => ({ ...prev, [entryId]: items }));
+      } catch {
+        setItemsByTx((prev) => ({ ...prev, [entryId]: [] }));
+      }
+    }
+  };
 
   if (!customer) {
     return (
@@ -71,6 +105,22 @@ function CustomerKhataPage() {
         subtitle={`${customer.village} · ${customer.mobile}`}
         actions={
           <>
+            <RecordPaymentDialog
+              customer={{ id: customer.id, name: customer.name, currentDue: customer.currentDue }}
+              trigger={
+                <Button variant="outline" className="rounded-full">
+                  <Wallet className="size-4" /> Record payment
+                </Button>
+              }
+            />
+            <KhataSaleDialog
+              customer={{ id: customer.id, name: customer.name }}
+              trigger={
+                <Button className="rounded-full">
+                  <ShoppingCart className="size-4" /> New sale
+                </Button>
+              }
+            />
             <Button variant="outline" className="rounded-full" onClick={() => window.print()}>
               <Printer className="size-4" /> Print
             </Button>
@@ -110,6 +160,7 @@ function CustomerKhataPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
+                      <TableHead className="w-8" />
                       <TableHead>Date</TableHead>
                       <TableHead>Product</TableHead>
                       <TableHead className="text-right">Qty</TableHead>
@@ -121,22 +172,70 @@ function CustomerKhataPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {sorted.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
-                        <TableCell className="font-medium">{entry.product}</TableCell>
-                        <TableCell className="text-right">{entry.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
-                        <TableCell className="text-right text-success">
-                          {formatCurrency(entry.payment)}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(entry.remainingDue)}
-                        </TableCell>
-                        <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
-                        <TableCell className="text-muted-foreground">{entry.remarks ?? "—"}</TableCell>
-                      </TableRow>
-                    ))}
+                    {sorted.map((entry) => {
+                      const canExpand = entry.entryType === "purchase";
+                      const isOpen = expanded.has(entry.id);
+                      const items = itemsByTx[entry.id];
+                      return (
+                        <>
+                          <TableRow key={entry.id}>
+                            <TableCell>
+                              {canExpand && (
+                                <button
+                                  type="button"
+                                  onClick={() => toggleExpand(entry.id)}
+                                  className="text-muted-foreground hover:text-foreground"
+                                  aria-label="Toggle items"
+                                >
+                                  {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                                </button>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
+                            <TableCell className="font-medium">{entry.product}</TableCell>
+                            <TableCell className="text-right">{entry.quantity}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
+                            <TableCell className="text-right text-success">
+                              {formatCurrency(entry.payment)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(entry.remainingDue)}
+                            </TableCell>
+                            <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
+                            <TableCell className="text-muted-foreground">{entry.remarks ?? "—"}</TableCell>
+                          </TableRow>
+                          {canExpand && isOpen && (
+                            <TableRow key={`${entry.id}-items`}>
+                              <TableCell />
+                              <TableCell colSpan={8} className="bg-muted/40 py-3">
+                                {items === "loading" || items === undefined ? (
+                                  <p className="text-sm text-muted-foreground">Loading items…</p>
+                                ) : items.length === 0 ? (
+                                  <p className="text-sm text-muted-foreground">No line items recorded for this entry.</p>
+                                ) : (
+                                  <div className="space-y-1">
+                                    {items.map((item) => (
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center justify-between text-sm"
+                                      >
+                                        <span>
+                                          {item.product}{" "}
+                                          <span className="text-muted-foreground">
+                                            ({item.quantity} {item.unit} × {formatCurrency(item.rate)})
+                                          </span>
+                                        </span>
+                                        <span className="font-medium">{formatCurrency(item.amount)}</span>
+                                      </div>
+                                    ))}
+                                  </div>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </>
+                      );
+                    })}
                   </TableBody>
                 </Table>
               </div>
