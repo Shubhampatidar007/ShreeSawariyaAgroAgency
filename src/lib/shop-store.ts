@@ -529,7 +529,35 @@ export const shopStore = {
     if (error) throw error;
     return after(data as string);
   },
+/**
+ * Records a payment made to a supplier and updates
+ * supplier total_paid + due_balance atomically.
+ */
+async recordSupplierPayment(input: {
+  supplierId: string;
+  amount: number;
+  method: "cash" | "upi" | "bank" | "cheque";
+  date?: string;
+  reference?: string;
+  remarks?: string;
+}) {
+  const { data, error } = await supabase.rpc(
+    "record_supplier_payment" as any,
+    {
+      _supplier_id: input.supplierId,
+      _amount: input.amount,
+      _method: input.method,
+      _entry_date:
+        input.date ?? new Date().toISOString().slice(0, 10),
+      _reference: input.reference ?? "",
+      _remarks: input.remarks ?? null,
+    },
+  );
 
+  if (error) throw error;
+
+  return after(data as string);
+},
   /** Loads the line items for one khata sale (for the ledger drill-down view). */
   async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
@@ -580,17 +608,21 @@ export const shopStore = {
     return after(undefined);
   },
 
-  async addInventoryItem(item: {
-    supplierId: string;
-    supplierName: string;
-    productName: string;
-    quantity: number;
-    unit: string;
-    purchasePrice: number;
-    minStockLevel: number;
-    lastUpdated: string;
-  }) {
-    const { data, error } = await supabase.rpc("record_supplier_purchase" as any, {
+async addInventoryItem(item: {
+  supplierId: string;
+  supplierName: string;
+  productName: string;
+  quantity: number;
+  unit: string;
+  purchasePrice: number;
+  advancePaid: number;
+  advanceMethod: "cash" | "upi" | "bank" | "cheque";
+  minStockLevel: number;
+  lastUpdated: string;
+}) {
+  const { data, error } = await supabase.rpc(
+    "record_supplier_purchase" as any,
+    {
       _supplier_id: item.supplierId,
       _product_name: item.productName,
       _quantity: item.quantity,
@@ -598,11 +630,15 @@ export const shopStore = {
       _purchase_price: item.purchasePrice,
       _min_stock_level: item.minStockLevel,
       _entry_date: item.lastUpdated,
-    });
-    if (error) throw error;
-    return after(data as string);
-  },
+      _advance_paid: item.advancePaid,
+      _advance_method: item.advanceMethod,
+    },
+  );
 
+  if (error) throw error;
+
+  return after(data as string);
+},
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
     const payload: any = { last_updated: new Date().toISOString().slice(0, 10) };
     if (patch.productName !== undefined) payload["product_name"] = patch.productName;

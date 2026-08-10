@@ -1,6 +1,29 @@
-import { useMemo } from "react";
+import { useMemo , useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { IndianRupee, Printer, Truck, Wallet } from "lucide-react";
+import {
+  IndianRupee,
+  Printer,
+  Truck,
+  Wallet,
+  CreditCard,
+} from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -23,6 +46,7 @@ import { Timeline } from "@/components/shared/Timeline";
 import {
   formatCurrency,
   formatDate,
+  shopStore,
   useShopStore,
 } from "@/lib/shop-store";
 
@@ -43,7 +67,18 @@ export const Route = createFileRoute("/admin/ledger/suppliers/$supplierId")({
 
 function SupplierLedgerPage() {
   const { supplierId } = Route.useParams();
-
+const [paymentOpen, setPaymentOpen] = useState(false);
+const [paymentAmount, setPaymentAmount] = useState("");
+const [paymentDate, setPaymentDate] = useState(
+  new Date().toISOString().slice(0, 10),
+);
+const [paymentMethod, setPaymentMethod] = useState<
+  "cash" | "upi" | "bank" | "cheque"
+>("cash");
+const [paymentReference, setPaymentReference] = useState("");
+const [paymentRemarks, setPaymentRemarks] = useState("");
+const [paymentSaving, setPaymentSaving] = useState(false);
+const [paymentError, setPaymentError] = useState("");
   const supplier = useShopStore((s) =>
     s.suppliers.find((x) => x.id === supplierId),
   );
@@ -83,15 +118,36 @@ function SupplierLedgerPage() {
         title={`${supplier.company} — Ledger`}
         subtitle={`${supplier.name} · ${supplier.mobile} · GSTIN ${supplier.gstin}`}
         actions={
-          <Button
-            variant="outline"
-            className="rounded-full"
-            onClick={() => window.print()}
-          >
-            <Printer className="mr-2 h-4 w-4" />
-            Print
-          </Button>
-        }
+  <div className="flex items-center gap-2">
+    <Button
+      className="rounded-full"
+      onClick={() => {
+        setPaymentError("");
+        setPaymentAmount("");
+        setPaymentReference("");
+        setPaymentRemarks("");
+        setPaymentDate(
+          new Date().toISOString().slice(0, 10),
+        );
+        setPaymentMethod("cash");
+        setPaymentOpen(true);
+      }}
+      disabled={supplier.dueBalance <= 0}
+    >
+      <CreditCard className="mr-2 h-4 w-4" />
+      Pay Supplier
+    </Button>
+
+    <Button
+      variant="outline"
+      className="rounded-full"
+      onClick={() => window.print()}
+    >
+      <Printer className="mr-2 h-4 w-4" />
+      Print
+    </Button>
+  </div>
+}
       />
 
       <SummaryCards
@@ -290,6 +346,257 @@ function SupplierLedgerPage() {
           </CardContent>
         </Card>
       </div>
+           <Dialog
+        open={paymentOpen}
+        onOpenChange={setPaymentOpen}
+      >
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Pay Supplier</DialogTitle>
+
+            <DialogDescription>
+              Record a payment made to {supplier.company}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">
+                Supplier
+              </p>
+
+              <p className="font-semibold">
+                {supplier.company}
+              </p>
+
+              <p className="text-sm text-muted-foreground">
+                {supplier.name}
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-amount">
+                Payment amount
+              </Label>
+
+            <Input
+  id="supplier-payment-amount"
+  type="number"
+  value={paymentAmount}
+  onChange={(e) => setPaymentAmount(e.target.value)}
+  inputMode="decimal"
+  min="0"
+  step="0.01"
+  placeholder="Enter amount"
+  className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+/>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-date">
+                Payment date
+              </Label>
+
+              <Input
+                id="supplier-payment-date"
+                type="date"
+                value={paymentDate}
+                onChange={(e) =>
+                  setPaymentDate(e.target.value)
+                }
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Payment method</Label>
+
+              <Select
+                value={paymentMethod}
+                onValueChange={(value) =>
+                  setPaymentMethod(
+                    value as
+                      | "cash"
+                      | "upi"
+                      | "bank"
+                      | "cheque",
+                  )
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="cash">
+                    Cash
+                  </SelectItem>
+
+                  <SelectItem value="upi">
+                    UPI
+                  </SelectItem>
+
+                  <SelectItem value="bank">
+                    Bank Transfer
+                  </SelectItem>
+
+                  <SelectItem value="cheque">
+                    Cheque
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-reference">
+                Transaction ID / Reference
+                <span className="ml-1 text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+
+              <Input
+                id="supplier-payment-reference"
+                value={paymentReference}
+                onChange={(e) =>
+                  setPaymentReference(e.target.value)
+                }
+                placeholder="Transaction ID, UTR, cheque no., etc."
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-remarks">
+                Remarks
+                <span className="ml-1 text-muted-foreground">
+                  (optional)
+                </span>
+              </Label>
+
+              <Input
+                id="supplier-payment-remarks"
+                value={paymentRemarks}
+                onChange={(e) =>
+                  setPaymentRemarks(e.target.value)
+                }
+                placeholder="Payment notes"
+              />
+            </div>
+
+            <div className="rounded-lg border p-4 space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Current due
+                </span>
+
+                <span className="font-semibold">
+                  {formatCurrency(supplier.dueBalance)}
+                </span>
+              </div>
+
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">
+                  Payment
+                </span>
+
+                <span className="font-semibold">
+                  {formatCurrency(
+                    Number(paymentAmount) || 0,
+                  )}
+                </span>
+              </div>
+
+              <div className="border-t pt-2 flex justify-between">
+                <span className="font-medium">
+                  Remaining due
+                </span>
+
+                <span className="font-bold">
+                  {formatCurrency(
+                    Math.max(
+                      0,
+                      supplier.dueBalance -
+                        (Number(paymentAmount) || 0),
+                    ),
+                  )}
+                </span>
+              </div>
+            </div>
+
+            {paymentError && (
+              <p className="text-sm text-destructive">
+                {paymentError}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentOpen(false)}
+              disabled={paymentSaving}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              disabled={
+                paymentSaving ||
+                !Number(paymentAmount) ||
+                Number(paymentAmount) <= 0 ||
+                Number(paymentAmount) > supplier.dueBalance
+              }
+              onClick={async () => {
+                const amount = Number(paymentAmount);
+
+                if (!amount || amount <= 0) {
+                  setPaymentError(
+                    "Enter a valid payment amount.",
+                  );
+                  return;
+                }
+
+                if (amount > supplier.dueBalance) {
+                  setPaymentError(
+                    `Payment cannot exceed the current due of ${formatCurrency(
+                      supplier.dueBalance,
+                    )}.`,
+                  );
+                  return;
+                }
+
+                setPaymentSaving(true);
+                setPaymentError("");
+
+                try {
+                  await shopStore.recordSupplierPayment({
+                    supplierId: supplier.id,
+                    amount,
+                    method: paymentMethod,
+                    date: paymentDate,
+                    reference:
+                      paymentReference.trim(),
+                    remarks: paymentRemarks.trim(),
+                  });
+
+                  setPaymentOpen(false);
+                } catch (error) {
+                  setPaymentError(
+                    error instanceof Error
+                      ? error.message
+                      : "Failed to record payment.",
+                  );
+                } finally {
+                  setPaymentSaving(false);
+                }
+              }}
+            >
+              {paymentSaving
+                ? "Recording..."
+                : "Record Payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
