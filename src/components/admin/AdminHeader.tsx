@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useShopStore } from "@/lib/shop-store";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,6 +25,10 @@ type AdminHeaderProps = {
 };
 
 export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
+  const notifications = useShopStore((s) => s.notifications);
+  const unreadNotifications = notifications.filter(
+  (notification) => !notification.isRead,
+);
   const { t } = useI18n();
   const { open, setOpen } = useCommandPalette();
   const user = useAuth();

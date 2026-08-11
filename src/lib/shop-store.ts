@@ -18,9 +18,24 @@ import type {
   Reminder,
   ReminderLog,
   CmsSection,
+  AdminNotification,
 } from "@/types";
 import type { Order } from "@/types/operations";
+
+export interface SecurityLog {
+  id: string;
+  event: string;
+  account: string;
+  ip: string;
+  device: string;
+  location: string;
+  timestamp: string;
+  severity: "info" | "warning" | "critical" | string;
+  status: string;
+}
+
 type ShopState = {
+  notifications: AdminNotification[];
   customers: Customer[];
   suppliers: Supplier[];
   inventory: InventoryItem[];
@@ -41,6 +56,7 @@ type ShopState = {
 };
 
 let state: ShopState = {
+  notifications: [],
   customers: [],
   suppliers: [],
   inventory: [],
@@ -184,21 +200,10 @@ const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   balance: num(r["balance"]),
   method: r["method"],
   remarks: r["remarks"] ?? undefined,
-
   productName: r["product_name"] ?? undefined,
-
-  quantity:
-    r["quantity"] !== undefined
-      ? num(r["quantity"])
-      : undefined,
-
-  unit:
-    r["unit"] ?? undefined,
-
-  unitPrice:
-    r["rate"] !== undefined
-      ? num(r["rate"])
-      : undefined,
+  quantity: r["quantity"] !== undefined ? num(r["quantity"]) : undefined,
+  unit: r["unit"] ?? undefined,
+  unitPrice: r["rate"] !== undefined ? num(r["rate"]) : undefined,
 });
 
 const toOrder = (r: any): Order => ({
@@ -259,6 +264,17 @@ const toReminder = (r: any): Reminder => ({
   status: r["status"],
   nextRun: r["next_run"],
   message: r["message"] ?? "",
+});
+
+const toNotification = (r: any): AdminNotification => ({
+  id: r["id"],
+  title: r["title"],
+  body: r["body"] ?? "",
+  type: r["type"],
+  link: r["link"] ?? undefined,
+  isRead: !!r["is_read"],
+  sourceId: r["source_id"] ?? undefined,
+  createdAt: r["created_at"],
 });
 
 const toReminderLog = (r: any): ReminderLog => ({
@@ -335,6 +351,7 @@ let loadPromise: Promise<void> | null = null;
 
 export async function loadShopData() {
   const [
+    notifications,
     customers,
     suppliers,
     inventory,
@@ -351,6 +368,7 @@ export async function loadShopData() {
     security,
     backupRows,
   ] = await Promise.all([
+    supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
     supabase.from("customers").select("*").order("name"),
     supabase.from("suppliers").select("*").order("name"),
     supabase.from("inventory_items").select("*").order("product_name"),
@@ -372,6 +390,7 @@ export async function loadShopData() {
   ]);
 
   setState({
+    notifications: (notifications.data ?? []).map(toNotification),
     customers: (customers.data ?? []).map(toCustomer),
     suppliers: (suppliers.data ?? []).map(toSupplier),
     inventory: (inventory.data ?? []).map(toInventory),
@@ -529,35 +548,33 @@ export const shopStore = {
     if (error) throw error;
     return after(data as string);
   },
-/**
- * Records a payment made to a supplier and updates
- * supplier total_paid + due_balance atomically.
- */
-async recordSupplierPayment(input: {
-  supplierId: string;
-  amount: number;
-  method: "cash" | "upi" | "bank" | "cheque";
-  date?: string;
-  reference?: string;
-  remarks?: string;
-}) {
-  const { data, error } = await supabase.rpc(
-    "record_supplier_payment" as any,
-    {
+
+  /**
+   * Records a payment made to a supplier and updates
+   * supplier total_paid + due_balance atomically.
+   */
+  async recordSupplierPayment(input: {
+    supplierId: string;
+    amount: number;
+    method: "cash" | "upi" | "bank" | "cheque";
+    date?: string;
+    reference?: string;
+    remarks?: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_supplier_payment" as any, {
       _supplier_id: input.supplierId,
       _amount: input.amount,
       _method: input.method,
-      _entry_date:
-        input.date ?? new Date().toISOString().slice(0, 10),
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
       _reference: input.reference ?? "",
       _remarks: input.remarks ?? null,
-    },
-  );
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return after(data as string);
-},
+    return after(data as string);
+  },
+
   /** Loads the line items for one khata sale (for the ledger drill-down view). */
   async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
@@ -597,8 +614,7 @@ async recordSupplierPayment(input: {
     if (patch.gstin !== undefined) payload["gstin"] = patch.gstin;
     if (patch.address !== undefined) payload["address"] = patch.address;
     if (patch.status !== undefined) payload["status"] = patch.status;
-    if (patch.productsSupplied !== undefined)
-      payload["products_supplied"] = patch.productsSupplied;
+    if (patch.productsSupplied !== undefined) payload["products_supplied"] = patch.productsSupplied;
     const { error } = await supabase.from("suppliers").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
@@ -608,21 +624,19 @@ async recordSupplierPayment(input: {
     return after(undefined);
   },
 
-async addInventoryItem(item: {
-  supplierId: string;
-  supplierName: string;
-  productName: string;
-  quantity: number;
-  unit: string;
-  purchasePrice: number;
-  advancePaid: number;
-  advanceMethod: "cash" | "upi" | "bank" | "cheque";
-  minStockLevel: number;
-  lastUpdated: string;
-}) {
-  const { data, error } = await supabase.rpc(
-    "record_supplier_purchase" as any,
-    {
+  async addInventoryItem(item: {
+    supplierId: string;
+    supplierName: string;
+    productName: string;
+    quantity: number;
+    unit: string;
+    purchasePrice: number;
+    advancePaid: number;
+    advanceMethod: "cash" | "upi" | "bank" | "cheque";
+    minStockLevel: number;
+    lastUpdated: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_supplier_purchase" as any, {
       _supplier_id: item.supplierId,
       _product_name: item.productName,
       _quantity: item.quantity,
@@ -632,13 +646,12 @@ async addInventoryItem(item: {
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,
       _advance_method: item.advanceMethod,
-    },
-  );
+    });
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return after(data as string);
-},
+    return after(data as string);
+  },
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
     const payload: any = { last_updated: new Date().toISOString().slice(0, 10) };
     if (patch.productName !== undefined) payload["product_name"] = patch.productName;

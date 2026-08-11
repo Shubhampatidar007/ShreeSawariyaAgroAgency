@@ -91,3 +91,13 @@ export type Backup = {
   status: "completed" | "running" | "failed";
   destination: string;
 };
+export type AdminNotification = {
+  id: string;
+  title: string;
+  body: string;
+  type: "info" | "success" | "warning" | "critical";
+  link?: string;
+  isRead: boolean;
+  sourceId?: string;
+  createdAt: string;
+};
