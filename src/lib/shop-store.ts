@@ -350,85 +350,199 @@ const toBackup = (r: any): Backup => ({
 let loadPromise: Promise<void> | null = null;
 
 export async function loadShopData() {
-  const [
-    notifications,
-    customers,
-    suppliers,
-    inventory,
-    products,
-    customerLedger,
-    supplierLedger,
-    orders,
-    payments,
-    reminders,
-    reminderLogs,
-    cmsSections,
-    ads,
-    activity,
-    security,
-    backupRows,
-  ] = await Promise.all([
-    supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
-    supabase.from("customers").select("*").order("name"),
-    supabase.from("suppliers").select("*").order("name"),
-    supabase.from("inventory_items").select("*").order("product_name"),
-    supabase.from("products").select("*").order("published_on", { ascending: false }),
-    supabase.from("customer_transactions").select("*").order("entry_date"),
-    supabase.from("supplier_transactions").select("*").order("entry_date"),
-    supabase
-      .from("orders")
-      .select("*, order_items(*)")
-      .order("placed_on", { ascending: false }),
-    supabase.from("payments").select("*").order("entry_date", { ascending: false }),
-    supabase.from("reminders").select("*").order("created_at", { ascending: false }),
-    supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
-    supabase.from("cms_sections").select("*").order("sort_order"),
-    supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
-    supabase.from("activity_logs").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("security_logs").select("*").order("created_at", { ascending: false }).limit(200),
-    supabase.from("backups").select("*").order("created_at", { ascending: false }),
-  ]);
+  setState({ loading: true });
 
-  setState({
-    notifications: (notifications.data ?? []).map(toNotification),
-    customers: (customers.data ?? []).map(toCustomer),
-    suppliers: (suppliers.data ?? []).map(toSupplier),
-    inventory: (inventory.data ?? []).map(toInventory),
-    products: (products.data ?? []).map(toProduct),
-    customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-    orders: (orders.data ?? []).map(toOrder),
-    payments: (payments.data ?? []).map(toPayment),
-    reminders: (reminders.data ?? []).map(toReminder),
-    reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
-    cmsSections: (cmsSections.data ?? []).map(toCms),
-    advertisements: (ads.data ?? []).map(toAd),
-    activityLogs: (activity.data ?? []).map(toActivityLog),
-    securityLogs: (security.data ?? []).map(toSecurityLog),
-    backups: (backupRows.data ?? []).map(toBackup),
-    loading: false,
-  });
+  try {
+    const [
+      notifications,
+      customers,
+      suppliers,
+      inventory,
+      products,
+      customerLedger,
+      supplierLedger,
+      orders,
+      payments,
+      reminders,
+      reminderLogs,
+      cmsSections,
+      ads,
+      activity,
+      security,
+      backupRows,
+    ] = await Promise.all([
+      supabase
+        .from("notifications")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(50),
+
+      supabase
+        .from("customers")
+        .select("*")
+        .order("name"),
+
+      supabase
+        .from("suppliers")
+        .select("*")
+        .order("name"),
+
+      supabase
+        .from("inventory_items")
+        .select("*")
+        .order("product_name"),
+
+      supabase
+        .from("products")
+        .select("*")
+        .order("published_on", { ascending: false }),
+
+      supabase
+        .from("customer_transactions")
+        .select("*")
+        .order("entry_date"),
+
+      supabase
+        .from("supplier_transactions")
+        .select("*")
+        .order("entry_date"),
+
+      supabase
+        .from("orders")
+        .select("*, order_items(*)")
+        .order("placed_on", { ascending: false }),
+
+      supabase
+        .from("payments")
+        .select("*")
+        .order("entry_date", { ascending: false }),
+
+      supabase
+        .from("reminders")
+        .select("*")
+        .order("created_at", { ascending: false }),
+
+      supabase
+        .from("reminder_logs")
+        .select("*")
+        .order("sent_at", { ascending: false }),
+
+      supabase
+        .from("cms_sections")
+        .select("*")
+        .order("sort_order"),
+
+      supabase
+        .from("advertisements")
+        .select("*")
+        .order("created_at", { ascending: false }),
+
+      supabase
+        .from("activity_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200),
+
+      supabase
+        .from("security_logs")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(200),
+
+      supabase
+        .from("backups")
+        .select("*")
+        .order("created_at", { ascending: false }),
+    ]);
+
+    const firstError = [
+      notifications,
+      customers,
+      suppliers,
+      inventory,
+      products,
+      customerLedger,
+      supplierLedger,
+      orders,
+      payments,
+      reminders,
+      reminderLogs,
+      cmsSections,
+      ads,
+      activity,
+      security,
+      backupRows,
+    ].find((result) => result.error);
+
+    if (firstError?.error) {
+      throw firstError.error;
+    }
+
+    setState({
+      notifications: (notifications.data ?? []).map(toNotification),
+      customers: (customers.data ?? []).map(toCustomer),
+      suppliers: (suppliers.data ?? []).map(toSupplier),
+      inventory: (inventory.data ?? []).map(toInventory),
+      products: (products.data ?? []).map(toProduct),
+      customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+      supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+      orders: (orders.data ?? []).map(toOrder),
+      payments: (payments.data ?? []).map(toPayment),
+      reminders: (reminders.data ?? []).map(toReminder),
+      reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
+      cmsSections: (cmsSections.data ?? []).map(toCms),
+      advertisements: (ads.data ?? []).map(toAd),
+      activityLogs: (activity.data ?? []).map(toActivityLog),
+      securityLogs: (security.data ?? []).map(toSecurityLog),
+      backups: (backupRows.data ?? []).map(toBackup),
+      loading: false,
+    });
+  } catch (error) {
+    setState({
+      loading: false,
+    });
+
+    throw error;
+  }
 }
 
 /** Loads once per session and refreshes whenever any table changes. */
 export function initShopData() {
-  if (typeof window === "undefined" || loadPromise) return loadPromise;
-  loadPromise = loadShopData();
+  if (typeof window === "undefined") return null;
 
-  let timer: ReturnType<typeof setTimeout> | null = null;
-  const refresh = () => {
-    if (timer) clearTimeout(timer);
-    timer = setTimeout(() => void loadShopData(), 250);
-  };
+  if (!loadPromise) {
+    loadPromise = loadShopData().catch((error) => {
+      loadPromise = null;
+      throw error;
+    });
 
-  supabase
-    .channel("shop-data")
-    .on("postgres_changes", { event: "*", schema: "public" }, refresh)
-    .subscribe();
+    let timer: ReturnType<typeof setTimeout> | null = null;
+
+    const refresh = () => {
+      if (timer) clearTimeout(timer);
+
+      timer = setTimeout(() => {
+        void loadShopData().catch((error) => {
+          console.error("Shop data refresh failed:", error);
+        });
+      }, 250);
+    };
+
+    supabase
+      .channel("shop-data")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+        },
+        refresh,
+      )
+      .subscribe();
+  }
 
   return loadPromise;
 }
-
 const after = async <T,>(value: T) => {
   await loadShopData();
   return value;

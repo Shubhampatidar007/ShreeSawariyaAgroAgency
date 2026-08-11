@@ -1,5 +1,12 @@
-import { useState } from "react";
-import { Link, Outlet, createFileRoute } from "@tanstack/react-router";
+import { useState , useEffect} from "react";
+import { AdminDataLoader } from "@/components/admin/AdminDataLoader";
+import { useShopStore } from "@/lib/shop-store";
+import {
+  Link,
+  Outlet,
+  createFileRoute,
+  useLocation,
+} from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -23,17 +30,34 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
+  const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+
+  const location = useLocation();
+  const shopLoading = useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
 
-  if (!ready) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-background">
-        <p className="text-sm text-muted-foreground">Checking your access…</p>
-      </div>
-    );
-  }
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      setMinimumLoaderDone(true);
+    }, 2800);
+
+    return () => window.clearTimeout(timer);
+  }, []);
+
+if (!ready || !minimumLoaderDone) {
+  return <AdminDataLoader />;
+}
+
+if (!user || (user.role !== "admin" && user.role !== "staff")) {
+  // existing access denied UI
+}
+
+if (shopLoading || !minimumLoaderDone) {
+  return <AdminDataLoader />;
+}
+
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) {
     return (
@@ -67,9 +91,14 @@ function AdminLayout() {
 
       <div className={cn("transition-[padding]", sidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
         <AdminHeader onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
-                <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-          <Outlet />
-        </main>
+               <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+  <div
+    key={location.pathname}
+    className="admin-page-transition"
+  >
+    <Outlet />
+  </div>
+</main>
       </div>
 
       <LowStockReminderPopup />

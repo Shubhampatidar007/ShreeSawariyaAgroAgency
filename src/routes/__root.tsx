@@ -14,7 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
-import { initAuth } from "@/lib/auth-store";
+import { initAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
 import { initShopData } from "@/lib/shop-store";
 
@@ -129,19 +129,31 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
-
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const authReady = useAuthReady();
 
   useEffect(() => {
     initTheme();
     initLanguage();
     initAuth();
     initCart();
-    void initShopData();
   }, []);
 
+  useEffect(() => {
+    if (!authReady) return;
+
+    void initShopData();
+  }, [authReady]);
+
   return (
+    <QueryClientProvider client={queryClient}>
+      <Outlet />
+      <Toaster />
+    </QueryClientProvider>
+  );
+
+return (
     <QueryClientProvider client={queryClient}>
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
