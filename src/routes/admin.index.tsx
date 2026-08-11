@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
   Area,
   AreaChart,
@@ -132,6 +133,7 @@ function AdminOverview() {
 
   return (
     <div className="space-y-6">
+      <ScrollReveal direction="up" distance={18} duration={550}>
       <PageHeader
         eyebrow={t("admin.overview.title")}
         title={`${greeting(t)}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
@@ -149,14 +151,31 @@ function AdminOverview() {
           </>
         }
       />
-
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {stats.map((stat) => (
-          <StatCard key={stat.id} stat={stat} />
-        ))}
-      </div>
-
+</ScrollReveal>
+    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+  {stats.map((stat, index) => (
+    <ScrollReveal
+      key={stat.id}
+      delay={index * 80}
+      direction="up"
+      distance={24}
+      duration={600}
+      scale={0.97}
+      blur={2}
+    >
+      <StatCard stat={stat} />
+    </ScrollReveal>
+  ))}
+</div>
       <div className="grid gap-4 lg:grid-cols-3">
+        <ScrollReveal
+  direction="up"
+  distance={28}
+  duration={700}
+  scale={0.98}
+  blur={2}
+>
+
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
@@ -202,7 +221,13 @@ function AdminOverview() {
             </ResponsiveContainer>
           </CardContent>
         </Card>
-
+</ScrollReveal>
+<ScrollReveal
+  direction="right"
+  distance={24}
+  duration={650}
+  scale={0.98}
+>
         <Card className="shadow-soft">
           <CardHeader>
             <CardTitle className="text-base">{t("admin.overview.quickActions")}</CardTitle>
@@ -223,9 +248,17 @@ function AdminOverview() {
             ))}
           </CardContent>
         </Card>
+        </ScrollReveal>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
+        <ScrollReveal
+  direction="up"
+  distance={28}
+  duration={700}
+  scale={0.98}
+  blur={2}
+>
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <CardTitle className="text-base">{t("admin.overview.recentBills")}</CardTitle>
@@ -287,8 +320,15 @@ function AdminOverview() {
             </div>
           </CardContent>
         </Card>
-
+</ScrollReveal>
         <div className="space-y-4">
+          <ScrollReveal
+  direction="right"
+  distance={24}
+  duration={650}
+  scale={0.98}
+>
+  
           <Card className="shadow-soft">
             <CardHeader className="flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">{t("admin.overview.lowStockAlerts")}</CardTitle>
@@ -321,7 +361,13 @@ function AdminOverview() {
               )}
             </CardContent>
           </Card>
-
+</ScrollReveal>
+<ScrollReveal
+  direction="right"
+  distance={24}
+  duration={650}
+  scale={0.98}
+>
           <Card className="shadow-soft">
             <CardHeader className="flex-row items-center justify-between space-y-0">
               <CardTitle className="text-base">{t("admin.overview.recentActivity")}</CardTitle>
@@ -348,6 +394,7 @@ function AdminOverview() {
               )}
             </CardContent>
           </Card>
+          </ScrollReveal>
         </div>
       </div>
 
