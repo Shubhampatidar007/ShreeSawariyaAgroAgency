@@ -65,17 +65,17 @@ function InventoryListPage() {
   const [editPurchasePrice, setEditPurchasePrice] = useState("");
   const [editMinStock, setEditMinStock] = useState("");
 
-  const rows = useMemo(() => {
-    const term = query.trim().toLowerCase();
+ const rows = useMemo(() => {
+  const term = query.trim().toLowerCase();
 
-    return inventory.filter(
-      (item) =>
-        !term ||
+  return inventory.filter(
+    (item) =>
+      item.quantity > 0 &&
+      (!term ||
         item.productName.toLowerCase().includes(term) ||
-        item.supplierName.toLowerCase().includes(term),
-    );
-  }, [inventory, query]);
-
+        item.supplierName.toLowerCase().includes(term)),
+  );
+}, [inventory, query]);
   const openEdit = (item: (typeof inventory)[number]) => {
     setEditingId(item.id);
     setEditProductName(item.productName);
