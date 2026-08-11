@@ -101,3 +101,17 @@ export type AdminNotification = {
   sourceId?: string;
   createdAt: string;
 };
+export type Reminder = {
+  id: string;
+  title: string;
+  audience: string;
+  target: string;
+  filterSummary: string;
+  schedule: string;
+  channel: string;
+  dueAmount: number;
+  status: string;
+  nextRun: string;
+  message: string;
+  sourceId?: string;
+};

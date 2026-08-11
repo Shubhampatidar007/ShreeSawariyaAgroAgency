@@ -251,7 +251,6 @@ const toPayment = (r: any): PaymentRecord => ({
   orderCode: r["order_code"] ?? undefined,
   remarks: r["remarks"] ?? undefined,
 });
-
 const toReminder = (r: any): Reminder => ({
   id: r["id"],
   title: r["title"],
@@ -264,6 +263,7 @@ const toReminder = (r: any): Reminder => ({
   status: r["status"],
   nextRun: r["next_run"],
   message: r["message"] ?? "",
+  sourceId: r["source_id"] ?? undefined,
 });
 
 const toNotification = (r: any): AdminNotification => ({

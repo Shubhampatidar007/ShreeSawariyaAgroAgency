@@ -4,6 +4,7 @@ import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
 import { cn } from "@/lib/utils";
 
@@ -66,10 +67,12 @@ function AdminLayout() {
 
       <div className={cn("transition-[padding]", sidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
         <AdminHeader onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
-        <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
+                <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
           <Outlet />
         </main>
       </div>
+
+      <LowStockReminderPopup />
     </div>
   );
 }
