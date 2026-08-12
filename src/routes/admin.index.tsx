@@ -42,7 +42,17 @@ export const Route = createFileRoute("/admin/")({
   component: AdminOverview,
 });
 
-const isoDay = (value: string) => new Date(value).toISOString().slice(0, 10);
+/** Returns the calendar day in the browser's local timezone without shifting date-only values. */
+const isoDay = (value: string) => {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return value.slice(0, 10);
+
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(
+    date.getDate(),
+  ).padStart(2, "0")}`;
+};
 
 function greeting(t: (key: string) => string) {
   const hour = new Date().getHours();
@@ -55,13 +65,29 @@ function AdminOverview() {
   const user = useAuth();
   const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
-  const { orders, customers, inventory, supplierLedger, activityLogs, payments, loading } =
-    useShopStore((s) => s);
+  const {
+    orders,
+    customers,
+    inventory,
+    supplierLedger,
+    customerLedger,
+    activityLogs,
+    payments,
+    loading,
+  } = useShopStore((s) => s);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = isoDay(new Date().toISOString());
   const todaysOrders = orders.filter((o) => isoDay(o.placedOn) === today);
-  const todaysSales = todaysOrders.reduce((sum, o) => sum + o.total, 0);
-  const todaysCollected = todaysOrders.reduce((sum, o) => sum + o.paid, 0);
+  const todaysKhataSales = customerLedger.filter(
+    (entry) => isoDay(entry.date) === today && entry.entryType === "purchase",
+  );
+  const todaysSales =
+    todaysOrders.reduce((sum, o) => sum + o.total, 0) +
+    todaysKhataSales.reduce((sum, entry) => sum + entry.amount, 0);
+  const todaysCollected =
+    todaysOrders.reduce((sum, o) => sum + o.paid, 0) +
+    todaysKhataSales.reduce((sum, entry) => sum + entry.payment, 0);
+  const todaysBillCount = todaysOrders.length + todaysKhataSales.length;
   const stockValue = inventory.reduce((sum, i) => sum + i.quantity * i.purchasePrice, 0);
   const lowStockItems = inventory.filter((i) => i.quantity <= i.minStockLevel);
   const activeCustomers = customers.filter((c) => c.status === "active");
@@ -71,7 +97,7 @@ function AdminOverview() {
       id: "sales",
       label: t("admin.overview.stats.sales"),
       value: formatCurrency(todaysSales),
-      helper: t("admin.overview.stats.salesHelper", { count: todaysOrders.length }),
+      helper: t("admin.overview.stats.salesHelper", { count: todaysBillCount }),
       change: t("admin.overview.stats.collected", { amount: formatCurrency(todaysCollected) }),
       trend: "up",
       icon: IndianRupee,
@@ -122,12 +148,16 @@ function AdminOverview() {
       const m = bucket(o.placedOn);
       if (m) m.sales += o.total;
     });
+    customerLedger.forEach((entry) => {
+      const m = bucket(entry.date);
+      if (m && entry.entryType === "purchase") m.sales += entry.amount;
+    });
     supplierLedger.forEach((e) => {
       const m = bucket(e.date);
       if (m && e.type === "purchase") m.purchases += e.amount;
     });
     return months;
-  }, [orders, supplierLedger]);
+  }, [orders, customerLedger, supplierLedger]);
 
   const recentBills = orders.slice(0, 5);
 
@@ -411,7 +441,7 @@ function AdminOverview() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-2 text-sm">
-            <SummaryRow label={t("admin.overview.dayCloseBillsGenerated")} value={String(todaysOrders.length)} />
+            <SummaryRow label={t("admin.overview.dayCloseBillsGenerated")} value={String(todaysBillCount)} />
             <SummaryRow label={t("admin.overview.dayCloseTotalSales")} value={formatCurrency(todaysSales)} />
             <SummaryRow label={t("admin.overview.dayCloseAmountCollected")} value={formatCurrency(todaysCollected)} />
             <SummaryRow
