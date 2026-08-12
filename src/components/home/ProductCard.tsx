@@ -24,8 +24,17 @@ export function ProductCard({ product }: { product: Product }) {
 
   return (
     <Card className="group h-full overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
-      <div className="relative flex h-36 items-center justify-center bg-muted text-5xl">
-        <span className="transition-transform group-hover:scale-110">{product.emoji}</span>
+      <div className="relative flex h-36 items-center justify-center bg-muted">
+        {product.image ? (
+          <img
+            src={product.image}
+            alt={product.name}
+            className="h-full w-full object-cover transition-transform group-hover:scale-105"
+            loading="lazy"
+          />
+        ) : (
+          <span className="text-5xl transition-transform group-hover:scale-110">{product.emoji}</span>
+        )}
         {product.tag ? (
           <Badge className="absolute left-3 top-3 rounded-full">{product.tag}</Badge>
         ) : null}
