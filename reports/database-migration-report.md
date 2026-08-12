@@ -1,7 +1,7 @@
 # Database Migration Report
 
 ## 1. Purpose
-This report documents the database structure used by the current Lovable Cloud / Supabase-backed application so another AI can recreate the same database in a new Supabase project and wire the app to it.
+This report documents the database structure used by the current Supabase-backed application so another AI can recreate the same database in a new Supabase project and wire the app to it.
 
 Project type: Vite + React + TypeScript + TanStack Router + Supabase
 Source of truth in this repository:
@@ -431,7 +431,7 @@ Returns: boolean
 Used by: access control
 
 ### 6.2 public.is_staff(_user_id)
-Purpose: Checks if a user is admin or staff.
+Purpose: Checks if user is admin or staff.
 Returns: boolean
 Used by: RLS policies and admin UI access
 
