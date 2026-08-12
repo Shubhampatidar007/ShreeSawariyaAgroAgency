@@ -20,6 +20,7 @@ export function FeaturedProducts() {
       ...(p.featured ? { tag: "Featured" } : {}),
       rating: 4.6,
       emoji: p.emoji || "🌾",
+      image: p.images[0],
       stock: p.stock,
     }));
 

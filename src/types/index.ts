@@ -44,6 +44,7 @@ export type Product = {
   stock: number;
   tag?: string;
   emoji: string;
+  image?: string;
 };
 
 export type Advertisement = {

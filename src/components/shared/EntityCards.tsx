@@ -135,9 +135,17 @@ export function AdminProductCard({
   product: PublishedProduct;
   actions?: ReactNode;
 }) {
+  const image = product.images[0];
+
   return (
     <Card className="overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
-      <div className="flex h-28 items-center justify-center bg-muted text-4xl">{product.emoji}</div>
+      <div className="flex h-28 items-center justify-center bg-muted text-4xl">
+        {image ? (
+          <img src={image} alt={product.title} className="h-full w-full object-cover" loading="lazy" />
+        ) : (
+          product.emoji
+        )}
+      </div>
       <CardContent className="space-y-3 p-4">
         <div className="flex items-start justify-between gap-2">
           <div>

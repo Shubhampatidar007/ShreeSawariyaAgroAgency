@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -16,8 +17,61 @@ import {
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { AdminProductCard } from "@/components/shared/EntityCards";
+import { supabase } from "@/integrations/supabase/client";
 import { shopStore, useShopStore } from "@/lib/shop-store";
 import type { PublishedProduct } from "@/types/business";
+
+const MAX_IMAGE_BYTES = 1024 * 1024;
+
+async function compressImage(file: File): Promise<Blob> {
+  if (file.size <= MAX_IMAGE_BYTES) return file;
+
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  const maxDimension = 1600;
+  const scale = Math.min(1, maxDimension / Math.max(bitmap.width, bitmap.height));
+  let width = Math.max(1, Math.round(bitmap.width * scale));
+  let height = Math.max(1, Math.round(bitmap.height * scale));
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    throw new Error("Could not prepare the image for upload");
+  }
+  context.drawImage(bitmap, 0, 0, width, height);
+
+  let quality = 0.86;
+  try {
+    for (let attempt = 0; attempt < 12; attempt += 1) {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/webp", quality),
+      );
+      if (blob && blob.size <= MAX_IMAGE_BYTES) return blob;
+
+      quality -= 0.06;
+      if (quality < 0.5) {
+        quality = 0.78;
+        width = Math.max(640, Math.round(width * 0.8));
+        height = Math.max(640, Math.round(height * 0.8));
+        canvas.width = width;
+        canvas.height = height;
+        const resizedContext = canvas.getContext("2d");
+        if (!resizedContext) throw new Error("Could not resize the image");
+        resizedContext.drawImage(bitmap, 0, 0, width, height);
+      }
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error("The image could not be compressed below 1 MB");
+}
+
+function imageExtension(blob: Blob) {
+  return blob.type === "image/webp" ? "webp" : blob.type === "image/png" ? "png" : "jpg";
+}
 
 export const Route = createFileRoute("/admin/products/publish")({
   head: () => ({
@@ -42,6 +96,19 @@ function PublishProductPage() {
   const [tags, setTags] = useState("");
   const [visibility, setVisibility] = useState<"public" | "hidden">("public");
   const [featured, setFeatured] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState("");
+  const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    if (!imageFile) {
+      setImagePreview("");
+      return;
+    }
+    const url = URL.createObjectURL(imageFile);
+    setImagePreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [imageFile]);
 
   const item = inventory.find((i) => i.id === inventoryId);
 
@@ -55,12 +122,52 @@ function PublishProductPage() {
     stock: item?.quantity ?? 0,
     description,
     tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
-    images: [],
+    images: imagePreview ? [imagePreview] : [],
     emoji: "🌾",
     visibility,
     featured,
     status: "published",
     publishedOn: new Date().toISOString().slice(0, 10),
+  };
+
+  const publish = async () => {
+    if (!inventoryId || !sellingPrice) {
+      toast.error("Select inventory and set a selling price");
+      return;
+    }
+
+    setPublishing(true);
+    try {
+      let imageUrl: string | undefined;
+
+      if (imageFile) {
+        const blob = await compressImage(imageFile);
+        if (blob.size > MAX_IMAGE_BYTES) throw new Error("Image must be smaller than 1 MB");
+
+        const path = `products/${inventoryId}/${crypto.randomUUID()}.${imageExtension(blob)}`;
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(path, blob, {
+            contentType: blob.type || "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+
+        imageUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
+      }
+
+      await shopStore.publishProduct({
+        ...draft,
+        images: imageUrl ? [imageUrl] : [],
+      });
+      toast.success("Product published to the storefront");
+      navigate({ to: "/admin/products" });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not publish the product");
+    } finally {
+      setPublishing(false);
+    }
   };
 
   return (
@@ -96,6 +203,22 @@ function PublishProductPage() {
                   ))}
                 </SelectContent>
               </Select>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Product image</Label>
+              <div className="rounded-lg border border-dashed border-border p-4">
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Maximum 1 MB after compression. JPEG, PNG and WebP are supported.
+                </p>
+                {imagePreview ? (
+                  <img src={imagePreview} alt="Product preview" className="mt-3 h-40 w-full rounded-lg object-cover" />
+                ) : null}
+              </div>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Title</Label>
@@ -150,19 +273,9 @@ function PublishProductPage() {
               <Switch checked={featured} onCheckedChange={setFeatured} />
             </div>
             <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Button
-                className="rounded-full"
-                onClick={() => {
-                  if (!inventoryId || !sellingPrice) {
-                    toast.error("Select inventory and set a selling price");
-                    return;
-                  }
-                  shopStore.publishProduct(draft);
-                  toast.success("Product published to the storefront");
-                  navigate({ to: "/admin/products" });
-                }}
-              >
-                Publish product
+              <Button className="rounded-full" onClick={publish} disabled={publishing}>
+                <Upload className="size-4" />
+                {publishing ? "Publishing…" : "Publish product"}
               </Button>
               <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/products" })}>
                 Cancel
