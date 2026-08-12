@@ -36,13 +36,39 @@ const methods = ["all", "cash", "credit", "upi", "card", "bank", "cheque", "onli
 function PaymentsPage() {
   const { t } = useI18n();
   const payments = useShopStore((s) => s.payments);
+  const suppliers = useShopStore((s) => s.suppliers);
+  const supplierLedger = useShopStore((s) => s.supplierLedger);
   const [query, setQuery] = useState("");
   const [method, setMethod] = useState("all");
   const [direction, setDirection] = useState("all");
 
+  const allPayments = useMemo(
+    () => [
+      ...payments,
+      ...supplierLedger
+        .filter((entry) => entry.type === "payment" || entry.type === "advance")
+        .map((entry) => {
+          const supplier = suppliers.find((item) => item.id === entry.supplierId);
+          return {
+            id: `supplier-${entry.id}`,
+            reference: entry.reference || "Supplier payment",
+            direction: "outgoing" as const,
+            partyId: entry.supplierId,
+            partyName: supplier?.company || supplier?.name || "Supplier",
+            date: entry.date,
+            amount: entry.amount,
+            method: entry.method === "credit" ? "credit" as const : entry.method,
+            status: "success" as const,
+            remarks: entry.remarks,
+          };
+        }),
+    ],
+    [payments, supplierLedger, suppliers],
+  );
+
   const filtered = useMemo(
     () =>
-      payments.filter((p) => {
+      allPayments.filter((p) => {
         const q = query.trim().toLowerCase();
         const matchQuery =
           !q || `${p.partyName} ${p.reference} ${p.orderCode ?? ""}`.toLowerCase().includes(q);
@@ -50,12 +76,12 @@ function PaymentsPage() {
         const matchDirection = direction === "all" || p.direction === direction;
         return matchQuery && matchMethod && matchDirection;
       }),
-    [payments, query, method, direction],
+    [allPayments, query, method, direction],
   );
 
-  const incoming = payments.filter((p) => p.direction === "incoming");
-  const outgoing = payments.filter((p) => p.direction === "outgoing");
-  const sum = (list: typeof payments) => list.reduce((total, p) => total + p.amount, 0);
+  const incoming = allPayments.filter((p) => p.direction === "incoming");
+  const outgoing = allPayments.filter((p) => p.direction === "outgoing");
+  const sum = (list: typeof allPayments) => list.reduce((total, p) => total + p.amount, 0);
 
   return (
     <div className="space-y-6">
@@ -73,11 +99,11 @@ function PaymentsPage() {
           { label: t("payments.paidOut"), value: formatCurrency(sum(outgoing)), icon: ArrowUpRight, tone: "warning" },
           {
             label: t("payments.pending"),
-            value: formatCurrency(sum(payments.filter((p) => p.status === "pending"))),
+            value: formatCurrency(sum(allPayments.filter((p) => p.status === "pending"))),
             icon: Wallet,
             tone: "warning",
           },
-          { label: "Transactions", value: String(payments.length), icon: WalletCards },
+          { label: "Transactions", value: String(allPayments.length), icon: WalletCards },
         ]}
       />
 
