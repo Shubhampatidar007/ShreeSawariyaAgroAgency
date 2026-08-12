@@ -12,10 +12,7 @@ import {
   LayoutTemplate,
   BellRing,
   DatabaseBackup,
-  History,
-  ShieldAlert,
   Search,
-  Settings,
 } from "lucide-react";
 import type { NavSection } from "@/types";
 
@@ -54,18 +51,6 @@ export const adminNavSections: NavSection[] = [
     items: [
       { label: "Reminders", labelKey: "nav.reminders", to: "/admin/reminders", icon: BellRing },
       { label: "Backups", labelKey: "nav.backups", to: "/admin/backups", icon: DatabaseBackup },
-      {
-        label: "Activity Logs",
-        labelKey: "nav.activityLogs",
-        to: "/admin/activity-logs",
-        icon: History,
-      },
-      {
-        label: "Security Logs",
-        labelKey: "nav.securityLogs",
-        to: "/admin/security-logs",
-        icon: ShieldAlert,
-      },
       { label: "Search", labelKey: "nav.search", to: "/admin/search", icon: Search },
     ],
   },

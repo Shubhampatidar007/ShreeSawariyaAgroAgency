@@ -11,7 +11,6 @@ import type {
   SupplierLedgerEntry,
 } from "@/types/business";
 import type {
-  ActivityLog,
   Advertisement,
   Backup,
   PaymentRecord,
@@ -21,18 +20,6 @@ import type {
   AdminNotification,
 } from "@/types";
 import type { Order } from "@/types/operations";
-
-export interface SecurityLog {
-  id: string;
-  event: string;
-  account: string;
-  ip: string;
-  device: string;
-  location: string;
-  timestamp: string;
-  severity: "info" | "warning" | "critical" | string;
-  status: string;
-}
 
 type ShopState = {
   notifications: AdminNotification[];
@@ -49,8 +36,6 @@ type ShopState = {
   reminderLogs: ReminderLog[];
   cmsSections: CmsSection[];
   advertisements: Advertisement[];
-  activityLogs: ActivityLog[];
-  securityLogs: SecurityLog[];
   backups: Backup[];
   loading: boolean;
 };
@@ -70,8 +55,6 @@ let state: ShopState = {
   reminderLogs: [],
   cmsSections: [],
   advertisements: [],
-  activityLogs: [],
-  securityLogs: [],
   backups: [],
   loading: true,
 };
@@ -251,6 +234,7 @@ const toPayment = (r: any): PaymentRecord => ({
   orderCode: r["order_code"] ?? undefined,
   remarks: r["remarks"] ?? undefined,
 });
+
 const toReminder = (r: any): Reminder => ({
   id: r["id"],
   title: r["title"],
@@ -313,28 +297,6 @@ const toAd = (r: any): Advertisement => ({
   runsUntil: r["runs_until"],
 });
 
-const toActivityLog = (r: any): ActivityLog => ({
-  id: r["id"],
-  actor: r["actor"],
-  action: r["action"],
-  target: r["detail"] ?? "",
-  module: r["entity"] ?? "",
-  timestamp: r["created_at"],
-  severity: "info",
-});
-
-const toSecurityLog = (r: any): SecurityLog => ({
-  id: r["id"],
-  event: r["event"],
-  account: r["account"] ?? "",
-  ip: r["ip"] ?? "",
-  device: r["device"] ?? "",
-  location: r["location"] ?? "",
-  timestamp: r["created_at"],
-  severity: r["severity"],
-  status: r["status"],
-});
-
 const toBackup = (r: any): Backup => ({
   id: r["id"],
   name: r["name"],
@@ -367,8 +329,6 @@ export async function loadShopData() {
       reminderLogs,
       cmsSections,
       ads,
-      activity,
-      security,
       backupRows,
     ] = await Promise.all([
       supabase
@@ -377,82 +337,31 @@ export async function loadShopData() {
         .order("created_at", { ascending: false })
         .limit(50),
 
-      supabase
-        .from("customers")
-        .select("*")
-        .order("name"),
+      supabase.from("customers").select("*").order("name"),
 
-      supabase
-        .from("suppliers")
-        .select("*")
-        .order("name"),
+      supabase.from("suppliers").select("*").order("name"),
 
-      supabase
-        .from("inventory_items")
-        .select("*")
-        .order("product_name"),
+      supabase.from("inventory_items").select("*").order("product_name"),
 
-      supabase
-        .from("products")
-        .select("*")
-        .order("published_on", { ascending: false }),
+      supabase.from("products").select("*").order("published_on", { ascending: false }),
 
-      supabase
-        .from("customer_transactions")
-        .select("*")
-        .order("entry_date"),
+      supabase.from("customer_transactions").select("*").order("entry_date"),
 
-      supabase
-        .from("supplier_transactions")
-        .select("*")
-        .order("entry_date"),
+      supabase.from("supplier_transactions").select("*").order("entry_date"),
 
-      supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .order("placed_on", { ascending: false }),
+      supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
 
-      supabase
-        .from("payments")
-        .select("*")
-        .order("entry_date", { ascending: false }),
+      supabase.from("payments").select("*").order("entry_date", { ascending: false }),
 
-      supabase
-        .from("reminders")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabase.from("reminders").select("*").order("created_at", { ascending: false }),
 
-      supabase
-        .from("reminder_logs")
-        .select("*")
-        .order("sent_at", { ascending: false }),
+      supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
 
-      supabase
-        .from("cms_sections")
-        .select("*")
-        .order("sort_order"),
+      supabase.from("cms_sections").select("*").order("sort_order"),
 
-      supabase
-        .from("advertisements")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
 
-      supabase
-        .from("activity_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200),
-
-      supabase
-        .from("security_logs")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(200),
-
-      supabase
-        .from("backups")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabase.from("backups").select("*").order("created_at", { ascending: false }),
     ]);
 
     const firstError = [
@@ -469,8 +378,6 @@ export async function loadShopData() {
       reminderLogs,
       cmsSections,
       ads,
-      activity,
-      security,
       backupRows,
     ].find((result) => result.error);
 
@@ -492,16 +399,11 @@ export async function loadShopData() {
       reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
       cmsSections: (cmsSections.data ?? []).map(toCms),
       advertisements: (ads.data ?? []).map(toAd),
-      activityLogs: (activity.data ?? []).map(toActivityLog),
-      securityLogs: (security.data ?? []).map(toSecurityLog),
       backups: (backupRows.data ?? []).map(toBackup),
       loading: false,
     });
   } catch (error) {
-    setState({
-      loading: false,
-    });
-
+    setState({ loading: false });
     throw error;
   }
 }
@@ -543,6 +445,7 @@ export function initShopData() {
 
   return loadPromise;
 }
+
 const after = async <T,>(value: T) => {
   await loadShopData();
   return value;
@@ -663,10 +566,6 @@ export const shopStore = {
     return after(data as string);
   },
 
-  /**
-   * Records a payment made to a supplier and updates
-   * supplier total_paid + due_balance atomically.
-   */
   async recordSupplierPayment(input: {
     supplierId: string;
     amount: number;
@@ -683,13 +582,10 @@ export const shopStore = {
       _reference: input.reference ?? "",
       _remarks: input.remarks ?? null,
     });
-
     if (error) throw error;
-
     return after(data as string);
   },
 
-  /** Loads the line items for one khata sale (for the ledger drill-down view). */
   async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
       .from("customer_transaction_items")
@@ -761,9 +657,7 @@ export const shopStore = {
       _advance_paid: item.advancePaid,
       _advance_method: item.advanceMethod,
     });
-
     if (error) throw error;
-
     return after(data as string);
   },
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
@@ -805,10 +699,7 @@ export const shopStore = {
     });
     if (error) throw error;
     if (product.inventoryId) {
-      await supabase
-        .from("inventory_items")
-        .update({ status: "published" })
-        .eq("id", product.inventoryId);
+      await supabase.from("inventory_items").update({ status: "published" }).eq("id", product.inventoryId);
     }
     setState({ draftProduct: null });
     return after(undefined);
@@ -978,16 +869,6 @@ export const shopStore = {
   },
   async deleteBackup(id: string) {
     await supabase.from("backups").delete().eq("id", id);
-    return after(undefined);
-  },
-
-  async logActivity(entry: { actor: string; action: string; entity?: string; detail?: string }) {
-    await supabase.from("activity_logs").insert({
-      actor: entry["actor"],
-      action: entry["action"],
-      entity: entry["entity"] ?? "",
-      detail: entry["detail"] ?? "",
-    });
     return after(undefined);
   },
 };

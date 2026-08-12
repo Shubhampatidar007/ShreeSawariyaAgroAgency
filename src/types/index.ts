@@ -46,30 +46,6 @@ export type Product = {
   emoji: string;
 };
 
-export type LogSeverity = "info" | "success" | "warning" | "critical";
-
-export type ActivityLog = {
-  id: string;
-  actor: string;
-  action: string;
-  target: string;
-  module: string;
-  timestamp: string;
-  severity: LogSeverity;
-};
-
-export type SecurityLog = {
-  id: string;
-  event: string;
-  account: string;
-  ip: string;
-  device: string;
-  location: string;
-  timestamp: string;
-  severity: LogSeverity;
-  status: "allowed" | "blocked" | "review";
-};
-
 export type Advertisement = {
   id: string;
   title: string;
