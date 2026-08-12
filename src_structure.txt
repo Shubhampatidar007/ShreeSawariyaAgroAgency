@@ -111,7 +111,6 @@ src/hooks/use-mobile.tsx
 src/hooks/use-theme.ts
 src/routeTree.gen.ts
 src/lib
-src/lib/lovable-error-reporting.ts
 src/lib/shop-store.ts
 src/lib/utils.ts
 src/lib/error-page.ts
@@ -148,7 +147,6 @@ src/routes/admin.sales.tsx
 src/routes/admin.index.tsx
 src/routes/admin.customers.$customerId.index.tsx
 src/routes/admin.cms.tsx
-src/routes/README.md
 src/routes/admin.inventory.index.tsx
 src/routes/admin.backups.tsx
 src/routes/admin.customers.new.tsx
