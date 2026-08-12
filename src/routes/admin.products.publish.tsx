@@ -216,7 +216,13 @@ function PublishProductPage() {
                   Maximum 1 MB after compression. JPEG, PNG and WebP are supported.
                 </p>
                 {imagePreview ? (
-                  <img src={imagePreview} alt="Product preview" className="mt-3 h-40 w-full rounded-lg object-cover" />
+                  <div className="mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-lg bg-muted p-2">
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  </div>
                 ) : null}
               </div>
             </div>
