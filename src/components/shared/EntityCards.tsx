@@ -139,9 +139,14 @@ export function AdminProductCard({
 
   return (
     <Card className="overflow-hidden shadow-soft transition-shadow hover:shadow-lg">
-      <div className="flex h-28 items-center justify-center bg-muted text-4xl">
+      <div className="flex h-40 items-center justify-center bg-muted p-2 text-4xl">
         {image ? (
-          <img src={image} alt={product.title} className="h-full w-full object-cover" loading="lazy" />
+          <img
+            src={image}
+            alt={product.title}
+            className="max-h-full max-w-full object-contain"
+            loading="lazy"
+          />
         ) : (
           product.emoji
         )}
