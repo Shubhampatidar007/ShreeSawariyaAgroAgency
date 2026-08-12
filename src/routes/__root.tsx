@@ -7,15 +7,15 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
-import { initAuth, useAuthReady } from "@/lib/auth-store";
+import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
-import { initShopData } from "@/lib/shop-store";
+import { initShopData, loadShopData } from "@/lib/shop-store";
 
 function NotFoundComponent() {
   return (
@@ -125,9 +125,12 @@ function RootShell({ children }: { children: ReactNode }) {
     </html>
   );
 }
+
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const authReady = useAuthReady();
+  const authUser = useAuth();
+  const previousUserId = useRef<string | null>(null);
 
   useEffect(() => {
     initTheme();
@@ -139,8 +142,25 @@ function RootComponent() {
   useEffect(() => {
     if (!authReady) return;
 
-    void initShopData();
-  }, [authReady]);
+    const currentUserId = authUser?.id ?? null;
+    const isFirstReadyRender = previousUserId.current === null;
+    const userChanged = !isFirstReadyRender && previousUserId.current !== currentUserId;
+
+    previousUserId.current = currentUserId;
+
+    if (isFirstReadyRender) {
+      void initShopData().catch((error) => {
+        console.error("Initial shop data load failed:", error);
+      });
+      return;
+    }
+
+    if (userChanged && currentUserId) {
+      void loadShopData().catch((error) => {
+        console.error("Shop data refresh after authentication change failed:", error);
+      });
+    }
+  }, [authReady, authUser?.id]);
 
   return (
     <QueryClientProvider client={queryClient}>
