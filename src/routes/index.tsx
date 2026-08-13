@@ -29,17 +29,7 @@ const isActive = (section: CmsSection) => {
 function Index() {
   const sections = useShopStore((s) => [...s.cmsSections].sort((a, b) => a.order - b.order));
   const cms = sections.length ? sections.filter(isActive) : null;
-  const byType = (type: CmsSection["type"]) => cms?.find((section) => section.type === type);
-
-  return (
-    <div className="min-h-screen bg-background">
-      <SiteHeader />
-      <main>
-        {!cms ? <><HeroSection /><CategorySection /><FeaturedProducts /><OffersSection /><AboutSection /></> : cms.map((section) => <CmsRender key={section.id} section={section} />)}
-      </main>
-      <SiteFooter />
-    </div>
-  );
+  return <div className="min-h-screen bg-background"><SiteHeader /><main>{!cms ? <><HeroSection /><CategorySection /><FeaturedProducts /><OffersSection /><AboutSection /></> : cms.map((section) => <CmsRender key={section.id} section={section} />)}</main><SiteFooter /></div>;
 }
 
 function CmsRender({ section }: { section: CmsSection }) {
