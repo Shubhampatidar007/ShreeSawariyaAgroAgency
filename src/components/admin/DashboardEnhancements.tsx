@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowDown, ArrowUp, Eye, EyeOff, Package, Percent, Settings2, TrendingUp, WalletCards } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { useShopStore } from "@/lib/shop-store";
-import { formatIndianCompactCurrency, formatIndianCurrency, formatIndianQuantity } from "@/lib/indian-format";
+import { formatIndianCompactCurrency, formatIndianQuantity } from "@/lib/indian-format";
 
 type InsightId = "top-profit" | "margin" | "outstanding" | "stock-value";
 
@@ -114,7 +115,7 @@ export function DashboardEnhancements() {
   const outstanding = customers.reduce((sum, customer) => sum + customer.currentDue, 0);
   const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
 
-  const values: Record<InsightId, { label: string; title: string; value: string; helper: string; icon: typeof TrendingUp; accent: string }> = {
+  const values: Record<InsightId, { label: string; title: string; value: string; helper: string; icon: LucideIcon; accent: string }> = {
     "top-profit": {
       label: "Top profit product",
       title: topProduct?.name ?? "No sales yet",
