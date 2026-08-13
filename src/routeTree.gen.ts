@@ -17,6 +17,7 @@ import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminCmsRouteImport } from './routes/admin.cms'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminRemindersRouteImport } from './routes/admin.reminders'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
@@ -72,6 +73,11 @@ const AdminCmsRoute = AdminCmsRouteImport.update({
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProfileRoute = AdminProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminRemindersRoute = AdminRemindersRouteImport.update({
@@ -168,6 +174,7 @@ export interface FileRoutesByFullPath {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
@@ -193,6 +200,7 @@ export interface FileRoutesByTo {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
@@ -220,6 +228,7 @@ export interface FileRoutesById {
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
@@ -248,6 +257,7 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/cms'
     | '/admin/payments'
+    | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
     | '/admin/sales'
@@ -273,6 +283,7 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/cms'
     | '/admin/payments'
+    | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
     | '/admin/sales'
@@ -299,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin/backups'
     | '/admin/cms'
     | '/admin/payments'
+    | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
     | '/admin/sales'
@@ -379,6 +391,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/profile': {
+      id: '/admin/profile'
+      path: '/profile'
+      fullPath: '/admin/profile'
+      preLoaderRoute: typeof AdminProfileRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/reminders': {
@@ -502,6 +521,7 @@ interface AdminRouteChildren {
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminCmsRoute: typeof AdminCmsRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminProfileRoute: typeof AdminProfileRoute
   AdminRemindersRoute: typeof AdminRemindersRoute
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSalesRoute: typeof AdminSalesRoute
@@ -527,6 +547,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminBackupsRoute: AdminBackupsRoute,
   AdminCmsRoute: AdminCmsRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminProfileRoute: AdminProfileRoute,
   AdminRemindersRoute: AdminRemindersRoute,
   AdminReportsRoute: AdminReportsRoute,
   AdminSalesRoute: AdminSalesRoute,
