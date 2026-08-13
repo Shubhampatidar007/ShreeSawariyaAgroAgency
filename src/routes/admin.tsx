@@ -35,7 +35,7 @@ function AdminLayout() {
   const ready = useAuthReady();
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 900);
+    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 2800);
     return () => window.clearTimeout(timer);
   }, []);
 
