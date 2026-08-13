@@ -1,18 +1,14 @@
-import { useState , useEffect} from "react";
-import { AdminDataLoader } from "@/components/admin/AdminDataLoader";
-import { useShopStore } from "@/lib/shop-store";
-import {
-  Link,
-  Outlet,
-  createFileRoute,
-  useLocation,
-} from "@tanstack/react-router";
+import { useEffect, useState } from "react";
+import { createFileRoute, Link, Outlet, useLocation } from "@tanstack/react-router";
 import { ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { AdminSidebar } from "@/components/admin/AdminSidebar";
+import { AdminDataLoader } from "@/components/admin/AdminDataLoader";
 import { AdminHeader } from "@/components/admin/AdminHeader";
+import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
+import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
+import { useShopStore } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -32,32 +28,19 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
   const location = useLocation();
   const shopLoading = useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
 
   useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setMinimumLoaderDone(true);
-    }, 2800);
-
+    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 900);
     return () => window.clearTimeout(timer);
   }, []);
 
-if (!ready || !minimumLoaderDone) {
-  return <AdminDataLoader />;
-}
-
-if (!user || (user.role !== "admin" && user.role !== "staff")) {
-  // existing access denied UI
-}
-
-if (shopLoading || !minimumLoaderDone) {
-  return <AdminDataLoader />;
-}
-
+  if (!ready || !minimumLoaderDone || shopLoading) {
+    return <AdminDataLoader />;
+  }
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) {
     return (
@@ -89,18 +72,16 @@ if (shopLoading || !minimumLoaderDone) {
         <AdminSidebar />
       </aside>
 
-      <div className={cn("transition-[padding]", sidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
+      <div className={cn("min-h-screen transition-[padding]", sidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
         <AdminHeader onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
-               <main className="mx-auto max-w-7xl px-4 py-6 md:px-6 md:py-8">
-  <div
-    key={location.pathname}
-    className="admin-page-transition"
-  >
-    <Outlet />
-  </div>
-</main>
+        <main className="mx-auto max-w-7xl px-3 pb-24 pt-4 sm:px-4 md:px-6 md:pb-8 md:pt-8">
+          <div key={location.pathname} className="admin-page-transition">
+            <Outlet />
+          </div>
+        </main>
       </div>
 
+      <MobileAdminNav />
       <LowStockReminderPopup />
     </div>
   );
