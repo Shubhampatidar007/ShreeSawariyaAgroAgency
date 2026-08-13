@@ -97,6 +97,24 @@ export const authStore = {
     await hydrate(data.user!.id, data.user!.email ?? input.email);
     return { ok: true as const, user: user! };
   },
+  async updateProfile(input: { name: string; mobile?: string; village?: string }) {
+    if (!user) return { ok: false as const, error: "You must be signed in." };
+    const { error } = await supabase
+      .from("profiles")
+      .update({
+        full_name: input.name.trim(),
+        mobile: input.mobile?.trim() || null,
+        village: input.village?.trim() || null,
+      })
+      .eq("id", user.id);
+    if (error) return { ok: false as const, error: error.message };
+    await hydrate(user.id, user.email);
+    return { ok: true as const, user: user! };
+  },
+  async changePassword(password: string) {
+    const { error } = await supabase.auth.updateUser({ password });
+    return error ? { ok: false as const, error: error.message } : { ok: true as const };
+  },
   async logout() {
     await supabase.auth.signOut();
     user = null;
