@@ -1,4 +1,4 @@
-import { PanelLeftClose, Search } from "lucide-react";
+import { Home, PanelLeftClose, Search, UserRound } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -84,14 +84,18 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
               </div>
             </button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-52 rounded-2xl">
+          <DropdownMenuContent align="end" className="w-56 rounded-2xl">
             <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link to="/admin/settings">{t("common.profile")}</Link>
+              <Link to="/admin/profile">
+                <UserRound className="size-4" /> Profile
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/admin/settings">{t("common.settings")}</Link>
+              <Link to="/">
+                <Home className="size-4" /> Homepage
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem onSelect={() => void authStore.logout()}>
