@@ -2,15 +2,15 @@ import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
-  Area,
-  AreaChart,
   CartesianGrid,
+  Line,
+  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
-import { AlertTriangle, IndianRupee, Package, Plus, Users } from "lucide-react";
+import { AlertTriangle, ArrowUpRight, IndianRupee, Package, Plus, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,14 +21,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { PageHeader } from "@/components/admin/PageHeader";
 import { StatCard } from "@/components/admin/StatCard";
 import { useAuth } from "@/lib/auth-store";
@@ -57,6 +49,13 @@ const addDays = (day: string, amount: number) => {
   ).padStart(2, "0")}`;
 };
 
+const formatDay = (day: string) =>
+  new Date(`${day}T00:00:00`).toLocaleDateString("en-IN", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+
 function greeting(t: (key: string) => string) {
   const hour = new Date().getHours();
   if (hour < 12) return t("common.greeting.morning");
@@ -68,9 +67,12 @@ function AdminOverview() {
   const user = useAuth();
   const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
-  const { orders, customers, inventory, supplierLedger, customerLedger, payments } = useShopStore((s) => s);
+  const [salesRange, setSalesRange] = useState<"7D" | "1M" | "3M" | "1Y" | "ALL">("1M");
+  const [profitDay, setProfitDay] = useState<string | null>(null);
 
+  const { orders, customers, inventory, supplierLedger, customerLedger, payments } = useShopStore((s) => s);
   const today = isoDay(new Date().toISOString());
+
   const inventoryCostByName = useMemo(
     () => new Map(inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice])),
     [inventory],
@@ -80,7 +82,6 @@ function AdminOverview() {
     inventoryCostByName.get(productName.trim().toLowerCase()) ?? 0;
 
   const saleEntries = customerLedger.filter((entry) => (entry.entryType as string) === "sale");
-
   const todaysOrders = orders.filter((order) => isoDay(order.placedOn) === today);
   const todaysKhataSales = saleEntries.filter((entry) => isoDay(entry.date) === today);
   const todaysSales =
@@ -118,7 +119,9 @@ function AdminOverview() {
       label: t("admin.overview.stats.customers"),
       value: String(activeCustomers.length),
       helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
-      change: t("admin.overview.stats.due", { amount: formatCurrency(customers.reduce((sum, c) => sum + c.currentDue, 0)) }),
+      change: t("admin.overview.stats.due", {
+        amount: formatCurrency(customers.reduce((sum, customer) => sum + customer.currentDue, 0)),
+      }),
       trend: "flat",
       icon: Users,
     },
@@ -133,69 +136,65 @@ function AdminOverview() {
     },
   ];
 
-  const salesTrend = useMemo(() => {
-    const months: { key: string; month: string; sales: number; purchases: number }[] = [];
-    const now = new Date();
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
-      months.push({
-        key: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}`,
-        month: date.toLocaleDateString("en-IN", { month: "short" }),
-        sales: 0,
-        purchases: 0,
-      });
-    }
-    const bucket = (date: string) => months.find((month) => isoDay(date).startsWith(month.key));
-    orders.forEach((order) => {
-      const month = bucket(order.placedOn);
-      if (month) month.sales += order.total;
-    });
-    saleEntries.forEach((entry) => {
-      const month = bucket(entry.date);
-      if (month) month.sales += entry.amount;
-    });
-    supplierLedger.forEach((entry) => {
-      const month = bucket(entry.date);
-      if (month && entry.type === "purchase") month.purchases += entry.amount;
-    });
-    return months;
-  }, [orders, saleEntries, supplierLedger]);
-
-  const profitRows = useMemo(() => {
-    const daily = new Map<string, { revenue: number; cost: number }>();
+  const dailyRows = useMemo(() => {
+    const daily = new Map<string, { sales: number; purchases: number; cost: number }>();
     const ensure = (date: string) => {
-      const current = daily.get(date) ?? { revenue: 0, cost: 0 };
+      const current = daily.get(date) ?? { sales: 0, purchases: 0, cost: 0 };
       daily.set(date, current);
       return current;
     };
 
-    saleEntries.forEach((entry) => {
-      const row = ensure(isoDay(entry.date));
-      row.revenue += entry.amount;
-      row.cost += entry.quantity * getPurchasePrice(entry.product);
-    });
-
     orders.forEach((order) => {
       const row = ensure(isoDay(order.placedOn));
-      row.revenue += Math.max(order.subtotal - order.discount, 0);
+      row.sales += order.total;
       row.cost += order.items.reduce(
         (sum, item) => sum + item.quantity * getPurchasePrice(item.product),
         0,
       );
     });
 
+    saleEntries.forEach((entry) => {
+      const row = ensure(isoDay(entry.date));
+      row.sales += entry.amount;
+      row.cost += entry.quantity * getPurchasePrice(entry.product);
+    });
+
+    supplierLedger.forEach((entry) => {
+      if (entry.type !== "purchase") return;
+      const row = ensure(isoDay(entry.date));
+      row.purchases += entry.amount;
+    });
+
     const dates = [...daily.keys()].sort();
     if (dates.length === 0) return [];
 
-    const rows: { date: string; revenue: number; cost: number; profit: number }[] = [];
+    const rows: { date: string; sales: number; purchases: number; cost: number; profit: number }[] = [];
     for (let date = dates[0]; date <= dates[dates.length - 1]; date = addDays(date, 1)) {
-      const row = daily.get(date) ?? { revenue: 0, cost: 0 };
-      rows.push({ ...row, date, profit: row.revenue - row.cost });
+      const row = daily.get(date) ?? { sales: 0, purchases: 0, cost: 0 };
+      rows.push({ date, sales: row.sales, purchases: row.purchases, cost: row.cost, profit: row.sales - row.cost });
     }
     return rows;
-  }, [saleEntries, orders, inventoryCostByName]);
+  }, [orders, saleEntries, supplierLedger, inventoryCostByName]);
 
-  const overallProfit = profitRows.reduce((sum, row) => sum + row.profit, 0);
+  const salesChartRows = useMemo(() => {
+    if (dailyRows.length === 0) return [];
+    const rangeDays = { "7D": 7, "1M": 30, "3M": 90, "1Y": 365, ALL: Number.POSITIVE_INFINITY }[salesRange];
+    const rows = Number.isFinite(rangeDays) ? dailyRows.slice(-rangeDays) : dailyRows;
+    return rows.map((row) => ({
+      ...row,
+      label: new Date(`${row.date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short" }),
+    }));
+  }, [dailyRows, salesRange]);
+
+  const overallProfit = dailyRows.reduce((sum, row) => sum + row.profit, 0);
+  const selectedProfitDay = profitDay ?? today;
+  const currentProfit = dailyRows.find((row) => row.date === selectedProfitDay)?.profit ?? 0;
+  const previousProfit = useMemo(() => {
+    const previousDate = addDays(selectedProfitDay, -1);
+    return dailyRows.find((row) => row.date === previousDate)?.profit ?? 0;
+  }, [dailyRows, selectedProfitDay]);
+  const profitChange =
+    previousProfit === 0 ? (currentProfit === 0 ? 0 : 100) : ((currentProfit - previousProfit) / Math.abs(previousProfit)) * 100;
 
   return (
     <div className="space-y-6">
@@ -227,88 +226,150 @@ function AdminOverview() {
         ))}
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1fr)_340px]">
+        <ScrollReveal direction="up" distance={28} duration={700} scale={0.98} blur={2}>
+          <Card className="overflow-hidden shadow-soft">
+            <CardHeader className="gap-5 pb-3">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                <div>
+                  <CardTitle className="text-lg">Sales & Purchases</CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">Daily movement of sales revenue against inventory purchases.</p>
+                </div>
+                <div className="flex items-center gap-4">
+                  <div className="hidden text-right sm:block">
+                    <p className="text-xs text-muted-foreground">Today</p>
+                    <p className="text-lg font-semibold tracking-tight">{formatCurrency(todaysSales)}</p>
+                  </div>
+                  <Badge variant="secondary" className="rounded-full">Live data</Badge>
+                </div>
+              </div>
+              <div className="flex w-fit items-center gap-1 rounded-xl bg-muted/60 p-1">
+                {(["7D", "1M", "3M", "1Y", "ALL"] as const).map((range) => (
+                  <button
+                    key={range}
+                    type="button"
+                    onClick={() => setSalesRange(range)}
+                    className={`rounded-lg px-3 py-1.5 text-xs font-medium transition-colors ${
+                      salesRange === range ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {range}
+                  </button>
+                ))}
+              </div>
+            </CardHeader>
+            <CardContent className="h-[360px] pt-0">
+              {salesChartRows.length === 0 ? (
+                <div className="flex h-full items-center justify-center text-sm text-muted-foreground">No sales or purchase data available yet.</div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={salesChartRows} margin={{ top: 20, right: 12, left: 4, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                    <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} tickLine={false} axisLine={false} minTickGap={24} />
+                    <YAxis
+                      stroke="var(--color-muted-foreground)"
+                      fontSize={11}
+                      tickLine={false}
+                      axisLine={false}
+                      tickFormatter={(value: number) => (value >= 1000 ? `${Math.round(value / 1000)}k` : String(value))}
+                    />
+                    <Tooltip
+                      labelFormatter={(_, payload) => (payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : "")}
+                      contentStyle={{ borderRadius: 14, border: "1px solid var(--color-border)", background: "var(--color-card)", color: "var(--color-card-foreground)" }}
+                      formatter={(value: number, name: string) => [formatCurrency(value), name === "sales" ? "Sales" : "Purchases"]}
+                    />
+                    <Line type="monotone" dataKey="sales" name="sales" stroke="var(--color-chart-1)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                    <Line type="monotone" dataKey="purchases" name="purchases" stroke="var(--color-chart-3)" strokeWidth={2.5} dot={false} activeDot={{ r: 5 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
+            </CardContent>
+            <div className="flex flex-wrap items-center gap-5 border-t border-border px-6 py-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[var(--color-chart-1)]" />Sales</span>
+              <span className="flex items-center gap-2"><span className="size-2 rounded-full bg-[var(--color-chart-3)]" />Purchases</span>
+              <span className="ml-auto">{salesChartRows.length} day{salesChartRows.length === 1 ? "" : "s"} shown</span>
+            </div>
+          </Card>
+        </ScrollReveal>
+
+        <ScrollReveal direction="right" distance={24} duration={650} scale={0.98}>
+          <Card className="h-full overflow-hidden shadow-soft">
+            <CardHeader className="border-b border-border pb-4">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <CardTitle className="text-lg">Current Day Profit</CardTitle>
+                  <p className="mt-1 text-xs text-muted-foreground">Customer selling price − inventory cost</p>
+                </div>
+                <div className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${profitChange < 0 ? "border-destructive/30 text-destructive" : "border-primary/20 text-primary"}`}>
+                  {profitChange >= 0 ? "+" : ""}{profitChange.toFixed(2)}%
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6 p-6">
+              <div>
+                <p className="text-xs font-medium text-muted-foreground">{selectedProfitDay === today ? "Today" : formatDay(selectedProfitDay)}</p>
+                <div className="mt-2 flex items-end justify-between gap-3">
+                  <p className={`text-4xl font-bold tracking-tight ${currentProfit < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(currentProfit)}</p>
+                  <ArrowUpRight className={`mb-1 size-5 ${profitChange < 0 ? "rotate-90 text-destructive" : "text-primary"}`} />
+                </div>
+                <p className="mt-2 text-xs text-muted-foreground">Compared with the previous recorded day.</p>
+              </div>
+              <div className="rounded-2xl border border-border bg-muted/30 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">Day-wise profit</span>
+                  <span className="text-xs font-medium">{dailyRows.length} days</span>
+                </div>
+                <div className="mt-3 max-h-48 space-y-1 overflow-auto pr-1">
+                  {dailyRows.slice().reverse().map((row) => (
+                    <button
+                      key={row.date}
+                      type="button"
+                      onClick={() => setProfitDay(row.date)}
+                      className={`flex w-full items-center justify-between rounded-xl px-3 py-2 text-left text-xs transition-colors ${selectedProfitDay === row.date ? "bg-background shadow-sm" : "hover:bg-background/70"}`}
+                    >
+                      <span className="text-muted-foreground">{formatDay(row.date)}</span>
+                      <span className={`font-semibold ${row.profit < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(row.profit)}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="flex items-center justify-between border-t border-border pt-4">
+                <span className="text-xs text-muted-foreground">Overall gross profit</span>
+                <span className="font-semibold">{formatCurrency(overallProfit)}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </ScrollReveal>
+      </div>
+
       <ScrollReveal direction="up" distance={28} duration={700} scale={0.98} blur={2}>
         <Card className="shadow-soft">
           <CardHeader className="flex-row items-center justify-between space-y-0">
             <div>
-              <CardTitle className="text-base">{t("admin.overview.salesVsPurchases")}</CardTitle>
-              <p className="text-xs text-muted-foreground">{t("admin.overview.salesVsPurchasesSubtitle")}</p>
+              <CardTitle className="text-base">Profit history</CardTitle>
+              <p className="text-xs text-muted-foreground">Day-wise sales, inventory cost and gross profit through the latest stored record.</p>
             </div>
-            <Badge variant="secondary">{t("common.liveData")}</Badge>
+            <Badge variant="outline" className="rounded-full">{formatCurrency(overallProfit)} total</Badge>
           </CardHeader>
-          <CardContent className="h-72">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={salesTrend} margin={{ left: -12, right: 8, top: 8 }}>
-                <defs>
-                  <linearGradient id="sales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-chart-1)" stopOpacity={0.45} />
-                    <stop offset="100%" stopColor="var(--color-chart-1)" stopOpacity={0} />
-                  </linearGradient>
-                  <linearGradient id="purchases" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0%" stopColor="var(--color-chart-3)" stopOpacity={0.4} />
-                    <stop offset="100%" stopColor="var(--color-chart-3)" stopOpacity={0} />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="month" stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} />
-                <YAxis stroke="var(--color-muted-foreground)" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value: number) => `${Math.round(value / 1000)}k`} />
-                <Tooltip
-                  contentStyle={{ borderRadius: 12, border: "1px solid var(--color-border)", background: "var(--color-card)", color: "var(--color-card-foreground)" }}
-                  formatter={(value: number) => formatCurrency(value)}
-                />
-                <Area type="monotone" dataKey="sales" stroke="var(--color-chart-1)" strokeWidth={2} fill="url(#sales)" />
-                <Area type="monotone" dataKey="purchases" stroke="var(--color-chart-3)" strokeWidth={2} fill="url(#purchases)" />
-              </AreaChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-      </ScrollReveal>
-
-      <ScrollReveal direction="up" distance={28} duration={700} scale={0.98} blur={2}>
-        <Card className="shadow-soft overflow-hidden">
-          <CardHeader className="flex flex-col gap-4 border-b border-border sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <CardTitle className="text-base">Overall profit</CardTitle>
-              <p className="text-xs text-muted-foreground">Estimated gross profit = sales revenue − inventory cost, using the current purchase price for each product.</p>
+          <CardContent className="overflow-x-auto">
+            <div className="grid min-w-[620px] grid-cols-[1.2fr_1fr_1fr_1fr] gap-4 border-b border-border px-2 pb-3 text-xs font-medium text-muted-foreground">
+              <span>Date</span><span className="text-right">Sales</span><span className="text-right">Inventory cost</span><span className="text-right">Profit</span>
             </div>
-            <div className="rounded-2xl border border-border bg-muted/40 px-5 py-3 text-right">
-              <p className="text-xs text-muted-foreground">Total gross profit</p>
-              <p className={`text-2xl font-bold tracking-tight ${overallProfit < 0 ? "text-destructive" : "text-primary"}`}>
-                {formatCurrency(overallProfit)}
-              </p>
+            <div className="min-w-[620px] divide-y divide-border">
+              {dailyRows.slice().reverse().map((row) => (
+                <button
+                  key={row.date}
+                  type="button"
+                  onClick={() => setProfitDay(row.date)}
+                  className="grid w-full grid-cols-[1.2fr_1fr_1fr_1fr] gap-4 px-2 py-3 text-sm transition-colors hover:bg-muted/40"
+                >
+                  <span className="text-left font-medium">{formatDay(row.date)}</span>
+                  <span className="text-right">{formatCurrency(row.sales)}</span>
+                  <span className="text-right text-muted-foreground">{formatCurrency(row.cost)}</span>
+                  <span className={`text-right font-semibold ${row.profit < 0 ? "text-destructive" : "text-foreground"}`}>{formatCurrency(row.profit)}</span>
+                </button>
+              ))}
             </div>
-          </CardHeader>
-          <CardContent className="p-0">
-            {profitRows.length === 0 ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">No sales data available yet.</div>
-            ) : (
-              <div className="max-h-[420px] overflow-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead className="text-right">Sales</TableHead>
-                      <TableHead className="text-right">Inventory cost</TableHead>
-                      <TableHead className="text-right">Profit</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {profitRows.map((row) => (
-                      <TableRow key={row.date}>
-                        <TableCell className="font-medium">
-                          {new Date(`${row.date}T00:00:00`).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrency(row.revenue)}</TableCell>
-                        <TableCell className="text-right text-muted-foreground">{formatCurrency(row.cost)}</TableCell>
-                        <TableCell className={`text-right font-semibold ${row.profit < 0 ? "text-destructive" : "text-primary"}`}>
-                          {formatCurrency(row.profit)}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            )}
           </CardContent>
         </Card>
       </ScrollReveal>
@@ -325,7 +386,7 @@ function AdminOverview() {
             <SummaryRow label={t("admin.overview.dayCloseAmountCollected")} value={formatCurrency(todaysCollected)} />
             <SummaryRow label={t("admin.overview.dayCloseOutstanding")} value={formatCurrency(Math.max(todaysSales - todaysCollected, 0))} />
             <SummaryRow label={t("admin.overview.dayClosePaymentsRecorded")} value={String(payments.filter((payment) => isoDay(payment.date) === today).length)} />
-            <SummaryRow label="Today's gross profit" value={formatCurrency(profitRows.find((row) => row.date === today)?.profit ?? 0)} />
+            <SummaryRow label="Today's gross profit" value={formatCurrency(dailyRows.find((row) => row.date === today)?.profit ?? 0)} />
           </div>
           <Button className="w-full rounded-full" onClick={() => window.print()}>{t("admin.overview.printSummary")}</Button>
         </DialogContent>
