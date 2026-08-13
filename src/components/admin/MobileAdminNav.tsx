@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LayoutDashboard, Menu, Package, ReceiptIndianRupee, Users } from "lucide-react";
+import { LayoutDashboard, Menu, Package, Receipt, Users } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
@@ -7,7 +7,7 @@ import { cn } from "@/lib/utils";
 
 const primaryItems = [
   { to: "/admin", label: "Home", icon: LayoutDashboard },
-  { to: "/admin/sales", label: "Sales", icon: ReceiptIndianRupee },
+  { to: "/admin/sales", label: "Sales", icon: Receipt },
   { to: "/admin/inventory", label: "Stock", icon: Package },
   { to: "/admin/customers", label: "Customers", icon: Users },
 ] as const;
