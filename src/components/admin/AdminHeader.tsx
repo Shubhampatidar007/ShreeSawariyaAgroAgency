@@ -1,4 +1,4 @@
-import { Bell, PanelLeftClose, Search } from "lucide-react";
+import { PanelLeftClose, Search } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
