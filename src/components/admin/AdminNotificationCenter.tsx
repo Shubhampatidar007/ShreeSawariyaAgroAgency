@@ -3,7 +3,7 @@ import { AlertTriangle, Bell, CheckCircle2, CircleAlert, Info } from "lucide-rea
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useShopStore } from "@/lib/shop-store";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIndianCompactCurrency, formatIndianDate } from "@/lib/indian-format";
@@ -22,6 +22,8 @@ const iconClassByType = {
   success: "text-success bg-success/10",
   info: "text-primary bg-primary/10",
 } as const;
+
+type NotificationType = keyof typeof iconByType;
 
 export function AdminNotificationCenter() {
   const { notifications, inventory, customers } = useShopStore((state) => state);
@@ -139,11 +141,12 @@ export function AdminNotificationCenter() {
             <div className="px-4 py-10 text-center text-sm text-muted-foreground">No notifications yet.</div>
           ) : (
             items.slice(0, 12).map((notification) => {
-              const Icon = iconByType[notification.type];
+              const safeType: NotificationType = notification.type in iconByType ? notification.type as NotificationType : "info";
+              const Icon = iconByType[safeType];
               const read = notification.isRead || localRead.has(notification.id);
               const content = (
                 <div className={`flex gap-3 rounded-xl p-3 transition-colors ${read ? "opacity-65 hover:opacity-100" : "bg-muted/40"}`}>
-                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconClassByType[notification.type]}`}>
+                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconClassByType[safeType]}`}>
                     <Icon className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
