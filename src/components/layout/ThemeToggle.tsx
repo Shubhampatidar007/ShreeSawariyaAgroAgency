@@ -13,7 +13,11 @@ export function ThemeToggle({ className }: { className?: string }) {
       aria-label="Toggle colour theme"
       onClick={toggleTheme}
     >
-      {theme === "dark" ? <Sun className="size-5" /> : <Moon className="size-5" />}
+      {theme === "dark" ? (
+        <Sun className="size-5 transition-transform duration-300 hover:rotate-12" />
+      ) : (
+        <Moon className="size-5 transition-transform duration-300 hover:-rotate-12" />
+      )}
     </Button>
   );
 }
