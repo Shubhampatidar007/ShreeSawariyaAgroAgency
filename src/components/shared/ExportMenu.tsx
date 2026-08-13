@@ -79,22 +79,41 @@ function exportCsv(tables: ExportTable[], filename: string) {
 }
 
 function escapeHtml(value: string) {
-  return value.replace(/[&<>\"]/g, (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '\"': "&quot;" })[character] ?? character);
+  const entities: Record<string, string> = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+  };
+  return value.replace(/[&<>\"]/g, (character) => entities[character] ?? character);
+}
+
+function renderTables(tables: ExportTable[]) {
+  return tables
+    .map(
+      (rows) =>
+        `<table>${rows
+          .map(
+            (row, rowIndex) =>
+              `<tr>${row
+                .map((cell) => (rowIndex === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`))
+                .join("")}</tr>`,
+          )
+          .join("")}</table>`,
+    )
+    .join("");
 }
 
 function exportExcel(tables: ExportTable[], title: string, filename: string) {
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif}h1{font-size:18px}table{border-collapse:collapse;margin:0 0 24px}th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}th{font-weight:700;background:#f3f4f6}</style></head><body><h1>${escapeHtml(title)}</h1>${tables.map((rows) => `<table>${rows.map((row, rowIndex) => `<tr>${row.map((cell) => rowIndex === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table>`).join("")}</body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>body{font-family:Arial,sans-serif}h1{font-size:18px}table{border-collapse:collapse;margin:0 0 24px}th,td{border:1px solid #d1d5db;padding:6px 8px;text-align:left}th{font-weight:700;background:#f3f4f6}</style></head><body><h1>${escapeHtml(title)}</h1>${renderTables(tables)}</body></html>`;
   downloadBlob(`\uFEFF${html}`, `${filename}.xls`, "application/vnd.ms-excel;charset=utf-8");
 }
 
 function exportPdf(tables: ExportTable[], title: string) {
   const printWindow = window.open("", "_blank", "noopener,noreferrer");
-  if (!printWindow) {
-    toast.error("Unable to open the PDF print window. Please allow pop-ups and try again.");
-    return;
-  }
+  if (!printWindow) return false;
 
-  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@page{size:auto;margin:14mm}body{font-family:Arial,sans-serif;color:#111827}h1{font-size:20px;margin:0 0 6px}p{font-size:11px;color:#6b7280;margin:0 0 18px}table{width:100%;border-collapse:collapse;margin:0 0 24px;font-size:11px}th,td{border:1px solid #d1d5db;padding:6px 7px;text-align:left;vertical-align:top}th{background:#f3f4f6;font-weight:700}tr{break-inside:avoid}</style></head><body><h1>${escapeHtml(title)}</h1><p>Exported ${escapeHtml(new Date().toLocaleString("en-IN"))}</p>${tables.map((rows) => `<table>${rows.map((row, rowIndex) => `<tr>${row.map((cell) => rowIndex === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`).join("")}</tr>`).join("")}</table>`).join("")}</body></html>`;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>${escapeHtml(title)}</title><style>@page{size:auto;margin:14mm}body{font-family:Arial,sans-serif;color:#111827}h1{font-size:20px;margin:0 0 6px}p{font-size:11px;color:#6b7280;margin:0 0 18px}table{width:100%;border-collapse:collapse;margin:0 0 24px;font-size:11px}th,td{border:1px solid #d1d5db;padding:6px 7px;text-align:left;vertical-align:top}th{background:#f3f4f6;font-weight:700}tr{break-inside:avoid}</style></head><body><h1>${escapeHtml(title)}</h1><p>Exported ${escapeHtml(new Date().toLocaleString("en-IN"))}</p>${renderTables(tables)}</body></html>`;
 
   printWindow.document.open();
   printWindow.document.write(html);
@@ -104,6 +123,7 @@ function exportPdf(tables: ExportTable[], title: string) {
     printWindow.print();
     printWindow.close();
   }, 250);
+  return true;
 }
 
 export function ExportMenu({ label, size = "sm" }: { label?: string; size?: "sm" | "default" }) {
@@ -126,8 +146,13 @@ export function ExportMenu({ label, size = "sm" }: { label?: string; size?: "sm"
     try {
       if (format === "CSV") exportCsv(tables, filename);
       if (format === "Excel") exportExcel(tables, title, filename);
-      if (format === "PDF") exportPdf(tables, title);
-      toast.success(`${format} export created`, { description: `${tables.length} table${tables.length === 1 ? "" : "s"} exported from ${title}.` });
+      if (format === "PDF" && !exportPdf(tables, title)) {
+        toast.error("Unable to open the PDF print window. Please allow pop-ups and try again.");
+        return;
+      }
+      toast.success(`${format} export created`, {
+        description: `${tables.length} table${tables.length === 1 ? "" : "s"} exported from ${title}.`,
+      });
     } catch (error) {
       console.error("Export failed", error);
       toast.error(`${format} export failed`, { description: "Please try again." });
