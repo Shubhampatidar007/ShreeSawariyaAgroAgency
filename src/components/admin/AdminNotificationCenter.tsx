@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AlertTriangle, Bell, CheckCircle2, CircleAlert, Info, Package, WalletCards } from "lucide-react";
+import { AlertTriangle, Bell, CheckCircle2, CircleAlert, Info } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -154,11 +154,7 @@ export function AdminNotificationCenter() {
                     <p className="mt-1 text-xs leading-5 text-muted-foreground">{notification.body}</p>
                     <div className="mt-2 flex items-center justify-between gap-2">
                       <span className="text-[10px] text-muted-foreground">{formatIndianDate(notification.createdAt, { day: "2-digit", month: "short" })}</span>
-                      {!read && !notification.id.startsWith("system-") ? (
-                        <button type="button" className="text-[10px] font-semibold text-primary hover:underline" disabled={updatingId === notification.id} onClick={(event) => { event.preventDefault(); event.stopPropagation(); void markRead(notification); }}>
-                          Mark read
-                        </button>
-                      ) : null}
+                      {updatingId === notification.id ? <span className="text-[10px] text-muted-foreground">Updating…</span> : null}
                     </div>
                   </div>
                 </div>
