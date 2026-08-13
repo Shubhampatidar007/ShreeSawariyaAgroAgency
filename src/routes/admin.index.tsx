@@ -79,9 +79,7 @@ function AdminOverview() {
   const getPurchasePrice = (productName: string) =>
     inventoryCostByName.get(productName.trim().toLowerCase()) ?? 0;
 
-  const saleEntries = customerLedger.filter(
-    (entry) => (entry.entryType as string) === "sale" || (entry.entryType as string) === "purchase",
-  );
+  const saleEntries = customerLedger.filter((entry) => (entry.entryType as string) === "sale");
 
   const todaysOrders = orders.filter((order) => isoDay(order.placedOn) === today);
   const todaysKhataSales = saleEntries.filter((entry) => isoDay(entry.date) === today);
