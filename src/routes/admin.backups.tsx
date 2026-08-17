@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import {
   CloudUpload,
   DatabaseBackup,
-  FileSpreadsheet,
   GitCompare,
   Loader2,
   MapPin,
@@ -108,17 +107,6 @@ function buildExcelXml(metadata: Record<string, string>, sheets: BackupSheet[]) 
   return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Shree Sawariya Agro Agency Backup</Title><Subject>Manual shop data backup</Subject></DocumentProperties><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Bottom"/><Font ss:FontName="Aptos" ss:Size="10"/></Style></Styles><Worksheet ss:Name="Backup Info"><Table><Row><Cell><Data ss:Type="String">Field</Data></Cell><Cell><Data ss:Type="String">Value</Data></Cell></Row>${metadataRows}</Table></Worksheet>${worksheetXml}</Workbook>`;
 }
 
-function downloadFile(blob: Blob, filename: string) {
-  const url = URL.createObjectURL(blob);
-  const anchor = document.createElement("a");
-  anchor.href = url;
-  anchor.download = filename;
-  document.body.appendChild(anchor);
-  anchor.click();
-  anchor.remove();
-  window.setTimeout(() => URL.revokeObjectURL(url), 2000);
-}
-
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
   if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
@@ -137,10 +125,7 @@ async function chooseLocalBackupRoot() {
     showDirectoryPicker?: () => Promise<any>;
   }).showDirectoryPicker;
 
-  if (!picker) {
-    return null;
-  }
-
+  if (!picker) return null;
   return picker();
 }
 
@@ -208,11 +193,7 @@ async function runManualBackup(localRootHandle: any) {
     const xml = buildExcelXml(metadata, sheets);
     const blob = new Blob([xml], { type: "application/vnd.ms-excel" });
 
-    if (localRootHandle) {
-      await saveToLocalFolder(localRootHandle, blob, name, now);
-    } else {
-      downloadFile(blob, name);
-    }
+    await saveToLocalFolder(localRootHandle, blob, name, now);
 
     const { error: uploadError } = await supabase.storage
       .from("shop-backups")
@@ -229,7 +210,7 @@ async function runManualBackup(localRootHandle: any) {
     if (updateError) throw updateError;
 
     await shopStore.reload();
-    return { name, size: blob.size, rows: totalRows, year, month, localRootSelected: Boolean(localRootHandle) };
+    return { name, rows: totalRows, year, month };
   } catch (error) {
     await supabase.from("backups").update({ status: "failed" }).eq("id", backupId);
     throw error;
@@ -348,17 +329,7 @@ function BackupsPage() {
   const [localRootHandle, setLocalRootHandle] = useState<any>(null);
   const [selectingFolder, setSelectingFolder] = useState(false);
 
-  const completedBackups = useMemo(
-    () => backups.filter((backup) => backup.status === "completed"),
-    [backups],
-  );
-
   const today = new Date().toISOString().slice(0, 10);
-  const backupDates = useMemo(() => {
-    return new Set(
-      completedBackups.map((backup) => new Date(backup.createdAt).toISOString().slice(0, 10)),
-    );
-  }, [completedBackups]);
 
   const chooseFolder = async () => {
     if (selectingFolder) return;
@@ -366,7 +337,7 @@ function BackupsPage() {
     try {
       const handle = await chooseLocalBackupRoot();
       if (!handle) {
-        toast.error("Your browser does not support selecting a local folder. Downloads will be used instead.");
+        toast.error("Your browser does not support selecting a local folder. A supported Chromium browser is required for structured local storage.");
         return;
       }
       setLocalRootHandle(handle);
@@ -539,9 +510,9 @@ function BackupsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Choose a local parent folder once in this browser session. The backup creates this structure automatically:</p>
+            <p>Choose a local parent folder in a supported Chromium browser. The backup creates this structure automatically:</p>
             <pre className="overflow-x-auto rounded-xl bg-muted p-3 text-xs leading-5 text-foreground">{`Shree-Sawariya-Agro-Agency/\n  2026/\n    August/\n      Shree-Sawariya-Agro-Agency-....xls`}</pre>
-            <p>{localRootHandle ? "Connected. Future backups in this session will use the structured folders." : "Not connected yet. The first Run backup now will ask you to choose the parent folder."}</p>
+            <p>{localRootHandle ? "Connected. Future backups in this session will use the structured folders." : "Not connected yet. Run backup will ask you to choose the parent folder."}</p>
           </CardContent>
         </Card>
       </div>
@@ -582,25 +553,23 @@ function BackupsPage() {
 
               {comparison.additions.length ? (
                 <div className="space-y-4">
-                  {comparison.additions.map((sheet) => (
-                    <div key={sheet.table} className="overflow-hidden rounded-xl border bg-background">
-                      <div className="flex items-center justify-between border-b px-4 py-3">
-                        <p className="text-sm font-semibold">{sheet.table}</p>
-                        <Badge variant="secondary">{sheet.rows.length} new</Badge>
-                      </div>
-                      <div className="max-h-80 overflow-auto">
-                        <Table>
-                          <TableHeader>
-                            <TableRow>
-                              {Array.from(new Set(sheet.rows.flatMap((row) => Object.keys(row)))).map((column) => (
-                                <TableHead key={column}>{column}</TableHead>
-                              ))}
-                            </TableRow>
-                          </TableHeader>
-                          <TableBody>
-                            {sheet.rows.map((row, rowIndex) => {
-                              const columns = Array.from(new Set(sheet.rows.flatMap((item) => Object.keys(item))));
-                              return (
+                  {comparison.additions.map((sheet) => {
+                    const columns = Array.from(new Set(sheet.rows.flatMap((row) => Object.keys(row))));
+                    return (
+                      <div key={sheet.table} className="overflow-hidden rounded-xl border bg-background">
+                        <div className="flex items-center justify-between border-b px-4 py-3">
+                          <p className="text-sm font-semibold">{sheet.table}</p>
+                          <Badge variant="secondary">{sheet.rows.length} new</Badge>
+                        </div>
+                        <div className="max-h-80 overflow-auto">
+                          <Table>
+                            <TableHeader>
+                              <TableRow>
+                                {columns.map((column) => <TableHead key={column}>{column}</TableHead>)}
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {sheet.rows.map((row, rowIndex) => (
                                 <TableRow key={`${sheet.table}-${rowIndex}`}>
                                   {columns.map((column) => (
                                     <TableCell key={column} className="max-w-[260px] whitespace-nowrap text-xs">
@@ -608,13 +577,13 @@ function BackupsPage() {
                                     </TableCell>
                                   ))}
                                 </TableRow>
-                              );
-                            })}
-                          </TableBody>
-                        </Table>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               ) : (
                 <div className="rounded-xl border bg-background p-5 text-center text-sm text-muted-foreground">
