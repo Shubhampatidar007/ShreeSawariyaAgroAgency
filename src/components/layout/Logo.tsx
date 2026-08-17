@@ -9,7 +9,12 @@ type LogoProps = {
   inverted?: boolean;
 };
 
-export function Logo({ to = "/", className, subtitle = "Shree Sawariya Agro Agncy", inverted }: LogoProps) {
+export function Logo({
+  to = "/",
+  className,
+  subtitle = "Agriculture Shop Management",
+  inverted,
+}: LogoProps) {
   return (
     <Link to={to} className={cn("flex items-center gap-2.5", className)}>
       <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
@@ -22,7 +27,7 @@ export function Logo({ to = "/", className, subtitle = "Shree Sawariya Agro Agnc
             inverted ? "text-sidebar-foreground" : "text-foreground",
           )}
         >
-          Shree Sawariya Agro Agncy
+          Shree Sawariya Agro Agency
         </span>
         <span
           className={cn(
