@@ -56,7 +56,7 @@ REVOKE ALL ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon,
 REVOKE ALL ON FUNCTION public.is_staff(uuid) FROM PUBLIC, anon, authenticated;
 
 -- Explicit Data API grants: anonymous users only need public catalogue/CMS reads.
-REVOKE SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public FROM anon;
+REVOKE ALL ON ALL TABLES IN SCHEMA public FROM anon;
 GRANT SELECT ON public.products, public.cms_sections TO anon;
 
 -- Keep authenticated access subject to RLS, but make the grant intentional.
