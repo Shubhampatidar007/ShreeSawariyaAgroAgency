@@ -51,7 +51,6 @@ END;
 $$;
 
 -- The public helper functions are no longer part of the Data API surface.
--- SECURITY DEFINER business RPCs can still call them as their definer.
 REVOKE ALL ON FUNCTION public.has_role(uuid, public.app_role) FROM PUBLIC, anon, authenticated;
 REVOKE ALL ON FUNCTION public.is_staff(uuid) FROM PUBLIC, anon, authenticated;
 
@@ -65,18 +64,36 @@ GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO authentic
 -- Internal / maintenance RPCs must not be directly callable through the Data API.
 REVOKE ALL ON FUNCTION public.cleanup_expired_zero_stock_inventory() FROM PUBLIC, anon, authenticated;
 
--- Business mutation RPCs are authenticated-only and retain their server-side checks.
+-- Business mutation RPCs are authenticated-only.
 REVOKE ALL ON FUNCTION public.create_khata_sale(uuid, jsonb, numeric, text, date, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.create_khata_sale(uuid, jsonb, numeric, text, date, text) TO authenticated;
-
 REVOKE ALL ON FUNCTION public.record_khata_payment(uuid, numeric, text, date, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_khata_payment(uuid, numeric, text, date, text) TO authenticated;
-
 REVOKE ALL ON FUNCTION public.record_supplier_payment(uuid, numeric, text, date, text, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_supplier_payment(uuid, numeric, text, date, text, text) TO authenticated;
-
 REVOKE ALL ON FUNCTION public.record_supplier_purchase(uuid, text, numeric, text, numeric, numeric, date, numeric, text) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.record_supplier_purchase(uuid, text, numeric, text, numeric, numeric, date, numeric, text) TO authenticated;
+
+-- Convert exposed mutation RPCs to SECURITY INVOKER so RLS remains the final authorization boundary.
+DO $$
+DECLARE
+  fn record;
+  definition text;
+BEGIN
+  FOR fn IN
+    SELECT p.oid
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid = p.pronamespace
+    WHERE n.nspname = 'public'
+      AND p.proname IN ('create_khata_sale','record_khata_payment','record_supplier_payment','record_supplier_purchase')
+  LOOP
+    definition := pg_get_functiondef(fn.oid);
+    definition := replace(definition, 'SECURITY DEFINER', 'SECURITY INVOKER');
+    definition := replace(definition, 'public.is_staff(auth.uid())', '(select private.is_staff())');
+    EXECUTE definition;
+  END LOOP;
+END;
+$$;
 
 -- Prevent future public-schema objects from becoming accidentally reachable.
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE SELECT, INSERT, UPDATE, DELETE ON TABLES FROM PUBLIC, anon, authenticated;
