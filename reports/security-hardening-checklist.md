@@ -9,7 +9,7 @@ Based on the supplied **Threat-by-Threat Security Audit & Remediation Runbook** 
 - [x] 3. Privilege escalation via fake admin flags — `user_roles` is not client-writable through its policy; new sign-ups now always receive `customer`, removing first-user automatic admin promotion.
 - [x] 4. SQL injection — reviewed the security-sensitive RPCs exposed by the project; no dynamic SQL concatenation was found in the inspected mutation functions. Supabase client table calls are parameterized.
 - [x] 5. XSS — server CSP, frame restrictions, and content-type protections added. No `dangerouslySetInnerHTML` occurrence was returned by the available GitHub code search; repository-wide static search could not be independently completed because GitHub reported an incomplete code-search index.
-- [x] 6. CSRF — browser data mutations use Supabase bearer authorization rather than an application-managed cookie-only session; security headers now add frame/form restrictions.
+- [x] 6. CSRF — existing TanStack CSRF middleware was preserved and security headers now add frame/form restrictions.
 - [x] 7. File uploads / storage — live buckets checked: `product-images` is intentionally public with a 1 MiB limit and image-only MIME allowlist; `shop-backups` is private. Storage write/read policies are staff-only.
 - [x] 8. Broken authentication / brute force — application code does not expose a password-handling backend endpoint. Supabase Auth leaked-password protection remains disabled and login rate-limit/CAPTCHA configuration could not be changed through the available connector; this is an external configuration follow-up.
 - [x] 9. Session & token exposure — no service-role key is shipped to the frontend. The browser Supabase client currently uses `localStorage` for session persistence, which remains an architectural hardening item if strict httpOnly-cookie storage is required.
@@ -41,7 +41,7 @@ Based on the supplied **Threat-by-Threat Security Audit & Remediation Runbook** 
 - [x] Anonymous Data API grants reduced to intended public catalogue/CMS reads.
 - [x] Internal staff helper moved to the non-exposed `private` schema.
 - [x] Security-definer helper functions removed from the public API surface.
-- [x] Mutation RPCs restricted to authenticated callers and retain server-side authorization checks.
+- [x] Mutation RPCs restricted to authenticated callers and converted to `SECURITY INVOKER` so RLS remains the authorization boundary.
 - [x] New-user role bootstrap changed to customer-only.
 - [x] Storage bucket visibility and upload constraints checked.
 - [x] No Edge Functions currently deployed.
@@ -69,6 +69,6 @@ Based on the supplied **Threat-by-Threat Security Audit & Remediation Runbook** 
 
 ## Verification Notes
 
-- Live Supabase project was checked after applying the hardening migration.
-- The security advisor no longer reports anonymous execution of the maintenance/security helper functions; remaining warnings are the four authenticated mutation RPCs that intentionally use `SECURITY DEFINER` and are explicitly authenticated-only.
+- Live Supabase project was checked after applying the hardening migrations.
+- Security Advisor now reports only one remaining warning: Supabase Auth leaked-password protection is disabled. The four mutation RPCs were converted to `SECURITY INVOKER`, anonymous execution was revoked, and staff authorization is enforced through the non-exposed `private.is_staff()` helper plus RLS.
 - The supplied runbook requires TEST → FIX → RE-TEST. Deployment-only items are left explicitly unchecked rather than being represented as falsely verified.
