@@ -130,7 +130,11 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const authReady = useAuthReady();
   const authUser = useAuth();
-  const previousUserId = useRef<string | null>(null);
+  // `undefined` means the auth lifecycle has not been observed yet.
+  // `null` is a real state: auth was ready and there was no signed-in user.
+  // This distinction prevents the first login from being mistaken for the
+  // initial auth render, which previously left the admin store at zero values.
+  const previousUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     initTheme();
@@ -143,7 +147,7 @@ function RootComponent() {
     if (!authReady) return;
 
     const currentUserId = authUser?.id ?? null;
-    const isFirstReadyRender = previousUserId.current === null;
+    const isFirstReadyRender = previousUserId.current === undefined;
     const userChanged = !isFirstReadyRender && previousUserId.current !== currentUserId;
 
     previousUserId.current = currentUserId;
@@ -155,6 +159,9 @@ function RootComponent() {
       return;
     }
 
+    // A login changes the authenticated Supabase session after the initial
+    // public render. Reload the shop data with the new user's RLS context
+    // before/while the admin route is rendered, so no restart is required.
     if (userChanged && currentUserId) {
       void loadShopData().catch((error) => {
         console.error("Shop data refresh after authentication change failed:", error);
