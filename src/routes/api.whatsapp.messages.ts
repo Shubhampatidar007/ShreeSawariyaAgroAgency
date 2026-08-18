@@ -31,8 +31,6 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
           );
         }
 
-        // Demo mode intentionally supports one configured WhatsApp recipient.
-        // The Meta number is never accepted from the browser as the destination.
         const validRecipients = payload.recipients.filter(
           (recipient) => Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
         );
@@ -44,42 +42,13 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
               mode: "live",
               acceptedCount: 0,
               skippedCount: payload.recipients.length,
-              note: "The current demo WhatsApp setup allows exactly one configured recipient.",
+              note: "The current demo WhatsApp setup allows exactly one recipient.",
             },
             400,
           );
         }
 
         const recipient = validRecipients[0];
-        const configuredRecipient = process.env.WHATSAPP_RECIPIENT_PHONE?.replace(/\D/g, "");
-        const selectedRecipient = recipient.mobile.replace(/\D/g, "");
-
-        if (!configuredRecipient) {
-          return json(
-            {
-              ok: false,
-              mode: "live",
-              acceptedCount: 0,
-              skippedCount: 1,
-              note: "WHATSAPP_RECIPIENT_PHONE is not configured on the server.",
-            },
-            503,
-          );
-        }
-
-        if (configuredRecipient !== selectedRecipient) {
-          return json(
-            {
-              ok: false,
-              mode: "live",
-              acceptedCount: 0,
-              skippedCount: 1,
-              note: "The selected recipient does not match the configured demo WhatsApp recipient.",
-            },
-            403,
-          );
-        }
-
         const reminderTitle =
           payload.kind === "due-reminder"
             ? "WhatsApp due reminder"
@@ -91,6 +60,7 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
           const result = await sendWhatsAppText({
             name: recipient.name,
             due: recipient.due,
+            mobile: recipient.mobile,
             message: payload.message,
           });
 
