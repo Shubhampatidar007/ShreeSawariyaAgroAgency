@@ -1,39 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-function isNewSupabaseApiKey(value: string): boolean {
-  return value.startsWith('sb_publishable_') || value.startsWith('sb_secret_');
-}
-
-function createSupabaseFetch(supabaseKey: string): typeof fetch {
-  return (input, init) => {
-    const headers = new Headers(
-      typeof Request !== 'undefined' && input instanceof Request ? input.headers : undefined,
-    );
-
-    if (init?.headers) {
-      new Headers(init.headers).forEach((value, key) => headers.set(key, value));
-    }
-
-    // New Supabase API keys are opaque strings, not bearer JWTs.
-    if (isNewSupabaseApiKey(supabaseKey) && headers.get('Authorization') === `Bearer ${supabaseKey}`) {
-      headers.delete('Authorization');
-    }
-
-    headers.set('apikey', supabaseKey);
-    return fetch(input, { ...init, headers });
-  };
-}
-
-// These are Supabase's browser-safe project identifiers.
-// Environment variables still take priority when configured.
+// Browser-safe Supabase project configuration.
+// Environment variables take priority; the public fallback keeps the local/GitHub
+// build connected when no .env file is present.
 const DEFAULT_SUPABASE_URL = 'https://yqaiffjxprmwerdoufke.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i';
 
 function createSupabaseClient() {
-  // Browser/Vite: VITE_* variables are replaced at build time.
-  // The public fallback keeps the GitHub-hosted build functional when no .env file is present.
-  // Server/SSR fallback: process.env variables are available at runtime.
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
     (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
@@ -45,9 +19,6 @@ function createSupabaseClient() {
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
-    global: {
-      fetch: createSupabaseFetch(SUPABASE_PUBLISHABLE_KEY),
-    },
     auth: {
       storage: typeof window !== 'undefined' ? localStorage : undefined,
       persistSession: true,
@@ -58,8 +29,6 @@ function createSupabaseClient() {
 
 let _supabase: ReturnType<typeof createSupabaseClient> | undefined;
 
-// Import the supabase client like this:
-// import { supabase } from '@/integrations/supabase/client';
 export const supabase = new Proxy({} as ReturnType<typeof createSupabaseClient>, {
   get(_, prop, receiver) {
     if (!_supabase) _supabase = createSupabaseClient();
