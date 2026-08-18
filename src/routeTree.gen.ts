@@ -30,6 +30,7 @@ import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.
 import { Route as AdminProductsPublishRouteImport } from './routes/admin.products.publish'
 import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
 import { Route as AdminSuppliersSupplierIdRouteImport } from './routes/admin.suppliers.$supplierId'
+import { Route as ApiWhatsappMessagesRouteImport } from './routes/api.whatsapp.messages'
 import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
 import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
 import { Route as AdminKhataCustomersCustomerIdRouteImport } from './routes/admin.khata.customers.$customerId'
@@ -141,6 +142,11 @@ const AdminSuppliersSupplierIdRoute =
     path: '/suppliers/$supplierId',
     getParentRoute: () => AdminRoute,
   } as any)
+const ApiWhatsappMessagesRoute = ApiWhatsappMessagesRouteImport.update({
+  id: '/api/whatsapp/messages',
+  path: '/api/whatsapp/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminCustomersCustomerIdIndexRoute =
   AdminCustomersCustomerIdIndexRouteImport.update({
     id: '/customers/$customerId/',
@@ -184,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
   '/admin/inventory': typeof AdminInventoryIndexRoute
   '/admin/products': typeof AdminProductsIndexRoute
@@ -238,6 +246,7 @@ export interface FileRoutesById {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
   '/admin/products/': typeof AdminProductsIndexRoute
@@ -267,6 +276,7 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
+    | '/api/whatsapp/messages'
     | '/admin/customers/'
     | '/admin/inventory/'
     | '/admin/products/'
@@ -293,6 +303,7 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
+    | '/api/whatsapp/messages'
     | '/admin/customers'
     | '/admin/inventory'
     | '/admin/products'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
+    | '/api/whatsapp/messages'
     | '/admin/customers/'
     | '/admin/inventory/'
     | '/admin/products/'
@@ -333,6 +345,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRouteWithChildren
+  ApiWhatsappMessagesRoute: typeof ApiWhatsappMessagesRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -484,6 +497,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuppliersSupplierIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/api/whatsapp/messages': {
+      id: '/api/whatsapp/messages'
+      path: '/api/whatsapp/messages'
+      fullPath: '/api/whatsapp/messages'
+      preLoaderRoute: typeof ApiWhatsappMessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin/customers/$customerId/': {
       id: '/admin/customers/$customerId/'
       path: '/customers/$customerId'
@@ -572,6 +592,7 @@ const AdminRouteWithChildren = AdminRoute._addFileChildren(AdminRouteChildren)
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRouteWithChildren,
+  ApiWhatsappMessagesRoute: ApiWhatsappMessagesRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
