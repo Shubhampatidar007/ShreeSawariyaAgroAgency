@@ -1,4 +1,4 @@
-export type WhatsAppMessageKind = "due-reminder" | "receipt" | "custom";
+export type WhatsAppMessageKind = "due-reminder" | "purchase-summary" | "custom";
 
 export type WhatsAppRecipient = {
   id: string;
@@ -7,14 +7,12 @@ export type WhatsAppRecipient = {
   due: number;
   village: string;
   lastPurchase: string;
-  receiptId?: string;
 };
 
 export type WhatsAppSendRequest = {
   kind: WhatsAppMessageKind;
   recipients: WhatsAppRecipient[];
   message: string;
-  receiptMode?: "latest" | "selected";
 };
 
 export type WhatsAppSendResponse = {
@@ -31,13 +29,13 @@ export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<W
     (recipient) => Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
   );
 
-  if (validRecipients.length !== 1) {
+  if (validRecipients.length === 0) {
     return {
       ok: false,
       mode: "live",
       acceptedCount: 0,
       skippedCount: payload.recipients.length,
-      note: "Exactly one WhatsApp recipient must be selected for the current live setup.",
+      note: "Select at least one customer with a WhatsApp number.",
     };
   }
 
