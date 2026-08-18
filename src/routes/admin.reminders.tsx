@@ -17,12 +17,12 @@ const messagePresets: Record<WhatsAppMessageKind, { label: string; description: 
   "due-reminder": {
     label: "Due reminder",
     description: "Share the customer's current outstanding amount.",
-    message: "Hello {name}, your current outstanding amount with Shree Sawariya Agro Agency is {due}. Please contact us if you have already paid. Thank you.",
+    message: "Hello {name},\n\nThis is a quick account update from Shree Sawariya Agro Agency.\n\nCurrent outstanding: {due}\n\nIf you have already made the payment, please ignore this message or contact us for confirmation.\n\nThank you,\nShree Sawariya Agro Agency",
   },
   "purchase-summary": {
     label: "Total amount record",
     description: "Share current purchase plus the customer's payment history.",
-    message: "Hello {name}, here is your purchase record from Shree Sawariya Agro Agency. Total purchases: {totalPurchase}. Total paid: {totalPaid}. Current due: {due}. Last purchase: {lastPurchase}.",
+    message: "Hello {name},\n\nHere is your account summary from Shree Sawariya Agro Agency:\n\nTotal purchases: {totalPurchase}\nTotal paid: {totalPaid}\nCurrent due: {due}\nLast purchase: {lastPurchase}\n\nFor any clarification, please contact us.\n\nThank you,\nShree Sawariya Agro Agency",
   },
   custom: {
     label: "Custom message",
@@ -145,7 +145,12 @@ function RemindersPage() {
     : null;
 
   const send = async () => {
-    const targets = previewCustomer ? [selectedRecipient].filter(Boolean) as WhatsAppRecipient[] : selectedCustomers.map((customer) => recipients.find((recipient) => recipient.id === customer.id)).filter(Boolean) as WhatsAppRecipient[];
+    const targets = previewCustomer
+      ? ([selectedRecipient].filter(Boolean) as WhatsAppRecipient[])
+      : (selectedCustomers
+        .map((customer) => recipients.find((recipient) => recipient.id === customer.id))
+        .filter(Boolean) as WhatsAppRecipient[]);
+
     if (targets.length === 0) {
       setResult({ ok: false, text: "Select a customer first." });
       return;
@@ -156,7 +161,12 @@ function RemindersPage() {
     try {
       const response = await sendWhatsAppBatch({ kind, recipients: targets, message });
       setResult({ ok: response.ok, text: response.note || "WhatsApp request completed." });
-      if (response.ok) setTab("history");
+
+      if (response.ok) {
+        setPreviewCustomer(null);
+        setTab("send");
+        window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+      }
     } catch (error) {
       setResult({ ok: false, text: error instanceof Error ? error.message : "WhatsApp delivery failed." });
     } finally {
@@ -177,7 +187,7 @@ function RemindersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="relative space-y-6">
       <ModulePageHeader
         crumbs={[{ label: "Admin", to: "/admin" }, { label: "Reminders" }]}
         eyebrow="Customer records"
@@ -207,22 +217,30 @@ function RemindersPage() {
 
         <TabsContent value="send" className="space-y-5">
           <Card className="shadow-soft">
-            <CardHeader>
+            <CardHeader className="space-y-1.5">
               <CardTitle>What do you want to share?</CardTitle>
-              <CardDescription>Receipt messaging is removed. Purchase records are generated from the actual khata/customer data.</CardDescription>
+              <CardDescription>Choose a clean message template, then edit it before sending.</CardDescription>
             </CardHeader>
             <CardContent className="grid gap-3 md:grid-cols-3">
               {(Object.keys(messagePresets) as WhatsAppMessageKind[]).map((messageType) => (
-                <button key={messageType} type="button" onClick={() => setKindAndPreset(messageType)} className={`rounded-2xl border p-4 text-left transition ${kind === messageType ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/40"}`}>
+                <button
+                  key={messageType}
+                  type="button"
+                  onClick={() => setKindAndPreset(messageType)}
+                  className={`rounded-2xl border p-4 text-left transition ${kind === messageType ? "border-primary bg-primary/5 ring-1 ring-primary/20" : "border-border hover:border-primary/40"}`}
+                >
                   <p className="font-semibold">{messagePresets[messageType].label}</p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">{messagePresets[messageType].description}</p>
+                  <div className="mt-3 max-h-32 overflow-hidden rounded-xl bg-muted/45 p-3 text-xs leading-5 text-muted-foreground whitespace-pre-line">
+                    {messagePresets[messageType].message}
+                  </div>
                 </button>
               ))}
             </CardContent>
           </Card>
 
           <Card className="shadow-soft">
-            <CardHeader>
+            <CardHeader className="space-y-1.5">
               <CardTitle className="flex items-center gap-2"><Filter className="size-5" />Advanced customer search</CardTitle>
               <CardDescription>Filter by customer, village, purchase amount, outstanding due and purchase date before selecting customers.</CardDescription>
             </CardHeader>
@@ -264,21 +282,33 @@ function RemindersPage() {
           </div>
 
           <Card className="shadow-soft">
-            <CardHeader><CardTitle>Edit message</CardTitle><CardDescription>Supported placeholders: {'{name}'}, {'{due}'}, {'{totalPurchase}'}, {'{totalPaid}'}, {'{lastPurchase}'}.</CardDescription></CardHeader>
+            <CardHeader className="space-y-1.5"><CardTitle>Edit message</CardTitle><CardDescription>Supported placeholders: {'{name}'}, {'{due}'}, {'{totalPurchase}'}, {'{totalPaid}'}, {'{lastPurchase}'}. Use blank lines to keep the WhatsApp message easy to read.</CardDescription></CardHeader>
             <CardContent className="space-y-4">
-              <textarea value={message} onChange={(event) => setMessage(event.target.value)} className="min-h-40 w-full rounded-xl border border-input bg-background p-4 text-sm outline-none focus:border-primary focus:ring-2 focus:ring-primary/10" />
-              {selectedCustomers[0] ? <div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview for {selectedCustomers[0].name}</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{previewText(selectedCustomers[0])}</p></div> : null}
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs text-muted-foreground">Current live Meta setup still enforces the configured recipient number.</p><Button className="rounded-full" disabled={selectedCustomers.length === 0 || sending} onClick={() => void send()}><Send className="size-4" />{sending ? "Sending…" : `Send selected (${selectedCustomers.length})`}</Button></div>
+              <textarea value={message} onChange={(event) => setMessage(event.target.value)} className="min-h-48 w-full rounded-2xl border border-input bg-background p-4 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10" />
+              {selectedCustomers[0] ? <div className="rounded-2xl border bg-muted/30 p-5"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview for {selectedCustomers[0].name}</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{previewText(selectedCustomers[0])}</p></div> : null}
+              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between"><p className="text-xs leading-5 text-muted-foreground">The reminder uses the live Meta WhatsApp connection and your selected customer records.</p><Button className="rounded-full" disabled={selectedCustomers.length === 0 || sending} onClick={() => void send()}><Send className="size-4" />{sending ? "Sending…" : `Send selected (${selectedCustomers.length})`}</Button></div>
             </CardContent>
           </Card>
         </TabsContent>
 
         <TabsContent value="history">
-          <Card className="shadow-soft"><CardHeader><CardTitle>Delivery history</CardTitle><CardDescription>Actual WhatsApp deliveries recorded in Supabase.</CardDescription></CardHeader><CardContent>{logs.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No deliveries recorded yet.</p> : <div className="space-y-3">{logs.map((log) => <div key={log.id} className="flex items-center gap-3 rounded-xl border p-4"><BellRing className="size-4 text-primary" /><div className="min-w-0 flex-1"><p className="font-medium">{log.reminderTitle}</p><p className="text-xs text-muted-foreground">{log.recipient} · {formatDate(log.sentAt)}</p></div><Badge variant="outline" className="rounded-full">{log.delivery}</Badge></div>)}</div>}</CardContent></Card>
+          <Card className="shadow-soft"><CardHeader className="space-y-1.5"><CardTitle>Delivery history</CardTitle><CardDescription>Actual WhatsApp deliveries recorded in Supabase.</CardDescription></CardHeader><CardContent>{logs.length === 0 ? <p className="py-8 text-center text-sm text-muted-foreground">No deliveries recorded yet.</p> : <div className="space-y-3">{logs.map((log) => <div key={log.id} className="flex items-center gap-3 rounded-xl border p-4"><BellRing className="size-4 text-primary" /><div className="min-w-0 flex-1"><p className="font-medium">{log.reminderTitle}</p><p className="text-xs text-muted-foreground">{log.recipient} · {formatDate(log.sentAt)}</p></div><Badge variant="outline" className="rounded-full">{log.delivery}</Badge></div>)}</div>}</CardContent></Card>
         </TabsContent>
       </Tabs>
 
       <CustomerPreviewDialog customer={previewCustomer} ledger={ledger} message={message} onMessageChange={setMessage} onClose={() => setPreviewCustomer(null)} onSend={() => void send()} sending={sending} />
+
+      {sending ? (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm">
+          <div className="w-full max-w-xs rounded-2xl border bg-card p-6 text-center shadow-2xl">
+            <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
+              <span className="size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary" style={{ animationDuration: "1.25s" }} />
+            </div>
+            <p className="mt-4 font-semibold">Saving reminder</p>
+            <p className="mt-1 text-sm leading-5 text-muted-foreground">Sending the reminder and returning to Reminders...</p>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
@@ -311,13 +341,13 @@ function CustomerPreviewDialog({ customer, ledger, message, onMessageChange, onC
   return (
     <Dialog open={Boolean(customer)} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader><DialogTitle>{customer.name} — customer record</DialogTitle><DialogDescription>{customer.mobile} · {customer.village || "Village not recorded"}</DialogDescription></DialogHeader>
+        <DialogHeader className="space-y-1.5"><DialogTitle>{customer.name} — customer record</DialogTitle><DialogDescription>{customer.mobile} · {customer.village || "Village not recorded"}</DialogDescription></DialogHeader>
         <div className="grid gap-3 sm:grid-cols-3"><Metric label="Total purchase" value={formatCurrency(customer.totalPurchases)} helper="All recorded purchases" /><Metric label="Total paid" value={formatCurrency(customer.totalPaid)} helper="All recorded payments" /><Metric label="Current due" value={formatCurrency(customer.currentDue)} helper="Outstanding now" /></div>
         <Separator />
-        <div><h3 className="mb-3 font-semibold">Current purchase</h3>{latestPurchase ? <div className="rounded-xl border p-4"><div className="grid gap-2 sm:grid-cols-4"><Info label="Date" value={formatDate(latestPurchase.date)} /><Info label="Purchase" value={formatCurrency(latestPurchase.amount)} /><Info label="Advance / paid" value={formatCurrency(latestPurchase.payment)} /><Info label="That-day due" value={formatCurrency(latestPurchase.remainingDue)} /></div><p className="mt-3 text-sm font-medium">{latestPurchase.product}</p>{loadingItems ? <p className="mt-2 text-xs text-muted-foreground">Loading purchased items…</p> : items.length ? <div className="mt-3 space-y-1 text-sm">{items.map((item) => <div key={item.id} className="flex justify-between rounded-lg bg-muted/40 px-3 py-2"><span>{item.product} · {item.quantity} {item.unit} × {formatCurrency(item.rate)}</span><span className="font-medium">{formatCurrency(item.amount)}</span></div>)}</div> : null}</div> : <p className="text-sm text-muted-foreground">No purchase recorded yet.</p>}</div>
-        <div><h3 className="mb-3 font-semibold">Complete purchase & payment history</h3><div className="space-y-2">{records.map((entry) => <div key={entry.id} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"><div><p className="font-medium capitalize">{entry.entryType === "purchase" ? entry.product : "Payment received"}</p><p className="text-xs text-muted-foreground">{formatDate(entry.date)} · {entry.method}</p></div><span className="text-sm">Purchase {formatCurrency(entry.amount)}</span><span className="text-sm">Paid {formatCurrency(entry.payment)}</span><span className="text-sm font-semibold">Due {formatCurrency(entry.remainingDue)}</span></div>)}</div></div>
-        <div className="space-y-3"><h3 className="font-semibold">Message to share</h3><textarea value={message} onChange={(event) => onMessageChange(event.target.value)} className="min-h-36 w-full rounded-xl border border-input bg-background p-4 text-sm" /><div className="rounded-xl bg-muted/50 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview</p><p className="mt-2 whitespace-pre-wrap text-sm leading-6">{preview}</p></div></div>
-        <DialogFooter><Button variant="outline" className="rounded-full" onClick={onClose}>Close</Button><Button className="rounded-full" disabled={sending} onClick={onSend}><Send className="size-4" />{sending ? "Sending…" : "Edit & send"}</Button></DialogFooter>
+        <div className="space-y-3"><h3 className="font-semibold">Current purchase</h3>{latestPurchase ? <div className="rounded-2xl border p-5"><div className="grid gap-4 sm:grid-cols-4"><Info label="Date" value={formatDate(latestPurchase.date)} /><Info label="Purchase" value={formatCurrency(latestPurchase.amount)} /><Info label="Advance / paid" value={formatCurrency(latestPurchase.payment)} /><Info label="That-day due" value={formatCurrency(latestPurchase.remainingDue)} /></div><p className="mt-4 text-sm font-medium">{latestPurchase.product}</p>{loadingItems ? <p className="mt-3 text-xs text-muted-foreground">Loading purchased items…</p> : items.length ? <div className="mt-4 space-y-1 text-sm">{items.map((item) => <div key={item.id} className="flex justify-between gap-4 rounded-lg bg-muted/40 px-3 py-2"><span>{item.product} · {item.quantity} {item.unit} × {formatCurrency(item.rate)}</span><span className="font-medium">{formatCurrency(item.amount)}</span></div>)}</div> : null}</div> : <p className="text-sm text-muted-foreground">No purchase recorded yet.</p>}</div>
+        <div className="space-y-3"><h3 className="font-semibold">Complete purchase & payment history</h3><div className="space-y-2">{records.map((entry) => <div key={entry.id} className="grid gap-2 rounded-xl border p-3 sm:grid-cols-[1fr_auto_auto_auto] sm:items-center"><div><p className="font-medium capitalize">{entry.entryType === "purchase" ? entry.product : "Payment received"}</p><p className="text-xs text-muted-foreground">{formatDate(entry.date)} · {entry.method}</p></div><span className="text-sm">Purchase {formatCurrency(entry.amount)}</span><span className="text-sm">Paid {formatCurrency(entry.payment)}</span><span className="text-sm font-semibold">Due {formatCurrency(entry.remainingDue)}</span></div>)}</div></div>
+        <div className="space-y-3 rounded-2xl border bg-muted/20 p-4"><h3 className="font-semibold">Message to share</h3><textarea value={message} onChange={(event) => onMessageChange(event.target.value)} className="min-h-44 w-full rounded-xl border border-input bg-background p-4 text-sm leading-6" /><div className="rounded-xl bg-muted/60 p-4"><p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Preview</p><p className="mt-3 whitespace-pre-wrap text-sm leading-6">{preview}</p></div></div>
+        <DialogFooter className="gap-2"><Button variant="outline" className="rounded-full" onClick={onClose} disabled={sending}>Close</Button><Button className="rounded-full" disabled={sending} onClick={onSend}><Send className="size-4" />{sending ? "Sending…" : "Edit & send"}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
