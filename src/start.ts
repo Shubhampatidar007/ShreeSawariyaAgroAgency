@@ -28,6 +28,13 @@ const SECURITY_HEADERS: Record<string, string> = {
 };
 
 function withSecurityHeaders(response: Response): Response {
+  // Do not apply production CSP/HSTS rules to the Vite/TanStack local dev
+  // server. In development they can block Vite HMR/WebSocket connections and
+  // upgrade localhost resources to HTTPS, resulting in a blank page.
+  if (process.env.NODE_ENV === "development") {
+    return response;
+  }
+
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
