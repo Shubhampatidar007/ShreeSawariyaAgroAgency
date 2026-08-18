@@ -1,4 +1,5 @@
 const DEFAULT_API_VERSION = "v25.0";
+const DEMO_WHATSAPP_RECIPIENT = "919752469028";
 
 type WhatsAppConfig = {
   apiVersion: string;
@@ -44,7 +45,9 @@ export async function sendWhatsAppText(recipient: {
   message: string;
 }) {
   const config = getConfig();
-  const to = normalizePhoneNumber(recipient.mobile);
+  // Demo/test mode always targets the one Meta-verified recipient.
+  // The customer's stored mobile number is never used as the Meta destination.
+  const to = normalizePhoneNumber(DEMO_WHATSAPP_RECIPIENT);
   const endpoint = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
   const bodyText = interpolateTemplate(recipient.message, recipient);
 
