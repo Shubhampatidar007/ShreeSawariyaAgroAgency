@@ -1,3 +1,5 @@
+import { supabase } from "@/integrations/supabase/client";
+
 export type WhatsAppMessageKind = "due-reminder" | "purchase-summary" | "custom";
 
 export type WhatsAppRecipient = {
@@ -39,9 +41,22 @@ export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<W
     };
   }
 
+  // The API route is protected by requireSupabaseAuth. Browser fetch() does
+  // not automatically forward the Supabase access token, so attach the
+  // current signed-in user's bearer token explicitly.
+  const { data: sessionData } = await supabase.auth.getSession();
+  const token = sessionData.session?.access_token;
+
+  if (!token) {
+    throw new Error("Your session has expired. Please sign in again.");
+  }
+
   const response = await fetch("/api/whatsapp/messages", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
     body: JSON.stringify({ ...payload, recipients: validRecipients }),
   });
 
