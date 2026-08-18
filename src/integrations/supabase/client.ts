@@ -25,30 +25,24 @@ function createSupabaseFetch(supabaseKey: string): typeof fetch {
   };
 }
 
+// These are Supabase's browser-safe project identifiers.
+// Environment variables still take priority when configured.
+const DEFAULT_SUPABASE_URL = 'https://yqaiffjxprmwerdoufke.supabase.co';
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i';
+
 function createSupabaseClient() {
   // Browser/Vite: VITE_* variables are replaced at build time.
+  // The public fallback keeps the GitHub-hosted build functional when no .env file is present.
   // Server/SSR fallback: process.env variables are available at runtime.
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined);
+    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
+    DEFAULT_SUPABASE_URL;
 
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
-
-  if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
-    const missing = [
-      ...(!SUPABASE_URL ? ['VITE_SUPABASE_URL'] : []),
-      ...(!SUPABASE_PUBLISHABLE_KEY ? ['VITE_SUPABASE_PUBLISHABLE_KEY'] : []),
-    ];
-
-    const message =
-      `Supabase is not configured. Missing: ${missing.join(', ')}. ` +
-      'Add these variables to your local .env/.env.local or your deployment environment, then restart/rebuild the app.';
-
-    console.error(`[Supabase] ${message}`);
-    throw new Error(message);
-  }
+    (typeof process !== 'undefined' ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined) ||
+    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     global: {
