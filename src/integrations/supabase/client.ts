@@ -2,9 +2,10 @@ import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
 // Browser-safe Supabase project configuration.
-// Environment variables take priority; the public fallback keeps the local/GitHub
-// build connected when no .env file is present.
-const DEFAULT_SUPABASE_URL = 'https://yqaiffjxprmwerdoufke.supabase.co';
+// Environment variables take priority; the fallback matches the connected
+// Shree Sawariya Agro Agency Supabase project so local/GitHub builds do not
+// silently connect to the retired project.
+const DEFAULT_SUPABASE_URL = 'https://cmfqlpcrnkswgxrszoog.supabase.co';
 const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i';
 
 function createSupabaseClient() {
