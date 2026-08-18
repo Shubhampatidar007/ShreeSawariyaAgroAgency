@@ -1,7 +1,11 @@
 import { createFileRoute } from "@tanstack/react-router";
-import type { WhatsAppSendRequest } from "@/lib/whatsapp";
-import { sendWhatsAppText } from "@/lib/whatsapp.server";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+
+const SUPABASE_URL =
+  process.env.SUPABASE_URL || "https://cmfqlpcrnkswgxrszoog.supabase.co";
+const SUPABASE_PUBLISHABLE_KEY =
+  process.env.SUPABASE_PUBLISHABLE_KEY ||
+  "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i";
+const EDGE_FUNCTION_NAME = "whatsapp-meta-messages";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -13,97 +17,84 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        let payload: WhatsAppSendRequest;
+        const authorization = request.headers.get("authorization");
 
-        try {
-          payload = (await request.json()) as WhatsAppSendRequest;
-        } catch {
-          return json(
-            { ok: false, mode: "live", acceptedCount: 0, skippedCount: 0, note: "Invalid JSON payload." },
-            400,
-          );
-        }
-
-        if (!payload?.kind || !Array.isArray(payload.recipients) || !payload.message?.trim()) {
-          return json(
-            { ok: false, mode: "live", acceptedCount: 0, skippedCount: 0, note: "Message type, recipient and message text are required." },
-            400,
-          );
-        }
-
-        const validRecipients = payload.recipients.filter(
-          (recipient) => Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
-        );
-
-        if (validRecipients.length !== 1) {
+        if (!authorization?.startsWith("Bearer ")) {
           return json(
             {
               ok: false,
               mode: "live",
               acceptedCount: 0,
-              skippedCount: payload.recipients.length,
-              note: "The current demo WhatsApp setup allows exactly one recipient.",
+              skippedCount: 0,
+              note: "Authentication is required.",
+            },
+            401,
+          );
+        }
+
+        let body: string;
+
+        try {
+          body = await request.text();
+          if (!body.trim()) {
+            return json(
+              {
+                ok: false,
+                mode: "live",
+                acceptedCount: 0,
+                skippedCount: 0,
+                note: "Request body is required.",
+              },
+              400,
+            );
+          }
+        } catch {
+          return json(
+            {
+              ok: false,
+              mode: "live",
+              acceptedCount: 0,
+              skippedCount: 0,
+              note: "Unable to read request body.",
             },
             400,
           );
         }
 
-        const recipient = validRecipients[0];
-        const reminderTitle =
-          payload.kind === "due-reminder"
-            ? "WhatsApp due reminder"
-            : payload.kind === "purchase-summary"
-              ? "WhatsApp purchase record"
-              : "WhatsApp custom message";
-
         try {
-          const result = await sendWhatsAppText({
-            name: recipient.name,
-            due: recipient.due,
-            mobile: recipient.mobile,
-            message: payload.message,
-          });
+          const response = await fetch(
+            `${SUPABASE_URL}/functions/v1/${EDGE_FUNCTION_NAME}`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: authorization,
+                apikey: SUPABASE_PUBLISHABLE_KEY,
+              },
+              body,
+            },
+          );
 
-          if (result.messageId) {
-            await supabaseAdmin.from("reminder_logs").insert({
-              reminder_title: reminderTitle,
-              recipient: recipient.name,
-              channel: "whatsapp",
-              sent_at: new Date().toISOString(),
-              delivery: "sent",
-              retries: 0,
-            });
-          }
+          const responseBody = await response.text();
 
-          return json({
-            ok: true,
-            mode: "live",
-            acceptedCount: result.messageId ? 1 : 0,
-            skippedCount: result.messageId ? 0 : 1,
-            messageId: result.messageId,
-            note: "WhatsApp message accepted by Meta Cloud API.",
+          return new Response(responseBody, {
+            status: response.status,
+            headers: {
+              "Content-Type":
+                response.headers.get("content-type") || "application/json",
+            },
           });
         } catch (error) {
-          try {
-            await supabaseAdmin.from("reminder_logs").insert({
-              reminder_title: reminderTitle,
-              recipient: recipient.name,
-              channel: "whatsapp",
-              sent_at: new Date().toISOString(),
-              delivery: "failed",
-              retries: 0,
-            });
-          } catch {
-            // Preserve the actual Meta/configuration error.
-          }
-
           return json(
             {
               ok: false,
               mode: "live",
               acceptedCount: 0,
-              skippedCount: 1,
-              note: error instanceof Error ? error.message : "WhatsApp delivery failed.",
+              skippedCount: 0,
+              note:
+                error instanceof Error
+                  ? error.message
+                  : "Unable to reach the WhatsApp Edge Function.",
             },
             502,
           );

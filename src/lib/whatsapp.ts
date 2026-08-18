@@ -1,7 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
 
-export const DEMO_WHATSAPP_RECIPIENT = "919752469028";
-
 export type WhatsAppMessageKind = "due-reminder" | "purchase-summary" | "custom";
 
 export type WhatsAppRecipient = {
@@ -30,7 +28,7 @@ export type WhatsAppSendResponse = {
 
 export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<WhatsAppSendResponse> {
   const selectedRecipients = payload.recipients.filter(
-    (recipient) => Boolean(recipient.id && recipient.name),
+    (recipient) => Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
   );
 
   if (selectedRecipients.length === 0) {
@@ -39,7 +37,7 @@ export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<W
       mode: "live",
       acceptedCount: 0,
       skippedCount: payload.recipients.length,
-      note: "Select at least one customer.",
+      note: "Select at least one customer with a valid mobile number.",
     };
   }
 
@@ -58,12 +56,7 @@ export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<W
     },
     body: JSON.stringify({
       ...payload,
-      recipients: selectedRecipients.map((recipient) => ({
-        ...recipient,
-        // Meta demo/test mode can only deliver to the verified test recipient.
-        // Customer phone numbers remain unchanged in Supabase.
-        mobile: DEMO_WHATSAPP_RECIPIENT,
-      })),
+      recipients: selectedRecipients,
     }),
   });
 
