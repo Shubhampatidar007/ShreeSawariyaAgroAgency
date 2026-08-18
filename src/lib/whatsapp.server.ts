@@ -1,49 +1,61 @@
 const DEFAULT_API_VERSION = "v25.0";
-const DEFAULT_TEMPLATE_NAME = "jaspers_market_order_confirmation_v1";
-const DEFAULT_TEMPLATE_LANGUAGE = "en_US";
 
 type WhatsAppConfig = {
   apiVersion: string;
   phoneNumberId: string;
   accessToken: string;
-  templateName: string;
-  templateLanguage: string;
-};
-
-export type WhatsAppTemplateRecipient = {
-  mobile: string;
-  customerName: string;
-  orderId: string;
-  orderDate: string;
+  recipientPhone: string;
 };
 
 function getConfig(): WhatsAppConfig {
   const accessToken = process.env.WHATSAPP_ACCESS_TOKEN?.trim();
   const phoneNumberId = process.env.WHATSAPP_BUSINESS_PHONE_NUMBER_ID?.trim();
+  const recipientPhone = process.env.WHATSAPP_RECIPIENT_PHONE?.trim();
 
-  if (!accessToken || !phoneNumberId) {
-    throw new Error("WhatsApp is not configured. Set WHATSAPP_ACCESS_TOKEN and WHATSAPP_BUSINESS_PHONE_NUMBER_ID on the server.");
+  if (!accessToken || !phoneNumberId || !recipientPhone) {
+    const missing = [
+      ...(!accessToken ? ["WHATSAPP_ACCESS_TOKEN"] : []),
+      ...(!phoneNumberId ? ["WHATSAPP_BUSINESS_PHONE_NUMBER_ID"] : []),
+      ...(!recipientPhone ? ["WHATSAPP_RECIPIENT_PHONE"] : []),
+    ];
+    throw new Error(`WhatsApp is not configured. Missing server variable(s): ${missing.join(", ")}.`);
   }
 
   return {
     apiVersion: process.env.WHATSAPP_API_VERSION?.trim() || DEFAULT_API_VERSION,
     phoneNumberId,
     accessToken,
-    templateName: process.env.WHATSAPP_TEMPLATE_NAME?.trim() || DEFAULT_TEMPLATE_NAME,
-    templateLanguage: process.env.WHATSAPP_TEMPLATE_LANGUAGE?.trim() || DEFAULT_TEMPLATE_LANGUAGE,
+    recipientPhone,
   };
 }
 
 function normalizePhoneNumber(value: string): string {
   const digits = value.replace(/\D/g, "");
-  if (!digits) throw new Error("Recipient mobile number is empty.");
+  if (!digits) throw new Error("WhatsApp recipient phone number is empty.");
   return digits;
 }
 
-export async function sendWhatsAppOrderConfirmation(recipient: WhatsAppTemplateRecipient) {
+function interpolateTemplate(message: string, recipient: { name: string; due: number; receiptId?: string }): string {
+  return message
+    .replaceAll("{name}", recipient.name)
+    .replaceAll("{due}", `₹${recipient.due.toLocaleString("en-IN")}`)
+    .replaceAll("{receipt}", recipient.receiptId || "");
+}
+
+export async function sendWhatsAppText(recipient: {
+  name: string;
+  due: number;
+  receiptId?: string;
+  message: string;
+}) {
   const config = getConfig();
-  const to = normalizePhoneNumber(recipient.mobile);
+  const to = normalizePhoneNumber(config.recipientPhone);
   const endpoint = `https://graph.facebook.com/${config.apiVersion}/${config.phoneNumberId}/messages`;
+  const bodyText = interpolateTemplate(recipient.message, recipient);
+
+  if (!bodyText.trim()) {
+    throw new Error("WhatsApp message text is empty.");
+  }
 
   const response = await fetch(endpoint, {
     method: "POST",
@@ -53,21 +65,12 @@ export async function sendWhatsAppOrderConfirmation(recipient: WhatsAppTemplateR
     },
     body: JSON.stringify({
       messaging_product: "whatsapp",
+      recipient_type: "individual",
       to,
-      type: "template",
-      template: {
-        name: config.templateName,
-        language: { code: config.templateLanguage },
-        components: [
-          {
-            type: "body",
-            parameters: [
-              { type: "text", text: recipient.customerName },
-              { type: "text", text: recipient.orderId },
-              { type: "text", text: recipient.orderDate },
-            ],
-          },
-        ],
+      type: "text",
+      text: {
+        preview_url: false,
+        body: bodyText,
       },
     }),
   });
