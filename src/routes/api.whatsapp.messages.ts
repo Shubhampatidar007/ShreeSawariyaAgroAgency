@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type { WhatsAppSendRequest } from "@/lib/whatsapp";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -10,6 +11,7 @@ const json = (body: unknown, status = 200) =>
 
 export const Route = createFileRoute("/api/whatsapp/messages")({
   server: {
+    middleware: [requireSupabaseAuth],
     handlers: {
       POST: async ({ request }) => {
         let payload: WhatsAppSendRequest;
@@ -39,6 +41,28 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
         }
 
         const recipient = validRecipients[0];
+        const configuredRecipient = process.env.WHATSAPP_RECIPIENT_PHONE?.replace(/\D/g, "");
+        const selectedRecipient = recipient.mobile.replace(/\D/g, "");
+
+        if (!configuredRecipient) {
+          return json({
+            ok: false,
+            mode: "live",
+            acceptedCount: 0,
+            skippedCount: 1,
+            note: "WHATSAPP_RECIPIENT_PHONE is not configured on the server.",
+          }, 503);
+        }
+
+        if (configuredRecipient !== selectedRecipient) {
+          return json({
+            ok: false,
+            mode: "live",
+            acceptedCount: 0,
+            skippedCount: 1,
+            note: "The selected recipient does not match the configured live WhatsApp recipient.",
+          }, 403);
+        }
 
         try {
           const result = await sendWhatsAppText({
