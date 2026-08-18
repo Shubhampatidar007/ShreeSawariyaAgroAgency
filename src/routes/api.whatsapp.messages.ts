@@ -2,6 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import type { WhatsAppSendRequest } from "@/lib/whatsapp";
 import { sendWhatsAppText } from "@/lib/whatsapp.server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), {
@@ -72,6 +73,17 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
             message: payload.message,
           });
 
+          if (result.messageId) {
+            await supabaseAdmin.from("reminder_logs").insert({
+              reminder_title: payload.kind === "due-reminder" ? "WhatsApp due reminder" : payload.kind === "receipt" ? "WhatsApp receipt" : "WhatsApp custom message",
+              recipient: recipient.name,
+              channel: "whatsapp",
+              sent_at: new Date().toISOString(),
+              delivery: "sent",
+              retries: 0,
+            });
+          }
+
           return json({
             ok: true,
             mode: "live",
@@ -81,6 +93,19 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
             note: "WhatsApp message accepted by Meta Cloud API.",
           });
         } catch (error) {
+          try {
+            await supabaseAdmin.from("reminder_logs").insert({
+              reminder_title: payload.kind === "due-reminder" ? "WhatsApp due reminder" : payload.kind === "receipt" ? "WhatsApp receipt" : "WhatsApp custom message",
+              recipient: recipient.name,
+              channel: "whatsapp",
+              sent_at: new Date().toISOString(),
+              delivery: "failed",
+              retries: 0,
+            });
+          } catch {
+            // Do not hide the real Meta error if the history write also fails.
+          }
+
           return json({
             ok: false,
             mode: "live",
