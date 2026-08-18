@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { BellRing, CheckCircle2, Eye, Filter, History, MapPin, Search, Send, Smartphone, X } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -153,6 +154,7 @@ function RemindersPage() {
 
     if (targets.length === 0) {
       setResult({ ok: false, text: "Select a customer first." });
+      toast.error("Select a customer first.");
       return;
     }
 
@@ -160,15 +162,22 @@ function RemindersPage() {
     setResult(null);
     try {
       const response = await sendWhatsAppBatch({ kind, recipients: targets, message });
-      setResult({ ok: response.ok, text: response.note || "WhatsApp request completed." });
+      const responseText = response.note || (response.ok ? "Reminder sent successfully." : "Reminder could not be sent.");
+      setResult({ ok: response.ok, text: responseText });
 
       if (response.ok) {
+        const recipientLabel = targets.length === 1 ? targets[0]?.name : `${targets.length} customers`;
+        toast.success(`Reminder sent successfully — ${recipientLabel}`);
         setPreviewCustomer(null);
         setTab("send");
         window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+      } else {
+        toast.error(responseText);
       }
     } catch (error) {
-      setResult({ ok: false, text: error instanceof Error ? error.message : "WhatsApp delivery failed." });
+      const errorText = error instanceof Error ? error.message : "WhatsApp delivery failed.";
+      setResult({ ok: false, text: errorText });
+      toast.error(`Reminder failed — ${errorText}`);
     } finally {
       setSending(false);
     }
