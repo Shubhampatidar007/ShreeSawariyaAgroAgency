@@ -28,10 +28,17 @@ const getReady = () => ready;
 const getReadyServer = () => false;
 
 async function hydrate(userId: string, email: string) {
-  const [{ data: profile }, { data: roles }] = await Promise.all([
+  const [{ data: profile, error: profileError }, { data: roles, error: rolesError }] = await Promise.all([
     supabase.from("profiles").select("full_name, mobile, village").eq("id", userId).maybeSingle(),
     supabase.from("user_roles").select("role").eq("user_id", userId),
   ]);
+
+  if (profileError || rolesError) {
+    throw new Error(
+      profileError?.message ?? rolesError?.message ?? "Unable to load your account data.",
+    );
+  }
+
   const roleList = (roles ?? []).map((r) => r.role);
   user = {
     id: userId,
@@ -50,16 +57,27 @@ export function initAuth() {
 
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      void hydrate(session.user.id, session.user.email ?? "");
+      void hydrate(session.user.id, session.user.email ?? "").catch((error) => {
+        console.error("[Auth] Failed to hydrate account data:", error);
+        user = null;
+        emit();
+      });
     } else {
       user = null;
       emit();
     }
   });
 
-  void supabase.auth.getSession().then(async ({ data }) => {
-    if (data.session?.user) {
-      await hydrate(data.session.user.id, data.session.user.email ?? "");
+  void supabase.auth.getSession().then(async ({ data, error }) => {
+    if (error) {
+      console.error("[Auth] Failed to restore session:", error);
+    } else if (data.session?.user) {
+      try {
+        await hydrate(data.session.user.id, data.session.user.email ?? "");
+      } catch (hydrateError) {
+        console.error("[Auth] Failed to hydrate account data:", hydrateError);
+        user = null;
+      }
     }
     ready = true;
     emit();
@@ -72,7 +90,17 @@ export const authStore = {
     if (error || !data.user) {
       return { ok: false as const, error: error?.message ?? "Unable to sign in." };
     }
-    await hydrate(data.user.id, data.user.email ?? email);
+
+    try {
+      await hydrate(data.user.id, data.user.email ?? email);
+    } catch (hydrateError) {
+      await supabase.auth.signOut();
+      return {
+        ok: false as const,
+        error: hydrateError instanceof Error ? hydrateError.message : "Unable to load your account data.",
+      };
+    }
+
     return { ok: true as const, user: user! };
   },
   async register(input: {
@@ -94,7 +122,17 @@ export const authStore = {
     if (!data.session) {
       return { ok: false as const, error: "Check your email to confirm the account." };
     }
-    await hydrate(data.user!.id, data.user!.email ?? input.email);
+
+    try {
+      await hydrate(data.user!.id, data.user!.email ?? input.email);
+    } catch (hydrateError) {
+      await supabase.auth.signOut();
+      return {
+        ok: false as const,
+        error: hydrateError instanceof Error ? hydrateError.message : "Unable to load your account data.",
+      };
+    }
+
     return { ok: true as const, user: user! };
   },
   async updateProfile(input: { name: string; mobile?: string; village?: string }) {
