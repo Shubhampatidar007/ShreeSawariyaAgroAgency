@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Check, Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
   DialogContent,
@@ -101,26 +102,28 @@ const KHATA_RECEIPT_EDGE_FUNCTION =
     };
   }
 
-  const supabaseUrl =
-    import.meta.env["VITE_SUPABASE_URL"];
+const {
+  data: { session },
+  error: sessionError,
+} = await supabase.auth.getSession();
 
-  const supabaseAnonKey =
-    import.meta.env["VITE_SUPABASE_ANON_KEY"];
+if (sessionError) {
+  throw new Error(
+    `Could not get Supabase session: ${sessionError.message}`,
+  );
+}
 
-  if (!supabaseUrl) {
-    throw new Error(
-      "VITE_SUPABASE_URL is missing from the frontend environment",
-    );
-  }
+if (!session?.access_token) {
+  throw new Error(
+    "You are not logged in. Please sign in again.",
+  );
+}
 
-  if (!supabaseAnonKey) {
-    throw new Error(
-      "VITE_SUPABASE_ANON_KEY is missing from the frontend environment",
-    );
-  }
+const supabaseUrl =
+  "https://cmfqlpcrnkswgxrszoog.supabase.co";
 
-  const edgeFunctionUrl =
-    `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
+const edgeFunctionUrl =
+  `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
   /*
    * Send only structured data.
    *
@@ -135,13 +138,14 @@ const KHATA_RECEIPT_EDGE_FUNCTION =
     method: "POST",
 
     headers: {
-      "Content-Type": "application/json",
+  "Content-Type": "application/json",
 
-      apikey: supabaseAnonKey,
+  apikey:
+    "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i",
 
-      Authorization:
-        `Bearer ${supabaseAnonKey}`,
-    },
+  Authorization:
+    `Bearer ${session.access_token}`,
+},
 
     body: JSON.stringify({
       /*
