@@ -1,13 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import {
-  Bell,
-  BellOff,
-  CheckCircle2,
-  Package,
-  Plus,
-  Trash2,
-} from "lucide-react";
+import { Bell, BellOff, CheckCircle2, Package, Trash2 } from "lucide-react";
 
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -22,7 +15,7 @@ export const Route = createFileRoute("/admin/inventory-reminders")({
       { title: "Inventory Reminders — Admin" },
       {
         name: "description",
-        content: "Manually control low-stock reminders for inventory products.",
+        content: "Manage configured low-stock reminders for inventory products.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -34,7 +27,6 @@ function InventoryRemindersPage() {
   const inventory = useShopStore((state) => state.inventory);
   const reminders = useShopStore((state) => state.reminders);
   const [busyId, setBusyId] = useState<string | null>(null);
-  const [creatingId, setCreatingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const inventoryReminders = useMemo(() => {
@@ -57,52 +49,7 @@ function InventoryRemindersPage() {
       );
   }, [inventory, reminders]);
 
-  const reminderInventoryIds = useMemo(
-    () => new Set(inventoryReminders.map(({ item }) => item.id)),
-    [inventoryReminders],
-  );
-
-  const availableInventory = inventory.filter(
-    (item) => !reminderInventoryIds.has(item.id),
-  );
-
-  const createReminder = async (item: (typeof inventory)[number]) => {
-    setCreatingId(item.id);
-    setError(null);
-
-    try {
-      const { error: insertError } = await supabase.from("reminders").insert({
-        title: `Low stock — ${item.productName}`,
-        audience: "admin",
-        target: "inventory",
-        filter_summary: `Low stock reminder for ${item.productName}`,
-        schedule: "on stock threshold",
-        channel: "in-app",
-        due_amount: 0,
-        status: "active",
-        next_run: new Date().toISOString(),
-        message: `Inventory item ${item.productName} has reached its minimum stock level.`,
-        source_id: item.id,
-      });
-
-      if (insertError) throw insertError;
-
-      await loadShopData();
-    } catch (createError) {
-      setError(
-        createError instanceof Error
-          ? createError.message
-          : "Failed to create inventory reminder.",
-      );
-    } finally {
-      setCreatingId(null);
-    }
-  };
-
-  const toggleReminder = async (
-    reminderId: string,
-    active: boolean,
-  ) => {
+  const toggleReminder = async (reminderId: string, active: boolean) => {
     setBusyId(reminderId);
     setError(null);
 
@@ -162,12 +109,10 @@ function InventoryRemindersPage() {
         ]}
         eyebrow="Inventory control"
         title="Inventory Reminders"
-        description="Manually create, pause, resume and delete low-stock reminders for inventory products."
+        description="Control the low-stock reminders already configured from Inventory."
         actions={
           <Button variant="outline" className="rounded-full" asChild>
-            <Link to="/admin/reminders">
-              Customer reminders
-            </Link>
+            <Link to="/admin/reminders">Customer reminders</Link>
           </Button>
         }
       />
@@ -187,7 +132,7 @@ function InventoryRemindersPage() {
                 Configured reminders
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                These reminders are linked directly to inventory products.
+                Configure or disable reminders from the Inventory module. The popup uses these active records.
               </p>
             </div>
             <Badge variant="outline" className="rounded-full">
@@ -200,9 +145,9 @@ function InventoryRemindersPage() {
           {inventoryReminders.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center">
               <BellOff className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 font-medium">No inventory reminders yet</p>
+              <p className="mt-3 font-medium">No inventory reminders configured</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Add a reminder from the inventory list below.
+                Open Inventory and use Configure reminder on a product to add one.
               </p>
             </div>
           ) : (
@@ -232,17 +177,13 @@ function InventoryRemindersPage() {
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Current stock
-                      </p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Current stock</p>
                       <p className="mt-1 text-xl font-bold">
                         {item.quantity} {item.unit}
                       </p>
                     </div>
                     <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Minimum stock
-                      </p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Minimum stock</p>
                       <p className="mt-1 text-xl font-bold">
                         {item.minStockLevel} {item.unit}
                       </p>
@@ -280,50 +221,6 @@ function InventoryRemindersPage() {
                 </div>
               );
             })
-          )}
-        </CardContent>
-      </Card>
-
-      <Card className="shadow-soft">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="size-5" />
-            Add inventory reminder
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Every inventory item can have one low-stock reminder.
-          </p>
-        </CardHeader>
-
-        <CardContent className="space-y-2">
-          {availableInventory.length === 0 ? (
-            <p className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
-              All inventory products already have a reminder.
-            </p>
-          ) : (
-            availableInventory.map((item) => (
-              <div
-                key={item.id}
-                className="flex flex-col gap-3 rounded-xl border p-4 sm:flex-row sm:items-center sm:justify-between"
-              >
-                <div>
-                  <p className="font-medium">{item.productName}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {item.quantity} {item.unit} current · minimum {item.minStockLevel} {item.unit}
-                  </p>
-                </div>
-
-                <Button
-                  size="sm"
-                  className="rounded-full"
-                  disabled={creatingId === item.id}
-                  onClick={() => void createReminder(item)}
-                >
-                  <Plus className="size-4" />
-                  {creatingId === item.id ? "Adding…" : "Add reminder"}
-                </Button>
-              </div>
-            ))
           )}
         </CardContent>
       </Card>
