@@ -1,9 +1,12 @@
 import type { ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { Bell } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { formatCurrency, formatDate } from "@/lib/shop-store";
+import { formatCurrency, formatDate, loadShopData } from "@/lib/shop-store";
+import { supabase } from "@/integrations/supabase/client";
 import type {
   Customer,
   InventoryItem,
@@ -108,6 +111,46 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
 }
 
 export function InventoryCard({ item }: { item: InventoryItem }) {
+  const navigate = useNavigate();
+
+  const configureReminder = async () => {
+    const { data: existing, error: lookupError } = await supabase
+      .from("reminders")
+      .select("id, status")
+      .eq("target", "inventory")
+      .eq("source_id", item.id)
+      .maybeSingle();
+
+    if (lookupError) {
+      console.error("Failed to find inventory reminder:", lookupError);
+      return;
+    }
+
+    const result = existing
+      ? await supabase.from("reminders").update({ status: "active" }).eq("id", existing.id)
+      : await supabase.from("reminders").insert({
+          title: `Low stock — ${item.productName}`,
+          audience: "admin",
+          target: "inventory",
+          filter_summary: `Low stock reminder for ${item.productName}`,
+          schedule: "on stock threshold",
+          channel: "in-app",
+          due_amount: 0,
+          status: "active",
+          next_run: new Date().toISOString(),
+          message: `Inventory item ${item.productName} has reached its minimum stock level.`,
+          source_id: item.id,
+        });
+
+    if (result.error) {
+      console.error("Failed to configure inventory reminder:", result.error);
+      return;
+    }
+
+    await loadShopData();
+    await navigate({ to: "/admin/inventory-reminders" });
+  };
+
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
       <CardContent className="space-y-3 p-4">
@@ -122,7 +165,12 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
           <Row label="Quantity" value={`${item.quantity} ${item.unit}`} />
           <Row label="Purchase price" value={formatCurrency(item.purchasePrice)} />
           <Row label="Updated" value={formatDate(item.lastUpdated)} />
+          <Row label="Minimum stock" value={`${item.minStockLevel} ${item.unit}`} />
         </div>
+        <Button className="w-full rounded-full" variant="outline" onClick={() => void configureReminder()}>
+          <Bell className="size-4" />
+          Configure reminder
+        </Button>
       </CardContent>
     </Card>
   );
