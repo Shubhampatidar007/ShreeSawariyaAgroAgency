@@ -16,6 +16,7 @@ import { Route as AdminAdvertisementsRouteImport } from './routes/admin.advertis
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminCmsRouteImport } from './routes/admin.cms'
+import { Route as AdminInventoryRemindersRouteImport } from './routes/admin.inventory-reminders'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminRemindersRouteImport } from './routes/admin.reminders'
@@ -69,6 +70,11 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
 const AdminCmsRoute = AdminCmsRouteImport.update({
   id: '/cms',
   path: '/cms',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInventoryRemindersRoute = AdminInventoryRemindersRouteImport.update({
+  id: '/inventory-reminders',
+  path: '/inventory-reminders',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
+  '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
@@ -206,6 +213,7 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
+  '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
@@ -235,6 +243,7 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/cms': typeof AdminCmsRoute
+  '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
@@ -265,6 +274,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/cms'
+    | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/profile'
     | '/admin/reminders'
@@ -292,6 +302,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/cms'
+    | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/profile'
     | '/admin/reminders'
@@ -320,6 +331,7 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/cms'
+    | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/profile'
     | '/admin/reminders'
@@ -397,6 +409,13 @@ declare module '@tanstack/react-router' {
       path: '/cms'
       fullPath: '/admin/cms'
       preLoaderRoute: typeof AdminCmsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/inventory-reminders': {
+      id: '/admin/inventory-reminders'
+      path: '/inventory-reminders'
+      fullPath: '/admin/inventory-reminders'
+      preLoaderRoute: typeof AdminInventoryRemindersRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/payments': {
@@ -540,6 +559,7 @@ interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminCmsRoute: typeof AdminCmsRoute
+  AdminInventoryRemindersRoute: typeof AdminInventoryRemindersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminRemindersRoute: typeof AdminRemindersRoute
@@ -566,6 +586,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
   AdminCmsRoute: AdminCmsRoute,
+  AdminInventoryRemindersRoute: AdminInventoryRemindersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminRemindersRoute: AdminRemindersRoute,

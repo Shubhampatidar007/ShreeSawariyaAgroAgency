@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { ReactNode } from "react";
-import { Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Check, Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,10 +50,201 @@ type CartItem = {
 
 type Props = {
   /** Preselect a customer (from the Khata / customer detail page). Omit to search or create one. */
-  customer?: { id: string; name: string };
+ customer?: {
+  id: string;
+  name: string;
+  mobile?: string;
+};
   trigger: ReactNode;
   onCreated?: (transactionId: string) => void;
 };
+
+type ReceiptOption = "current" | "full" | "none";
+
+
+
+const KHATA_RECEIPT_EDGE_FUNCTION =
+  import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] ||
+  "whatsapp-meta-messages";
+
+ async function sendKhataReceiptToEdgeFunction({
+  receiptOption,
+  customerId,
+  transactionId,
+  customer,
+  items,
+  total,
+  paid,
+  due,
+  paymentMethod,
+  saleDate,
+}: {
+  receiptOption: ReceiptOption;
+  customerId: string;
+  transactionId: string;
+  customer: {
+    id: string;
+    name: string;
+    mobile?: string;
+  };
+  items: CartItem[];
+  total: number;
+  paid: number;
+  due: number;
+  paymentMethod: PaymentMethod;
+  saleDate: string;
+}) {
+  if (receiptOption === "none") {
+    return {
+      success: true,
+      skipped: true,
+    };
+  }
+
+  const supabaseUrl =
+    import.meta.env["VITE_SUPABASE_URL"];
+
+  const supabaseAnonKey =
+    import.meta.env["VITE_SUPABASE_ANON_KEY"];
+
+  if (!supabaseUrl) {
+    throw new Error(
+      "VITE_SUPABASE_URL is missing from the frontend environment",
+    );
+  }
+
+  if (!supabaseAnonKey) {
+    throw new Error(
+      "VITE_SUPABASE_ANON_KEY is missing from the frontend environment",
+    );
+  }
+
+  const edgeFunctionUrl =
+    `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
+  /*
+   * Send only structured data.
+   *
+   * The Edge Function is responsible for:
+   *
+   * 1. Building the current receipt
+   * 2. Querying purchase history for full receipt
+   * 3. Calculating totals
+   * 4. Sending WhatsApp through Meta
+   */
+  const response = await fetch(edgeFunctionUrl, {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+
+      apikey: supabaseAnonKey,
+
+      Authorization:
+        `Bearer ${supabaseAnonKey}`,
+    },
+
+    body: JSON.stringify({
+      /*
+       * This tells the existing Edge Function
+       * to enter the new receipt code.
+       */
+      kind: "purchase-receipt",
+
+      /*
+       * current / full / none
+       */
+      receiptOption,
+
+      /*
+       * Required by the Edge Function to identify
+       * the newly-created transaction.
+       */
+      transactionId,
+
+      /*
+       * Required for Sup—abase purchase-history query.
+       */
+      customerId,
+
+      /*
+       * Customer information.
+       */
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        mobile: customer.mobile ?? "",
+      },
+
+      /*
+       * Current sale information.
+       */
+      sale: {
+        date: saleDate,
+
+        items: items.map((item) => ({
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+          amount:
+            item.quantity * item.rate,
+        })),
+
+        total,
+
+        paid,
+
+        due,
+
+        paymentMethod,
+      },
+    }),
+  });
+
+  /*
+   * Read Edge Function response.
+   */
+  const responseText =
+    await response.text();
+
+  let result: unknown;
+
+  try {
+    result = responseText
+      ? JSON.parse(responseText)
+      : null;
+  } catch {
+    result = responseText;
+  }
+
+  /*
+   * Edge Function returned an error.
+   */
+  if (!response.ok) {
+    const errorMessage =
+      typeof result === "object" &&
+      result !== null &&
+      "error" in result &&
+      typeof (
+        result as {
+          error?: unknown;
+        }
+      ).error === "string"
+        ? (
+            result as {
+              error: string;
+            }
+          ).error
+        : `Receipt Edge Function failed with status ${response.status}`;
+
+    throw new Error(errorMessage);
+  }
+
+  /*
+   * Successful response.
+   */
+  return result;
+}
 
 export function KhataSaleDialog({
   customer,
@@ -94,6 +285,11 @@ export function KhataSaleDialog({
   );
   const [remarks, setRemarks] = useState("");
 
+  // receipt choice option: default is 'current'
+  const [receiptOption, setReceiptOption] = useState<
+    "current" | "full" | "none"
+  >("current");
+
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.rate, 0),
     [items],
@@ -102,12 +298,6 @@ export function KhataSaleDialog({
   const paidNum = Number(paid) || 0;
   const due = Math.max(total - paidNum, 0);
 
-  /*
-   * Customer search
-   *
-   * Removes duplicate records with the same ID.
-   * Search still works using either customer name or mobile.
-   */
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
 
@@ -130,11 +320,9 @@ export function KhataSaleDialog({
         const aName = a.name.toLowerCase();
         const bName = b.name.toLowerCase();
 
-        // Exact name match first
         if (aName === q && bName !== q) return -1;
         if (bName === q && aName !== q) return 1;
 
-        // Name starting with search text next
         if (aName.startsWith(q) && !bName.startsWith(q)) return -1;
         if (bName.startsWith(q) && !aName.startsWith(q)) return 1;
 
@@ -149,13 +337,6 @@ export function KhataSaleDialog({
     [customers, selectedCustomerId],
   );
 
-  /*
-   * Inventory-backed product search
-   *
-   * Uses inventory directly instead of depending only on published
-   * products. If a matching product exists, its title/category/emoji/
-   * selling price are used. Otherwise inventory data is used.
-   */
   const catalogOptions = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
 
@@ -185,9 +366,7 @@ export function KhataSaleDialog({
           .includes(q);
       })
       .slice(0, 8);
-      
   }, [inventory, products, productQuery]);
-  
 
   const reset = () => {
     setCustomerMode("select");
@@ -209,6 +388,7 @@ export function KhataSaleDialog({
     setMethod("cash");
     setEntryDate(new Date().toISOString().slice(0, 10));
     setRemarks("");
+    setReceiptOption("current");
   };
 
   const addProductToCart = (inventoryId: string) => {
@@ -218,10 +398,10 @@ export function KhataSaleDialog({
     const product = products.find(
       (p) => p.inventoryId === inv.id,
     );
-if (inv.quantity <= 0) {
-  toast.error(`${inv.productName} is out of stock`);
-  return;
-}
+    if (inv.quantity <= 0) {
+      toast.error(`${inv.productName} is out of stock`);
+      return;
+    }
     setItems((prev): CartItem[] => {
       const existing = prev.find(
         (i) =>
@@ -230,27 +410,28 @@ if (inv.quantity <= 0) {
             i.productId === product.id),
       );
 
-     if (existing) {
-  if (
-    existing.maxStock !== undefined &&
-    existing.quantity >= existing.maxStock
-  ) {
-    toast.error(
-      `Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`,
-    );
+      if (existing) {
+        if (
+          existing.maxStock !== undefined &&
+          existing.quantity >= existing.maxStock
+        ) {
+          toast.error(
+            `Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`,
+          );
 
-    return prev;
-  }
-
-  return prev.map((i) =>
-    i.key === existing.key
-      ? {
-          ...i,
-          quantity: i.quantity + 1,
+          return prev;
         }
-      : i,
-  );
-}
+
+        return prev.map((i) =>
+          i.key === existing.key
+            ? {
+                ...i,
+                quantity: i.quantity + 1,
+              }
+            : i,
+        );
+      }
+
       const newItem: CartItem = {
         key: crypto.randomUUID(),
         inventoryId: inv.id,
@@ -315,110 +496,145 @@ if (inv.quantity <= 0) {
     );
   };
 
-  const handleSubmit = async () => {
-    if (items.length === 0) {
+ const handleSubmit = async () => {
+  if (items.length === 0) {
+    return toast.error("Add at least one product to the sale");
+  }
+
+  for (const item of items) {
+    if (item.quantity <= 0) {
       return toast.error(
-        "Add at least one product to the sale",
+        `Enter a valid quantity for ${item.product}`,
       );
     }
 
-    for (const item of items) {
-      if (item.quantity <= 0) {
-        return toast.error(
-          `Enter a valid quantity for ${item.product}`,
-        );
-      }
-
-      if (
-        item.maxStock !== undefined &&
-        item.quantity > item.maxStock
-      ) {
-        return toast.error(
-          `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
-        );
-      }
-    }
-
-    let customerId =
-      customer?.id ??
-      selectedCustomerId ??
-      undefined;
-
-    if (!customerId && customerMode === "new") {
-      if (
-        !newCustomer.name.trim() ||
-        !newCustomer.mobile.trim()
-      ) {
-        return toast.error(
-          "Enter the customer's name and mobile number",
-        );
-      }
-    } else if (!customerId) {
+    if (
+      item.maxStock !== undefined &&
+      item.quantity > item.maxStock
+    ) {
       return toast.error(
-        "Select or create a customer",
+        `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
       );
     }
+  }
 
-    if (paidNum < 0) {
+  let customerId =
+    customer?.id ??
+    selectedCustomerId ??
+    undefined;
+
+  if (!customerId && customerMode === "new") {
+    if (
+      !newCustomer.name.trim() ||
+      !newCustomer.mobile.trim()
+    ) {
       return toast.error(
-        "Paid amount cannot be negative",
+        "Enter the customer's name and mobile number",
       );
     }
+  } else if (!customerId) {
+    return toast.error(
+      "Select or create a customer",
+    );
+  }
 
-    if (paidNum > total) {
-      return toast.error(
-        "Paid amount cannot exceed the total",
-      );
-    }
+  if (paidNum < 0) {
+    return toast.error(
+      "Paid amount cannot be negative",
+    );
+  }
 
-    setSubmitting(true);
+  if (paidNum > total) {
+    return toast.error(
+      "Paid amount cannot exceed the total",
+    );
+  }
 
-    try {
-      if (!customerId) {
-        const created =
-          await shopStore.addCustomer({
-            name: newCustomer.name.trim(),
-            mobile: newCustomer.mobile.trim(),
-            village: newCustomer.village.trim(),
-            address: newCustomer.address.trim(),
-            joinedOn: new Date()
-              .toISOString()
-              .slice(0, 10),
-            creditLimit: 0,
-            creditBalance: 0,
-            totalPurchases: 0,
-            totalPaid: 0,
-            currentDue: 0,
-            lastPurchase: "",
-            status: "active",
-          });
+  setSubmitting(true);
 
-        customerId = created.id;
-      }
+  try {
+    /*
+     * ---------------------------------------------------------
+     * STEP 1: CREATE CUSTOMER IF NEEDED
+     * ---------------------------------------------------------
+     */
 
-      const txId =
-        await shopStore.createKhataSale({
-          customerId,
-         items: items.map((item) => ({
-  ...(item.inventoryId
-    ? { inventoryId: item.inventoryId }
-    : {}),
-  ...(item.productId
-    ? { productId: item.productId }
-    : {}),
-  product: item.product,
-  quantity: item.quantity,
-  unit: item.unit,
-  rate: item.rate,
-})),
-          paid: paidNum,
-          method,
-          date: entryDate,
-          ...(remarks.trim()
-            ? { remarks: remarks.trim() }
-            : {}),
+    if (!customerId) {
+      const created =
+        await shopStore.addCustomer({
+          name: newCustomer.name.trim(),
+          mobile: newCustomer.mobile.trim(),
+          village: newCustomer.village.trim(),
+          address: newCustomer.address.trim(),
+          joinedOn: new Date()
+            .toISOString()
+            .slice(0, 10),
+          creditLimit: 0,
+          creditBalance: 0,
+          totalPurchases: 0,
+          totalPaid: 0,
+          currentDue: 0,
+          lastPurchase: "",
+          status: "active",
         });
 
+      customerId = created.id;
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 2: SAVE THE SALE
+     *
+     * IMPORTANT:
+     * We pass "none" here so createKhataSale does not
+     * automatically send another WhatsApp receipt.
+     *
+     * The WhatsApp receipt is handled explicitly below
+     * through the Edge Function.
+     * ---------------------------------------------------------
+     */
+
+    const txId =
+      await shopStore.createKhataSale({
+        customerId,
+
+        items: items.map((item) => ({
+          ...(item.inventoryId
+            ? { inventoryId: item.inventoryId }
+            : {}),
+
+          ...(item.productId
+            ? { productId: item.productId }
+            : {}),
+
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+        })),
+
+        paid: paidNum,
+        method,
+        date: entryDate,
+
+        // Prevent createKhataSale from sending another receipt.
+        receiptOption: "none",
+
+        ...(remarks.trim()
+          ? { remarks: remarks.trim() }
+          : {}),
+      });
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 3: NONE
+     *
+     * Sale is already saved.
+     * Do not call Edge Function.
+     * ---------------------------------------------------------
+     */
+
+    if (receiptOption === "none") {
       toast.success(
         paidNum >= total
           ? "Sale recorded — fully paid"
@@ -430,17 +646,101 @@ if (inv.quantity <= 0) {
       onCreated?.(txId);
       setOpen(false);
       reset();
-    } catch (err) {
-      toast.error(
-        err instanceof Error
-          ? err.message
-          : "Could not record the sale",
-      );
-    } finally {
-      setSubmitting(false);
-    }
-  };
 
+      return;
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 4: FIND CUSTOMER DATA FOR RECEIPT
+     * ---------------------------------------------------------
+     */
+
+  const receiptCustomer = customer
+  ? {
+      id: customer.id,
+      name: customer.name,
+      mobile:
+        customer.mobile ??
+        customers.find(
+          (c) => c.id === customer.id,
+        )?.mobile ??
+        "",
+    }
+  : {
+      id: customerId,
+      name:
+        selectedCustomer?.name ??
+        newCustomer.name.trim(),
+      mobile:
+        selectedCustomer?.mobile ??
+        newCustomer.mobile.trim(),
+    };
+   
+
+    try {
+      await sendKhataReceiptToEdgeFunction({
+        receiptOption,
+
+        customerId,
+
+        transactionId: txId,
+
+        customer: receiptCustomer,
+
+        items,
+
+        total,
+
+        paid: paidNum,
+
+        due,
+
+        paymentMethod: method,
+
+        saleDate: entryDate,
+      });
+
+      toast.success(
+        receiptOption === "full"
+          ? "Sale recorded and full receipt sent"
+          : "Sale recorded and current receipt sent",
+      );
+    } catch (receiptError) {
+      /*
+       * IMPORTANT:
+       * Sale has already been successfully saved.
+       *
+       * Therefore we DO NOT show "sale failed".
+       * We only tell the admin that WhatsApp receipt failed.
+       */
+
+      toast.error(
+        receiptError instanceof Error
+          ? `Sale saved, but receipt failed: ${receiptError.message}`
+          : "Sale saved, but WhatsApp receipt could not be sent",
+      );
+    }
+
+    /*
+     * ---------------------------------------------------------
+     * STEP 6: FINISH
+     * ---------------------------------------------------------
+     */
+
+    onCreated?.(txId);
+    setOpen(false);
+    reset();
+  } catch (err) {
+    toast.error(
+      err instanceof Error
+        ? err.message
+        : "Could not record the sale",
+    );
+  } finally {
+    setSubmitting(false);
+  }
+};
   return (
     <Dialog
       open={open}
@@ -473,7 +773,6 @@ if (inv.quantity <= 0) {
         <div className="space-y-6">
           {!customer && (
             <div className="space-y-3 rounded-lg border p-3">
-              {/* Customer mode buttons */}
               <div className="flex gap-2">
                 <Button
                   type="button"
@@ -510,11 +809,9 @@ if (inv.quantity <= 0) {
                 </Button>
               </div>
 
-              {/* Existing customer */}
               {customerMode === "select" ? (
                 <div className="space-y-2">
                   {selectedCustomer ? (
-                    /* Selected customer banner */
                     <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
                       <div>
                         <p className="text-xs text-muted-foreground">
@@ -544,7 +841,6 @@ if (inv.quantity <= 0) {
                       </Button>
                     </div>
                   ) : (
-                    /* Customer search */
                     <>
                       <Input
                         placeholder="Search by name or mobile"
@@ -599,7 +895,6 @@ if (inv.quantity <= 0) {
                   )}
                 </div>
               ) : (
-                /* New customer */
                 <div className="grid gap-2 sm:grid-cols-2">
                   <Input
                     placeholder="Customer name"
@@ -690,12 +985,9 @@ if (inv.quantity <= 0) {
                 </p>
               )}
             </div>
-
-            {/* Custom item */}
-           
           </div>
 
-          {/* Cart */}
+          {/* Cart Table */}
           {items.length > 0 && (
             <div className="overflow-x-auto rounded-lg border">
               <Table>
@@ -727,51 +1019,52 @@ if (inv.quantity <= 0) {
                       </TableCell>
 
                       <TableCell>
-<Input
-  type="text"
-  inputMode="numeric"
-  minLength={1}
-  className="h-8 w-16"
-  value={item.quantity}
-  onFocus={(e) => e.currentTarget.select()}
-  onChange={(e) => {
-  const nextQuantity = Number(e.target.value) || 0;
+                        <Input
+                          type="text"
+                          inputMode="numeric"
+                          minLength={1}
+                          className="h-8 w-16"
+                          value={item.quantity}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => {
+                            const nextQuantity =
+                              Number(e.target.value) || 0;
 
-  if (
-    item.maxStock !== undefined &&
-    nextQuantity > item.maxStock
-  ) {
-    toast.error(
-      `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
-    );
+                            if (
+                              item.maxStock !== undefined &&
+                              nextQuantity > item.maxStock
+                            ) {
+                              toast.error(
+                                `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
+                              );
 
-    updateItem(item.key, {
-      quantity: item.maxStock,
-    });
+                              updateItem(item.key, {
+                                quantity: item.maxStock,
+                              });
 
-    return;
-  }
+                              return;
+                            }
 
-  updateItem(item.key, {
-    quantity: nextQuantity,
-  });
-}}
-/>
+                            updateItem(item.key, {
+                              quantity: nextQuantity,
+                            });
+                          }}
+                        />
                       </TableCell>
 
                       <TableCell>
-                <Input
-  type="text"
-  inputMode="decimal"
-  className="h-8 w-20"
-  value={item.rate}
-  onFocus={(e) => e.currentTarget.select()}
-  onChange={(e) =>
-    updateItem(item.key, {
-      rate: Number(e.target.value) || 0,
-    })
-  }
-/>
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="h-8 w-20"
+                          value={item.rate}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) =>
+                            updateItem(item.key, {
+                              rate: Number(e.target.value) || 0,
+                            })
+                          }
+                        />
                       </TableCell>
 
                       <TableCell className="text-right">
@@ -798,50 +1091,53 @@ if (inv.quantity <= 0) {
               </Table>
             </div>
           )}
- <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto]">
-              <Input
-                placeholder="Custom item name"
-                value={customName}
-                onChange={(e) =>
-                  setCustomName(e.target.value)
-                }
-              />
 
-              <Input
-  className="w-32"
-  type="text"
-  inputMode="decimal"
-  min="0"
-  placeholder="Price"
-  value={customRate}
-  onFocus={(e) => e.currentTarget.select()}
-  onChange={(e) => setCustomRate(e.target.value)}
-/>
+          {/* Custom Item Entry */}
+          <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto]">
+            <Input
+              placeholder="Custom item name"
+              value={customName}
+              onChange={(e) =>
+                setCustomName(e.target.value)
+              }
+            />
 
-              <Button
-                type="button"
-                size="sm"
-                variant="secondary"
-                className="sm:col-span-3"
-                onClick={addCustomItem}
-              >
-                <Plus className="size-4" />
-                Add custom item
-              </Button>
-            </div>
+            <Input
+              className="w-32"
+              type="text"
+              inputMode="decimal"
+              min="0"
+              placeholder="Price"
+              value={customRate}
+              onFocus={(e) => e.currentTarget.select()}
+              onChange={(e) => setCustomRate(e.target.value)}
+            />
+
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="sm:col-span-3"
+              onClick={addCustomItem}
+            >
+              <Plus className="size-4" />
+              Add custom item
+            </Button>
+          </div>
+
           {/* Payment */}
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
               <Label>Amount paid now</Label>
 
-            <Input
-  type="text"
-  inputMode="decimal"
-  min="0"
-  value={paid}
-  onFocus={(e) => e.currentTarget.select()}
-  onChange={(e) => setPaid(e.target.value)}
-/>
+              <Input
+                type="text"
+                inputMode="decimal"
+                min="0"
+                value={paid}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setPaid(e.target.value)}
+              />
             </div>
 
             <div className="space-y-1.5">
@@ -901,6 +1197,46 @@ if (inv.quantity <= 0) {
                   setRemarks(e.target.value)
                 }
               />
+            </div>
+          </div>
+
+          {/* Receipt Options Section */}
+          <div className="space-y-2 rounded-lg border p-3">
+            <Label className="text-sm font-medium">Receipt send options</Label>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "current", label: "Current receipt" },
+                { id: "full", label: "Full receipt" },
+                { id: "none", label: "No receipt" },
+              ].map((opt) => {
+                const active = receiptOption === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() =>
+                      setReceiptOption(opt.id as "current" | "full" | "none")
+                    }
+                    className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <div
+                      className={`flex size-4 items-center justify-center rounded-full border ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground"
+                      }`}
+                    >
+                      {active && <Check className="size-3" />}
+                    </div>
+                    {opt.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
