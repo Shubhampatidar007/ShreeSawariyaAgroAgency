@@ -50,6 +50,11 @@ export const adminNavSections: NavSection[] = [
     titleKey: "nav.system",
     items: [
       { label: "Reminders", labelKey: "nav.reminders", to: "/admin/reminders", icon: BellRing },
+      {
+        label: "Inventory Reminders",
+        to: "/admin/inventory-reminders",
+        icon: BellRing,
+      },
       { label: "Backups", labelKey: "nav.backups", to: "/admin/backups", icon: DatabaseBackup },
       { label: "Search", labelKey: "nav.search", to: "/admin/search", icon: Search },
     ],
