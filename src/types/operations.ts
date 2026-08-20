@@ -3,11 +3,21 @@ import type { PaymentMethod } from "@/types/business";
 export type OrderChannel = "online" | "offline";
 
 export type OrderStatus =
-  "pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
+  | "pending"
+  | "confirmed"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "returned";
 
 export type PaymentStatus = "paid" | "partial" | "pending" | "refunded";
 export type DeliveryStatus =
-  "not-required" | "scheduled" | "out-for-delivery" | "delivered" | "failed";
+  | "not-required"
+  | "scheduled"
+  | "out-for-delivery"
+  | "delivered"
+  | "failed";
 export type InvoiceStatus = "generated" | "draft" | "not-generated";
 
 export type OrderLine = {
@@ -35,6 +45,8 @@ export type Order = {
   customerType: "registered" | "guest" | "walk-in";
   village: string;
   mobile: string;
+  deliveryAddress?: string | undefined;
+  pincode?: string | undefined;
   placedOn: string;
   items: OrderLine[];
   subtotal: number;
@@ -95,7 +107,13 @@ export type ReminderLog = {
 };
 
 export type CmsSectionType =
-  "hero" | "poster" | "featured" | "categories" | "offers" | "announcement" | "marketing";
+  | "hero"
+  | "poster"
+  | "featured"
+  | "categories"
+  | "offers"
+  | "announcement"
+  | "marketing";
 
 export type CmsSection = {
   id: string;

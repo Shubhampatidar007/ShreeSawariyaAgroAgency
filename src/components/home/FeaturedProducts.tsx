@@ -10,12 +10,13 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
   const { t } = useI18n();
   const published = useShopStore((s) => s.products);
   const publishedCards = published
-    .filter((p) => p.visibility === "public")
+    .filter((p) => p.visibility === "public" && p.status === "published")
     .map((p) => ({
       id: p.id,
       name: p.title,
       category: p.category,
-      price: p.discountPrice ?? p.sellingPrice,
+      price: p.sellingPrice,
+      discountPrice: p.discountPrice,
       unit: "unit",
       ...(p.featured ? { tag: "Featured" } : {}),
       rating: 4.6,
@@ -24,6 +25,7 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
       stock: p.stock,
     }));
   const cards = [...publishedCards, ...featuredProducts].slice(0, 8);
+
   return (
     <section id="products" className="bg-muted/50 py-16">
       <div className="mx-auto max-w-7xl px-6">
