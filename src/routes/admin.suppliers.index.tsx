@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IndianRupee, Pencil, Trash2, Truck, Wallet } from "lucide-react";
 import { Card } from "@/components/ui/card";
@@ -18,7 +18,8 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SupplierCard } from "@/components/shared/EntityCards";
-import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, setAdminFeatureState, shopStore, useShopStore } from "@/lib/shop-store";
+import { loadSuppliersFeature } from "@/lib/admin-feature-loaders";
 
 export const Route = createFileRoute("/admin/suppliers/")({
   head: () => ({
@@ -34,6 +35,19 @@ export const Route = createFileRoute("/admin/suppliers/")({
 function SupplierListPage() {
   const suppliers = useShopStore((s) => s.suppliers);
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadSuppliersFeature()
+      .then((loadedSuppliers) => {
+        if (!cancelled) setAdminFeatureState({ suppliers: loadedSuppliers });
+      })
+      .catch((error) => console.error("Suppliers data load failed:", error));
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const rows = useMemo(() => {
     const term = query.trim().toLowerCase();
