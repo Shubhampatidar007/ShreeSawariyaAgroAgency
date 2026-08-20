@@ -17,33 +17,43 @@ let lastScope = "";
 const CACHE_MS = 30_000;
 
 /**
- * Keeps legacy admin modules working while progressively replacing the
- * all-data read with route-scoped reads. Existing mutations/business logic
- * remain in shopStore.
+ * Loads only the data required by the current admin route.
+ * The overview has its own dedicated loader, so this file is only used
+ * for child admin sections.
  */
 export function ensureAdminSectionData(force = false) {
   if (typeof window === "undefined") return Promise.resolve();
 
   const path = window.location.pathname;
+  const segments = path.split("/").filter(Boolean);
+  const isCustomerDetail =
+    path.startsWith("/admin/customers/") && segments.length >= 3;
   const scope = path.startsWith("/admin/khata/customers/")
     ? "customer-khata"
-    : path.startsWith("/admin/customers")
-      ? "customers"
-      : path.startsWith("/admin/suppliers")
-        ? "suppliers"
-        : path.startsWith("/admin/inventory")
-          ? "inventory"
-          : path.startsWith("/admin/products")
-            ? "products"
-            : path.startsWith("/admin/sales")
-              ? "sales"
-              : path.startsWith("/admin/payments")
-                ? "payments"
-                : path.startsWith("/admin/reminders")
-                  ? "reminders"
-                  : "legacy";
+    : isCustomerDetail
+      ? "customer-detail"
+      : path === "/admin/customers" || path === "/admin/customers/"
+        ? "customers"
+        : path.startsWith("/admin/suppliers")
+          ? "suppliers"
+          : path.startsWith("/admin/inventory")
+            ? "inventory"
+            : path.startsWith("/admin/products")
+              ? "products"
+              : path.startsWith("/admin/sales")
+                ? "sales"
+                : path.startsWith("/admin/payments")
+                  ? "payments"
+                  : path.startsWith("/admin/reminders")
+                    ? "reminders"
+                    : "legacy";
 
-  if (!force && lastLoadedAt && lastScope === scope && Date.now() - lastLoadedAt < CACHE_MS) {
+  const customerId = isCustomerDetail || scope === "customer-khata"
+    ? segments.at(-1)
+    : undefined;
+  const cacheKey = customerId ? `${scope}:${customerId}` : scope;
+
+  if (!force && lastLoadedAt && lastScope === cacheKey && Date.now() - lastLoadedAt < CACHE_MS) {
     return Promise.resolve();
   }
 
@@ -52,8 +62,12 @@ export function ensureAdminSectionData(force = false) {
   pending = (async () => {
     switch (scope) {
       case "customer-khata": {
-        const customerId = path.split("/").filter(Boolean).at(-1);
         if (!customerId) throw new Error("Missing customer ID for khata route");
+        setAdminFeatureState(await loadCustomerKhataFeature(customerId));
+        break;
+      }
+      case "customer-detail": {
+        if (!customerId) throw new Error("Missing customer ID for customer route");
         setAdminFeatureState(await loadCustomerKhataFeature(customerId));
         break;
       }
@@ -64,16 +78,33 @@ export function ensureAdminSectionData(force = false) {
         setAdminFeatureState({ suppliers: await loadSuppliersFeature() });
         break;
       case "inventory": {
-        const data = await loadInventoryFeature();
-        setAdminFeatureState(data);
+        const [inventoryData, suppliers] = await Promise.all([
+          loadInventoryFeature(),
+          loadSuppliersFeature(),
+        ]);
+        setAdminFeatureState({
+          ...inventoryData,
+          suppliers,
+        });
         break;
       }
       case "products":
         setAdminFeatureState({ products: await loadProductsFeature() });
         break;
       case "sales": {
-        const data = await loadSalesFeature();
-        setAdminFeatureState(data);
+        const [sales, customers, inventoryData, products] = await Promise.all([
+          loadSalesFeature(),
+          loadCustomersFeature(),
+          loadInventoryFeature(),
+          loadProductsFeature(),
+        ]);
+        setAdminFeatureState({
+          ...sales,
+          customers,
+          inventory: inventoryData.inventory,
+          reminders: inventoryData.reminders,
+          products,
+        });
         break;
       }
       case "payments": {
@@ -92,7 +123,7 @@ export function ensureAdminSectionData(force = false) {
     }
 
     lastLoadedAt = Date.now();
-    lastScope = scope;
+    lastScope = cacheKey;
   })().finally(() => {
     pending = null;
   });
