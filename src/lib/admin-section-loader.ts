@@ -2,6 +2,7 @@ import {
   loadCustomersFeature,
   loadInventoryFeature,
   loadPaymentsFeature,
+  loadProductsFeature,
   loadRemindersFeature,
   loadSalesFeature,
   loadSuppliersFeature,
@@ -29,13 +30,15 @@ export function ensureAdminSectionData(force = false) {
       ? "suppliers"
       : path.startsWith("/admin/inventory")
         ? "inventory"
-        : path.startsWith("/admin/sales")
-          ? "sales"
-          : path.startsWith("/admin/payments")
-            ? "payments"
-            : path.startsWith("/admin/reminders")
-              ? "reminders"
-              : "legacy";
+        : path.startsWith("/admin/products")
+          ? "products"
+          : path.startsWith("/admin/sales")
+            ? "sales"
+            : path.startsWith("/admin/payments")
+              ? "payments"
+              : path.startsWith("/admin/reminders")
+                ? "reminders"
+                : "legacy";
 
   if (!force && lastLoadedAt && lastScope === scope && Date.now() - lastLoadedAt < CACHE_MS) {
     return Promise.resolve();
@@ -56,6 +59,9 @@ export function ensureAdminSectionData(force = false) {
         setAdminFeatureState(data);
         break;
       }
+      case "products":
+        setAdminFeatureState({ products: await loadProductsFeature() });
+        break;
       case "sales": {
         const data = await loadSalesFeature();
         setAdminFeatureState(data);
