@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { AdminDataLoader } from "@/components/admin/AdminDataLoader";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { DashboardEnhancements } from "@/components/admin/DashboardEnhancements";
+import { DashboardEnhancementsOptimized } from "@/components/admin/DashboardEnhancementsOptimized";
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
@@ -35,7 +35,6 @@ function AdminLayout() {
       setSectionLoading(false);
       return;
     }
-
     let active = true;
     setSectionLoading(true);
     void loadAdminShopData()
@@ -43,15 +42,10 @@ function AdminLayout() {
       .finally(() => {
         if (active) setSectionLoading(false);
       });
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, [ready, location.pathname]);
 
-  if (!ready || sectionLoading) {
-    return <AdminDataLoader />;
-  }
+  if (!ready || sectionLoading) return <AdminDataLoader />;
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) {
     return (
@@ -60,9 +54,7 @@ function AdminLayout() {
           <ShieldAlert className="mx-auto size-10 text-destructive" />
           <h1 className="mt-4 font-display text-xl font-semibold">Staff access only</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {user
-              ? "This account does not have shop management permissions. Ask the shop owner for staff access."
-              : "Please sign in with your shop owner or staff account to open the management panel."}
+            {user ? "This account does not have shop management permissions. Ask the shop owner for staff access." : "Please sign in with your shop owner or staff account to open the management panel."}
           </p>
           <Button asChild className="mt-6 rounded-full"><Link to="/">Back to the shop</Link></Button>
         </div>
@@ -72,23 +64,18 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <aside className={cn(
-        "fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-sidebar-border transition-transform lg:block",
-        sidebarOpen ? "translate-x-0" : "-translate-x-full",
-      )}>
+      <aside className={cn("fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-sidebar-border transition-transform lg:block", sidebarOpen ? "translate-x-0" : "-translate-x-full")}>
         <AdminSidebar />
       </aside>
-
       <div className={cn("min-h-screen transition-[padding]", sidebarOpen ? "lg:pl-64" : "lg:pl-0")}>
         <AdminHeader onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
         <main className="mx-auto max-w-7xl px-3 pb-24 pt-4 sm:px-4 md:px-6 md:pb-8 md:pt-8">
           <div key={location.pathname} className="admin-page-transition space-y-8">
             <Outlet />
-            {location.pathname === "/admin" ? <DashboardEnhancements /> : null}
+            {location.pathname === "/admin" ? <DashboardEnhancementsOptimized /> : null}
           </div>
         </main>
       </div>
-
       <MobileAdminNav />
       <LowStockReminderPopup />
     </div>
