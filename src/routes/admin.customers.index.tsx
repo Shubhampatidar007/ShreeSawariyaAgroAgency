@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import {
   ArrowUpDown,
@@ -39,7 +39,8 @@ import { TablePagination } from "@/components/shared/TablePagination";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { CustomerCard } from "@/components/shared/EntityCards";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
-import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, setAdminFeatureState, shopStore, useShopStore } from "@/lib/shop-store";
+import { loadCustomersFeature } from "@/lib/admin-feature-loaders";
 
 export const Route = createFileRoute("/admin/customers/")({
   head: () => ({
@@ -60,6 +61,21 @@ function CustomerListPage() {
   const [status, setStatus] = useState("all");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadCustomersFeature()
+      .then((loadedCustomers) => {
+        if (!cancelled) setAdminFeatureState({ customers: loadedCustomers });
+      })
+      .catch((error) => {
+        console.error("Customers data load failed:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -271,8 +287,9 @@ function CustomerListPage() {
           <TablePagination
             page={currentPage}
             pageCount={pageCount}
-            total={filtered.length}
             onPageChange={setPage}
+            totalItems={filtered.length}
+            pageSize={PAGE_SIZE}
           />
         </>
       )}
