@@ -55,24 +55,13 @@ export function initAuth() {
   if (typeof window === "undefined" || started) return;
   started = true;
 
-  supabase.auth.onAuthStateChange((event, session) => {
+  supabase.auth.onAuthStateChange((_event, session) => {
     if (!session?.user) {
-      // SIGNED_OUT is the only auth event that needs to immediately clear the store.
       user = null;
       emit();
-      return;
     }
-
-    // Login/register already hydrate their user explicitly. Avoid hydrating again
-    // from the SIGNED_IN event, which previously caused duplicate profile/role queries.
-    // INITIAL_SESSION handles a session restored after a page reload.
-    if (event === "INITIAL_SESSION") {
-      void hydrate(session.user.id, session.user.email ?? "").catch((error) => {
-        console.error("[Auth] Failed to hydrate account data:", error);
-        user = null;
-        emit();
-      });
-    }
+    // Signed-in users are hydrated by login/register/getSession below.
+    // Auth token refreshes do not require another profile/role database query.
   });
 
   void supabase.auth.getSession().then(async ({ data, error }) => {
