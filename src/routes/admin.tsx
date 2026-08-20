@@ -9,7 +9,7 @@ import { DashboardEnhancementsOptimized } from "@/components/admin/DashboardEnha
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
-import { loadAdminShopData } from "@/lib/shop-store";
+import { ensureAdminSectionData } from "@/lib/admin-section-loader";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -35,14 +35,18 @@ function AdminLayout() {
       setSectionLoading(false);
       return;
     }
+
     let active = true;
     setSectionLoading(true);
-    void loadAdminShopData()
+    void ensureAdminSectionData()
       .catch((error) => console.error("Admin section data load failed:", error))
       .finally(() => {
         if (active) setSectionLoading(false);
       });
-    return () => { active = false; };
+
+    return () => {
+      active = false;
+    };
   }, [ready, location.pathname]);
 
   if (!ready || sectionLoading) return <AdminDataLoader />;
@@ -54,7 +58,9 @@ function AdminLayout() {
           <ShieldAlert className="mx-auto size-10 text-destructive" />
           <h1 className="mt-4 font-display text-xl font-semibold">Staff access only</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            {user ? "This account does not have shop management permissions. Ask the shop owner for staff access." : "Please sign in with your shop owner or staff account to open the management panel."}
+            {user
+              ? "This account does not have shop management permissions. Ask the shop owner for staff access."
+              : "Please sign in with your shop owner or staff account to open the management panel."}
           </p>
           <Button asChild className="mt-6 rounded-full"><Link to="/">Back to the shop</Link></Button>
         </div>
