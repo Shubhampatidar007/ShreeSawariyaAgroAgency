@@ -31,10 +31,10 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   formatCurrency,
   formatDate,
-  loadShopData,
   shopStore,
   useShopStore,
 } from "@/lib/shop-store";
+import { ensureAdminSectionData } from "@/lib/admin-section-loader";
 
 export const Route = createFileRoute("/admin/inventory/")({
   head: () => ({
@@ -144,7 +144,7 @@ function InventoryListPage() {
         if (error) throw error;
       }
 
-      await loadShopData();
+      await ensureAdminSectionData(true);
       await navigate({ to: "/admin/inventory-reminders" });
     } catch (error) {
       setReminderError(
