@@ -27,12 +27,16 @@ export function ensureAdminSectionData(force = false) {
   const path = window.location.pathname;
   const segments = path.split("/").filter(Boolean);
   const isCustomerDetail =
-    path.startsWith("/admin/customers/") && segments.length >= 3;
+    path.startsWith("/admin/customers/") &&
+    path !== "/admin/customers/new" &&
+    !path.startsWith("/admin/customers/new/") &&
+    segments.length >= 3;
+
   const scope = path.startsWith("/admin/khata/customers/")
     ? "customer-khata"
     : isCustomerDetail
       ? "customer-detail"
-      : path === "/admin/customers" || path === "/admin/customers/"
+      : path === "/admin/customers" || path === "/admin/customers/" || path === "/admin/customers/new"
         ? "customers"
         : path.startsWith("/admin/suppliers")
           ? "suppliers"
