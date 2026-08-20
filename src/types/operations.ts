@@ -45,8 +45,8 @@ export type Order = {
   customerType: "registered" | "guest" | "walk-in";
   village: string;
   mobile: string;
-  deliveryAddress: string;
-  pincode: string;
+  deliveryAddress?: string | undefined;
+  pincode?: string | undefined;
   placedOn: string;
   items: OrderLine[];
   subtotal: number;
