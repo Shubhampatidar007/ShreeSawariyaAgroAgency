@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type FormEvent } from "react";
 import { CheckCircle2, Loader2, MapPin, Minus, Phone, Plus, ShoppingCart, Trash2, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,7 @@ export function CartSheet() {
     setCheckoutOpen(true);
   };
 
-  const submitOrder = async (event: React.FormEvent<HTMLFormElement>) => {
+  const submitOrder = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!items.length) return;
 
