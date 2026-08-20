@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Customer, InventoryItem, PublishedProduct } from "@/types/business";
+import type { Customer, InventoryItem, PublishedProduct, Supplier } from "@/types/business";
 import type { Reminder } from "@/types";
 
 const num = (value: unknown) => Number(value ?? 0);
@@ -19,6 +19,23 @@ const toCustomer = (r: any): Customer => ({
   lastPurchase: r.last_purchase ?? r.joined_on,
   status: r.status,
   notes: r.notes ?? undefined,
+});
+
+const toSupplier = (r: any): Supplier => ({
+  id: r.id,
+  name: r.name,
+  company: r.company ?? "",
+  mobile: r.mobile ?? "",
+  email: r.email ?? "",
+  gstin: r.gstin ?? "",
+  address: r.address ?? "",
+  productsSupplied: r.products_supplied ?? [],
+  totalPurchases: num(r.total_purchases),
+  totalPaid: num(r.total_paid),
+  advance: num(r.advance),
+  dueBalance: num(r.due_balance),
+  lastOrder: r.last_order ?? "",
+  status: r.status,
 });
 
 const toInventory = (r: any): InventoryItem => ({
@@ -77,6 +94,12 @@ export async function loadCustomersFeature() {
   const { data, error } = await supabase.from("customers").select("*").order("name");
   if (error) throw error;
   return (data ?? []).map(toCustomer);
+}
+
+export async function loadSuppliersFeature() {
+  const { data, error } = await supabase.from("suppliers").select("*").order("name");
+  if (error) throw error;
+  return (data ?? []).map(toSupplier);
 }
 
 export async function loadInventoryFeature() {
