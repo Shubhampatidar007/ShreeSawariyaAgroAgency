@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase row shapes are inferred at runtime by the generated client. */
 import { supabase } from "@/integrations/supabase/client";
 import type { Customer, CustomerLedgerEntry } from "@/types/business";
 
