@@ -9,7 +9,12 @@ type SearchToolbarProps = {
   children?: ReactNode;
 };
 
-export function SearchToolbar({ value, onChange, placeholder = "Search…", children }: SearchToolbarProps) {
+export function SearchToolbar({
+  value,
+  onChange,
+  placeholder = "Search…",
+  children,
+}: SearchToolbarProps) {
   return (
     <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 shadow-soft sm:flex-row sm:items-center">
       <div className="relative flex-1">

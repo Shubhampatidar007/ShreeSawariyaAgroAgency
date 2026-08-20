@@ -288,28 +288,28 @@ function RemindersPage() {
         </TabsList>
 
         <TabsContent value="send" className="space-y-5">
-     <Card className="shadow-soft">
-  <CardHeader className="pb-3">
-    <CardTitle>What do you want to share?</CardTitle>
-  </CardHeader>
+          <Card className="shadow-soft">
+            <CardHeader className="pb-3">
+              <CardTitle>What do you want to share?</CardTitle>
+            </CardHeader>
 
-  <CardContent className="grid gap-3 md:grid-cols-3">
-    {(Object.keys(messagePresets) as WhatsAppMessageKind[]).map((messageType) => (
-      <button
-        key={messageType}
-        type="button"
-        onClick={() => setKindAndPreset(messageType)}
-        className={`flex min-h-14 items-center justify-center rounded-xl border px-4 py-3 text-sm font-semibold transition ${
-          kind === messageType
-            ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
-            : "border-border bg-background hover:border-primary/40 hover:bg-muted/30"
-        }`}
-      >
-        {messagePresets[messageType].label}
-      </button>
-    ))}
-  </CardContent>
-</Card>
+            <CardContent className="grid gap-3 md:grid-cols-3">
+              {(Object.keys(messagePresets) as WhatsAppMessageKind[]).map((messageType) => (
+                <button
+                  key={messageType}
+                  type="button"
+                  onClick={() => setKindAndPreset(messageType)}
+                  className={`flex min-h-14 items-center justify-center rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                    kind === messageType
+                      ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
+                      : "border-border bg-background hover:border-primary/40 hover:bg-muted/30"
+                  }`}
+                >
+                  {messagePresets[messageType].label}
+                </button>
+              ))}
+            </CardContent>
+          </Card>
 
           <Card className="shadow-soft">
             <CardHeader className="space-y-1.5">

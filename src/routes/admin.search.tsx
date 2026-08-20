@@ -14,20 +14,9 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormMessage,
-} from "@/components/ui/form";
+import { Form, FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { formatCurrency, useShopStore } from "@/lib/shop-store";
@@ -50,13 +39,7 @@ type Result = {
   href?: string;
 };
 
-const suggestions = [
-  "Product",
-  "Invoice",
-  "Customer",
-  "Stock",
-  "Supplier",
-];
+const suggestions = ["Product", "Invoice", "Customer", "Stock", "Supplier"];
 
 function AdminSearchPage() {
   const [query, setQuery] = useState("");
@@ -81,9 +64,7 @@ function AdminSearchPage() {
 
     const customerHits: Result[] = limit(
       customers.filter((customer) =>
-        `${customer.name} ${customer.mobile} ${customer.village}`
-          .toLowerCase()
-          .includes(q),
+        `${customer.name} ${customer.mobile} ${customer.village}`.toLowerCase().includes(q),
       ),
     ).map((customer) => ({
       id: customer.id,
@@ -95,9 +76,7 @@ function AdminSearchPage() {
 
     const supplierHits: Result[] = limit(
       suppliers.filter((supplier) =>
-        `${supplier.company} ${supplier.name} ${supplier.mobile}`
-          .toLowerCase()
-          .includes(q),
+        `${supplier.company} ${supplier.name} ${supplier.mobile}`.toLowerCase().includes(q),
       ),
     ).map((supplier) => ({
       id: supplier.id,
@@ -109,9 +88,7 @@ function AdminSearchPage() {
 
     const productHits: Result[] = limit(
       products.filter((product) =>
-        `${product.title} ${product.category}`
-          .toLowerCase()
-          .includes(q),
+        `${product.title} ${product.category}`.toLowerCase().includes(q),
       ),
     ).map((product) => ({
       id: product.id,
@@ -123,9 +100,7 @@ function AdminSearchPage() {
 
     const inventoryHits: Result[] = limit(
       inventory.filter((item) =>
-        `${item.productName} ${item.supplierName}`
-          .toLowerCase()
-          .includes(q),
+        `${item.productName} ${item.supplierName}`.toLowerCase().includes(q),
       ),
     ).map((item) => ({
       id: item.id,
@@ -137,9 +112,7 @@ function AdminSearchPage() {
 
     const orderHits: Result[] = limit(
       orders.filter((order) =>
-        `${order.code} ${order.customerName} ${order.village}`
-          .toLowerCase()
-          .includes(q),
+        `${order.code} ${order.customerName} ${order.village}`.toLowerCase().includes(q),
       ),
     ).map((order) => ({
       id: order.id,
@@ -149,21 +122,8 @@ function AdminSearchPage() {
       href: "/admin/sales",
     }));
 
-    return [
-      ...customerHits,
-      ...supplierHits,
-      ...productHits,
-      ...inventoryHits,
-      ...orderHits,
-    ];
-  }, [
-    query,
-    customers,
-    suppliers,
-    inventory,
-    products,
-    orders,
-  ]);
+    return [...customerHits, ...supplierHits, ...productHits, ...inventoryHits, ...orderHits];
+  }, [query, customers, suppliers, inventory, products, orders]);
 
   return (
     <div className="space-y-6">
@@ -177,9 +137,7 @@ function AdminSearchPage() {
         <CardContent className="p-6">
           <Form {...form}>
             <form
-              onSubmit={form.handleSubmit((values) =>
-                setQuery(values.query),
-              )}
+              onSubmit={form.handleSubmit((values) => setQuery(values.query))}
               className="flex flex-col gap-3 sm:flex-row"
             >
               <FormField
@@ -204,20 +162,14 @@ function AdminSearchPage() {
                 )}
               />
 
-              <Button
-                type="submit"
-                size="lg"
-                className="rounded-full"
-              >
+              <Button type="submit" size="lg" className="rounded-full">
                 Search
               </Button>
             </form>
           </Form>
 
           <div className="mt-4 flex flex-wrap items-center gap-2">
-            <span className="text-xs text-muted-foreground">
-              Try:
-            </span>
+            <span className="text-xs text-muted-foreground">Try:</span>
 
             {suggestions.map((suggestion) => (
               <Button
@@ -282,19 +234,13 @@ function AdminSearchPage() {
                     </div>
 
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-semibold">
-                        {result.title}
-                      </p>
+                      <p className="truncate text-sm font-semibold">{result.title}</p>
 
-                      <p className="truncate text-xs text-muted-foreground">
-                        {result.subtitle}
-                      </p>
+                      <p className="truncate text-xs text-muted-foreground">{result.subtitle}</p>
                     </div>
                   </div>
 
-                  <Badge variant="secondary">
-                    {result.type}
-                  </Badge>
+                  <Badge variant="secondary">{result.type}</Badge>
                 </>
               );
 

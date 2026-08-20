@@ -28,10 +28,11 @@ const getReady = () => ready;
 const getReadyServer = () => false;
 
 async function hydrate(userId: string, email: string) {
-  const [{ data: profile, error: profileError }, { data: roles, error: rolesError }] = await Promise.all([
-    supabase.from("profiles").select("full_name, mobile, village").eq("id", userId).maybeSingle(),
-    supabase.from("user_roles").select("role").eq("user_id", userId),
-  ]);
+  const [{ data: profile, error: profileError }, { data: roles, error: rolesError }] =
+    await Promise.all([
+      supabase.from("profiles").select("full_name, mobile, village").eq("id", userId).maybeSingle(),
+      supabase.from("user_roles").select("role").eq("user_id", userId),
+    ]);
 
   if (profileError || rolesError) {
     throw new Error(
@@ -93,7 +94,10 @@ export const authStore = {
       await supabase.auth.signOut();
       return {
         ok: false as const,
-        error: hydrateError instanceof Error ? hydrateError.message : "Unable to load your account data.",
+        error:
+          hydrateError instanceof Error
+            ? hydrateError.message
+            : "Unable to load your account data.",
       };
     }
 
@@ -125,7 +129,10 @@ export const authStore = {
       await supabase.auth.signOut();
       return {
         ok: false as const,
-        error: hydrateError instanceof Error ? hydrateError.message : "Unable to load your account data.",
+        error:
+          hydrateError instanceof Error
+            ? hydrateError.message
+            : "Unable to load your account data.",
       };
     }
 

@@ -18,7 +18,13 @@ import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { SupplierCard } from "@/components/shared/EntityCards";
-import { formatCurrency, formatDate, setAdminFeatureState, shopStore, useShopStore } from "@/lib/shop-store";
+import {
+  formatCurrency,
+  formatDate,
+  setAdminFeatureState,
+  shopStore,
+  useShopStore,
+} from "@/lib/shop-store";
 import { loadSuppliersFeature } from "@/lib/admin-feature-loaders";
 
 export const Route = createFileRoute("/admin/suppliers/")({
@@ -81,7 +87,12 @@ function SupplierListPage() {
         items={[
           { label: "Suppliers", value: String(suppliers.length), icon: Truck },
           { label: "Total purchases", value: formatCurrency(totals.purchases), icon: IndianRupee },
-          { label: "Outstanding due", value: formatCurrency(totals.due), icon: Wallet, tone: "warning" },
+          {
+            label: "Outstanding due",
+            value: formatCurrency(totals.due),
+            icon: Wallet,
+            tone: "warning",
+          },
           {
             label: "Active",
             value: String(suppliers.filter((s) => s.status === "active").length),
@@ -130,17 +141,24 @@ function SupplierListPage() {
                     <TableCell className="max-w-[200px] truncate text-muted-foreground">
                       {supplier.productsSupplied.join(", ")}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(supplier.totalPurchases)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(supplier.totalPurchases)}
+                    </TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatCurrency(supplier.dueBalance)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(supplier.lastOrder)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(supplier.lastOrder)}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={supplier.status} />
                     </TableCell>
                     <TableCell className="text-right">
                       <Button variant="ghost" size="sm" asChild>
-                        <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
+                        <Link
+                          to="/admin/ledger/suppliers/$supplierId"
+                          params={{ supplierId: supplier.id }}
+                        >
                           Open
                         </Link>
                       </Button>

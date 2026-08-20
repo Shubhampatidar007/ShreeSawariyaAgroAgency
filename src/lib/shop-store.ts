@@ -289,10 +289,7 @@ const toBackup = (r: any): Backup => ({
 export async function loadPublicShopData() {
   try {
     const [products, cmsSections] = await Promise.all([
-      supabase
-        .from("products")
-        .select("*")
-        .order("published_on", { ascending: false }),
+      supabase.from("products").select("*").order("published_on", { ascending: false }),
 
       supabase.from("cms_sections").select("*").order("sort_order"),
     ]);
@@ -341,30 +338,12 @@ export async function loadAdminShopData() {
       supabase.from("inventory_items").select("*").order("product_name"),
       supabase.from("customer_transactions").select("*").order("entry_date"),
       supabase.from("supplier_transactions").select("*").order("entry_date"),
-      supabase
-        .from("orders")
-        .select("*, order_items(*)")
-        .order("placed_on", { ascending: false }),
-      supabase
-        .from("payments")
-        .select("*")
-        .order("entry_date", { ascending: false }),
-      supabase
-        .from("reminders")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("reminder_logs")
-        .select("*")
-        .order("sent_at", { ascending: false }),
-      supabase
-        .from("advertisements")
-        .select("*")
-        .order("created_at", { ascending: false }),
-      supabase
-        .from("backups")
-        .select("*")
-        .order("created_at", { ascending: false }),
+      supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+      supabase.from("payments").select("*").order("entry_date", { ascending: false }),
+      supabase.from("reminders").select("*").order("created_at", { ascending: false }),
+      supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
+      supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
+      supabase.from("backups").select("*").order("created_at", { ascending: false }),
     ]);
 
     const firstError = [
@@ -444,7 +423,7 @@ export function initAdminShopData() {
   return adminLoadPromise;
 }
 
-const after = async <T,>(value: T) => {
+const after = async <T>(value: T) => {
   await loadAdminShopData();
   return value;
 };
@@ -478,13 +457,9 @@ export const shopStore = {
     if (patch.address !== undefined) payload.address = patch.address;
     if (patch.status !== undefined) payload.status = patch.status;
     if (patch.notes !== undefined) payload.notes = patch.notes ?? null;
-    if (patch.creditLimit !== undefined)
-      payload.credit_limit = patch.creditLimit;
+    if (patch.creditLimit !== undefined) payload.credit_limit = patch.creditLimit;
     if (patch.joinedOn !== undefined) payload.joined_on = patch.joinedOn;
-    const { error } = await supabase
-      .from("customers")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("customers").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
@@ -568,23 +543,18 @@ export const shopStore = {
     reference?: string;
     remarks?: string;
   }) {
-    const { data, error } = await supabase.rpc(
-      "record_supplier_payment" as any,
-      {
-        _supplier_id: input.supplierId,
-        _amount: input.amount,
-        _method: input.method,
-        _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
-        _reference: input.reference ?? "",
-        _remarks: input.remarks ?? null,
-      },
-    );
+    const { data, error } = await supabase.rpc("record_supplier_payment" as any, {
+      _supplier_id: input.supplierId,
+      _amount: input.amount,
+      _method: input.method,
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _reference: input.reference ?? "",
+      _remarks: input.remarks ?? null,
+    });
     if (error) throw error;
     return after(data as string);
   },
-  async fetchTransactionItems(
-    transactionId: string,
-  ): Promise<CustomerSaleItem[]> {
+  async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
       .from("customer_transaction_items")
       .select("*")
@@ -621,12 +591,8 @@ export const shopStore = {
     if (patch.gstin !== undefined) payload.gstin = patch.gstin;
     if (patch.address !== undefined) payload.address = patch.address;
     if (patch.status !== undefined) payload.status = patch.status;
-    if (patch.productsSupplied !== undefined)
-      payload.products_supplied = patch.productsSupplied;
-    const { error } = await supabase
-      .from("suppliers")
-      .update(payload)
-      .eq("id", id);
+    if (patch.productsSupplied !== undefined) payload.products_supplied = patch.productsSupplied;
+    const { error } = await supabase.from("suppliers").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
@@ -646,38 +612,29 @@ export const shopStore = {
     minStockLevel: number;
     lastUpdated: string;
   }) {
-    const { data, error } = await supabase.rpc(
-      "record_supplier_purchase" as any,
-      {
-        _supplier_id: item.supplierId,
-        _product_name: item.productName,
-        _quantity: item.quantity,
-        _unit: item.unit,
-        _purchase_price: item.purchasePrice,
-        _min_stock_level: item.minStockLevel,
-        _entry_date: item.lastUpdated,
-        _advance_paid: item.advancePaid,
-        _advance_method: item.advanceMethod,
-      },
-    );
+    const { data, error } = await supabase.rpc("record_supplier_purchase" as any, {
+      _supplier_id: item.supplierId,
+      _product_name: item.productName,
+      _quantity: item.quantity,
+      _unit: item.unit,
+      _purchase_price: item.purchasePrice,
+      _min_stock_level: item.minStockLevel,
+      _entry_date: item.lastUpdated,
+      _advance_paid: item.advancePaid,
+      _advance_method: item.advanceMethod,
+    });
     if (error) throw error;
     return after(data as string);
   },
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
     const payload: any = { last_updated: new Date().toISOString().slice(0, 10) };
-    if (patch.productName !== undefined)
-      payload.product_name = patch.productName;
+    if (patch.productName !== undefined) payload.product_name = patch.productName;
     if (patch.quantity !== undefined) payload.quantity = patch.quantity;
     if (patch.unit !== undefined) payload.unit = patch.unit;
-    if (patch.purchasePrice !== undefined)
-      payload.purchase_price = patch.purchasePrice;
-    if (patch.minStockLevel !== undefined)
-      payload.min_stock_level = patch.minStockLevel;
+    if (patch.purchasePrice !== undefined) payload.purchase_price = patch.purchasePrice;
+    if (patch.minStockLevel !== undefined) payload.min_stock_level = patch.minStockLevel;
     if (patch.status !== undefined) payload.status = patch.status;
-    const { error } = await supabase
-      .from("inventory_items")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("inventory_items").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
@@ -719,20 +676,14 @@ export const shopStore = {
     const payload: any = {};
     if (patch.title !== undefined) payload.title = patch.title;
     if (patch.category !== undefined) payload.category = patch.category;
-    if (patch.sellingPrice !== undefined)
-      payload.selling_price = patch.sellingPrice;
-    if (patch.discountPrice !== undefined)
-      payload.discount_price = patch.discountPrice ?? null;
+    if (patch.sellingPrice !== undefined) payload.selling_price = patch.sellingPrice;
+    if (patch.discountPrice !== undefined) payload.discount_price = patch.discountPrice ?? null;
     if (patch.stock !== undefined) payload.stock = patch.stock;
-    if (patch.description !== undefined)
-      payload.description = patch.description;
+    if (patch.description !== undefined) payload.description = patch.description;
     if (patch.visibility !== undefined) payload.visibility = patch.visibility;
     if (patch.featured !== undefined) payload.featured = patch.featured;
     if (patch.status !== undefined) payload.status = patch.status;
-    const { error } = await supabase
-      .from("products")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("products").update(payload).eq("id", id);
     if (error) throw error;
     await loadPublicShopData();
     return after(undefined);
@@ -785,24 +736,17 @@ export const shopStore = {
   },
   async updateOrder(id: string, patch: Partial<Order>) {
     const payload: any = {};
-    if (patch.orderStatus !== undefined)
-      payload.order_status = patch.orderStatus;
-    if (patch.paymentStatus !== undefined)
-      payload.payment_status = patch.paymentStatus;
-    if (patch.deliveryStatus !== undefined)
-      payload.delivery_status = patch.deliveryStatus;
-    if (patch.invoiceStatus !== undefined)
-      payload.invoice_status = patch.invoiceStatus;
+    if (patch.orderStatus !== undefined) payload.order_status = patch.orderStatus;
+    if (patch.paymentStatus !== undefined) payload.payment_status = patch.paymentStatus;
+    if (patch.deliveryStatus !== undefined) payload.delivery_status = patch.deliveryStatus;
+    if (patch.invoiceStatus !== undefined) payload.invoice_status = patch.invoiceStatus;
     if (patch.paid !== undefined) payload.paid = patch.paid;
     if (patch.timeline !== undefined) payload.timeline = patch.timeline;
-    const { error } = await supabase
-      .from("orders")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
-async addPayment(payment: Omit<PaymentRecord, "id">) {
+  async addPayment(payment: Omit<PaymentRecord, "id">) {
     const { error } = await supabase.from("payments").insert({
       reference: payment["reference"],
       direction: payment["direction"],
@@ -823,10 +767,7 @@ async addPayment(payment: Omit<PaymentRecord, "id">) {
     if (patch.message !== undefined) payload.message = patch.message;
     if (patch.schedule !== undefined) payload.schedule = patch.schedule;
     if (patch.channel !== undefined) payload.channel = patch.channel;
-    const { error } = await supabase
-      .from("reminders")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("reminders").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
@@ -837,10 +778,7 @@ async addPayment(payment: Omit<PaymentRecord, "id">) {
     if (patch.enabled !== undefined) payload.enabled = patch.enabled;
     if (patch.visibility !== undefined) payload.visibility = patch.visibility;
     if (patch.order !== undefined) payload.sort_order = patch.order;
-    const { error } = await supabase
-      .from("cms_sections")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("cms_sections").update(payload).eq("id", id);
     if (error) throw error;
     await loadPublicShopData();
     return after(undefined);
@@ -853,21 +791,13 @@ async addPayment(payment: Omit<PaymentRecord, "id">) {
     const current = sorted[index]!,
       swap = sorted[target]!;
     await Promise.all([
-      supabase
-        .from("cms_sections")
-        .update({ sort_order: swap.order })
-        .eq("id", current.id),
-      supabase
-        .from("cms_sections")
-        .update({ sort_order: current.order })
-        .eq("id", swap.id),
+      supabase.from("cms_sections").update({ sort_order: swap.order }).eq("id", current.id),
+      supabase.from("cms_sections").update({ sort_order: current.order }).eq("id", swap.id),
     ]);
     await loadPublicShopData();
     return after(undefined);
   },
-  async addAdvertisement(
-    ad: Omit<Advertisement, "id" | "impressions" | "clicks">,
-  ) {
+  async addAdvertisement(ad: Omit<Advertisement, "id" | "impressions" | "clicks">) {
     const { error } = await supabase.from("advertisements").insert({
       title: ad.title,
       placement: ad.placement,
@@ -887,10 +817,7 @@ async addPayment(payment: Omit<PaymentRecord, "id">) {
     if (patch.status !== undefined) payload.status = patch.status;
     if (patch.startsOn !== undefined) payload.starts_on = patch.startsOn;
     if (patch.runsUntil !== undefined) payload.runs_until = patch.runsUntil;
-    const { error } = await supabase
-      .from("advertisements")
-      .update(payload)
-      .eq("id", id);
+    const { error } = await supabase.from("advertisements").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
@@ -915,8 +842,7 @@ async addPayment(payment: Omit<PaymentRecord, "id">) {
   },
 };
 
-export const formatCurrency = (value: number) =>
-  `₹${Math.round(value).toLocaleString("en-IN")}`;
+export const formatCurrency = (value: number) => `₹${Math.round(value).toLocaleString("en-IN")}`;
 export const formatDate = (value: string) =>
   new Date(value).toLocaleDateString("en-IN", {
     day: "2-digit",

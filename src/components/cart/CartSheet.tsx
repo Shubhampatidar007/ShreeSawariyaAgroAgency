@@ -95,17 +95,25 @@ export function CartSheet() {
             <div className="space-y-3 pb-2">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">{t("cart.subtotal", "Subtotal")}</span>
-                <span className="font-display text-lg font-semibold">{formatCurrency(subtotal)}</span>
+                <span className="font-display text-lg font-semibold">
+                  {formatCurrency(subtotal)}
+                </span>
               </div>
               <Button
                 className="w-full rounded-full"
                 onClick={() =>
-                  toast.info(t("cart.checkoutSoon", "Checkout will be connected to online payments next."))
+                  toast.info(
+                    t("cart.checkoutSoon", "Checkout will be connected to online payments next."),
+                  )
                 }
               >
                 {t("cart.checkout", "Proceed to checkout")}
               </Button>
-              <Button variant="ghost" className="w-full rounded-full" onClick={() => cartStore.clear()}>
+              <Button
+                variant="ghost"
+                className="w-full rounded-full"
+                onClick={() => cartStore.clear()}
+              >
                 {t("cart.clear", "Clear cart")}
               </Button>
             </div>

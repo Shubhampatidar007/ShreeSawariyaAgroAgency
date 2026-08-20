@@ -50,8 +50,7 @@ const placements = ["Homepage hero", "Category banner", "Storefront strip", "Pro
 const audiences = ["All visitors", "Repeat customers", "Wheat growers", "Dairy farmers"];
 
 const today = () => new Date().toISOString().slice(0, 10);
-const inDays = (days: number) =>
-  new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
+const inDays = (days: number) => new Date(Date.now() + days * 86400000).toISOString().slice(0, 10);
 
 function AdvertisementsPage() {
   const ads = useShopStore((s) => s.advertisements);
@@ -148,7 +147,11 @@ function AdvertisementsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <SummaryCard label="Live campaigns" value={String(live.length)} helper="Running right now" />
+        <SummaryCard
+          label="Live campaigns"
+          value={String(live.length)}
+          helper="Running right now"
+        />
         <SummaryCard
           label="Total impressions"
           value={impressions.toLocaleString("en-IN")}
@@ -193,7 +196,10 @@ function AdvertisementsPage() {
               <TableBody>
                 {visible.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={8} className="py-12 text-center text-sm text-muted-foreground">
+                    <TableCell
+                      colSpan={8}
+                      className="py-12 text-center text-sm text-muted-foreground"
+                    >
                       {loading
                         ? "Loading campaigns…"
                         : "No campaigns yet. Create your first one with “New campaign”."}
@@ -220,7 +226,9 @@ function AdvertisementsPage() {
                       <TableCell className="text-right">
                         {ad.impressions.toLocaleString("en-IN")}
                       </TableCell>
-                      <TableCell className="text-right">{ad.clicks.toLocaleString("en-IN")}</TableCell>
+                      <TableCell className="text-right">
+                        {ad.clicks.toLocaleString("en-IN")}
+                      </TableCell>
                       <TableCell className="hidden sm:table-cell text-muted-foreground">
                         {formatDate(ad.runsUntil)}
                       </TableCell>

@@ -43,7 +43,10 @@ export function MobileAdminNav() {
 
         <Sheet>
           <SheetTrigger asChild>
-            <Button variant="ghost" className="h-auto min-h-14 flex-col gap-1 rounded-xl px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground">
+            <Button
+              variant="ghost"
+              className="h-auto min-h-14 flex-col gap-1 rounded-xl px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
               <Menu className="size-5" />
               <span>More</span>
             </Button>

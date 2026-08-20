@@ -3,7 +3,13 @@ import { AlertTriangle, Bell, CheckCircle2, CircleAlert, Info } from "lucide-rea
 import { Link } from "@tanstack/react-router";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { useShopStore } from "@/lib/shop-store";
 import { supabase } from "@/integrations/supabase/client";
 import { formatIndianCompactCurrency, formatIndianDate } from "@/lib/indian-format";
@@ -88,7 +94,10 @@ export function AdminNotificationCenter() {
 
     setUpdatingId(notification.id);
     try {
-      const { error } = await supabase.from("notifications").update({ is_read: true }).eq("id", notification.id);
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .eq("id", notification.id);
       if (error) throw error;
       setLocalRead((current) => new Set(current).add(notification.id));
     } finally {
@@ -97,7 +106,9 @@ export function AdminNotificationCenter() {
   };
 
   const markAllRead = async () => {
-    const databaseIds = items.filter((item) => !item.id.startsWith("system-") && !item.isRead).map((item) => item.id);
+    const databaseIds = items
+      .filter((item) => !item.id.startsWith("system-") && !item.isRead)
+      .map((item) => item.id);
     if (databaseIds.length === 0) {
       setLocalRead(new Set(items.map((item) => item.id)));
       return;
@@ -105,7 +116,10 @@ export function AdminNotificationCenter() {
 
     setUpdatingId("all");
     try {
-      const { error } = await supabase.from("notifications").update({ is_read: true }).in("id", databaseIds);
+      const { error } = await supabase
+        .from("notifications")
+        .update({ is_read: true })
+        .in("id", databaseIds);
       if (error) throw error;
       setLocalRead(new Set(items.map((item) => item.id)));
     } finally {
@@ -116,7 +130,12 @@ export function AdminNotificationCenter() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative size-10 rounded-full" aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative size-10 rounded-full"
+          aria-label={`Notifications${unreadCount ? `, ${unreadCount} unread` : ""}`}
+        >
           <Bell className="size-5" />
           {unreadCount > 0 ? (
             <Badge className="absolute -right-0.5 -top-0.5 flex size-5 items-center justify-center rounded-full border-2 border-card bg-destructive p-0 text-[10px] text-destructive-foreground">
@@ -125,52 +144,96 @@ export function AdminNotificationCenter() {
           ) : null}
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-[min(92vw,380px)] overflow-hidden rounded-2xl p-0">
+      <DropdownMenuContent
+        align="end"
+        className="w-[min(92vw,380px)] overflow-hidden rounded-2xl p-0"
+      >
         <div className="flex items-center justify-between border-b border-border px-4 py-3">
           <div>
             <DropdownMenuLabel className="p-0 text-sm">Notifications</DropdownMenuLabel>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Operational alerts and system updates</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Operational alerts and system updates
+            </p>
           </div>
-          <Button variant="ghost" size="sm" className="h-8 rounded-full px-3 text-xs" disabled={unreadCount === 0 || updatingId === "all"} onClick={() => void markAllRead()}>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 rounded-full px-3 text-xs"
+            disabled={unreadCount === 0 || updatingId === "all"}
+            onClick={() => void markAllRead()}
+          >
             Mark all read
           </Button>
         </div>
 
         <div className="max-h-[min(70vh,520px)] overflow-y-auto p-2">
           {items.length === 0 ? (
-            <div className="px-4 py-10 text-center text-sm text-muted-foreground">No notifications yet.</div>
+            <div className="px-4 py-10 text-center text-sm text-muted-foreground">
+              No notifications yet.
+            </div>
           ) : (
             items.slice(0, 12).map((notification) => {
-              const safeType: NotificationType = notification.type in iconByType ? notification.type as NotificationType : "info";
+              const safeType: NotificationType =
+                notification.type in iconByType ? (notification.type as NotificationType) : "info";
               const Icon = iconByType[safeType];
               const read = notification.isRead || localRead.has(notification.id);
               const content = (
-                <div className={`flex gap-3 rounded-xl p-3 transition-colors ${read ? "opacity-65 hover:opacity-100" : "bg-muted/40"}`}>
-                  <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconClassByType[safeType]}`}>
+                <div
+                  className={`flex gap-3 rounded-xl p-3 transition-colors ${read ? "opacity-65 hover:opacity-100" : "bg-muted/40"}`}
+                >
+                  <div
+                    className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${iconClassByType[safeType]}`}
+                  >
                     <Icon className="size-4" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
                       <p className="text-sm font-semibold leading-5">{notification.title}</p>
-                      {!read ? <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" /> : null}
+                      {!read ? (
+                        <span className="mt-1 size-2 shrink-0 rounded-full bg-primary" />
+                      ) : null}
                     </div>
-                    <p className="mt-1 text-xs leading-5 text-muted-foreground">{notification.body}</p>
+                    <p className="mt-1 text-xs leading-5 text-muted-foreground">
+                      {notification.body}
+                    </p>
                     <div className="mt-2 flex items-center justify-between gap-2">
-                      <span className="text-[10px] text-muted-foreground">{formatIndianDate(notification.createdAt, { day: "2-digit", month: "short" })}</span>
-                      {updatingId === notification.id ? <span className="text-[10px] text-muted-foreground">Updating…</span> : null}
+                      <span className="text-[10px] text-muted-foreground">
+                        {formatIndianDate(notification.createdAt, {
+                          day: "2-digit",
+                          month: "short",
+                        })}
+                      </span>
+                      {updatingId === notification.id ? (
+                        <span className="text-[10px] text-muted-foreground">Updating…</span>
+                      ) : null}
                     </div>
                   </div>
                 </div>
               );
 
               return (
-                <DropdownMenuItem key={notification.id} asChild className="cursor-pointer rounded-xl p-0 focus:bg-transparent">
+                <DropdownMenuItem
+                  key={notification.id}
+                  asChild
+                  className="cursor-pointer rounded-xl p-0 focus:bg-transparent"
+                >
                   {notification.link ? (
-                    <Link to={notification.link} onClick={() => { if (!read) void markRead(notification); }}>
+                    <Link
+                      to={notification.link}
+                      onClick={() => {
+                        if (!read) void markRead(notification);
+                      }}
+                    >
                       {content}
                     </Link>
                   ) : (
-                    <button type="button" className="w-full text-left" onClick={() => { if (!read) void markRead(notification); }}>
+                    <button
+                      type="button"
+                      className="w-full text-left"
+                      onClick={() => {
+                        if (!read) void markRead(notification);
+                      }}
+                    >
                       {content}
                     </button>
                   )}
@@ -181,7 +244,9 @@ export function AdminNotificationCenter() {
         </div>
 
         <div className="border-t border-border px-4 py-3 text-[11px] text-muted-foreground">
-          {unreadCount ? `${unreadCount} notification${unreadCount === 1 ? "" : "s"} need your attention.` : "You're all caught up."}
+          {unreadCount
+            ? `${unreadCount} notification${unreadCount === 1 ? "" : "s"} need your attention.`
+            : "You're all caught up."}
         </div>
       </DropdownMenuContent>
     </DropdownMenu>

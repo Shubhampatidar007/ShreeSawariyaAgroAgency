@@ -24,15 +24,17 @@ function cachedFeature<T>(key: string, load: () => Promise<T>) {
   }
   if (existing?.pending) return existing.pending;
 
-  const pending = load().then((value) => {
-    cache.set(key, { value, loadedAt: Date.now() });
-    return value;
-  }).finally(() => {
-    const current = cache.get(key);
-    if (current?.pending === pending) {
-      cache.set(key, { value: current.value, loadedAt: current.loadedAt });
-    }
-  });
+  const pending = load()
+    .then((value) => {
+      cache.set(key, { value, loadedAt: Date.now() });
+      return value;
+    })
+    .finally(() => {
+      const current = cache.get(key);
+      if (current?.pending === pending) {
+        cache.set(key, { value: current.value, loadedAt: current.loadedAt });
+      }
+    });
 
   cache.set(key, { ...existing, loadedAt: existing?.loadedAt ?? 0, pending });
   return pending;
@@ -232,7 +234,11 @@ export function loadInventoryFeature() {
   return cachedFeature("inventory", async () => {
     const [inventory, reminders, products] = await Promise.all([
       supabase.from("inventory_items").select("*").order("product_name"),
-      supabase.from("reminders").select("*").eq("target", "inventory").order("created_at", { ascending: false }),
+      supabase
+        .from("reminders")
+        .select("*")
+        .eq("target", "inventory")
+        .order("created_at", { ascending: false }),
       supabase.from("products").select("*").order("published_on", { ascending: false }),
     ]);
     if (inventory.error) throw inventory.error;

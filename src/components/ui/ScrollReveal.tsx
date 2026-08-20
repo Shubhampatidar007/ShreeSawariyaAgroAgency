@@ -1,10 +1,4 @@
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-} from "react";
+import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 
 type RevealDirection = "up" | "down" | "left" | "right" | "none";
 
@@ -79,11 +73,7 @@ type ScrollRevealProps = {
   onReveal?: () => void;
 };
 
-const getTransform = (
-  direction: RevealDirection,
-  distance: number,
-  scale: number,
-) => {
+const getTransform = (direction: RevealDirection, distance: number, scale: number) => {
   const translations: Record<RevealDirection, string> = {
     up: `translate3d(0, ${distance}px, 0)`,
     down: `translate3d(0, -${distance}px, 0)`,
@@ -122,8 +112,7 @@ export function ScrollReveal({
   const callbackRef = useRef(onReveal);
 
   const [isVisible, setIsVisible] = useState(false);
-  const [supportsReducedMotion, setSupportsReducedMotion] =
-    useState(false);
+  const [supportsReducedMotion, setSupportsReducedMotion] = useState(false);
 
   /*
    * Keep the callback reference current without
@@ -138,9 +127,7 @@ export function ScrollReveal({
    * accessibility preference.
    */
   useEffect(() => {
-    const mediaQuery = window.matchMedia(
-      "(prefers-reduced-motion: reduce)",
-    );
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
 
     const updatePreference = () => {
       setSupportsReducedMotion(mediaQuery.matches);
@@ -210,49 +197,26 @@ export function ScrollReveal({
     return () => {
       observer.disconnect();
     };
-  }, [
-    once,
-    rootMargin,
-    supportsReducedMotion,
-    threshold,
-  ]);
+  }, [once, rootMargin, supportsReducedMotion, threshold]);
 
-  const hiddenTransform = getTransform(
-    direction,
-    distance,
-    scale,
-  );
+  const hiddenTransform = getTransform(direction, distance, scale);
 
   const visibleTransform = "translate3d(0, 0, 0) scale(1)";
 
   const revealStyle: CSSProperties = {
     opacity: isVisible ? 1 : opacity,
     transform: isVisible ? visibleTransform : hiddenTransform,
-    filter:
-      isVisible || blur === 0
-        ? "blur(0px)"
-        : `blur(${blur}px)`,
+    filter: isVisible || blur === 0 ? "blur(0px)" : `blur(${blur}px)`,
     transitionProperty: "opacity, transform, filter",
-    transitionDuration: supportsReducedMotion
-      ? "0ms"
-      : `${duration}ms`,
-    transitionTimingFunction:
-      "cubic-bezier(0.22, 1, 0.36, 1)",
-    transitionDelay: supportsReducedMotion
-      ? "0ms"
-      : `${delay}ms`,
-    willChange: isVisible
-      ? "auto"
-      : "opacity, transform, filter",
+    transitionDuration: supportsReducedMotion ? "0ms" : `${duration}ms`,
+    transitionTimingFunction: "cubic-bezier(0.22, 1, 0.36, 1)",
+    transitionDelay: supportsReducedMotion ? "0ms" : `${delay}ms`,
+    willChange: isVisible ? "auto" : "opacity, transform, filter",
     ...style,
   };
 
   return (
-    <div
-      ref={elementRef}
-      className={className}
-      style={revealStyle}
-    >
+    <div ref={elementRef} className={className} style={revealStyle}>
       {children}
     </div>
   );

@@ -38,7 +38,11 @@ const subscribe = (listener: () => void) => {
 };
 
 export function useOverviewStore<T>(selector: (value: OverviewState) => T): T {
-  const snapshot = useSyncExternalStore(subscribe, () => state, () => emptyState);
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    () => state,
+    () => emptyState,
+  );
   return selector(snapshot);
 }
 
@@ -147,46 +151,50 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
 
   loadPromise = (async () => {
     try {
-      const [orders, customers, inventory, customerLedger, supplierLedger, payments] = await Promise.all([
-        supabase
-          .from("orders")
-          .select(
-            "id,code,channel,customer_id,customer_name,customer_type,village,mobile,placed_on,subtotal,discount,tax,total,paid,payment_method,payment_status,delivery_status,order_status,invoice_status,remarks,timeline,order_items(id,product,quantity,unit,rate,amount)",
-          )
-          .gte("placed_on", from)
-          .order("placed_on", { ascending: false }),
-        supabase.from("customers").select("id,status,current_due"),
-        supabase
-          .from("inventory_items")
-          .select(
-            "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,total_price,min_stock_level,status,last_updated",
-          )
-          .order("product_name"),
-        supabase
-          .from("customer_transactions")
-          .select(
-            "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks",
-          )
-          .gte("entry_date", from)
-          .order("entry_date", { ascending: true }),
-        supabase
-          .from("supplier_transactions")
-          .select(
-            "id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks",
-          )
-          .gte("entry_date", from)
-          .order("entry_date", { ascending: true }),
-        supabase
-          .from("payments")
-          .select(
-            "id,reference,direction,party_id,party_name,entry_date,amount,method,status,order_code,remarks",
-          )
-          .eq("entry_date", today),
-      ]);
+      const [orders, customers, inventory, customerLedger, supplierLedger, payments] =
+        await Promise.all([
+          supabase
+            .from("orders")
+            .select(
+              "id,code,channel,customer_id,customer_name,customer_type,village,mobile,placed_on,subtotal,discount,tax,total,paid,payment_method,payment_status,delivery_status,order_status,invoice_status,remarks,timeline,order_items(id,product,quantity,unit,rate,amount)",
+            )
+            .gte("placed_on", from)
+            .order("placed_on", { ascending: false }),
+          supabase.from("customers").select("id,status,current_due"),
+          supabase
+            .from("inventory_items")
+            .select(
+              "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,total_price,min_stock_level,status,last_updated",
+            )
+            .order("product_name"),
+          supabase
+            .from("customer_transactions")
+            .select(
+              "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks",
+            )
+            .gte("entry_date", from)
+            .order("entry_date", { ascending: true }),
+          supabase
+            .from("supplier_transactions")
+            .select("id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks")
+            .gte("entry_date", from)
+            .order("entry_date", { ascending: true }),
+          supabase
+            .from("payments")
+            .select(
+              "id,reference,direction,party_id,party_name,entry_date,amount,method,status,order_code,remarks",
+            )
+            .eq("entry_date", today),
+        ]);
 
-      const firstError = [orders, customers, inventory, customerLedger, supplierLedger, payments].find(
-        (result) => result.error,
-      );
+      const firstError = [
+        orders,
+        customers,
+        inventory,
+        customerLedger,
+        supplierLedger,
+        payments,
+      ].find((result) => result.error);
 
       if (firstError?.error) throw firstError.error;
 

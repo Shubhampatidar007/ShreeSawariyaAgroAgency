@@ -33,7 +33,9 @@ export function ProductCard({ product }: { product: Product }) {
             loading="lazy"
           />
         ) : (
-          <span className="text-5xl transition-transform group-hover:scale-110">{product.emoji}</span>
+          <span className="text-5xl transition-transform group-hover:scale-110">
+            {product.emoji}
+          </span>
         )}
         {product.tag ? (
           <Badge className="absolute left-3 top-3 rounded-full">{product.tag}</Badge>

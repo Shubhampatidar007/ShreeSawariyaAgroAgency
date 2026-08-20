@@ -51,7 +51,12 @@ function getPageTitle(trigger: HTMLElement) {
 }
 
 function safeFilename(value: string) {
-  return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "export";
+  return (
+    value
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "") || "export"
+  );
 }
 
 function downloadBlob(content: BlobPart, filename: string, type: string) {
@@ -96,7 +101,9 @@ function renderTables(tables: ExportTable[]) {
           .map(
             (row, rowIndex) =>
               `<tr>${row
-                .map((cell) => (rowIndex === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`))
+                .map((cell) =>
+                  rowIndex === 0 ? `<th>${escapeHtml(cell)}</th>` : `<td>${escapeHtml(cell)}</td>`,
+                )
                 .join("")}</tr>`,
           )
           .join("")}</table>`,

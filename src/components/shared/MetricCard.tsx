@@ -52,9 +52,7 @@ export function MetricCard({ metric }: { metric: Metric }) {
                 {metric.change}
               </span>
             ) : null}
-            {metric.helper ? (
-              <span className="text-muted-foreground">{metric.helper}</span>
-            ) : null}
+            {metric.helper ? <span className="text-muted-foreground">{metric.helper}</span> : null}
           </div>
         </div>
         <span

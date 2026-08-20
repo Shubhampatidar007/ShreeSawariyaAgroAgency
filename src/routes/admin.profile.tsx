@@ -15,7 +15,10 @@ export const Route = createFileRoute("/admin/profile")({
   head: () => ({
     meta: [
       { title: "Profile — Admin" },
-      { name: "description", content: "Manage your Agrishop account profile and business contact details." },
+      {
+        name: "description",
+        content: "Manage your Agrishop account profile and business contact details.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -82,7 +85,12 @@ function ProfilePage() {
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="profile-name">Full name</Label>
-                <Input id="profile-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+                <Input
+                  id="profile-name"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-email">Email</Label>
@@ -95,14 +103,26 @@ function ProfilePage() {
                 <Label htmlFor="profile-mobile">Mobile</Label>
                 <div className="relative">
                   <Phone className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="profile-mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="Mobile number" className="pl-9" />
+                  <Input
+                    id="profile-mobile"
+                    value={mobile}
+                    onChange={(e) => setMobile(e.target.value)}
+                    placeholder="Mobile number"
+                    className="pl-9"
+                  />
                 </div>
               </div>
               <div className="space-y-2">
                 <Label htmlFor="profile-village">Village / area</Label>
                 <div className="relative">
                   <MapPin className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                  <Input id="profile-village" value={village} onChange={(e) => setVillage(e.target.value)} placeholder="Village or area" className="pl-9" />
+                  <Input
+                    id="profile-village"
+                    value={village}
+                    onChange={(e) => setVillage(e.target.value)}
+                    placeholder="Village or area"
+                    className="pl-9"
+                  />
                 </div>
               </div>
             </div>
@@ -120,10 +140,15 @@ function ProfilePage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
-              <InfoRow label="Role" value={user?.role === "admin" ? "Owner / Admin" : user?.role ?? "—"} />
+              <InfoRow
+                label="Role"
+                value={user?.role === "admin" ? "Owner / Admin" : (user?.role ?? "—")}
+              />
               <InfoRow label="Account ID" value={user?.id ?? "—"} mono />
               <Separator />
-              <p className="text-xs text-muted-foreground">Role is managed from the database and is not editable from this page.</p>
+              <p className="text-xs text-muted-foreground">
+                Role is managed from the database and is not editable from this page.
+              </p>
             </CardContent>
           </Card>
 
@@ -152,9 +177,20 @@ function ProfilePage() {
         <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-end">
           <div className="flex-1 space-y-2">
             <Label htmlFor="new-password">New password</Label>
-            <Input id="new-password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 6 characters" />
+            <Input
+              id="new-password"
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="At least 6 characters"
+            />
           </div>
-          <Button variant="outline" className="rounded-full" onClick={() => void updatePassword()} disabled={changingPassword}>
+          <Button
+            variant="outline"
+            className="rounded-full"
+            onClick={() => void updatePassword()}
+            disabled={changingPassword}
+          >
             {changingPassword ? "Updating…" : "Update password"}
           </Button>
         </CardContent>

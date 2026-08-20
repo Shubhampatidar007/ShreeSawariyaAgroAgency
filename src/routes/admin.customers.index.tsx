@@ -39,7 +39,13 @@ import { TablePagination } from "@/components/shared/TablePagination";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { CustomerCard } from "@/components/shared/EntityCards";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
-import { formatCurrency, formatDate, setAdminFeatureState, shopStore, useShopStore } from "@/lib/shop-store";
+import {
+  formatCurrency,
+  formatDate,
+  setAdminFeatureState,
+  shopStore,
+  useShopStore,
+} from "@/lib/shop-store";
 import { loadCustomersFeature } from "@/lib/admin-feature-loaders";
 
 export const Route = createFileRoute("/admin/customers/")({
@@ -119,29 +125,49 @@ function CustomerListPage() {
         title="Customers"
         description="Farmer profiles, village mapping, purchase history and khata dues."
         actions={
-  <div className="flex items-center gap-2">
-    <KhataSaleDialog
-      trigger={
-        <Button variant="outline" className="rounded-full">
-          <ShoppingCart className="size-4" /> New khata sale
-        </Button>
-      }
-    />
-    <Button className="rounded-full" asChild>
-      <Link to="/admin/customers/new">
-        <Plus className="size-4" /> Add customer
-      </Link>
-    </Button>
-  </div>
-}
+          <div className="flex items-center gap-2">
+            <KhataSaleDialog
+              trigger={
+                <Button variant="outline" className="rounded-full">
+                  <ShoppingCart className="size-4" /> New khata sale
+                </Button>
+              }
+            />
+            <Button className="rounded-full" asChild>
+              <Link to="/admin/customers/new">
+                <Plus className="size-4" /> Add customer
+              </Link>
+            </Button>
+          </div>
+        }
       />
 
       <SummaryCards
         items={[
-          { label: "Total customers", value: String(totals.count), icon: Users, helper: "Across all villages" },
-          { label: "Active", value: String(totals.active), icon: UserCheck, tone: "success", helper: "Bought in last 6 months" },
-          { label: "Lifetime purchases", value: formatCurrency(totals.purchases), icon: IndianRupee },
-          { label: "Outstanding due", value: formatCurrency(totals.due), icon: Wallet, tone: "warning" },
+          {
+            label: "Total customers",
+            value: String(totals.count),
+            icon: Users,
+            helper: "Across all villages",
+          },
+          {
+            label: "Active",
+            value: String(totals.active),
+            icon: UserCheck,
+            tone: "success",
+            helper: "Bought in last 6 months",
+          },
+          {
+            label: "Lifetime purchases",
+            value: formatCurrency(totals.purchases),
+            icon: IndianRupee,
+          },
+          {
+            label: "Outstanding due",
+            value: formatCurrency(totals.due),
+            icon: Wallet,
+            tone: "warning",
+          },
         ]}
       />
 
@@ -234,21 +260,30 @@ function CustomerListPage() {
                     <TableCell className="max-w-[200px] truncate text-muted-foreground">
                       {customer.address}
                     </TableCell>
-                    <TableCell className="text-right">{formatCurrency(customer.totalPurchases)}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(customer.totalPaid)}</TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(customer.totalPurchases)}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {formatCurrency(customer.totalPaid)}
+                    </TableCell>
                     <TableCell
                       className={`text-right font-semibold ${customer.currentDue > 0 ? "text-destructive" : "text-success"}`}
                     >
                       {formatCurrency(customer.currentDue)}
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{formatDate(customer.lastPurchase)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(customer.lastPurchase)}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge status={customer.status} />
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center justify-end gap-1">
                         <Button variant="ghost" size="icon" asChild aria-label="View customer">
-                          <Link to="/admin/customers/$customerId" params={{ customerId: customer.id }}>
+                          <Link
+                            to="/admin/customers/$customerId"
+                            params={{ customerId: customer.id }}
+                          >
                             <Eye className="size-4" />
                           </Link>
                         </Button>
@@ -261,7 +296,10 @@ function CustomerListPage() {
                           </Link>
                         </Button>
                         <Button variant="ghost" size="icon" asChild aria-label="Open khata">
-                          <Link to="/admin/khata/customers/$customerId" params={{ customerId: customer.id }}>
+                          <Link
+                            to="/admin/khata/customers/$customerId"
+                            params={{ customerId: customer.id }}
+                          >
                             <BookOpen className="size-4" />
                           </Link>
                         </Button>

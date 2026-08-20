@@ -24,7 +24,9 @@ export function StatCard({ stat, loading = false }: { stat: StatItem; loading?: 
               </>
             ) : (
               <>
-                <p className="mt-2 font-display text-2xl font-semibold tracking-tight">{stat.value}</p>
+                <p className="mt-2 font-display text-2xl font-semibold tracking-tight">
+                  {stat.value}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">{stat.helper}</p>
               </>
             )}
@@ -39,9 +41,7 @@ export function StatCard({ stat, loading = false }: { stat: StatItem; loading?: 
           <div
             className={cn(
               "mt-4 inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold",
-              stat.trend === "down"
-                ? "bg-warning/15 text-warning"
-                : "bg-success/15 text-success",
+              stat.trend === "down" ? "bg-warning/15 text-warning" : "bg-success/15 text-success",
             )}
           >
             <TrendIcon className="size-3.5" />

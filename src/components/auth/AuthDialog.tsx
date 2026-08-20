@@ -46,16 +46,14 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
       setError(result.error);
       return;
     }
-  setError(null);
-onOpenChange(false);
+    setError(null);
+    onOpenChange(false);
 
-toast.success(
-  `${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`,
-);
+    toast.success(`${t("auth.welcomeBack", "Welcome back")}, ${result.user.name}`);
 
-if (result.user.role === "admin" || result.user.role === "staff") {
-  void navigate({ to: "/admin" });
-}
+    if (result.user.role === "admin" || result.user.role === "staff") {
+      void navigate({ to: "/admin" });
+    }
   };
 
   const handleRegister = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -183,7 +181,11 @@ if (result.user.role === "admin" || result.user.role === "staff") {
                         : t("auth.showPassword", "Show password")
                     }
                   >
-                    {showRegisterPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                    {showRegisterPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
                   </button>
                 </div>
               </div>

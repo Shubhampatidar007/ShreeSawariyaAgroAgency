@@ -1,9 +1,4 @@
-import {
-  CheckCircle2,
-  Database,
-  Loader2,
-  RefreshCw,
-} from "lucide-react";
+import { CheckCircle2, Database, Loader2, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 type AdminDataLoaderProps = {
@@ -11,10 +6,7 @@ type AdminDataLoaderProps = {
   onRetry?: () => void;
 };
 
-export function AdminDataLoader({
-  error = null,
-  onRetry,
-}: AdminDataLoaderProps) {
+export function AdminDataLoader({ error = null, onRetry }: AdminDataLoaderProps) {
   if (error) {
     return (
       <div className="relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-6">
@@ -28,13 +20,10 @@ export function AdminDataLoader({
             <Database className="size-10 text-destructive" />
           </div>
 
-          <h1 className="font-display text-2xl font-bold">
-            We couldn't load your shop
-          </h1>
+          <h1 className="font-display text-2xl font-bold">We couldn't load your shop</h1>
 
           <p className="mt-3 text-sm leading-6 text-muted-foreground">
-            Your login is fine, but the shop data could not be loaded.
-            Please try again.
+            Your login is fine, but the shop data could not be loaded. Please try again.
           </p>
 
           <p className="mt-3 break-words rounded-xl bg-muted px-4 py-3 text-xs text-muted-foreground">
@@ -62,9 +51,7 @@ export function AdminDataLoader({
           />
         </div>
 
-        <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">
-          Preparing your shop
-        </h1>
+        <h1 className="mt-5 font-display text-2xl font-bold tracking-tight">Preparing your shop</h1>
 
         <p className="mt-3 text-sm leading-6 text-muted-foreground">
           Getting your dashboard, inventory and business data ready.

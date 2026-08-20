@@ -10,9 +10,7 @@ type TablePaginationProps = {
 
 export function TablePagination({ page, pageCount, total, onPageChange }: TablePaginationProps) {
   if (pageCount <= 1) {
-    return (
-      <p className="px-1 py-2 text-xs text-muted-foreground">{total} records</p>
-    );
+    return <p className="px-1 py-2 text-xs text-muted-foreground">{total} records</p>;
   }
 
   return (

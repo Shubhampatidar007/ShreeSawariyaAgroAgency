@@ -55,7 +55,11 @@ function interpolate(value: string, params?: TranslateParams) {
   return value.replace(/\{(\w+)\}/g, (_, key: string) => String(params[key] ?? `{${key}}`));
 }
 
-export function translate(key: TranslationKey | string, lang: Language = language, params?: TranslateParams) {
+export function translate(
+  key: TranslationKey | string,
+  lang: Language = language,
+  params?: TranslateParams,
+) {
   const dict = dictionaries[lang] as Record<string, string | undefined>;
   const value = dict[key] ?? (en as Record<string, string | undefined>)[key] ?? key;
   return interpolate(value, params);
@@ -80,10 +84,7 @@ export function useI18n() {
     [current],
   );
 
-  const toggleLanguage = useCallback(
-    () => setLanguage(current === "en" ? "hi" : "en"),
-    [current],
-  );
+  const toggleLanguage = useCallback(() => setLanguage(current === "en" ? "hi" : "en"), [current]);
 
   return { language: current, setLanguage, toggleLanguage, t };
 }

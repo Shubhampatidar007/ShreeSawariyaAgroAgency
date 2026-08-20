@@ -11,7 +11,13 @@ const supportLinks = [
   "Government subsidy schemes",
 ];
 
-const companyLinks = ["About our shop", "Licences & certifications", "Careers", "Dealer network", "Contact us"];
+const companyLinks = [
+  "About our shop",
+  "Licences & certifications",
+  "Careers",
+  "Dealer network",
+  "Contact us",
+];
 
 export function SiteFooter() {
   return (
@@ -45,7 +51,10 @@ export function SiteFooter() {
 
       <div className="border-t border-border">
         <div className="mx-auto flex max-w-7xl flex-col gap-2 px-6 py-5 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} {shopInfo.name}. Update your legal and business details here.</p>
+          <p>
+            © {new Date().getFullYear()} {shopInfo.name}. Update your legal and business details
+            here.
+          </p>
           <p>Customize this footer with your own contact and policy information.</p>
         </div>
       </div>

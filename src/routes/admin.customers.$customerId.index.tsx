@@ -1,15 +1,6 @@
 import { useMemo } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import {
-  BookOpen,
-  IndianRupee,
-  MapPin,
-  Pencil,
-  Phone,
-  Receipt,
-  UserX,
-  Wallet,
-} from "lucide-react";
+import { BookOpen, IndianRupee, MapPin, Pencil, Phone, Receipt, UserX, Wallet } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -33,7 +24,10 @@ export const Route = createFileRoute("/admin/customers/$customerId/")({
   head: () => ({
     meta: [
       { title: "Customer Profile — Admin" },
-      { name: "description", content: "Farmer profile with purchases, payments and khata summary." },
+      {
+        name: "description",
+        content: "Farmer profile with purchases, payments and khata summary.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -45,10 +39,7 @@ function CustomerDetailPage() {
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
   const ledger = useShopStore((s) => s.customerLedger.filter((e) => e.customerId === customerId));
 
-  const sorted = useMemo(
-    () => [...ledger].sort((a, b) => b.date.localeCompare(a.date)),
-    [ledger],
-  );
+  const sorted = useMemo(() => [...ledger].sort((a, b) => b.date.localeCompare(a.date)), [ledger]);
 
   if (!customer) {
     return (
@@ -101,15 +92,29 @@ function CustomerDetailPage() {
 
       <SummaryCards
         items={[
-          { label: "Total purchases", value: formatCurrency(customer.totalPurchases), icon: IndianRupee },
-          { label: "Total paid", value: formatCurrency(customer.totalPaid), icon: Wallet, tone: "success" },
+          {
+            label: "Total purchases",
+            value: formatCurrency(customer.totalPurchases),
+            icon: IndianRupee,
+          },
+          {
+            label: "Total paid",
+            value: formatCurrency(customer.totalPaid),
+            icon: Wallet,
+            tone: "success",
+          },
           {
             label: "Current due",
             value: formatCurrency(customer.currentDue),
             icon: Receipt,
             tone: customer.currentDue > 0 ? "warning" : "success",
           },
-          { label: "Transactions", value: String(ledger.length), icon: BookOpen, helper: "Khata entries" },
+          {
+            label: "Transactions",
+            value: String(ledger.length),
+            icon: BookOpen,
+            helper: "Khata entries",
+          },
         ]}
       />
 
@@ -151,7 +156,9 @@ function CustomerDetailPage() {
                   id: entry.id,
                   title: entry.product,
                   meta: `${formatDate(entry.date)} · ${entry.quantity} unit(s) · ${entry.method.toUpperCase()}`,
-                  description: entry.remarks ?? `Paid ${formatCurrency(entry.payment)}, due ${formatCurrency(entry.remainingDue)}`,
+                  description:
+                    entry.remarks ??
+                    `Paid ${formatCurrency(entry.payment)}, due ${formatCurrency(entry.remainingDue)}`,
                   amount: formatCurrency(entry.amount),
                   tone: entry.remainingDue > 0 ? "warning" : "success",
                 }))}
@@ -182,15 +189,21 @@ function CustomerDetailPage() {
               <TableBody>
                 {sorted.map((entry) => (
                   <TableRow key={entry.id}>
-                    <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {formatDate(entry.date)}
+                    </TableCell>
                     <TableCell className="font-medium">{entry.product}</TableCell>
                     <TableCell className="text-right">{entry.quantity}</TableCell>
                     <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
-                    <TableCell className="text-right text-success">{formatCurrency(entry.payment)}</TableCell>
+                    <TableCell className="text-right text-success">
+                      {formatCurrency(entry.payment)}
+                    </TableCell>
                     <TableCell className="text-right font-semibold">
                       {formatCurrency(entry.remainingDue)}
                     </TableCell>
-                    <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
+                    <TableCell className="uppercase text-muted-foreground">
+                      {entry.method}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
