@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { Bell, Boxes, Pencil, Plus, Trash2, Upload } from "lucide-react";
 
@@ -31,10 +31,11 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   formatCurrency,
   formatDate,
+  setAdminFeatureState,
   shopStore,
   useShopStore,
 } from "@/lib/shop-store";
-import { ensureAdminSectionData } from "@/lib/admin-section-loader";
+import { loadInventoryFeature } from "@/lib/admin-feature-loaders";
 
 export const Route = createFileRoute("/admin/inventory/")({
   head: () => ({
@@ -53,7 +54,6 @@ export const Route = createFileRoute("/admin/inventory/")({
 function InventoryListPage() {
   const inventory = useShopStore((s) => s.inventory);
   const reminders = useShopStore((s) => s.reminders);
-  const navigate = useNavigate();
   const [query, setQuery] = useState("");
 
   const [editOpen, setEditOpen] = useState(false);
@@ -65,6 +65,26 @@ function InventoryListPage() {
   const [editMinStock, setEditMinStock] = useState("");
   const [configuringReminderId, setConfiguringReminderId] = useState<string | null>(null);
   const [reminderError, setReminderError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    void loadInventoryFeature()
+      .then((loaded) => {
+        if (cancelled) return;
+        setAdminFeatureState({
+          inventory: loaded.inventory,
+          reminders: loaded.reminders,
+          products: loaded.products,
+        });
+      })
+      .catch((error) => {
+        console.error("Inventory data load failed:", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const rows = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -144,7 +164,12 @@ function InventoryListPage() {
         if (error) throw error;
       }
 
-      await ensureAdminSectionData(true);
+      const loaded = await loadInventoryFeature();
+      setAdminFeatureState({
+        inventory: loaded.inventory,
+        reminders: loaded.reminders,
+        products: loaded.products,
+      });
       await navigate({ to: "/admin/inventory-reminders" });
     } catch (error) {
       setReminderError(
