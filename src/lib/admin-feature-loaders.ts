@@ -205,9 +205,19 @@ export async function loadSalesFeature() {
 }
 
 export async function loadPaymentsFeature() {
-  const { data, error } = await supabase.from("payments").select("*").order("entry_date", { ascending: false });
-  if (error) throw error;
-  return (data ?? []).map(toPayment);
+  const [payments, suppliers, supplierLedger] = await Promise.all([
+    supabase.from("payments").select("*").order("entry_date", { ascending: false }),
+    supabase.from("suppliers").select("*").order("name"),
+    supabase.from("supplier_transactions").select("*").order("entry_date", { ascending: false }),
+  ]);
+  if (payments.error) throw payments.error;
+  if (suppliers.error) throw suppliers.error;
+  if (supplierLedger.error) throw supplierLedger.error;
+  return {
+    payments: (payments.data ?? []).map(toPayment),
+    suppliers: (suppliers.data ?? []).map(toSupplier),
+    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+  };
 }
 
 export async function loadRemindersFeature() {
