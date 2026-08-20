@@ -24,21 +24,25 @@ export function ensureAdminSectionData(force = false) {
   if (typeof window === "undefined") return Promise.resolve();
 
   const path = window.location.pathname;
-  const scope = path.startsWith("/admin/customers")
-    ? "customers"
-    : path.startsWith("/admin/suppliers")
-      ? "suppliers"
-      : path.startsWith("/admin/inventory")
-        ? "inventory"
-        : path.startsWith("/admin/products")
-          ? "products"
-          : path.startsWith("/admin/sales")
-            ? "sales"
-            : path.startsWith("/admin/payments")
-              ? "payments"
-              : path.startsWith("/admin/reminders")
-                ? "reminders"
-                : "legacy";
+  const isCustomerDetail =
+    path.startsWith("/admin/customers/") && path !== "/admin/customers/";
+  const scope = isCustomerDetail
+    ? "customer-detail"
+    : path.startsWith("/admin/customers")
+      ? "customers"
+      : path.startsWith("/admin/suppliers")
+        ? "suppliers"
+        : path.startsWith("/admin/inventory")
+          ? "inventory"
+          : path.startsWith("/admin/products")
+            ? "products"
+            : path.startsWith("/admin/sales")
+              ? "sales"
+              : path.startsWith("/admin/payments")
+                ? "payments"
+                : path.startsWith("/admin/reminders")
+                  ? "reminders"
+                  : "legacy";
 
   if (!force && lastLoadedAt && lastScope === scope && Date.now() - lastLoadedAt < CACHE_MS) {
     return Promise.resolve();
@@ -51,6 +55,14 @@ export function ensureAdminSectionData(force = false) {
       case "customers":
         setAdminFeatureState({ customers: await loadCustomersFeature() });
         break;
+      case "customer-detail": {
+        const [customers, inventory] = await Promise.all([
+          loadCustomersFeature(),
+          loadInventoryFeature(),
+        ]);
+        setAdminFeatureState({ customers, ...inventory });
+        break;
+      }
       case "suppliers":
         setAdminFeatureState({ suppliers: await loadSuppliersFeature() });
         break;
