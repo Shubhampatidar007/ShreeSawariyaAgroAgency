@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Customer, InventoryItem } from "@/types/business";
+import type { Customer, InventoryItem, PublishedProduct } from "@/types/business";
 import type { Reminder } from "@/types";
 
 const num = (value: unknown) => Number(value ?? 0);
@@ -35,6 +35,24 @@ const toInventory = (r: any): InventoryItem => ({
   lastUpdated: r.last_updated,
 });
 
+const toProduct = (r: any): PublishedProduct => ({
+  id: r.id,
+  inventoryId: r.inventory_id ?? "",
+  title: r.title,
+  category: r.category,
+  sellingPrice: num(r.selling_price),
+  discountPrice: r.discount_price == null ? undefined : num(r.discount_price),
+  stock: num(r.stock),
+  description: r.description ?? "",
+  tags: r.tags ?? [],
+  images: r.images ?? [],
+  emoji: r.emoji ?? "🌾",
+  visibility: r.visibility,
+  featured: !!r.featured,
+  status: r.status,
+  publishedOn: r.published_on,
+});
+
 const toReminder = (r: any): Reminder => ({
   id: r.id,
   title: r.title,
@@ -50,6 +68,11 @@ const toReminder = (r: any): Reminder => ({
   sourceId: r.source_id ?? undefined,
 });
 
+/**
+ * Feature-scoped reads used while admin modules are migrated away from the
+ * legacy all-data loader. These functions intentionally only read; existing
+ * shopStore mutations remain responsible for business logic.
+ */
 export async function loadCustomersFeature() {
   const { data, error } = await supabase.from("customers").select("*").order("name");
   if (error) throw error;
@@ -57,16 +80,19 @@ export async function loadCustomersFeature() {
 }
 
 export async function loadInventoryFeature() {
-  const [inventory, reminders] = await Promise.all([
+  const [inventory, reminders, products] = await Promise.all([
     supabase.from("inventory_items").select("*").order("product_name"),
     supabase.from("reminders").select("*").eq("target", "inventory").order("created_at", { ascending: false }),
+    supabase.from("products").select("*").order("published_on", { ascending: false }),
   ]);
 
   if (inventory.error) throw inventory.error;
   if (reminders.error) throw reminders.error;
+  if (products.error) throw products.error;
 
   return {
     inventory: (inventory.data ?? []).map(toInventory),
     reminders: (reminders.data ?? []).map(toReminder),
+    products: (products.data ?? []).map(toProduct),
   };
 }
