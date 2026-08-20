@@ -13,12 +13,9 @@ import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
-import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
+import { initAuth } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
-import {
-  initAdminShopData,
-  loadPublicShopData,
-} from "@/lib/shop-store";
+import { loadPublicShopData } from "@/lib/shop-store";
 
 function NotFoundComponent() {
   return (
@@ -67,7 +64,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground"
           >
             Go home
           </a>
@@ -96,10 +93,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
+      { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
@@ -131,8 +125,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
-  const authReady = useAuthReady();
-  const authUser = useAuth();
+  const authReady = true;
 
   useEffect(() => {
     initTheme();
@@ -141,29 +134,12 @@ function RootComponent() {
     initCart();
   }, []);
 
-  // Effect A — Public data (loads public store data once auth state is ready)
   useEffect(() => {
     if (!authReady) return;
-
     void loadPublicShopData().catch((error) => {
       console.error("Public shop data load failed:", error);
     });
   }, [authReady]);
-
-  // Effect B — Admin data (loads protected data only when an authorized admin or staff user is present)
-  useEffect(() => {
-    if (!authReady) return;
-
-    const isAdmin =
-      authUser?.role === "admin" ||
-      authUser?.role === "staff";
-
-    if (!isAdmin) return;
-
-    void initAdminShopData().catch((error) => {
-      console.error("Initial admin shop data load failed:", error);
-    });
-  }, [authReady, authUser?.id, authUser?.role]);
 
   return (
     <QueryClientProvider client={queryClient}>
