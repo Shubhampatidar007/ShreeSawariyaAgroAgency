@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
@@ -15,7 +15,10 @@ import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
 import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
-import { initShopData, loadShopData } from "@/lib/shop-store";
+import {
+  initAdminShopData,
+  loadPublicShopData,
+} from "@/lib/shop-store";
 
 function NotFoundComponent() {
   return (
@@ -130,11 +133,6 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const authReady = useAuthReady();
   const authUser = useAuth();
-  // `undefined` means the auth lifecycle has not been observed yet.
-  // `null` is a real state: auth was ready and there was no signed-in user.
-  // This distinction prevents the first login from being mistaken for the
-  // initial auth render, which previously left the admin store at zero values.
-  const previousUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
     initTheme();
@@ -143,31 +141,29 @@ function RootComponent() {
     initCart();
   }, []);
 
+  // Effect A — Public data (loads public store data once auth state is ready)
   useEffect(() => {
     if (!authReady) return;
 
-    const currentUserId = authUser?.id ?? null;
-    const isFirstReadyRender = previousUserId.current === undefined;
-    const userChanged = !isFirstReadyRender && previousUserId.current !== currentUserId;
+    void loadPublicShopData().catch((error) => {
+      console.error("Public shop data load failed:", error);
+    });
+  }, [authReady]);
 
-    previousUserId.current = currentUserId;
+  // Effect B — Admin data (loads protected data only when an authorized admin or staff user is present)
+  useEffect(() => {
+    if (!authReady) return;
 
-    if (isFirstReadyRender) {
-      void initShopData().catch((error) => {
-        console.error("Initial shop data load failed:", error);
-      });
-      return;
-    }
+    const isAdmin =
+      authUser?.role === "admin" ||
+      authUser?.role === "staff";
 
-    // A login changes the authenticated Supabase session after the initial
-    // public render. Reload the shop data with the new user's RLS context
-    // before/while the admin route is rendered, so no restart is required.
-    if (userChanged && currentUserId) {
-      void loadShopData().catch((error) => {
-        console.error("Shop data refresh after authentication change failed:", error);
-      });
-    }
-  }, [authReady, authUser?.id]);
+    if (!isAdmin) return;
+
+    void initAdminShopData().catch((error) => {
+      console.error("Initial admin shop data load failed:", error);
+    });
+  }, [authReady, authUser?.id, authUser?.role]);
 
   return (
     <QueryClientProvider client={queryClient}>
