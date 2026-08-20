@@ -39,6 +39,7 @@ export type Product = {
   name: string;
   category: string;
   price: number;
+  discountPrice?: number;
   unit: string;
   rating: number;
   stock: number;
@@ -58,7 +59,6 @@ export type Advertisement = {
   startsOn: string;
   runsUntil: string;
 };
-
 export type Backup = {
   id: string;
   name: string;
