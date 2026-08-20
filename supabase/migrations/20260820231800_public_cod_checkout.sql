@@ -1,7 +1,6 @@
 -- Public storefront checkout: Cash on Delivery only.
--- The function is SECURITY DEFINER so anonymous shoppers never receive direct
--- INSERT access to orders/order_items. Stock is checked and decremented in one
--- transaction to prevent overselling.
+-- Anonymous shoppers never receive direct INSERT access to orders/order_items.
+-- Stock is checked and decremented in one transaction to prevent overselling.
 
 ALTER TABLE public.orders
   ADD COLUMN IF NOT EXISTS delivery_address text NOT NULL DEFAULT '',
@@ -28,6 +27,7 @@ DECLARE
   _item jsonb;
   _product public.products%ROWTYPE;
   _qty numeric(12,2);
+  _total_qty numeric(12,2);
   _rate numeric(12,2);
   _amount numeric(12,2);
   _inventory_quantity numeric(12,2);
@@ -52,7 +52,6 @@ BEGIN
     RAISE EXCEPTION 'Your cart is empty';
   END IF;
 
-  -- Lock every requested product before calculating totals/decrementing stock.
   FOR _item IN SELECT value FROM jsonb_array_elements(_items) LOOP
     IF NULLIF(_item->>'id', '') IS NULL THEN
       RAISE EXCEPTION 'Invalid cart item';
@@ -62,6 +61,12 @@ BEGIN
     IF _qty <= 0 THEN
       RAISE EXCEPTION 'Invalid quantity for cart item';
     END IF;
+
+    -- Aggregate duplicate product ids so a crafted request cannot bypass stock checks.
+    SELECT COALESCE(SUM((value->>'qty')::numeric), 0)
+      INTO _total_qty
+    FROM jsonb_array_elements(_items)
+    WHERE value->>'id' = _item->>'id';
 
     SELECT * INTO _product
     FROM public.products
@@ -74,7 +79,7 @@ BEGIN
       RAISE EXCEPTION 'One of the products is no longer available';
     END IF;
 
-    IF _product.stock < _qty THEN
+    IF _product.stock < _total_qty THEN
       RAISE EXCEPTION 'Insufficient stock for %', _product.title;
     END IF;
 
