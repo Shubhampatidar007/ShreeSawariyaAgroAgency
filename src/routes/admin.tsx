@@ -9,17 +9,14 @@ import { DashboardEnhancements } from "@/components/admin/DashboardEnhancements"
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
-import { useShopStore } from "@/lib/shop-store";
+import { loadAdminShopData } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin Panel — Shop Management" },
-      {
-        name: "description",
-        content: "Manage inventory, sales, customers and shop operations from one panel.",
-      },
+      { name: "description", content: "Manage inventory, sales, customers and shop operations from one panel." },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -27,19 +24,32 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sectionLoading, setSectionLoading] = useState(false);
   const location = useLocation();
-  const shopLoading = useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 2800);
-    return () => window.clearTimeout(timer);
-  }, []);
+    if (!ready || location.pathname === "/admin") {
+      setSectionLoading(false);
+      return;
+    }
 
-  if (!ready || !minimumLoaderDone || shopLoading) {
+    let active = true;
+    setSectionLoading(true);
+    void loadAdminShopData()
+      .catch((error) => console.error("Admin section data load failed:", error))
+      .finally(() => {
+        if (active) setSectionLoading(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [ready, location.pathname]);
+
+  if (!ready || sectionLoading) {
     return <AdminDataLoader />;
   }
 
@@ -54,9 +64,7 @@ function AdminLayout() {
               ? "This account does not have shop management permissions. Ask the shop owner for staff access."
               : "Please sign in with your shop owner or staff account to open the management panel."}
           </p>
-          <Button asChild className="mt-6 rounded-full">
-            <Link to="/">Back to the shop</Link>
-          </Button>
+          <Button asChild className="mt-6 rounded-full"><Link to="/">Back to the shop</Link></Button>
         </div>
       </div>
     );
@@ -64,12 +72,10 @@ function AdminLayout() {
 
   return (
     <div className="min-h-screen bg-background">
-      <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-sidebar-border transition-transform lg:block",
-          sidebarOpen ? "translate-x-0" : "-translate-x-full",
-        )}
-      >
+      <aside className={cn(
+        "fixed inset-y-0 left-0 z-40 hidden w-64 border-r border-sidebar-border transition-transform lg:block",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full",
+      )}>
         <AdminSidebar />
       </aside>
 
