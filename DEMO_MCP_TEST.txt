@@ -1,2 +1,0 @@
-This is a temporary MCP test file.
-It will be deleted immediately.
