@@ -2,7 +2,7 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { CustomerLedgerEntry, InventoryItem, SupplierLedgerEntry } from "@/types/business";
-import type { Order, PaymentRecord } from "@/types/operations";
+import type { Order } from "@/types/operations";
 
 type OverviewState = {
   orders: Order[];
@@ -10,7 +10,6 @@ type OverviewState = {
   inventory: InventoryItem[];
   customerLedger: CustomerLedgerEntry[];
   supplierLedger: SupplierLedgerEntry[];
-  payments: PaymentRecord[];
   loading: boolean;
   error: string | null;
 };
@@ -21,7 +20,6 @@ const emptyState: OverviewState = {
   inventory: [],
   customerLedger: [],
   supplierLedger: [],
-  payments: [],
   loading: true,
   error: null,
 };
@@ -120,20 +118,6 @@ const toOrder = (row: any): Order => ({
   timeline: row.timeline ?? [],
 });
 
-const toPayment = (row: any): PaymentRecord => ({
-  id: row.id,
-  reference: row.reference,
-  direction: row.direction,
-  partyId: row.party_id ?? "",
-  partyName: row.party_name ?? "",
-  date: row.entry_date,
-  amount: num(row.amount),
-  method: row.method,
-  status: row.status,
-  orderCode: row.order_code ?? undefined,
-  remarks: row.remarks ?? undefined,
-});
-
 export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
   if (typeof window === "undefined") return;
 
@@ -147,11 +131,10 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
   const start = new Date();
   start.setDate(start.getDate() - 364);
   const from = start.toISOString().slice(0, 10);
-  const today = new Date().toISOString().slice(0, 10);
 
   loadPromise = (async () => {
     try {
-      const [orders, customers, inventory, customerLedger, supplierLedger, payments] =
+      const [orders, customers, inventory, customerLedger, supplierLedger] =
         await Promise.all([
           supabase
             .from("orders")
@@ -179,12 +162,6 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
             .select("id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks")
             .gte("entry_date", from)
             .order("entry_date", { ascending: true }),
-          supabase
-            .from("payments")
-            .select(
-              "id,reference,direction,party_id,party_name,entry_date,amount,method,status,order_code,remarks",
-            )
-            .eq("entry_date", today),
         ]);
 
       const firstError = [
@@ -193,7 +170,6 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
         inventory,
         customerLedger,
         supplierLedger,
-        payments,
       ].find((result) => result.error);
 
       if (firstError?.error) throw firstError.error;
@@ -208,7 +184,6 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
         inventory: (inventory.data ?? []).map(toInventory),
         customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
         supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-        payments: (payments.data ?? []).map(toPayment),
         loading: false,
         error: null,
       };
