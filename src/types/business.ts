@@ -35,7 +35,11 @@ export type Supplier = {
 };
 
 export type InventoryStatus =
-  "inventory-only" | "published" | "hidden" | "out-of-stock" | "archived";
+  | "inventory-only"
+  | "published"
+  | "hidden"
+  | "out-of-stock"
+  | "archived";
 
 export type InventoryItem = {
   id: string;
@@ -69,7 +73,7 @@ export type PublishedProduct = {
   publishedOn: string;
 };
 
-export type PaymentMethod = "cash" | "upi" | "bank" | "cheque" | "credit";
+export type PaymentMethod = "cash" | "upi" | "bank" | "cheque" | "credit" | "cod";
 
 export type CustomerLedgerEntry = {
   id: string;
