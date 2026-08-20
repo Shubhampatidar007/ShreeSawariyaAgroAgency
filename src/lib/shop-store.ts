@@ -64,6 +64,9 @@ function setState(update: Partial<ShopState>) {
   state = { ...state, ...update };
   listeners.forEach((listener) => listener());
 }
+export function setAdminFeatureState(update: Partial<ShopState>) {
+  setState(update);
+}
 function subscribe(listener: () => void) {
   listeners.add(listener);
   return () => listeners.delete(listener);
@@ -383,7 +386,7 @@ export async function loadAdminShopData() {
     throw error;
   }
 }
-
+export const loadShopData = loadAdminShopData;
 let adminLoadPromise: Promise<void> | null = null;
 
 export function initAdminShopData() {
