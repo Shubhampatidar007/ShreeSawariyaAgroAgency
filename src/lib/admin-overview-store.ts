@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Supabase row shapes are inferred at runtime by the generated client. */
 import { useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { CustomerLedgerEntry, InventoryItem, SupplierLedgerEntry } from "@/types/business";
@@ -146,14 +147,7 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
 
   loadPromise = (async () => {
     try {
-      const [
-        orders,
-        customers,
-        inventory,
-        customerLedger,
-        supplierLedger,
-        payments,
-      ] = await Promise.all([
+      const [orders, customers, inventory, customerLedger, supplierLedger, payments] = await Promise.all([
         supabase
           .from("orders")
           .select(
@@ -161,9 +155,7 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
           )
           .gte("placed_on", from)
           .order("placed_on", { ascending: false }),
-        supabase
-          .from("customers")
-          .select("id,status,current_due"),
+        supabase.from("customers").select("id,status,current_due"),
         supabase
           .from("inventory_items")
           .select(
@@ -192,14 +184,9 @@ export async function loadAdminOverviewData(options: { force?: boolean } = {}) {
           .eq("entry_date", today),
       ]);
 
-      const firstError = [
-        orders,
-        customers,
-        inventory,
-        customerLedger,
-        supplierLedger,
-        payments,
-      ].find((result) => result.error);
+      const firstError = [orders, customers, inventory, customerLedger, supplierLedger, payments].find(
+        (result) => result.error,
+      );
 
       if (firstError?.error) throw firstError.error;
 
