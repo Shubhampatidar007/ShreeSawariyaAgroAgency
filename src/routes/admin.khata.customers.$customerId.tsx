@@ -30,6 +30,7 @@ import { SummaryCards } from "@/components/shared/SummaryCards";
 import { Timeline } from "@/components/shared/Timeline";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
+import { loadKhataInventory } from "@/lib/khata-inventory";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
 import type { CustomerSaleItem } from "@/types/business";
 
@@ -117,7 +118,14 @@ function CustomerKhataPage() {
             <KhataSaleDialog
               customer={{ id: customer.id, name: customer.name }}
               trigger={
-                <Button className="rounded-full">
+                <Button
+                  className="rounded-full"
+                  onClick={() => {
+                    void loadKhataInventory().catch((error) => {
+                      console.error("Khata inventory load failed:", error);
+                    });
+                  }}
+                >
                   <ShoppingCart className="size-4" /> New sale
                 </Button>
               }
