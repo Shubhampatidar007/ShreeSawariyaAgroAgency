@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { loadShopData, useShopStore } from "@/lib/shop-store";
+import { ensureAdminSectionData, useShopStore } from "@/lib/admin-section-loader";
 
 export const Route = createFileRoute("/admin/inventory-reminders")({
   head: () => ({
@@ -61,7 +61,7 @@ function InventoryRemindersPage() {
 
       if (updateError) throw updateError;
 
-      await loadShopData();
+      await ensureAdminSectionData(true);
     } catch (toggleError) {
       setError(
         toggleError instanceof Error
@@ -87,7 +87,7 @@ function InventoryRemindersPage() {
 
       if (deleteError) throw deleteError;
 
-      await loadShopData();
+      await ensureAdminSectionData(true);
     } catch (deleteErr) {
       setError(
         deleteErr instanceof Error
@@ -125,102 +125,68 @@ function InventoryRemindersPage() {
 
       <Card className="shadow-soft">
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="size-5" />
-                Configured reminders
-              </CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Configure or disable reminders from the Inventory module. The popup uses these active records.
-              </p>
-            </div>
-            <Badge variant="outline" className="rounded-full">
-              {inventoryReminders.length} configured
-            </Badge>
-          </div>
+          <CardTitle className="flex items-center gap-2">
+            <Bell className="size-5 text-primary" />
+            Configured low-stock reminders
+          </CardTitle>
         </CardHeader>
-
-        <CardContent className="space-y-4">
+        <CardContent>
           {inventoryReminders.length === 0 ? (
             <div className="rounded-xl border border-dashed p-8 text-center">
-              <BellOff className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 font-medium">No inventory reminders configured</p>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Open Inventory and use Configure reminder on a product to add one.
+              <Package className="mx-auto size-8 text-muted-foreground" />
+              <p className="mt-3 text-sm font-medium">No inventory reminders configured</p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Configure a reminder from the Inventory module for products that need attention.
               </p>
+              <Button className="mt-4 rounded-full" asChild>
+                <Link to="/admin/inventory">Open inventory</Link>
+              </Button>
             </div>
           ) : (
-            inventoryReminders.map(({ reminder, item }) => {
-              const active = reminder.status === "active";
-              const busy = busyId === reminder.id;
+            <div className="space-y-3">
+              {inventoryReminders.map(({ reminder, item }) => {
+                const active = reminder.status === "active";
+                const busy = busyId === reminder.id;
 
-              return (
-                <div key={reminder.id} className="rounded-2xl border p-5">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Package className="size-5" />
+                return (
+                  <div key={reminder.id} className="flex flex-col gap-4 rounded-2xl border p-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="font-semibold">{item.productName}</p>
+                        <Badge variant={active ? "default" : "secondary"} className="rounded-full">
+                          {active ? "Active" : "Paused"}
+                        </Badge>
                       </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{item.productName}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {active ? "Reminder is enabled" : "Reminder is paused"}
-                        </p>
-                      </div>
-                    </div>
-
-                    <Badge variant={active ? "default" : "secondary"}>
-                      {active ? "Active" : "Paused"}
-                    </Badge>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Current stock</p>
-                      <p className="mt-1 text-xl font-bold">
-                        {item.quantity} {item.unit}
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Current stock: {item.quantity} {item.unit} · Minimum: {item.minStockLevel} {item.unit}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Minimum stock</p>
-                      <p className="mt-1 text-xl font-bold">
-                        {item.minStockLevel} {item.unit}
-                      </p>
+
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="rounded-full"
+                        disabled={busy}
+                        onClick={() => void toggleReminder(reminder.id, active)}
+                      >
+                        {active ? <BellOff className="size-4" /> : <Bell className="size-4" />}
+                        {active ? "Pause" : "Activate"}
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={`Delete ${item.productName} reminder`}
+                        disabled={busy}
+                        onClick={() => void deleteReminder(reminder.id)}
+                      >
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      variant={active ? "outline" : "default"}
-                      disabled={busy}
-                      onClick={() => void toggleReminder(reminder.id, active)}
-                    >
-                      {active ? (
-                        <>
-                          <BellOff className="size-4" />
-                          Turn off reminder
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="size-4" />
-                          Turn on reminder
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      disabled={busy}
-                      onClick={() => void deleteReminder(reminder.id)}
-                    >
-                      <Trash2 className="size-4" />
-                      Delete reminder
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
