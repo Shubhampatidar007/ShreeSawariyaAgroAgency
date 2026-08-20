@@ -1,5 +1,14 @@
 import { useSyncExternalStore } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  refreshCustomersFeature,
+  refreshSuppliersFeature,
+  refreshInventoryFeature,
+  refreshProductsFeature,
+  refreshSalesFeature,
+  refreshPaymentsFeature,
+  refreshRemindersFeature,
+} from "@/lib/admin-feature-loaders";
 import type {
   Customer,
   CustomerLedgerEntry,
@@ -389,6 +398,92 @@ export async function loadAdminShopData() {
 export const loadShopData = loadAdminShopData;
 let adminLoadPromise: Promise<void> | null = null;
 
+type AdminFeature =
+  | "customers"
+  | "suppliers"
+  | "inventory"
+  | "products"
+  | "sales"
+  | "payments"
+  | "reminders";
+
+function getActiveAdminFeature(): AdminFeature | null {
+  if (typeof window === "undefined") return null;
+
+  const path = window.location.pathname;
+  if (path.startsWith("/admin/customers")) return "customers";
+  if (path.startsWith("/admin/suppliers")) return "suppliers";
+  if (path.startsWith("/admin/inventory")) return "inventory";
+  if (path.startsWith("/admin/products")) return "products";
+  if (path.startsWith("/admin/sales")) return "sales";
+  if (path.startsWith("/admin/payments")) return "payments";
+  if (path.startsWith("/admin/reminders")) return "reminders";
+  return null;
+}
+
+async function refreshAdminFeatureState(feature: AdminFeature) {
+  switch (feature) {
+    case "customers":
+      setAdminFeatureState({ customers: await refreshCustomersFeature() });
+      return;
+    case "suppliers":
+      setAdminFeatureState({ suppliers: await refreshSuppliersFeature() });
+      return;
+    case "inventory": {
+      const data = await refreshInventoryFeature();
+      setAdminFeatureState(data);
+      return;
+    }
+    case "products":
+      setAdminFeatureState({ products: await refreshProductsFeature() });
+      return;
+    case "sales": {
+      const data = await refreshSalesFeature();
+      setAdminFeatureState(data);
+      return;
+    }
+    case "payments": {
+      const data = await refreshPaymentsFeature();
+      setAdminFeatureState(data);
+      return;
+    }
+    case "reminders": {
+      const data = await refreshRemindersFeature();
+      setAdminFeatureState(data);
+      return;
+    }
+  }
+}
+
+function affectedFeaturesForRealtimeTable(table: string): AdminFeature[] {
+  const active = getActiveAdminFeature();
+  if (!active) return [];
+
+  switch (table) {
+    case "customers":
+      return active === "customers" ? ["customers"] : [];
+    case "customer_transactions":
+      return active === "customers" || active === "sales" ? [active] : [];
+    case "suppliers":
+    case "supplier_transactions":
+      return active === "suppliers" || active === "payments" ? [active] : [];
+    case "inventory_items":
+      return active === "inventory" ? ["inventory"] : [];
+    case "products":
+      return active === "inventory" || active === "products" ? [active] : [];
+    case "orders":
+    case "order_items":
+      return active === "sales" ? ["sales"] : [];
+    case "payments":
+      return active === "payments" ? ["payments"] : [];
+    case "reminders":
+    case "reminder_logs":
+      return active === "inventory" || active === "reminders" ? [active] : [];
+    default:
+      return [];
+  }
+}
+
 export function initAdminShopData() {
   if (typeof window === "undefined") return null;
 
@@ -399,13 +494,26 @@ export function initAdminShopData() {
     });
 
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let queuedFeatures = new Set<AdminFeature>();
 
-    const refresh = () => {
+    const scheduleFeatureRefresh = (table: string) => {
+      for (const feature of affectedFeaturesForRealtimeTable(table)) {
+        queuedFeatures.add(feature);
+      }
+
       if (timer) clearTimeout(timer);
 
       timer = setTimeout(() => {
-        void loadAdminShopData().catch((error) =>
-          console.error("Admin shop data refresh failed:", error),
+        const features = [...queuedFeatures];
+        queuedFeatures = new Set();
+        timer = null;
+
+        void Promise.all(
+          features.map((feature) =>
+            refreshAdminFeatureState(feature).catch((error) =>
+              console.error(`Admin ${feature} realtime refresh failed:`, error),
+            ),
+          ),
         );
       }, 250);
     };
@@ -418,7 +526,7 @@ export function initAdminShopData() {
           event: "*",
           schema: "public",
         },
-        refresh,
+        (payload) => scheduleFeatureRefresh(payload.table),
       )
       .subscribe();
   }
@@ -426,8 +534,14 @@ export function initAdminShopData() {
   return adminLoadPromise;
 }
 
-const after = async <T>(value: T) => {
-  await loadAdminShopData();
+const after = async <T>(
+  value: T,
+  refresh?: () => Promise<unknown>,
+) => {
+  if (refresh) {
+    await refresh();
+  }
+
   return value;
 };
 
@@ -450,7 +564,10 @@ export const shopStore = {
       .select()
       .single();
     if (error) throw error;
-    return after(toCustomer(data));
+    return after(
+      toCustomer(data),
+      refreshCustomersFeature,
+    );
   },
   async updateCustomer(id: string, patch: Partial<Customer>) {
     const payload: any = {};
@@ -464,11 +581,17 @@ export const shopStore = {
     if (patch.joinedOn !== undefined) payload.joined_on = patch.joinedOn;
     const { error } = await supabase.from("customers").update(payload).eq("id", id);
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshCustomersFeature,
+    );
   },
   async deleteCustomer(id: string) {
     await supabase.from("customers").delete().eq("id", id);
-    return after(undefined);
+    return after(
+      undefined,
+      refreshCustomersFeature,
+    );
   },
   async addCustomerTransaction(entry: {
     customerId: string;
@@ -493,7 +616,10 @@ export const shopStore = {
       remarks: entry.remarks ?? null,
     });
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshCustomersFeature,
+    );
   },
   async createKhataSale(input: {
     customerId: string;
@@ -519,7 +645,13 @@ export const shopStore = {
       _remarks: input.remarks ?? null,
     });
     if (error) throw error;
-    return after(data as string);
+    return after(
+      data as string,
+      async () => {
+        await refreshCustomersFeature();
+        await refreshInventoryFeature();
+      },
+    );
   },
   async recordKhataPayment(input: {
     customerId: string;
@@ -536,7 +668,10 @@ export const shopStore = {
       _remarks: input.remarks ?? null,
     });
     if (error) throw error;
-    return after(data as string);
+    return after(
+      data as string,
+      refreshCustomersFeature,
+    );
   },
   async recordSupplierPayment(input: {
     supplierId: string;
@@ -555,7 +690,10 @@ export const shopStore = {
       _remarks: input.remarks ?? null,
     });
     if (error) throw error;
-    return after(data as string);
+    return after(
+      data as string,
+      refreshSuppliersFeature,
+    );
   },
   async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
@@ -583,7 +721,10 @@ export const shopStore = {
       .select()
       .single();
     if (error) throw error;
-    return after(toSupplier(data));
+    return after(
+      toSupplier(data),
+      refreshSuppliersFeature,
+    );
   },
   async updateSupplier(id: string, patch: Partial<Supplier>) {
     const payload: any = {};
@@ -597,11 +738,17 @@ export const shopStore = {
     if (patch.productsSupplied !== undefined) payload.products_supplied = patch.productsSupplied;
     const { error } = await supabase.from("suppliers").update(payload).eq("id", id);
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshSuppliersFeature,
+    );
   },
   async deleteSupplier(id: string) {
     await supabase.from("suppliers").delete().eq("id", id);
-    return after(undefined);
+    return after(
+      undefined,
+      refreshSuppliersFeature,
+    );
   },
   async addInventoryItem(item: {
     supplierId: string;
@@ -627,7 +774,10 @@ export const shopStore = {
       _advance_method: item.advanceMethod,
     });
     if (error) throw error;
-    return after(data as string);
+    return after(
+      data as string,
+      refreshInventoryFeature,
+    );
   },
   async updateInventoryItem(id: string, patch: Partial<InventoryItem>) {
     const payload: any = { last_updated: new Date().toISOString().slice(0, 10) };
@@ -639,32 +789,40 @@ export const shopStore = {
     if (patch.status !== undefined) payload.status = patch.status;
     const { error } = await supabase.from("inventory_items").update(payload).eq("id", id);
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshInventoryFeature,
+    );
   },
   async deleteInventoryItem(id: string) {
     await supabase.from("inventory_items").delete().eq("id", id);
-    return after(undefined);
+    return after(
+      undefined,
+      refreshInventoryFeature,
+    );
   },
   setDraftProduct(draft: PublishedProduct | null) {
     setState({ draftProduct: draft });
   },
   async publishProduct(product: PublishedProduct) {
-    const { error } = await supabase.from("products").insert({
-      inventory_id: product.inventoryId || null,
-      title: product.title,
-      category: product.category,
-      selling_price: product.sellingPrice,
-      discount_price: product.discountPrice ?? null,
-      stock: product.stock,
-      description: product.description,
-      tags: product.tags,
-      images: product.images,
-      emoji: product.emoji,
-      visibility: product.visibility,
-      featured: product.featured,
-      status: product.status,
-      published_on: product.publishedOn,
-    });
+    const { error } = await supabase
+      .from("products")
+      .insert({
+        inventory_id: product.inventoryId || null,
+        title: product.title,
+        category: product.category,
+        selling_price: product.sellingPrice,
+        discount_price: product.discountPrice ?? null,
+        stock: product.stock,
+        description: product.description,
+        tags: product.tags,
+        images: product.images,
+        emoji: product.emoji,
+        visibility: product.visibility,
+        featured: product.featured,
+        status: product.status,
+        published_on: product.publishedOn,
+      });
     if (error) throw error;
     if (product.inventoryId)
       await supabase
@@ -673,7 +831,15 @@ export const shopStore = {
         .eq("id", product.inventoryId);
     setState({ draftProduct: null });
     await loadPublicShopData();
-    return after(undefined);
+    return after(
+      undefined,
+      product.inventoryId
+        ? async () => {
+            await refreshProductsFeature();
+            await refreshInventoryFeature();
+          }
+        : refreshProductsFeature,
+    );
   },
   async updateProduct(id: string, patch: Partial<PublishedProduct>) {
     const payload: any = {};
@@ -686,15 +852,24 @@ export const shopStore = {
     if (patch.visibility !== undefined) payload.visibility = patch.visibility;
     if (patch.featured !== undefined) payload.featured = patch.featured;
     if (patch.status !== undefined) payload.status = patch.status;
-    const { error } = await supabase.from("products").update(payload).eq("id", id);
+    const { error } = await supabase
+      .from("products")
+      .update(payload)
+      .eq("id", id);
     if (error) throw error;
     await loadPublicShopData();
-    return after(undefined);
+    return after(
+      undefined,
+      refreshProductsFeature,
+    );
   },
   async deleteProduct(id: string) {
     await supabase.from("products").delete().eq("id", id);
     await loadPublicShopData();
-    return after(undefined);
+    return after(
+      undefined,
+      refreshProductsFeature,
+    );
   },
   async addOrder(order: Omit<Order, "id">) {
     const { data, error } = await supabase
@@ -735,7 +910,10 @@ export const shopStore = {
           amount: item.amount,
         })),
       );
-    return after(toOrder(data));
+    return after(
+      toOrder(data),
+      refreshSalesFeature,
+    );
   },
   async updateOrder(id: string, patch: Partial<Order>) {
     const payload: any = {};
@@ -747,7 +925,10 @@ export const shopStore = {
     if (patch.timeline !== undefined) payload.timeline = patch.timeline;
     const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshSalesFeature,
+    );
   },
   async addPayment(payment: Omit<PaymentRecord, "id">) {
     const { error } = await supabase.from("payments").insert({
@@ -762,7 +943,10 @@ export const shopStore = {
       remarks: payment["remarks"] ?? null,
     });
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshPaymentsFeature,
+    );
   },
   async updateReminder(id: string, patch: Partial<Reminder>) {
     const payload: any = {};
@@ -772,7 +956,10 @@ export const shopStore = {
     if (patch.channel !== undefined) payload.channel = patch.channel;
     const { error } = await supabase.from("reminders").update(payload).eq("id", id);
     if (error) throw error;
-    return after(undefined);
+    return after(
+      undefined,
+      refreshRemindersFeature,
+    );
   },
   async updateCmsSection(id: string, patch: Partial<CmsSection>) {
     const payload: any = {};

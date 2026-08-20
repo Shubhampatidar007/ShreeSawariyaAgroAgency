@@ -44,7 +44,42 @@ export function invalidateAdminFeature(key?: string) {
   if (key) cache.delete(key);
   else cache.clear();
 }
+export async function refreshCustomersFeature() {
+  invalidateAdminFeature("customers");
+  return loadCustomersFeature();
+}
 
+export async function refreshSuppliersFeature() {
+  invalidateAdminFeature("suppliers");
+  return loadSuppliersFeature();
+}
+
+export async function refreshInventoryFeature() {
+  invalidateAdminFeature("inventory");
+  invalidateAdminFeature("products");
+
+  return loadInventoryFeature();
+}
+
+export async function refreshProductsFeature() {
+  invalidateAdminFeature("products");
+  return loadProductsFeature();
+}
+
+export async function refreshSalesFeature() {
+  invalidateAdminFeature("sales");
+  return loadSalesFeature();
+}
+
+export async function refreshPaymentsFeature() {
+  invalidateAdminFeature("payments");
+  return loadPaymentsFeature();
+}
+
+export async function refreshRemindersFeature() {
+  invalidateAdminFeature("reminders");
+  return loadRemindersFeature();
+}
 const toCustomer = (r: any): Customer => ({
   id: r.id,
   name: r.name,
