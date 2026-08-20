@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import { loadShopData, useShopStore } from "@/lib/shop-store";
+import { useShopStore } from "@/lib/shop-store";
 import { ensureAdminSectionData } from "@/lib/admin-section-loader";
 
 export const Route = createFileRoute("/admin/inventory-reminders")({
