@@ -7,6 +7,7 @@ import {
   loadSalesFeature,
   loadSuppliersFeature,
 } from "@/lib/admin-feature-loaders";
+import { loadCustomerKhataFeature } from "@/lib/admin-khata-loader";
 import { setAdminFeatureState } from "@/lib/shop-store";
 import { loadAdminShopData } from "@/lib/shop-store";
 
@@ -24,21 +25,23 @@ export function ensureAdminSectionData(force = false) {
   if (typeof window === "undefined") return Promise.resolve();
 
   const path = window.location.pathname;
-  const scope = path.startsWith("/admin/customers")
-    ? "customers"
-    : path.startsWith("/admin/suppliers")
-      ? "suppliers"
-      : path.startsWith("/admin/inventory")
-        ? "inventory"
-        : path.startsWith("/admin/products")
-          ? "products"
-          : path.startsWith("/admin/sales")
-            ? "sales"
-            : path.startsWith("/admin/payments")
-              ? "payments"
-              : path.startsWith("/admin/reminders")
-                ? "reminders"
-                : "legacy";
+  const scope = path.startsWith("/admin/khata/customers/")
+    ? "customer-khata"
+    : path.startsWith("/admin/customers")
+      ? "customers"
+      : path.startsWith("/admin/suppliers")
+        ? "suppliers"
+        : path.startsWith("/admin/inventory")
+          ? "inventory"
+          : path.startsWith("/admin/products")
+            ? "products"
+            : path.startsWith("/admin/sales")
+              ? "sales"
+              : path.startsWith("/admin/payments")
+                ? "payments"
+                : path.startsWith("/admin/reminders")
+                  ? "reminders"
+                  : "legacy";
 
   if (!force && lastLoadedAt && lastScope === scope && Date.now() - lastLoadedAt < CACHE_MS) {
     return Promise.resolve();
@@ -48,6 +51,12 @@ export function ensureAdminSectionData(force = false) {
 
   pending = (async () => {
     switch (scope) {
+      case "customer-khata": {
+        const customerId = path.split("/").filter(Boolean).at(-1);
+        if (!customerId) throw new Error("Missing customer ID for khata route");
+        setAdminFeatureState(await loadCustomerKhataFeature(customerId));
+        break;
+      }
       case "customers":
         setAdminFeatureState({ customers: await loadCustomersFeature() });
         break;
