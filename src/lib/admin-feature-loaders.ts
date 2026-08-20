@@ -4,6 +4,36 @@ import type { Order } from "@/types/operations";
 import type { PaymentRecord, Reminder } from "@/types";
 
 const num = (value: unknown) => Number(value ?? 0);
+const CACHE_MS = 30_000;
+
+type CacheEntry<T> = { value?: T; loadedAt: number; pending?: Promise<T> };
+const cache = new Map<string, CacheEntry<any>>();
+
+function cachedFeature<T>(key: string, load: () => Promise<T>) {
+  const existing = cache.get(key) as CacheEntry<T> | undefined;
+  if (existing?.value !== undefined && Date.now() - existing.loadedAt < CACHE_MS) {
+    return Promise.resolve(existing.value);
+  }
+  if (existing?.pending) return existing.pending;
+
+  const pending = load().then((value) => {
+    cache.set(key, { value, loadedAt: Date.now() });
+    return value;
+  }).finally(() => {
+    const current = cache.get(key);
+    if (current?.pending === pending) {
+      cache.set(key, { value: current.value, loadedAt: current.loadedAt });
+    }
+  });
+
+  cache.set(key, { ...existing, loadedAt: existing?.loadedAt ?? 0, pending });
+  return pending;
+}
+
+export function invalidateAdminFeature(key?: string) {
+  if (key) cache.delete(key);
+  else cache.clear();
+}
 
 const toCustomer = (r: any): Customer => ({
   id: r.id,
@@ -163,72 +193,84 @@ const toReminder = (r: any): Reminder => ({
 });
 
 /** Feature-scoped reads only; existing mutations/business logic stay in shopStore. */
-export async function loadCustomersFeature() {
-  const { data, error } = await supabase.from("customers").select("*").order("name");
-  if (error) throw error;
-  return (data ?? []).map(toCustomer);
+export function loadCustomersFeature() {
+  return cachedFeature("customers", async () => {
+    const { data, error } = await supabase.from("customers").select("*").order("name");
+    if (error) throw error;
+    return (data ?? []).map(toCustomer);
+  });
 }
 
-export async function loadSuppliersFeature() {
-  const { data, error } = await supabase.from("suppliers").select("*").order("name");
-  if (error) throw error;
-  return (data ?? []).map(toSupplier);
+export function loadSuppliersFeature() {
+  return cachedFeature("suppliers", async () => {
+    const { data, error } = await supabase.from("suppliers").select("*").order("name");
+    if (error) throw error;
+    return (data ?? []).map(toSupplier);
+  });
 }
 
-export async function loadInventoryFeature() {
-  const [inventory, reminders, products] = await Promise.all([
-    supabase.from("inventory_items").select("*").order("product_name"),
-    supabase.from("reminders").select("*").eq("target", "inventory").order("created_at", { ascending: false }),
-    supabase.from("products").select("*").order("published_on", { ascending: false }),
-  ]);
-  if (inventory.error) throw inventory.error;
-  if (reminders.error) throw reminders.error;
-  if (products.error) throw products.error;
-  return {
-    inventory: (inventory.data ?? []).map(toInventory),
-    reminders: (reminders.data ?? []).map(toReminder),
-    products: (products.data ?? []).map(toProduct),
-  };
+export function loadInventoryFeature() {
+  return cachedFeature("inventory", async () => {
+    const [inventory, reminders, products] = await Promise.all([
+      supabase.from("inventory_items").select("*").order("product_name"),
+      supabase.from("reminders").select("*").eq("target", "inventory").order("created_at", { ascending: false }),
+      supabase.from("products").select("*").order("published_on", { ascending: false }),
+    ]);
+    if (inventory.error) throw inventory.error;
+    if (reminders.error) throw reminders.error;
+    if (products.error) throw products.error;
+    return {
+      inventory: (inventory.data ?? []).map(toInventory),
+      reminders: (reminders.data ?? []).map(toReminder),
+      products: (products.data ?? []).map(toProduct),
+    };
+  });
 }
 
-export async function loadSalesFeature() {
-  const [orders, customerLedger] = await Promise.all([
-    supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
-    supabase.from("customer_transactions").select("*").order("entry_date", { ascending: false }),
-  ]);
-  if (orders.error) throw orders.error;
-  if (customerLedger.error) throw customerLedger.error;
-  return {
-    orders: (orders.data ?? []).map(toOrder),
-    customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-  };
+export function loadSalesFeature() {
+  return cachedFeature("sales", async () => {
+    const [orders, customerLedger] = await Promise.all([
+      supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+      supabase.from("customer_transactions").select("*").order("entry_date", { ascending: false }),
+    ]);
+    if (orders.error) throw orders.error;
+    if (customerLedger.error) throw customerLedger.error;
+    return {
+      orders: (orders.data ?? []).map(toOrder),
+      customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+    };
+  });
 }
 
-export async function loadPaymentsFeature() {
-  const [payments, suppliers, supplierLedger] = await Promise.all([
-    supabase.from("payments").select("*").order("entry_date", { ascending: false }),
-    supabase.from("suppliers").select("*").order("name"),
-    supabase.from("supplier_transactions").select("*").order("entry_date", { ascending: false }),
-  ]);
-  if (payments.error) throw payments.error;
-  if (suppliers.error) throw suppliers.error;
-  if (supplierLedger.error) throw supplierLedger.error;
-  return {
-    payments: (payments.data ?? []).map(toPayment),
-    suppliers: (suppliers.data ?? []).map(toSupplier),
-    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-  };
+export function loadPaymentsFeature() {
+  return cachedFeature("payments", async () => {
+    const [payments, suppliers, supplierLedger] = await Promise.all([
+      supabase.from("payments").select("*").order("entry_date", { ascending: false }),
+      supabase.from("suppliers").select("*").order("name"),
+      supabase.from("supplier_transactions").select("*").order("entry_date", { ascending: false }),
+    ]);
+    if (payments.error) throw payments.error;
+    if (suppliers.error) throw suppliers.error;
+    if (supplierLedger.error) throw supplierLedger.error;
+    return {
+      payments: (payments.data ?? []).map(toPayment),
+      suppliers: (suppliers.data ?? []).map(toSupplier),
+      supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+    };
+  });
 }
 
-export async function loadRemindersFeature() {
-  const [reminders, logs] = await Promise.all([
-    supabase.from("reminders").select("*").order("created_at", { ascending: false }),
-    supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
-  ]);
-  if (reminders.error) throw reminders.error;
-  if (logs.error) throw logs.error;
-  return {
-    reminders: (reminders.data ?? []).map(toReminder),
-    reminderLogs: logs.data ?? [],
-  };
+export function loadRemindersFeature() {
+  return cachedFeature("reminders", async () => {
+    const [reminders, logs] = await Promise.all([
+      supabase.from("reminders").select("*").order("created_at", { ascending: false }),
+      supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
+    ]);
+    if (reminders.error) throw reminders.error;
+    if (logs.error) throw logs.error;
+    return {
+      reminders: (reminders.data ?? []).map(toReminder),
+      reminderLogs: logs.data ?? [],
+    };
+  });
 }
