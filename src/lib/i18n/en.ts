@@ -312,23 +312,34 @@ export const en = {
   "commandPalette.addCustomer": "Add customer",
   "commandPalette.newStockEntry": "New stock entry",
   "commandPalette.publishProduct": "Publish product",
-  "home.hero.badge": "Your storefront is ready",
-  "home.hero.title": "Welcome to your shop",
-  "home.hero.subtitle": "Add your own products, offers, and customer details here.",
-  "home.hero.shopNow": "Shop now",
-  "home.hero.explore": "Explore categories",
-  "home.hero.farmers": "Farmers served",
-  "home.hero.products": "Products in stock",
-  "home.hero.villages": "Villages delivered",
-  "home.category.eyebrow": "Shop by category",
-  "home.category.title": "Everything a farm needs, season after season",
-  "home.category.description":
-    "Stocked from IFFCO, Bayer, Mahyco, Coromandel and other licensed suppliers. Prices updated daily against company rate lists.",
-  "home.featured.eyebrow": "Featured this season",
-  "home.featured.title": "Fast-moving inputs for the current sowing window",
-  "home.featured.description":
-    "Rates reviewed every morning. Society and bulk buyers get slab pricing on request.",
-  "home.featured.browse": "Browse full catalogue",
+ "home.hero.badge": "Your Trusted Agriculture Partner",
+
+"home.hero.title": "Shree Sawariya Agro Agency",
+
+"home.hero.subtitle":
+  "High-quality seeds, fertilizers and agricultural products for better crops and a better future.",
+
+"home.hero.shopNow": "View Our Products",
+
+"home.hero.explore": "Contact Us",
+
+"home.hero.farmers": "Farmers Served",
+
+"home.hero.products": "Quality Products",
+
+"home.hero.villages": "Reliable Service",
+
+"home.hero.quality": "Quality Products",
+
+"home.hero.qualityText": "Better crops, better future",
+
+"home.hero.service": "Reliable Service",
+
+"home.hero.serviceText": "Always with you",
+
+"home.hero.growth": "Farmer Growth",
+
+"home.hero.growthText": "Our priority",
 };
 
 export type TranslationKey = keyof typeof en;
