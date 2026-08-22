@@ -214,9 +214,12 @@ function InventoryEntryPage() {
             {productSearch.trim() && (
               <div className="rounded-md border bg-background shadow-sm">
                 {inventoryItems
-                  .filter((item) =>
-                    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
-                  )
+
+               .filter(
+  (item) =>
+    item.quantity > 0 &&
+    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+)
                   .slice(0, 8)
                   .map((item) => (
                     <button
@@ -254,9 +257,11 @@ function InventoryEntryPage() {
                     </button>
                   ))}
 
-                {inventoryItems.filter((item) =>
-                  item.productName.toLowerCase().includes(productSearch.toLowerCase()),
-                ).length === 0 && (
+            {inventoryItems.filter(
+  (item) =>
+    item.quantity > 0 &&
+    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+).length === 0 && (
                   <div className="px-3 py-3 text-sm text-muted-foreground">
                     No existing product found. You can add it as a new product.
                   </div>
