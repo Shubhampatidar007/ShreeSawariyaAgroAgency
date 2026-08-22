@@ -9,18 +9,20 @@ import type { CmsSection } from "@/types/operations";
 export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "headline" | "body"> }) {
   const { t } = useI18n();
   const published = usePublicShopStore((s) => s.products);
-  const publishedCards = published.map((p) => ({
-    id: p.id,
-    name: p.title,
-    category: p.category,
-    price: p.discountPrice ?? p.sellingPrice,
-    unit: "unit",
-    ...(p.featured ? { tag: "Featured" } : {}),
-    rating: 4.6,
-    emoji: p.emoji || "🌾",
-    image: p.images[0],
-    stock: p.stock,
-  }));
+  const publishedCards = published
+    .filter((p) => p.stock > 0)
+    .map((p) => ({
+      id: p.id,
+      name: p.title,
+      category: p.category,
+      price: p.discountPrice ?? p.sellingPrice,
+      unit: "unit",
+      ...(p.featured ? { tag: "Featured" } : {}),
+      rating: 4.6,
+      emoji: p.emoji || "🌾",
+      image: p.images[0],
+      stock: p.stock,
+    }));
   const cards = [...publishedCards, ...featuredProducts].slice(0, 8);
   return (
     <section id="products" className="bg-muted/50 py-16">
