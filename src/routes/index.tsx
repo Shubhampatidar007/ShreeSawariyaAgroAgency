@@ -7,7 +7,7 @@ import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
 import { AboutSection } from "@/components/home/AboutSection";
-import { useShopStore } from "@/lib/shop-store";
+import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
 
 const title = "Your Shop";
@@ -27,7 +27,7 @@ const isActive = (section: CmsSection) => {
 };
 
 function Index() {
-  const sections = useShopStore((s) => [...s.cmsSections].sort((a, b) => a.order - b.order));
+  const sections = usePublicShopStore((s) => [...s.cmsSections].sort((a, b) => a.order - b.order));
   const cms = sections.length ? sections.filter(isActive) : null;
   return <div className="min-h-screen bg-background"><SiteHeader /><main>{!cms ? <><HeroSection /><CategorySection /><FeaturedProducts /><OffersSection /><AboutSection /></> : cms.map((section) => <CmsRender key={section.id} section={section} />)}</main><SiteFooter /></div>;
 }
