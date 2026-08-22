@@ -1,72 +1,93 @@
 import { animate } from "motion";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useRouterState } from "@tanstack/react-router";
+
+const TEXT_SELECTOR =
+  "h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption, label";
+const REVEAL_CLASS = "data-text-reveal-ready";
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
-function scrollToPosition(targetY: number) {
-  if (prefersReducedMotion()) {
-    window.scrollTo(0, targetY);
-    return () => undefined;
+function hasVisibleText(element: Element) {
+  return Boolean(element.textContent?.trim());
+}
+
+function revealElement(element: HTMLElement, immediate = false) {
+  if (!hasVisibleText(element) || element.dataset.textReveal === "done") return;
+
+  element.dataset.textReveal = "done";
+
+  if (prefersReducedMotion() || immediate) {
+    element.style.opacity = "1";
+    element.style.transform = "translateY(0)";
+    element.style.clipPath = "inset(0 0 0 0)";
+    return;
   }
 
-  return animate(window.scrollY, targetY, {
-    duration: 0.85,
-    ease: [0.22, 1, 0.36, 1],
-    onUpdate: (value) => window.scrollTo(0, value),
-  });
+  element.classList.add(REVEAL_CLASS);
+  element.style.opacity = "0";
+  element.style.transform = "translateY(1.1em)";
+  element.style.clipPath = "inset(1.15em 0 0 0)";
+
+  animate(
+    element,
+    {
+      opacity: 1,
+      transform: "translateY(0)",
+      clipPath: "inset(0 0 0 0)",
+    },
+    {
+      duration: 0.8,
+      ease: [0.22, 1, 0.36, 1],
+    },
+  );
+}
+
+function prepareElement(element: Element) {
+  if (!(element instanceof HTMLElement)) return;
+  if (element.dataset.textReveal === "done") return;
+  element.style.willChange = "transform, opacity, clip-path";
 }
 
 export function SmoothScroll() {
   const locationHref = useRouterState({ select: (state) => state.location.href });
-  const hasMounted = useRef(false);
 
   useEffect(() => {
-    const handleClick = (event: MouseEvent) => {
-      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) {
-        return;
-      }
+    const reducedMotion = prefersReducedMotion();
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          revealElement(entry.target as HTMLElement, reducedMotion);
+          observer.unobserve(entry.target);
+        });
+      },
+      {
+        threshold: 0.12,
+        rootMargin: "0px 0px -8% 0px",
+      },
+    );
 
-      const target = event.target;
-      if (!(target instanceof Element)) return;
-
-      const link = target.closest("a[href]");
-      if (!(link instanceof HTMLAnchorElement)) return;
-
-      const url = new URL(link.href, window.location.href);
-      if (url.origin !== window.location.origin || url.pathname !== window.location.pathname || !url.hash) {
-        return;
-      }
-
-      const hash = decodeURIComponent(url.hash.slice(1));
-      const element = document.getElementById(hash);
-      if (!element) return;
-
-      event.preventDefault();
-      const targetY = Math.max(0, element.getBoundingClientRect().top + window.scrollY - 24);
-      const controls = scrollToPosition(targetY);
-      window.history.pushState(null, "", url.hash);
-
-      if (controls && "stop" in controls) {
-        void controls;
-      }
+    const scan = () => {
+      document.querySelectorAll(TEXT_SELECTOR).forEach((element) => {
+        prepareElement(element);
+        observer.observe(element);
+      });
     };
 
-    document.addEventListener("click", handleClick, { passive: false });
-    return () => document.removeEventListener("click", handleClick);
-  }, []);
+    scan();
 
-  useEffect(() => {
-    if (!hasMounted.current) {
-      hasMounted.current = true;
-      return;
-    }
+    const mutationObserver = new MutationObserver(scan);
+    mutationObserver.observe(document.body, {
+      childList: true,
+      subtree: true,
+    });
 
-    const controls = scrollToPosition(0);
     return () => {
-      if (controls && "stop" in controls) controls.stop();
+      mutationObserver.disconnect();
+      observer.disconnect();
     };
   }, [locationHref]);
 
