@@ -1,10 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowDown, ArrowUp, Eye, EyeOff, Package, Percent, Settings2, TrendingUp, WalletCards } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  Eye,
+  EyeOff,
+  Package,
+  Percent,
+  Settings2,
+  TrendingUp,
+  WalletCards,
+} from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { useShopStore } from "@/lib/shop-store";
 import { formatIndianCompactCurrency, formatIndianQuantity } from "@/lib/indian-format";
 
@@ -42,7 +59,9 @@ export function DashboardEnhancements() {
       if (!stored) return;
       const parsed = JSON.parse(stored) as InsightPreference[];
       if (Array.isArray(parsed) && parsed.every((item) => item && typeof item.id === "string")) {
-        const normalized = DEFAULT_PREFERENCES.map((fallback) => parsed.find((item) => item.id === fallback.id) ?? fallback);
+        const normalized = DEFAULT_PREFERENCES.map(
+          (fallback) => parsed.find((item) => item.id === fallback.id) ?? fallback,
+        );
         setPreferences(normalized);
       }
     } catch {
@@ -59,18 +78,28 @@ export function DashboardEnhancements() {
   }, [preferences]);
 
   const inventoryCostByName = useMemo(
-    () => new Map(inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice])),
+    () =>
+      new Map(inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice])),
     [inventory],
   );
 
-  const getPurchasePrice = (name: string) => inventoryCostByName.get(name.trim().toLowerCase()) ?? 0;
+  const getPurchasePrice = (name: string) =>
+    inventoryCostByName.get(name.trim().toLowerCase()) ?? 0;
 
   const productProfit = useMemo(() => {
-    const map = new Map<string, { name: string; quantity: number; revenue: number; cost: number }>();
+    const map = new Map<
+      string,
+      { name: string; quantity: number; revenue: number; cost: number }
+    >();
 
     const ensure = (name: string) => {
       const key = name.trim().toLowerCase();
-      const current = map.get(key) ?? { name: name.trim() || "Unknown product", quantity: 0, revenue: 0, cost: 0 };
+      const current = map.get(key) ?? {
+        name: name.trim() || "Unknown product",
+        quantity: 0,
+        revenue: 0,
+        cost: 0,
+      };
       map.set(key, current);
       return current;
     };
@@ -104,10 +133,11 @@ export function DashboardEnhancements() {
 
   const topProduct = productProfit[0] ?? null;
   const totals = useMemo(
-    () => productProfit.reduce(
-      (acc, row) => ({ revenue: acc.revenue + row.revenue, profit: acc.profit + row.profit }),
-      { revenue: 0, profit: 0 },
-    ),
+    () =>
+      productProfit.reduce(
+        (acc, row) => ({ revenue: acc.revenue + row.revenue, profit: acc.profit + row.profit }),
+        { revenue: 0, profit: 0 },
+      ),
     [productProfit],
   );
 
@@ -115,7 +145,17 @@ export function DashboardEnhancements() {
   const outstanding = customers.reduce((sum, customer) => sum + customer.currentDue, 0);
   const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
 
-  const values: Record<InsightId, { label: string; title: string; value: string; helper: string; icon: LucideIcon; accent: string }> = {
+  const values: Record<
+    InsightId,
+    {
+      label: string;
+      title: string;
+      value: string;
+      helper: string;
+      icon: LucideIcon;
+      accent: string;
+    }
+  > = {
     "top-profit": {
       label: "Top profit product",
       title: topProduct?.name ?? "No sales yet",
@@ -166,7 +206,9 @@ export function DashboardEnhancements() {
   };
 
   const toggle = (id: InsightId) => {
-    setPreferences((current) => current.map((item) => (item.id === id ? { ...item, visible: !item.visible } : item)));
+    setPreferences((current) =>
+      current.map((item) => (item.id === id ? { ...item, visible: !item.visible } : item)),
+    );
   };
 
   return (
@@ -174,7 +216,9 @@ export function DashboardEnhancements() {
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="font-display text-lg font-semibold tracking-tight">Quick insights</h2>
-          <p className="text-xs text-muted-foreground">Customize the business signals you want to see on your dashboard.</p>
+          <p className="text-xs text-muted-foreground">
+            Customize the business signals you want to see on your dashboard.
+          </p>
         </div>
         <Dialog open={customizeOpen} onOpenChange={setCustomizeOpen}>
           <DialogTrigger asChild>
@@ -186,24 +230,52 @@ export function DashboardEnhancements() {
           <DialogContent className="w-[calc(100%-1.5rem)] max-w-lg rounded-2xl">
             <DialogHeader>
               <DialogTitle>Customize dashboard</DialogTitle>
-              <DialogDescription>Choose which insight cards appear and change their order. Your preference is saved on this device.</DialogDescription>
+              <DialogDescription>
+                Choose which insight cards appear and change their order. Your preference is saved
+                on this device.
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-2">
               {preferences.map((item, index) => {
                 const Icon = values[item.id].icon;
                 return (
-                  <div key={item.id} className="flex items-center gap-3 rounded-2xl border border-border p-3">
-                    <div className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${values[item.id].accent}`}>
+                  <div
+                    key={item.id}
+                    className="flex items-center gap-3 rounded-2xl border border-border p-3"
+                  >
+                    <div
+                      className={`flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${values[item.id].accent}`}
+                    >
                       <Icon className="size-4" />
                     </div>
                     <p className="min-w-0 flex-1 truncate text-sm font-medium">{labels[item.id]}</p>
-                    <Button variant="ghost" size="icon" className="size-9" onClick={() => toggle(item.id)} aria-label={`${item.visible ? "Hide" : "Show"} ${labels[item.id]}`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      onClick={() => toggle(item.id)}
+                      aria-label={`${item.visible ? "Hide" : "Show"} ${labels[item.id]}`}
+                    >
                       {item.visible ? <Eye className="size-4" /> : <EyeOff className="size-4" />}
                     </Button>
-                    <Button variant="ghost" size="icon" className="size-9" disabled={index === 0} onClick={() => move(item.id, -1)} aria-label={`Move ${labels[item.id]} up`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      disabled={index === 0}
+                      onClick={() => move(item.id, -1)}
+                      aria-label={`Move ${labels[item.id]} up`}
+                    >
                       <ArrowUp className="size-4" />
                     </Button>
-                    <Button variant="ghost" size="icon" className="size-9" disabled={index === preferences.length - 1} onClick={() => move(item.id, 1)} aria-label={`Move ${labels[item.id]} down`}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-9"
+                      disabled={index === preferences.length - 1}
+                      onClick={() => move(item.id, 1)}
+                      aria-label={`Move ${labels[item.id]} down`}
+                    >
                       <ArrowDown className="size-4" />
                     </Button>
                   </div>
@@ -226,21 +298,34 @@ export function DashboardEnhancements() {
             const insight = values[item.id];
             const Icon = insight.icon;
             return (
-              <Card key={item.id} className="group overflow-hidden shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg">
+              <Card
+                key={item.id}
+                className="group overflow-hidden shadow-soft transition-all duration-200 hover:-translate-y-0.5 hover:shadow-lg"
+              >
                 <CardHeader className="flex-row items-start justify-between gap-3 pb-2">
                   <div>
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{insight.label}</p>
-                    <CardTitle className="mt-2 line-clamp-2 text-base leading-5">{insight.title}</CardTitle>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                      {insight.label}
+                    </p>
+                    <CardTitle className="mt-2 line-clamp-2 text-base leading-5">
+                      {insight.title}
+                    </CardTitle>
                   </div>
-                  <div className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${insight.accent}`}>
+                  <div
+                    className={`flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 ${insight.accent}`}
+                  >
                     <Icon className="size-5" />
                   </div>
                 </CardHeader>
                 <CardContent>
-                  <p className={`text-2xl font-bold tracking-tight ${insight.accent}`}>{insight.value}</p>
+                  <p className={`text-2xl font-bold tracking-tight ${insight.accent}`}>
+                    {insight.value}
+                  </p>
                   <p className="mt-1 text-xs leading-5 text-muted-foreground">{insight.helper}</p>
                   {item.id === "top-profit" && topProduct ? (
-                    <Badge variant="secondary" className="mt-3 rounded-full">{topProduct.profit >= 0 ? "Highest recorded profit" : "Highest recorded loss"}</Badge>
+                    <Badge variant="secondary" className="mt-3 rounded-full">
+                      {topProduct.profit >= 0 ? "Highest recorded profit" : "Highest recorded loss"}
+                    </Badge>
                   ) : null}
                 </CardContent>
               </Card>

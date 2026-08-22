@@ -30,9 +30,7 @@ function readDismissedIds(): Set<string> {
     const raw = window.sessionStorage.getItem(SESSION_KEY);
     const ids = raw ? JSON.parse(raw) : [];
     return new Set<string>(
-      Array.isArray(ids)
-        ? ids.filter((id): id is string => typeof id === "string")
-        : [],
+      Array.isArray(ids) ? ids.filter((id): id is string => typeof id === "string") : [],
     );
   } catch {
     return new Set<string>();
@@ -58,21 +56,19 @@ export function LowStockReminderPopup() {
     return (reminders as LowStockReminder[])
       .filter(
         (reminder) =>
-          reminder.status === "active" &&
-          reminder.target === "inventory" &&
-          !!reminder.sourceId,
+          reminder.status === "active" && reminder.target === "inventory" && !!reminder.sourceId,
       )
       .map((reminder) => {
-        const item = reminder.sourceId
-          ? inventoryById.get(reminder.sourceId)
-          : undefined;
+        const item = reminder.sourceId ? inventoryById.get(reminder.sourceId) : undefined;
 
         if (!item || item.quantity > item.minStockLevel) return null;
 
         return { reminder, item };
       })
       .filter(
-        (value): value is {
+        (
+          value,
+        ): value is {
           reminder: LowStockReminder;
           item: InventoryItem;
         } => value !== null,
@@ -142,20 +138,26 @@ export function LowStockReminderPopup() {
 
                 <div className="min-w-0 flex-1">
                   <p className="text-lg font-semibold tracking-tight">{current.item.productName}</p>
-                  <p className="mt-1 text-sm text-muted-foreground">Inventory item needs restocking.</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Inventory item needs restocking.
+                  </p>
                 </div>
               </div>
 
               <div className="mt-6 grid gap-3 sm:grid-cols-2">
                 <div className="rounded-xl bg-muted/50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Current quantity</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Current quantity
+                  </p>
                   <p className="mt-1 text-2xl font-bold tracking-tight">
                     {current.item.quantity} {current.item.unit}
                   </p>
                 </div>
 
                 <div className="rounded-xl bg-muted/50 p-4">
-                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Minimum stock level</p>
+                  <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Minimum stock level
+                  </p>
                   <p className="mt-1 text-2xl font-bold tracking-tight">
                     {current.item.minStockLevel} {current.item.unit}
                   </p>
@@ -165,7 +167,8 @@ export function LowStockReminderPopup() {
               <div className="mt-4 flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
                 <BellRing className="mt-0.5 size-4 shrink-0" />
                 <p>
-                  Stock is at or below the configured minimum. Review this product in Inventory and restock it when required.
+                  Stock is at or below the configured minimum. Review this product in Inventory and
+                  restock it when required.
                 </p>
               </div>
             </div>
@@ -179,7 +182,8 @@ export function LowStockReminderPopup() {
 
             {visibleItems.length > 1 && (
               <p className="text-center text-xs text-muted-foreground">
-                {visibleItems.length - 1} more low-stock {visibleItems.length - 1 === 1 ? "item" : "items"} will be shown next.
+                {visibleItems.length - 1} more low-stock{" "}
+                {visibleItems.length - 1 === 1 ? "item" : "items"} will be shown next.
               </p>
             )}
           </div>

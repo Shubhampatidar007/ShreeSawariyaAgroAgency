@@ -11,7 +11,14 @@ type DetailHeaderProps = {
   avatar?: ReactNode;
 };
 
-export function DetailHeader({ crumbs, title, subtitle, badge, actions, avatar }: DetailHeaderProps) {
+export function DetailHeader({
+  crumbs,
+  title,
+  subtitle,
+  badge,
+  actions,
+  avatar,
+}: DetailHeaderProps) {
   return (
     <div className="space-y-3">
       <BackButton />

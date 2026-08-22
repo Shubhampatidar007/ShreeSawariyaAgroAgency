@@ -24,7 +24,10 @@ export const Route = createFileRoute("/admin/payments")({
   head: () => ({
     meta: [
       { title: "Payments — Admin" },
-      { name: "description", content: "Customer and supplier payments with method filters and status." },
+      {
+        name: "description",
+        content: "Customer and supplier payments with method filters and status.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -57,7 +60,7 @@ function PaymentsPage() {
             partyName: supplier?.company || supplier?.name || "Supplier",
             date: entry.date,
             amount: entry.amount,
-            method: entry.method === "credit" ? "credit" as const : entry.method,
+            method: entry.method === "credit" ? ("credit" as const) : entry.method,
             status: "success" as const,
             remarks: entry.remarks,
           };
@@ -95,8 +98,18 @@ function PaymentsPage() {
 
       <SummaryCards
         items={[
-          { label: t("payments.received"), value: formatCurrency(sum(incoming)), icon: ArrowDownLeft, tone: "success" },
-          { label: t("payments.paidOut"), value: formatCurrency(sum(outgoing)), icon: ArrowUpRight, tone: "warning" },
+          {
+            label: t("payments.received"),
+            value: formatCurrency(sum(incoming)),
+            icon: ArrowDownLeft,
+            tone: "success",
+          },
+          {
+            label: t("payments.paidOut"),
+            value: formatCurrency(sum(outgoing)),
+            icon: ArrowUpRight,
+            tone: "warning",
+          },
           {
             label: t("payments.pending"),
             value: formatCurrency(sum(allPayments.filter((p) => p.status === "pending"))),
@@ -115,7 +128,11 @@ function PaymentsPage() {
         </TabsList>
       </Tabs>
 
-      <SearchToolbar value={query} onChange={setQuery} placeholder="Search reference, party, order…">
+      <SearchToolbar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search reference, party, order…"
+      >
         {methods.map((item) => (
           <button
             key={item}
@@ -163,16 +180,24 @@ function PaymentsPage() {
                         <p className="font-medium">{payment.partyName}</p>
                         <p className="text-xs text-muted-foreground">{payment.orderCode ?? "—"}</p>
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{formatDate(payment.date)}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(payment.date)}
+                      </TableCell>
                       <TableCell className="capitalize">{payment.direction}</TableCell>
-                      <TableCell className="uppercase text-muted-foreground">{payment.method}</TableCell>
+                      <TableCell className="uppercase text-muted-foreground">
+                        {payment.method}
+                      </TableCell>
                       <TableCell className="text-right font-semibold">
                         {formatCurrency(payment.amount)}
                       </TableCell>
                       <TableCell>
-                        <StatusBadge status={payment.status === "success" ? "paid" : payment.status} />
+                        <StatusBadge
+                          status={payment.status === "success" ? "paid" : payment.status}
+                        />
                       </TableCell>
-                      <TableCell className="text-muted-foreground">{payment.remarks ?? "—"}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {payment.remarks ?? "—"}
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

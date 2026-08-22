@@ -7,12 +7,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate, loadShopData } from "@/lib/shop-store";
 import { supabase } from "@/integrations/supabase/client";
-import type {
-  Customer,
-  InventoryItem,
-  PublishedProduct,
-  Supplier,
-} from "@/types/business";
+import type { Customer, InventoryItem, PublishedProduct, Supplier } from "@/types/business";
 
 const initials = (name: string) =>
   name
@@ -167,7 +162,11 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
           <Row label="Updated" value={formatDate(item.lastUpdated)} />
           <Row label="Minimum stock" value={`${item.minStockLevel} ${item.unit}`} />
         </div>
-        <Button className="w-full rounded-full" variant="outline" onClick={() => void configureReminder()}>
+        <Button
+          className="w-full rounded-full"
+          variant="outline"
+          onClick={() => void configureReminder()}
+        >
           <Bell className="size-4" />
           Configure reminder
         </Button>

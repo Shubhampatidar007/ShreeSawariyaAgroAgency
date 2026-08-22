@@ -40,7 +40,12 @@ type CustomerFormProps = {
   onCancel: () => void;
 };
 
-export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }: CustomerFormProps) {
+export function CustomerForm({
+  defaultValues,
+  submitLabel,
+  onSubmit,
+  onCancel,
+}: CustomerFormProps) {
   const form = useForm<CustomerFormValues>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
@@ -151,7 +156,11 @@ export function CustomerForm({ defaultValues, submitLabel, onSubmit, onCancel }:
                 <FormItem className="md:col-span-2">
                   <FormLabel>Notes (optional)</FormLabel>
                   <FormControl>
-                    <Textarea rows={3} placeholder="Add notes about the customer or account" {...field} />
+                    <Textarea
+                      rows={3}
+                      placeholder="Add notes about the customer or account"
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

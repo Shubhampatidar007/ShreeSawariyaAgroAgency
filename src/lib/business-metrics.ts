@@ -63,7 +63,8 @@ export const buildDailyMetrics = (
     const row = ensure(isoDay(order.placedOn));
     row.sales += order.total;
     row.cost += order.items.reduce(
-      (sum, item) => sum + item.quantity * (costByProduct.get(item.product.trim().toLowerCase()) ?? 0),
+      (sum, item) =>
+        sum + item.quantity * (costByProduct.get(item.product.trim().toLowerCase()) ?? 0),
       0,
     );
   });
@@ -101,6 +102,8 @@ export const buildDailyMetrics = (
 };
 
 export const getPurchaseCost = (productName: string, inventory: InventoryItem[]) => {
-  const item = inventory.find((entry) => entry.productName.trim().toLowerCase() === productName.trim().toLowerCase());
+  const item = inventory.find(
+    (entry) => entry.productName.trim().toLowerCase() === productName.trim().toLowerCase(),
+  );
   return item?.purchasePrice ?? 0;
 };

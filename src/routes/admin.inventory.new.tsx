@@ -37,8 +37,8 @@ export const Route = createFileRoute("/admin/inventory/new")({
 function InventoryEntryPage() {
   const inventoryItems = useShopStore((s) => s.inventory);
 
-const [productSearch, setProductSearch] = useState("");
-const [selectedInventoryId, setSelectedInventoryId] = useState("");
+  const [productSearch, setProductSearch] = useState("");
+  const [selectedInventoryId, setSelectedInventoryId] = useState("");
   const navigate = useNavigate();
   const suppliers = useShopStore((s) => s.suppliers);
   const [supplierId, setSupplierId] = useState("");
@@ -47,8 +47,7 @@ const [selectedInventoryId, setSelectedInventoryId] = useState("");
   const [unit, setUnit] = useState("bags");
   const [price, setPrice] = useState("");
   const [advancePaid, setAdvancePaid] = useState("");
-  const [advanceMethod, setAdvanceMethod] =
-    useState<"cash" | "upi" | "bank" | "cheque">("cash");
+  const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [minStock, setMinStock] = useState("10");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
@@ -108,15 +107,15 @@ const [selectedInventoryId, setSelectedInventoryId] = useState("");
             <Label>Supplier</Label>
             <div className="flex gap-2">
               <Select
-  value={supplierId}
-  onValueChange={(value) => {
-    setSupplierId(value);
+                value={supplierId}
+                onValueChange={(value) => {
+                  setSupplierId(value);
 
-    if (selectedInventoryId) {
-      setSelectedInventoryId("");
-    }
-  }}
->
+                  if (selectedInventoryId) {
+                    setSelectedInventoryId("");
+                  }
+                }}
+              >
                 <SelectTrigger className="flex-1">
                   <SelectValue placeholder="Choose supplier" />
                 </SelectTrigger>
@@ -200,178 +199,160 @@ const [selectedInventoryId, setSelectedInventoryId] = useState("");
           </div>
 
           <div className="space-y-2 sm:col-span-2">
-  <Label>Product</Label>
+            <Label>Product</Label>
 
-  <Input
-    value={productSearch}
-    onChange={(e) => {
-      setProductSearch(e.target.value);
-      setSelectedInventoryId("");
-      setProductName(e.target.value);
-    }}
-    placeholder="Search existing product or enter new product name"
-  />
+            <Input
+              value={productSearch}
+              onChange={(e) => {
+                setProductSearch(e.target.value);
+                setSelectedInventoryId("");
+                setProductName(e.target.value);
+              }}
+              placeholder="Search existing product or enter new product name"
+            />
 
-  {productSearch.trim() && (
-    <div className="rounded-md border bg-background shadow-sm">
-      {inventoryItems
-        .filter((item) =>
-          item.productName
-            .toLowerCase()
-            .includes(productSearch.toLowerCase()),
-        )
-        .slice(0, 8)
-        .map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className="flex w-full items-center justify-between border-b px-3 py-3 text-left last:border-b-0 hover:bg-muted"
-            onClick={() => {
-              setSelectedInventoryId(item.id);
-              setProductName(item.productName);
-              setProductSearch(item.productName);
-              setSupplierId(item.supplierId);
-              setUnit(item.unit);
-              setPrice(String(item.purchasePrice));
-            }}
-          >
-           <div className="min-w-0">
-  <p className="font-medium truncate">
-    {item.productName}
-  </p>
+            {productSearch.trim() && (
+              <div className="rounded-md border bg-background shadow-sm">
+                {inventoryItems
+                  .filter((item) =>
+                    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+                  )
+                  .slice(0, 8)
+                  .map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className="flex w-full items-center justify-between border-b px-3 py-3 text-left last:border-b-0 hover:bg-muted"
+                      onClick={() => {
+                        setSelectedInventoryId(item.id);
+                        setProductName(item.productName);
+                        setProductSearch(item.productName);
+                        setSupplierId(item.supplierId);
+                        setUnit(item.unit);
+                        setPrice(String(item.purchasePrice));
+                      }}
+                    >
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{item.productName}</p>
 
-  <p className="text-xs text-muted-foreground">
-    Supplier: {item.supplierName}
-  </p>
+                        <p className="text-xs text-muted-foreground">
+                          Supplier: {item.supplierName}
+                        </p>
 
-  <p className="text-xs text-muted-foreground">
-    Stock: {item.quantity} {item.unit}
-  </p>
-</div>
+                        <p className="text-xs text-muted-foreground">
+                          Stock: {item.quantity} {item.unit}
+                        </p>
+                      </div>
 
-<div className="shrink-0 text-right">
-  <p className="text-sm font-semibold">
-    {formatCurrency(item.purchasePrice)}
-  </p>
+                      <div className="shrink-0 text-right">
+                        <p className="text-sm font-semibold">
+                          {formatCurrency(item.purchasePrice)}
+                        </p>
 
-  <p className="text-xs text-muted-foreground">
-    per {item.unit}
-  </p>
-</div>
-          </button>
-        ))}
+                        <p className="text-xs text-muted-foreground">per {item.unit}</p>
+                      </div>
+                    </button>
+                  ))}
 
-      {inventoryItems.filter((item) =>
-        item.productName
-          .toLowerCase()
-          .includes(productSearch.toLowerCase()),
-      ).length === 0 && (
-        <div className="px-3 py-3 text-sm text-muted-foreground">
-          No existing product found. You can add it as a new product.
-        </div>
-      )}
-    </div>
-  )}
+                {inventoryItems.filter((item) =>
+                  item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+                ).length === 0 && (
+                  <div className="px-3 py-3 text-sm text-muted-foreground">
+                    No existing product found. You can add it as a new product.
+                  </div>
+                )}
+              </div>
+            )}
 
-  {selectedInventoryId && (() => {
-  const selectedItem = inventoryItems.find(
-    (item) => item.id === selectedInventoryId,
-  );
+            {selectedInventoryId &&
+              (() => {
+                const selectedItem = inventoryItems.find((item) => item.id === selectedInventoryId);
 
-  if (!selectedItem) return null;
+                if (!selectedItem) return null;
 
-  const priceChanged =
-  Number(price) !== Number(selectedItem.purchasePrice);
+                const priceChanged = Number(price) !== Number(selectedItem.purchasePrice);
 
-const supplierChanged =
-  supplierId !== selectedItem.supplierId;
+                const supplierChanged = supplierId !== selectedItem.supplierId;
 
-const unitChanged =
-  unit.trim().toLowerCase() !==
-  selectedItem.unit.trim().toLowerCase();
+                const unitChanged =
+                  unit.trim().toLowerCase() !== selectedItem.unit.trim().toLowerCase();
 
-const productChanged =
-  productName.trim().toLowerCase() !==
-  selectedItem.productName.trim().toLowerCase();
+                const productChanged =
+                  productName.trim().toLowerCase() !==
+                  selectedItem.productName.trim().toLowerCase();
 
-const willCreateNewEntry =
-  priceChanged ||
-  supplierChanged ||
-  unitChanged ||
-  productChanged;
-  return (
-    <div className="rounded-lg border bg-muted/30 p-3">
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-sm font-medium">
-            Existing inventory selected
-          </p>
+                const willCreateNewEntry =
+                  priceChanged || supplierChanged || unitChanged || productChanged;
+                return (
+                  <div className="rounded-lg border bg-muted/30 p-3">
+                    <div className="flex items-start justify-between gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Existing inventory selected</p>
 
-          <p className="mt-1 text-xs text-muted-foreground">
-            Current stock: {selectedItem.quantity}{" "}
-            {selectedItem.unit}
-          </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          Current stock: {selectedItem.quantity} {selectedItem.unit}
+                        </p>
 
-          <p className="text-xs text-muted-foreground">
-            Current purchase price:{" "}
-            {formatCurrency(selectedItem.purchasePrice)}
-          </p>
+                        <p className="text-xs text-muted-foreground">
+                          Current purchase price: {formatCurrency(selectedItem.purchasePrice)}
+                        </p>
 
-          <p className="text-xs text-muted-foreground">
-            Supplier: {selectedItem.supplierName}
-          </p>
-        </div>
+                        <p className="text-xs text-muted-foreground">
+                          Supplier: {selectedItem.supplierName}
+                        </p>
+                      </div>
 
-        <button
-          type="button"
-          className="text-xs text-muted-foreground hover:text-foreground"
-          onClick={() => {
-            setSelectedInventoryId("");
-            setProductSearch("");
-            setProductName("");
-          }}
-        >
-          Clear
-        </button>
-      </div>
+                      <button
+                        type="button"
+                        className="text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => {
+                          setSelectedInventoryId("");
+                          setProductSearch("");
+                          setProductName("");
+                        }}
+                      >
+                        Clear
+                      </button>
+                    </div>
 
-      {willCreateNewEntry ? (
-  <div className="mt-3 space-y-1">
-    <p className="text-xs font-medium text-amber-600">
-      A new inventory entry will be created.
-    </p>
+                    {willCreateNewEntry ? (
+                      <div className="mt-3 space-y-1">
+                        <p className="text-xs font-medium text-amber-600">
+                          A new inventory entry will be created.
+                        </p>
 
-    {priceChanged && (
-      <p className="text-xs text-muted-foreground">
-        • Purchase price is different
-      </p>
-    )}
+                        {priceChanged && (
+                          <p className="text-xs text-muted-foreground">
+                            • Purchase price is different
+                          </p>
+                        )}
 
-    {supplierChanged && (
-      <p className="text-xs text-muted-foreground">
-        • Supplier is different
-      </p>
-    )}
+                        {supplierChanged && (
+                          <p className="text-xs text-muted-foreground">• Supplier is different</p>
+                        )}
 
-    {unitChanged && (
-      <p className="text-xs text-muted-foreground">
-        • Unit is different
-      </p>
-    )}
-  </div>
-) : (
-  <p className="mt-3 text-xs text-muted-foreground">
-    Same product, supplier, unit and purchase price.
-    New quantity will be added to this existing inventory.
-  </p>
-)}
-    </div>
-  );
-})()}
-</div>
+                        {unitChanged && (
+                          <p className="text-xs text-muted-foreground">• Unit is different</p>
+                        )}
+                      </div>
+                    ) : (
+                      <p className="mt-3 text-xs text-muted-foreground">
+                        Same product, supplier, unit and purchase price. New quantity will be added
+                        to this existing inventory.
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
+          </div>
           <div className="space-y-2">
             <Label>Quantity</Label>
-            <Input value={quantity} onChange={(e) => setQuantity(e.target.value)} inputMode="numeric" placeholder="100" />
+            <Input
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              inputMode="numeric"
+              placeholder="100"
+            />
           </div>
           <div className="space-y-2">
             <Label>Unit</Label>
@@ -379,7 +360,12 @@ const willCreateNewEntry =
           </div>
           <div className="space-y-2">
             <Label>Purchase price (per unit)</Label>
-            <Input value={price} onChange={(e) => setPrice(e.target.value)} inputMode="numeric" placeholder="266" />
+            <Input
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              inputMode="numeric"
+              placeholder="266"
+            />
           </div>
           <div className="space-y-2">
             <Label>Advance paid to supplier</Label>
@@ -397,9 +383,7 @@ const willCreateNewEntry =
             <Select
               value={advanceMethod}
               onValueChange={(value) =>
-                setAdvanceMethod(
-                  value as "cash" | "upi" | "bank" | "cheque",
-                )
+                setAdvanceMethod(value as "cash" | "upi" | "bank" | "cheque")
               }
             >
               <SelectTrigger>
@@ -414,10 +398,15 @@ const willCreateNewEntry =
               </SelectContent>
             </Select>
           </div>
-          
+
           <div className="space-y-2">
             <Label>Minimum stock level</Label>
-            <Input value={minStock} onChange={(e) => setMinStock(e.target.value)} inputMode="numeric" placeholder="10" />
+            <Input
+              value={minStock}
+              onChange={(e) => setMinStock(e.target.value)}
+              inputMode="numeric"
+              placeholder="10"
+            />
           </div>
 
           {/* New Totals Section */}
@@ -426,10 +415,7 @@ const willCreateNewEntry =
             <div className="space-y-2">
               <Label>Total price</Label>
               <div className="rounded-md border px-3 py-2 bg-muted/50">
-                ₹
-                {(
-                  Number(quantity || 0) * Number(price || 0)
-                ).toLocaleString("en-IN")}
+                ₹{(Number(quantity || 0) * Number(price || 0)).toLocaleString("en-IN")}
               </div>
             </div>
 
@@ -449,8 +435,7 @@ const willCreateNewEntry =
               ₹
               {Math.max(
                 0,
-                Number(quantity || 0) * Number(price || 0) -
-                  Number(advancePaid || 0),
+                Number(quantity || 0) * Number(price || 0) - Number(advancePaid || 0),
               ).toLocaleString("en-IN")}
             </div>
           </div>

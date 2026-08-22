@@ -135,7 +135,12 @@ function CustomerKhataPage() {
       <SummaryCards
         items={[
           { label: "Total purchase", value: formatCurrency(totals.purchase), icon: IndianRupee },
-          { label: "Total paid", value: formatCurrency(totals.paid), icon: Wallet, tone: "success" },
+          {
+            label: "Total paid",
+            value: formatCurrency(totals.paid),
+            icon: Wallet,
+            tone: "success",
+          },
           {
             label: "Current due",
             value: formatCurrency(customer.currentDue),
@@ -172,7 +177,7 @@ function CustomerKhataPage() {
                       <TableHead>Remarks</TableHead>
                     </TableRow>
                   </TableHeader>
-               <TableBody>
+                  <TableBody>
                     {sorted.map((entry) => {
                       const canExpand = entry.entryType === "purchase";
                       const isOpen = expanded.has(entry.id);
@@ -188,22 +193,34 @@ function CustomerKhataPage() {
                                   className="text-muted-foreground hover:text-foreground"
                                   aria-label="Toggle items"
                                 >
-                                  {isOpen ? <ChevronDown className="size-4" /> : <ChevronRight className="size-4" />}
+                                  {isOpen ? (
+                                    <ChevronDown className="size-4" />
+                                  ) : (
+                                    <ChevronRight className="size-4" />
+                                  )}
                                 </button>
                               )}
                             </TableCell>
-                            <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {formatDate(entry.date)}
+                            </TableCell>
                             <TableCell className="font-medium">{entry.product}</TableCell>
                             <TableCell className="text-right">{entry.quantity}</TableCell>
-                            <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(entry.amount)}
+                            </TableCell>
                             <TableCell className="text-right text-success">
                               {formatCurrency(entry.payment)}
                             </TableCell>
                             <TableCell className="text-right font-semibold">
                               {formatCurrency(entry.remainingDue)}
                             </TableCell>
-                            <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
-                            <TableCell className="text-muted-foreground">{entry.remarks ?? "—"}</TableCell>
+                            <TableCell className="uppercase text-muted-foreground">
+                              {entry.method}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {entry.remarks ?? "—"}
+                            </TableCell>
                           </TableRow>
                           {canExpand && isOpen && (
                             <TableRow>
@@ -212,18 +229,26 @@ function CustomerKhataPage() {
                                 {items === "loading" || items === undefined ? (
                                   <p className="text-sm text-muted-foreground">Loading items…</p>
                                 ) : items.length === 0 ? (
-                                  <p className="text-sm text-muted-foreground">No line items recorded for this entry.</p>
+                                  <p className="text-sm text-muted-foreground">
+                                    No line items recorded for this entry.
+                                  </p>
                                 ) : (
                                   <div className="space-y-1">
                                     {items.map((item) => (
-                                      <div key={item.id} className="flex items-center justify-between text-sm">
+                                      <div
+                                        key={item.id}
+                                        className="flex items-center justify-between text-sm"
+                                      >
                                         <span>
                                           {item.product}{" "}
                                           <span className="text-muted-foreground">
-                                            ({item.quantity} {item.unit} × {formatCurrency(item.rate)})
+                                            ({item.quantity} {item.unit} ×{" "}
+                                            {formatCurrency(item.rate)})
                                           </span>
                                         </span>
-                                        <span className="font-medium">{formatCurrency(item.amount)}</span>
+                                        <span className="font-medium">
+                                          {formatCurrency(item.amount)}
+                                        </span>
                                       </div>
                                     ))}
                                   </div>

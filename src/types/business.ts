@@ -35,11 +35,7 @@ export type Supplier = {
 };
 
 export type InventoryStatus =
-  | "inventory-only"
-  | "published"
-  | "hidden"
-  | "out-of-stock"
-  | "archived";
+  "inventory-only" | "published" | "hidden" | "out-of-stock" | "archived";
 
 export type InventoryItem = {
   id: string;

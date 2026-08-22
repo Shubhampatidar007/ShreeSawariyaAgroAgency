@@ -113,8 +113,7 @@ function InventoryListPage() {
 
     try {
       const existing = reminders.find(
-        (reminder) =>
-          reminder.target === "inventory" && reminder.sourceId === item.id,
+        (reminder) => reminder.target === "inventory" && reminder.sourceId === item.id,
       );
 
       if (existing) {
@@ -148,9 +147,7 @@ function InventoryListPage() {
       await navigate({ to: "/admin/inventory-reminders" });
     } catch (error) {
       setReminderError(
-        error instanceof Error
-          ? error.message
-          : "Failed to configure inventory reminder.",
+        error instanceof Error ? error.message : "Failed to configure inventory reminder.",
       );
     } finally {
       setConfiguringReminderId(null);
@@ -160,10 +157,7 @@ function InventoryListPage() {
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[
-          { label: "Admin", to: "/admin" },
-          { label: "Inventory" },
-        ]}
+        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Inventory" }]}
         eyebrow="Module"
         title="Inventory"
         description="Stock received from suppliers. Publishing to the storefront is a separate step."
@@ -177,11 +171,7 @@ function InventoryListPage() {
         }
       />
 
-      <SearchToolbar
-        value={query}
-        onChange={setQuery}
-        placeholder="Search product or supplier…"
-      />
+      <SearchToolbar value={query} onChange={setQuery} placeholder="Search product or supplier…" />
 
       {reminderError ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
@@ -225,8 +215,7 @@ function InventoryListPage() {
               <TableBody>
                 {rows.map((item) => {
                   const configured = reminders.some(
-                    (reminder) =>
-                      reminder.target === "inventory" && reminder.sourceId === item.id,
+                    (reminder) => reminder.target === "inventory" && reminder.sourceId === item.id,
                   );
                   const configuring = configuringReminderId === item.id;
 

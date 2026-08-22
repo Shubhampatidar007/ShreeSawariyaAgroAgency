@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import {
-  CloudUpload,
-  DatabaseBackup,
-  GitCompare,
-  Loader2,
-  MapPin,
-  Save,
-} from "lucide-react";
+import { CloudUpload, DatabaseBackup, GitCompare, Loader2, MapPin, Save } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -121,20 +114,17 @@ function dateFolderParts(date = new Date()) {
 }
 
 async function chooseLocalBackupRoot() {
-  const picker = (window as Window & {
-    showDirectoryPicker?: () => Promise<any>;
-  }).showDirectoryPicker;
+  const picker = (
+    window as Window & {
+      showDirectoryPicker?: () => Promise<any>;
+    }
+  ).showDirectoryPicker;
 
   if (!picker) return null;
   return picker();
 }
 
-async function saveToLocalFolder(
-  rootHandle: any,
-  blob: Blob,
-  filename: string,
-  date = new Date(),
-) {
+async function saveToLocalFolder(rootHandle: any, blob: Blob, filename: string, date = new Date()) {
   const agency = await rootHandle.getDirectoryHandle("Shree-Sawariya-Agro-Agency", {
     create: true,
   });
@@ -195,12 +185,10 @@ async function runManualBackup(localRootHandle: any) {
 
     await saveToLocalFolder(localRootHandle, blob, name, now);
 
-    const { error: uploadError } = await supabase.storage
-      .from("shop-backups")
-      .upload(path, blob, {
-        contentType: "application/vnd.ms-excel",
-        upsert: false,
-      });
+    const { error: uploadError } = await supabase.storage.from("shop-backups").upload(path, blob, {
+      contentType: "application/vnd.ms-excel",
+      upsert: false,
+    });
     if (uploadError) throw uploadError;
 
     const { error: updateError } = await supabase
@@ -337,7 +325,9 @@ function BackupsPage() {
     try {
       const handle = await chooseLocalBackupRoot();
       if (!handle) {
-        toast.error("Your browser does not support selecting a local folder. A supported Chromium browser is required for structured local storage.");
+        toast.error(
+          "Your browser does not support selecting a local folder. A supported Chromium browser is required for structured local storage.",
+        );
         return;
       }
       setLocalRootHandle(handle);
@@ -362,7 +352,8 @@ function BackupsPage() {
       const handle = localRootHandle ?? (await chooseLocalBackupRoot());
       if (!handle) {
         toast.error("Choose a local backup folder first", {
-          description: "The backup needs a real local folder so it can create the year/month structure.",
+          description:
+            "The backup needs a real local folder so it can create the year/month structure.",
         });
         return;
       }
@@ -393,7 +384,8 @@ function BackupsPage() {
       });
     } catch (error) {
       toast.error("Comparison failed", {
-        description: error instanceof Error ? error.message : "Unable to compare the selected backups.",
+        description:
+          error instanceof Error ? error.message : "Unable to compare the selected backups.",
       });
     } finally {
       setComparing(false);
@@ -444,12 +436,25 @@ function BackupsPage() {
         description="Manual backups only. Run a backup when you need a fresh Excel snapshot of the shop data."
         actions={
           <>
-            <Button variant="outline" className="rounded-full" onClick={() => void chooseFolder()} disabled={selectingFolder || running}>
-              {selectingFolder ? <Loader2 className="size-4 animate-spin" /> : <MapPin className="size-4" />}
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => void chooseFolder()}
+              disabled={selectingFolder || running}
+            >
+              {selectingFolder ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <MapPin className="size-4" />
+              )}
               {localRootHandle ? "Local folder connected" : "Choose local folder"}
             </Button>
             <Button className="rounded-full" onClick={() => void handleBackup()} disabled={running}>
-              {running ? <Loader2 className="size-4 animate-spin" /> : <CloudUpload className="size-4" />}
+              {running ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <CloudUpload className="size-4" />
+              )}
               {running ? "Creating backup…" : "Run backup now"}
             </Button>
           </>
@@ -481,12 +486,19 @@ function BackupsPage() {
                     backups.map((backup) => (
                       <TableRow key={backup.id}>
                         <TableCell className="font-medium">{backup.name}</TableCell>
-                        <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">{backup.type}</TableCell>
-                        <TableCell className="hidden md:table-cell text-muted-foreground">{backup.destination}</TableCell>
+                        <TableCell className="hidden sm:table-cell capitalize text-muted-foreground">
+                          {backup.type}
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell text-muted-foreground">
+                          {backup.destination}
+                        </TableCell>
                         <TableCell className="text-muted-foreground">{backup.createdAt}</TableCell>
                         <TableCell className="text-right">{backup.size}</TableCell>
                         <TableCell className="text-right">
-                          <Badge variant="outline" className={`border-0 capitalize ${statusStyles[backup.status] ?? ""}`}>
+                          <Badge
+                            variant="outline"
+                            className={`border-0 capitalize ${statusStyles[backup.status] ?? ""}`}
+                          >
                             {backup.status}
                           </Badge>
                         </TableCell>
@@ -494,7 +506,12 @@ function BackupsPage() {
                     ))
                   ) : (
                     <TableRow>
-                      <TableCell colSpan={6} className="py-10 text-center text-sm text-muted-foreground">No backups created yet.</TableCell>
+                      <TableCell
+                        colSpan={6}
+                        className="py-10 text-center text-sm text-muted-foreground"
+                      >
+                        No backups created yet.
+                      </TableCell>
                     </TableRow>
                   )}
                 </TableBody>
@@ -510,9 +527,16 @@ function BackupsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 text-sm text-muted-foreground">
-            <p>Choose a local parent folder in a supported Chromium browser. The backup creates this structure automatically:</p>
+            <p>
+              Choose a local parent folder in a supported Chromium browser. The backup creates this
+              structure automatically:
+            </p>
             <pre className="overflow-x-auto rounded-xl bg-muted p-3 text-xs leading-5 text-foreground">{`Shree-Sawariya-Agro-Agency/\n  2026/\n    August/\n      Shree-Sawariya-Agro-Agency-....xls`}</pre>
-            <p>{localRootHandle ? "Connected. Future backups in this session will use the structured folders." : "Not connected yet. Run backup will ask you to choose the parent folder."}</p>
+            <p>
+              {localRootHandle
+                ? "Connected. Future backups in this session will use the structured folders."
+                : "Not connected yet. Run backup will ask you to choose the parent folder."}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -526,37 +550,76 @@ function BackupsPage() {
         <CardContent className="space-y-5">
           <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="backup-old-date">Older date</label>
-              <Input id="backup-old-date" type="date" value={oldDate} onChange={(event) => setOldDate(event.target.value)} />
+              <label className="text-sm font-medium" htmlFor="backup-old-date">
+                Older date
+              </label>
+              <Input
+                id="backup-old-date"
+                type="date"
+                value={oldDate}
+                onChange={(event) => setOldDate(event.target.value)}
+              />
             </div>
             <div className="space-y-2">
-              <label className="text-sm font-medium" htmlFor="backup-new-date">Newer date</label>
-              <Input id="backup-new-date" type="date" value={newDate} onChange={(event) => setNewDate(event.target.value)} />
+              <label className="text-sm font-medium" htmlFor="backup-new-date">
+                Newer date
+              </label>
+              <Input
+                id="backup-new-date"
+                type="date"
+                value={newDate}
+                onChange={(event) => setNewDate(event.target.value)}
+              />
             </div>
-            <Button onClick={() => void handleCompare()} disabled={comparing || !oldDate || !newDate} className="rounded-full">
-              {comparing ? <Loader2 className="size-4 animate-spin" /> : <GitCompare className="size-4" />}
+            <Button
+              onClick={() => void handleCompare()}
+              disabled={comparing || !oldDate || !newDate}
+              className="rounded-full"
+            >
+              {comparing ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <GitCompare className="size-4" />
+              )}
               {comparing ? "Comparing…" : "Compare data"}
             </Button>
           </div>
 
           <p className="text-xs text-muted-foreground">
-            The comparison uses the latest completed backup from each selected date and reports records that exist in the newer snapshot but not in the older snapshot.
+            The comparison uses the latest completed backup from each selected date and reports
+            records that exist in the newer snapshot but not in the older snapshot.
           </p>
 
           {comparison ? (
             <div className="space-y-4 rounded-2xl border bg-muted/20 p-4">
               <div className="grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border bg-background p-3"><p className="text-xs text-muted-foreground">Older snapshot</p><p className="mt-1 truncate text-sm font-semibold">{comparison.oldBackup.name}</p></div>
-                <div className="rounded-xl border bg-background p-3"><p className="text-xs text-muted-foreground">Newer snapshot</p><p className="mt-1 truncate text-sm font-semibold">{comparison.newBackup.name}</p></div>
-                <div className="rounded-xl border bg-background p-3"><p className="text-xs text-muted-foreground">New records</p><p className="mt-1 text-lg font-bold">{comparison.totalNewRows.toLocaleString("en-IN")}</p></div>
+                <div className="rounded-xl border bg-background p-3">
+                  <p className="text-xs text-muted-foreground">Older snapshot</p>
+                  <p className="mt-1 truncate text-sm font-semibold">{comparison.oldBackup.name}</p>
+                </div>
+                <div className="rounded-xl border bg-background p-3">
+                  <p className="text-xs text-muted-foreground">Newer snapshot</p>
+                  <p className="mt-1 truncate text-sm font-semibold">{comparison.newBackup.name}</p>
+                </div>
+                <div className="rounded-xl border bg-background p-3">
+                  <p className="text-xs text-muted-foreground">New records</p>
+                  <p className="mt-1 text-lg font-bold">
+                    {comparison.totalNewRows.toLocaleString("en-IN")}
+                  </p>
+                </div>
               </div>
 
               {comparison.additions.length ? (
                 <div className="space-y-4">
                   {comparison.additions.map((sheet) => {
-                    const columns = Array.from(new Set(sheet.rows.flatMap((row) => Object.keys(row))));
+                    const columns = Array.from(
+                      new Set(sheet.rows.flatMap((row) => Object.keys(row))),
+                    );
                     return (
-                      <div key={sheet.table} className="overflow-hidden rounded-xl border bg-background">
+                      <div
+                        key={sheet.table}
+                        className="overflow-hidden rounded-xl border bg-background"
+                      >
                         <div className="flex items-center justify-between border-b px-4 py-3">
                           <p className="text-sm font-semibold">{sheet.table}</p>
                           <Badge variant="secondary">{sheet.rows.length} new</Badge>
@@ -565,14 +628,19 @@ function BackupsPage() {
                           <Table>
                             <TableHeader>
                               <TableRow>
-                                {columns.map((column) => <TableHead key={column}>{column}</TableHead>)}
+                                {columns.map((column) => (
+                                  <TableHead key={column}>{column}</TableHead>
+                                ))}
                               </TableRow>
                             </TableHeader>
                             <TableBody>
                               {sheet.rows.map((row, rowIndex) => (
                                 <TableRow key={`${sheet.table}-${rowIndex}`}>
                                   {columns.map((column) => (
-                                    <TableCell key={column} className="max-w-[260px] whitespace-nowrap text-xs">
+                                    <TableCell
+                                      key={column}
+                                      className="max-w-[260px] whitespace-nowrap text-xs"
+                                    >
                                       {cellValue(row[column])}
                                     </TableCell>
                                   ))}
@@ -599,9 +667,14 @@ function BackupsPage() {
         <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-semibold">Daily backup reminder — 7:00 AM</p>
-            <p className="mt-1 text-sm text-muted-foreground">When the admin panel is open at 7:00 AM, the app checks whether today's backup exists and asks the owner/admin to save it.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              When the admin panel is open at 7:00 AM, the app checks whether today's backup exists
+              and asks the owner/admin to save it.
+            </p>
           </div>
-          <Badge variant="outline" className="w-fit rounded-full">Reminder only · no automatic backup</Badge>
+          <Badge variant="outline" className="w-fit rounded-full">
+            Reminder only · no automatic backup
+          </Badge>
         </CardContent>
       </Card>
     </div>

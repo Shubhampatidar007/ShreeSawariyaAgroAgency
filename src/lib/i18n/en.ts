@@ -276,8 +276,7 @@ export const en = {
   "cms.title": "Homepage CMS",
   "reminders.title": "Reminders & notifications",
   "auth.title": "Account",
-  "auth.subtitle":
-    "Sign in to manage your shop.",
+  "auth.subtitle": "Sign in to manage your shop.",
   "auth.login": "Login",
   "auth.register": "Register",
   "auth.mobile": "Mobile number",
@@ -314,9 +313,8 @@ export const en = {
   "commandPalette.newStockEntry": "New stock entry",
   "commandPalette.publishProduct": "Publish product",
   "home.hero.badge": "Your storefront is ready",
-  "home.hero.title": "Welcome to your shop", 
-  "home.hero.subtitle":
-    "Add your own products, offers, and customer details here.",
+  "home.hero.title": "Welcome to your shop",
+  "home.hero.subtitle": "Add your own products, offers, and customer details here.",
   "home.hero.shopNow": "Shop now",
   "home.hero.explore": "Explore categories",
   "home.hero.farmers": "Farmers served",

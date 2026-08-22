@@ -26,9 +26,11 @@ export type WhatsAppSendResponse = {
   note?: string;
 };
 
-export async function sendWhatsAppBatch(payload: WhatsAppSendRequest): Promise<WhatsAppSendResponse> {
-  const selectedRecipients = payload.recipients.filter(
-    (recipient) => Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
+export async function sendWhatsAppBatch(
+  payload: WhatsAppSendRequest,
+): Promise<WhatsAppSendResponse> {
+  const selectedRecipients = payload.recipients.filter((recipient) =>
+    Boolean(recipient.id && recipient.name && recipient.mobile?.trim()),
   );
 
   if (selectedRecipients.length === 0) {

@@ -319,8 +319,7 @@ export const hi: Partial<Record<keyof typeof en, string>> = {
   "commandPalette.publishProduct": "उत्पाद प्रकाशित करें",
   "home.hero.badge": "आपका स्टोरफ्रंट तैयार है",
   "home.hero.title": "आपकी दुकान में स्वागत है",
-  "home.hero.subtitle":
-    "यहाँ अपनी उत्पाद सूची, ऑफ़र और ग्राहक जानकारी जोड़ें।",
+  "home.hero.subtitle": "यहाँ अपनी उत्पाद सूची, ऑफ़र और ग्राहक जानकारी जोड़ें।",
   "home.hero.shopNow": "अभी खरीदें",
   "home.hero.explore": "श्रेणियाँ देखें",
   "home.hero.farmers": "किसान सेवित",

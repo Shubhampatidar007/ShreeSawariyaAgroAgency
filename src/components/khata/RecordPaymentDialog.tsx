@@ -102,7 +102,8 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
             />
             {exceedsDue && (
               <p className="text-xs text-warning">
-                This exceeds the current due of {formatCurrency(customer.currentDue)} — will be recorded as an advance.
+                This exceeds the current due of {formatCurrency(customer.currentDue)} — will be
+                recorded as an advance.
               </p>
             )}
           </div>
@@ -131,10 +132,20 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
         </div>
 
         <DialogFooter>
-          <Button type="button" variant="outline" className="rounded-full" onClick={() => setOpen(false)}>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => setOpen(false)}
+          >
             Cancel
           </Button>
-          <Button type="button" className="rounded-full" onClick={handleSubmit} disabled={submitting}>
+          <Button
+            type="button"
+            className="rounded-full"
+            onClick={handleSubmit}
+            disabled={submitting}
+          >
             {submitting && <Loader2 className="size-4 animate-spin" />} Save payment
           </Button>
         </DialogFooter>

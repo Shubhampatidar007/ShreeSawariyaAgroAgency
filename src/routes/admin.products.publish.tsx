@@ -121,7 +121,10 @@ function PublishProductPage() {
     discountPrice: discountPrice ? Number(discountPrice) : undefined,
     stock: item?.quantity ?? 0,
     description,
-    tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+    tags: tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean),
     images: imagePreview ? [imagePreview] : [],
     emoji: "🌾",
     visibility,
@@ -228,15 +231,27 @@ function PublishProductPage() {
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Title</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={item?.productName ?? "Product title"} />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={item?.productName ?? "Product title"}
+              />
             </div>
             <div className="space-y-2">
               <Label>Selling price</Label>
-              <Input value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="numeric" />
+              <Input
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+                inputMode="numeric"
+              />
             </div>
             <div className="space-y-2">
               <Label>Discount price</Label>
-              <Input value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} inputMode="numeric" />
+              <Input
+                value={discountPrice}
+                onChange={(e) => setDiscountPrice(e.target.value)}
+                inputMode="numeric"
+              />
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
@@ -255,11 +270,19 @@ function PublishProductPage() {
             </div>
             <div className="space-y-2">
               <Label>Tags (comma separated)</Label>
-              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags, categories" />
+              <Input
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="tags, categories"
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>
-              <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
               <div>
@@ -283,7 +306,11 @@ function PublishProductPage() {
                 <Upload className="size-4" />
                 {publishing ? "Publishing…" : "Publish product"}
               </Button>
-              <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/products" })}>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => navigate({ to: "/admin/products" })}
+              >
                 Cancel
               </Button>
             </div>

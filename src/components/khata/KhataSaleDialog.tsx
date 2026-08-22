@@ -31,11 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  formatCurrency,
-  shopStore,
-  useShopStore,
-} from "@/lib/shop-store";
+import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 import type { PaymentMethod } from "@/types/business";
 
 type CartItem = {
@@ -51,24 +47,21 @@ type CartItem = {
 
 type Props = {
   /** Preselect a customer (from the Khata / customer detail page). Omit to search or create one. */
- customer?: {
-  id: string;
-  name: string;
-  mobile?: string;
-};
+  customer?: {
+    id: string;
+    name: string;
+    mobile?: string;
+  };
   trigger: ReactNode;
   onCreated?: (transactionId: string) => void;
 };
 
 type ReceiptOption = "current" | "full" | "none";
 
-
-
 const KHATA_RECEIPT_EDGE_FUNCTION =
-  import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] ||
-  "whatsapp-meta-messages";
+  import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
 
- async function sendKhataReceiptToEdgeFunction({
+async function sendKhataReceiptToEdgeFunction({
   receiptOption,
   customerId,
   transactionId,
@@ -102,28 +95,22 @@ const KHATA_RECEIPT_EDGE_FUNCTION =
     };
   }
 
-const {
-  data: { session },
-  error: sessionError,
-} = await supabase.auth.getSession();
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
 
-if (sessionError) {
-  throw new Error(
-    `Could not get Supabase session: ${sessionError.message}`,
-  );
-}
+  if (sessionError) {
+    throw new Error(`Could not get Supabase session: ${sessionError.message}`);
+  }
 
-if (!session?.access_token) {
-  throw new Error(
-    "You are not logged in. Please sign in again.",
-  );
-}
+  if (!session?.access_token) {
+    throw new Error("You are not logged in. Please sign in again.");
+  }
 
-const supabaseUrl =
-  "https://cmfqlpcrnkswgxrszoog.supabase.co";
+  const supabaseUrl = "https://cmfqlpcrnkswgxrszoog.supabase.co";
 
-const edgeFunctionUrl =
-  `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
   /*
    * Send only structured data.
    *
@@ -138,14 +125,12 @@ const edgeFunctionUrl =
     method: "POST",
 
     headers: {
-  "Content-Type": "application/json",
+      "Content-Type": "application/json",
 
-  apikey:
-    "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i",
+      apikey: "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i",
 
-  Authorization:
-    `Bearer ${session.access_token}`,
-},
+      Authorization: `Bearer ${session.access_token}`,
+    },
 
     body: JSON.stringify({
       /*
@@ -190,8 +175,7 @@ const edgeFunctionUrl =
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
-          amount:
-            item.quantity * item.rate,
+          amount: item.quantity * item.rate,
         })),
 
         total,
@@ -208,15 +192,12 @@ const edgeFunctionUrl =
   /*
    * Read Edge Function response.
    */
-  const responseText =
-    await response.text();
+  const responseText = await response.text();
 
   let result: unknown;
 
   try {
-    result = responseText
-      ? JSON.parse(responseText)
-      : null;
+    result = responseText ? JSON.parse(responseText) : null;
   } catch {
     result = responseText;
   }
@@ -250,11 +231,7 @@ const edgeFunctionUrl =
   return result;
 }
 
-export function KhataSaleDialog({
-  customer,
-  trigger,
-  onCreated,
-}: Props) {
+export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const customers = useShopStore((s) => s.customers);
   const products = useShopStore((s) => s.products);
   const inventory = useShopStore((s) => s.inventory);
@@ -263,10 +240,8 @@ export function KhataSaleDialog({
   const [submitting, setSubmitting] = useState(false);
 
   // customer selection
-  const [customerMode, setCustomerMode] =
-    useState<"select" | "new">("select");
-  const [selectedCustomerId, setSelectedCustomerId] =
-    useState<string | null>(null);
+  const [customerMode, setCustomerMode] = useState<"select" | "new">("select");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [customerQuery, setCustomerQuery] = useState("");
   const [newCustomer, setNewCustomer] = useState({
     name: "",
@@ -284,15 +259,11 @@ export function KhataSaleDialog({
   // payment
   const [paid, setPaid] = useState("0");
   const [method, setMethod] = useState<PaymentMethod>("cash");
-  const [entryDate, setEntryDate] = useState(() =>
-    new Date().toISOString().slice(0, 10),
-  );
+  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [remarks, setRemarks] = useState("");
 
   // receipt choice option: default is 'current'
-  const [receiptOption, setReceiptOption] = useState<
-    "current" | "full" | "none"
-  >("current");
+  const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
   const total = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity * item.rate, 0),
@@ -305,9 +276,7 @@ export function KhataSaleDialog({
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
 
-    const uniqueCustomers = Array.from(
-      new Map(customers.map((c) => [c.id, c])).values(),
-    );
+    const uniqueCustomers = Array.from(new Map(customers.map((c) => [c.id, c])).values());
 
     if (!q) {
       return uniqueCustomers.slice(0, 8);
@@ -336,8 +305,7 @@ export function KhataSaleDialog({
   }, [customers, customerQuery]);
 
   const selectedCustomer = useMemo(
-    () =>
-      customers.find((c) => c.id === selectedCustomerId) ?? null,
+    () => customers.find((c) => c.id === selectedCustomerId) ?? null,
     [customers, selectedCustomerId],
   );
 
@@ -346,9 +314,7 @@ export function KhataSaleDialog({
 
     return inventory
       .map((item) => {
-        const product = products.find(
-          (p) => p.inventoryId === item.id,
-        );
+        const product = products.find((p) => p.inventoryId === item.id);
 
         return {
           key: item.id,
@@ -362,6 +328,7 @@ export function KhataSaleDialog({
           stock: item.quantity,
         };
       })
+      .filter((option) => option.stock > 0)
       .filter((option) => {
         if (!q) return true;
 
@@ -399,9 +366,7 @@ export function KhataSaleDialog({
     const inv = inventory.find((i) => i.id === inventoryId);
     if (!inv) return;
 
-    const product = products.find(
-      (p) => p.inventoryId === inv.id,
-    );
+    const product = products.find((p) => p.inventoryId === inv.id);
     if (inv.quantity <= 0) {
       toast.error(`${inv.productName} is out of stock`);
       return;
@@ -409,19 +374,12 @@ export function KhataSaleDialog({
     setItems((prev): CartItem[] => {
       const existing = prev.find(
         (i) =>
-          i.inventoryId === inv.id ||
-          (product?.id !== undefined &&
-            i.productId === product.id),
+          i.inventoryId === inv.id || (product?.id !== undefined && i.productId === product.id),
       );
 
       if (existing) {
-        if (
-          existing.maxStock !== undefined &&
-          existing.quantity >= existing.maxStock
-        ) {
-          toast.error(
-            `Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`,
-          );
+        if (existing.maxStock !== undefined && existing.quantity >= existing.maxStock) {
+          toast.error(`Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`);
 
           return prev;
         }
@@ -439,14 +397,10 @@ export function KhataSaleDialog({
       const newItem: CartItem = {
         key: crypto.randomUUID(),
         inventoryId: inv.id,
-        ...(product?.id
-          ? { productId: product.id }
-          : {}),
+        ...(product?.id ? { productId: product.id } : {}),
         product: product?.title ?? inv.productName,
         unit: inv.unit,
-        rate:
-          product?.sellingPrice ??
-          inv.purchasePrice,
+        rate: product?.sellingPrice ?? inv.purchasePrice,
         quantity: 1,
         maxStock: inv.quantity,
       };
@@ -481,98 +435,63 @@ export function KhataSaleDialog({
     setCustomRate("");
   };
 
-  const updateItem = (
-    key: string,
-    patch: Partial<CartItem>,
-  ) => {
-    setItems((prev) =>
-      prev.map((item) =>
-        item.key === key
-          ? { ...item, ...patch }
-          : item,
-      ),
-    );
+  const updateItem = (key: string, patch: Partial<CartItem>) => {
+    setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
   };
 
   const removeItem = (key: string) => {
-    setItems((prev) =>
-      prev.filter((item) => item.key !== key),
-    );
+    setItems((prev) => prev.filter((item) => item.key !== key));
   };
 
- const handleSubmit = async () => {
-  if (items.length === 0) {
-    return toast.error("Add at least one product to the sale");
-  }
-
-  for (const item of items) {
-    if (item.quantity <= 0) {
-      return toast.error(
-        `Enter a valid quantity for ${item.product}`,
-      );
+  const handleSubmit = async () => {
+    if (items.length === 0) {
+      return toast.error("Add at least one product to the sale");
     }
 
-    if (
-      item.maxStock !== undefined &&
-      item.quantity > item.maxStock
-    ) {
-      return toast.error(
-        `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
-      );
+    for (const item of items) {
+      if (item.quantity <= 0) {
+        return toast.error(`Enter a valid quantity for ${item.product}`);
+      }
+
+      if (item.maxStock !== undefined && item.quantity > item.maxStock) {
+        return toast.error(`Only ${item.maxStock} ${item.unit} of ${item.product} in stock`);
+      }
     }
-  }
 
-  let customerId =
-    customer?.id ??
-    selectedCustomerId ??
-    undefined;
+    let customerId = customer?.id ?? selectedCustomerId ?? undefined;
 
-  if (!customerId && customerMode === "new") {
-    if (
-      !newCustomer.name.trim() ||
-      !newCustomer.mobile.trim()
-    ) {
-      return toast.error(
-        "Enter the customer's name and mobile number",
-      );
+    if (!customerId && customerMode === "new") {
+      if (!newCustomer.name.trim() || !newCustomer.mobile.trim()) {
+        return toast.error("Enter the customer's name and mobile number");
+      }
+    } else if (!customerId) {
+      return toast.error("Select or create a customer");
     }
-  } else if (!customerId) {
-    return toast.error(
-      "Select or create a customer",
-    );
-  }
 
-  if (paidNum < 0) {
-    return toast.error(
-      "Paid amount cannot be negative",
-    );
-  }
+    if (paidNum < 0) {
+      return toast.error("Paid amount cannot be negative");
+    }
 
-  if (paidNum > total) {
-    return toast.error(
-      "Paid amount cannot exceed the total",
-    );
-  }
+    if (paidNum > total) {
+      return toast.error("Paid amount cannot exceed the total");
+    }
 
-  setSubmitting(true);
+    setSubmitting(true);
 
-  try {
-    /*
-     * ---------------------------------------------------------
-     * STEP 1: CREATE CUSTOMER IF NEEDED
-     * ---------------------------------------------------------
-     */
+    try {
+      /*
+       * ---------------------------------------------------------
+       * STEP 1: CREATE CUSTOMER IF NEEDED
+       * ---------------------------------------------------------
+       */
 
-    if (!customerId) {
-      const created =
-        await shopStore.addCustomer({
+      if (!customerId) {
+        const created = await shopStore.addCustomer({
           name: newCustomer.name.trim(),
           mobile: newCustomer.mobile.trim(),
           village: newCustomer.village.trim(),
           address: newCustomer.address.trim(),
-          joinedOn: new Date()
-            .toISOString()
-            .slice(0, 10),
+          joinedOn: new Date().toISOString().slice(0, 10),
           creditLimit: 0,
           creditBalance: 0,
           totalPurchases: 0,
@@ -582,34 +501,29 @@ export function KhataSaleDialog({
           status: "active",
         });
 
-      customerId = created.id;
-    }
+        customerId = created.id;
+      }
 
-    /*
-     * ---------------------------------------------------------
-     * STEP 2: SAVE THE SALE
-     *
-     * IMPORTANT:
-     * We pass "none" here so createKhataSale does not
-     * automatically send another WhatsApp receipt.
-     *
-     * The WhatsApp receipt is handled explicitly below
-     * through the Edge Function.
-     * ---------------------------------------------------------
-     */
+      /*
+       * ---------------------------------------------------------
+       * STEP 2: SAVE THE SALE
+       *
+       * IMPORTANT:
+       * We pass "none" here so createKhataSale does not
+       * automatically send another WhatsApp receipt.
+       *
+       * The WhatsApp receipt is handled explicitly below
+       * through the Edge Function.
+       * ---------------------------------------------------------
+       */
 
-    const txId =
-      await shopStore.createKhataSale({
+      const txId = await shopStore.createKhataSale({
         customerId,
 
         items: items.map((item) => ({
-          ...(item.inventoryId
-            ? { inventoryId: item.inventoryId }
-            : {}),
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
 
-          ...(item.productId
-            ? { productId: item.productId }
-            : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
 
           product: item.product,
           quantity: item.quantity,
@@ -624,127 +538,111 @@ export function KhataSaleDialog({
         // Prevent createKhataSale from sending another receipt.
         receiptOption: "none",
 
-        ...(remarks.trim()
-          ? { remarks: remarks.trim() }
-          : {}),
+        ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
       });
 
-    /*
-     * ---------------------------------------------------------
-     * STEP 3: NONE
-     *
-     * Sale is already saved.
-     * Do not call Edge Function.
-     * ---------------------------------------------------------
-     */
+      /*
+       * ---------------------------------------------------------
+       * STEP 3: NONE
+       *
+       * Sale is already saved.
+       * Do not call Edge Function.
+       * ---------------------------------------------------------
+       */
 
-    if (receiptOption === "none") {
-      toast.success(
-        paidNum >= total
-          ? "Sale recorded — fully paid"
-          : paidNum > 0
-            ? "Sale recorded — partly paid"
-            : "Sale recorded on credit (udhari)",
-      );
+      if (receiptOption === "none") {
+        toast.success(
+          paidNum >= total
+            ? "Sale recorded — fully paid"
+            : paidNum > 0
+              ? "Sale recorded — partly paid"
+              : "Sale recorded on credit (udhari)",
+        );
+
+        onCreated?.(txId);
+        setOpen(false);
+        reset();
+
+        return;
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * STEP 4: FIND CUSTOMER DATA FOR RECEIPT
+       * ---------------------------------------------------------
+       */
+
+      const receiptCustomer = customer
+        ? {
+            id: customer.id,
+            name: customer.name,
+            mobile: customer.mobile ?? customers.find((c) => c.id === customer.id)?.mobile ?? "",
+          }
+        : {
+            id: customerId,
+            name: selectedCustomer?.name ?? newCustomer.name.trim(),
+            mobile: selectedCustomer?.mobile ?? newCustomer.mobile.trim(),
+          };
+
+      try {
+        await sendKhataReceiptToEdgeFunction({
+          receiptOption,
+
+          customerId,
+
+          transactionId: txId,
+
+          customer: receiptCustomer,
+
+          items,
+
+          total,
+
+          paid: paidNum,
+
+          due,
+
+          paymentMethod: method,
+
+          saleDate: entryDate,
+        });
+
+        toast.success(
+          receiptOption === "full"
+            ? "Sale recorded and full receipt sent"
+            : "Sale recorded and current receipt sent",
+        );
+      } catch (receiptError) {
+        /*
+         * IMPORTANT:
+         * Sale has already been successfully saved.
+         *
+         * Therefore we DO NOT show "sale failed".
+         * We only tell the admin that WhatsApp receipt failed.
+         */
+
+        toast.error(
+          receiptError instanceof Error
+            ? `Sale saved, but receipt failed: ${receiptError.message}`
+            : "Sale saved, but WhatsApp receipt could not be sent",
+        );
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * STEP 6: FINISH
+       * ---------------------------------------------------------
+       */
 
       onCreated?.(txId);
       setOpen(false);
       reset();
-
-      return;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not record the sale");
+    } finally {
+      setSubmitting(false);
     }
-
-    /*
-     * ---------------------------------------------------------
-     * STEP 4: FIND CUSTOMER DATA FOR RECEIPT
-     * ---------------------------------------------------------
-     */
-
-  const receiptCustomer = customer
-  ? {
-      id: customer.id,
-      name: customer.name,
-      mobile:
-        customer.mobile ??
-        customers.find(
-          (c) => c.id === customer.id,
-        )?.mobile ??
-        "",
-    }
-  : {
-      id: customerId,
-      name:
-        selectedCustomer?.name ??
-        newCustomer.name.trim(),
-      mobile:
-        selectedCustomer?.mobile ??
-        newCustomer.mobile.trim(),
-    };
-   
-
-    try {
-      await sendKhataReceiptToEdgeFunction({
-        receiptOption,
-
-        customerId,
-
-        transactionId: txId,
-
-        customer: receiptCustomer,
-
-        items,
-
-        total,
-
-        paid: paidNum,
-
-        due,
-
-        paymentMethod: method,
-
-        saleDate: entryDate,
-      });
-
-      toast.success(
-        receiptOption === "full"
-          ? "Sale recorded and full receipt sent"
-          : "Sale recorded and current receipt sent",
-      );
-    } catch (receiptError) {
-      /*
-       * IMPORTANT:
-       * Sale has already been successfully saved.
-       *
-       * Therefore we DO NOT show "sale failed".
-       * We only tell the admin that WhatsApp receipt failed.
-       */
-
-      toast.error(
-        receiptError instanceof Error
-          ? `Sale saved, but receipt failed: ${receiptError.message}`
-          : "Sale saved, but WhatsApp receipt could not be sent",
-      );
-    }
-
-    /*
-     * ---------------------------------------------------------
-     * STEP 6: FINISH
-     * ---------------------------------------------------------
-     */
-
-    onCreated?.(txId);
-    setOpen(false);
-    reset();
-  } catch (err) {
-    toast.error(
-      err instanceof Error
-        ? err.message
-        : "Could not record the sale",
-    );
-  } finally {
-    setSubmitting(false);
-  }
-};
+  };
   return (
     <Dialog
       open={open}
@@ -756,9 +654,7 @@ export function KhataSaleDialog({
         }
       }}
     >
-      <DialogTrigger asChild>
-        {trigger}
-      </DialogTrigger>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
 
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
@@ -781,11 +677,7 @@ export function KhataSaleDialog({
                 <Button
                   type="button"
                   size="sm"
-                  variant={
-                    customerMode === "select"
-                      ? "default"
-                      : "outline"
-                  }
+                  variant={customerMode === "select" ? "default" : "outline"}
                   className="rounded-full"
                   onClick={() => {
                     setCustomerMode("select");
@@ -797,11 +689,7 @@ export function KhataSaleDialog({
                 <Button
                   type="button"
                   size="sm"
-                  variant={
-                    customerMode === "new"
-                      ? "default"
-                      : "outline"
-                  }
+                  variant={customerMode === "new" ? "default" : "outline"}
                   className="rounded-full"
                   onClick={() => {
                     setCustomerMode("new");
@@ -818,17 +706,11 @@ export function KhataSaleDialog({
                   {selectedCustomer ? (
                     <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
                       <div>
-                        <p className="text-xs text-muted-foreground">
-                          Selected customer
-                        </p>
+                        <p className="text-xs text-muted-foreground">Selected customer</p>
 
-                        <p className="font-medium">
-                          {selectedCustomer.name}
-                        </p>
+                        <p className="font-medium">{selectedCustomer.name}</p>
 
-                        <p className="text-xs text-muted-foreground">
-                          {selectedCustomer.mobile}
-                        </p>
+                        <p className="text-xs text-muted-foreground">{selectedCustomer.mobile}</p>
                       </div>
 
                       <Button
@@ -849,11 +731,7 @@ export function KhataSaleDialog({
                       <Input
                         placeholder="Search by name or mobile"
                         value={customerQuery}
-                        onChange={(e) =>
-                          setCustomerQuery(
-                            e.target.value,
-                          )
-                        }
+                        onChange={(e) => setCustomerQuery(e.target.value)}
                       />
 
                       <div className="max-h-40 space-y-1 overflow-y-auto">
@@ -862,19 +740,12 @@ export function KhataSaleDialog({
                             type="button"
                             key={c.id}
                             onClick={() => {
-                              setCustomerMode(
-                                "select",
-                              );
-                              setSelectedCustomerId(
-                                c.id,
-                              );
-                              setCustomerQuery(
-                                c.name,
-                              );
+                              setCustomerMode("select");
+                              setSelectedCustomerId(c.id);
+                              setCustomerQuery(c.name);
                             }}
                             className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${
-                              selectedCustomerId ===
-                              c.id
+                              selectedCustomerId === c.id
                                 ? "border border-primary bg-primary/5 font-medium"
                                 : ""
                             }`}
@@ -882,14 +753,12 @@ export function KhataSaleDialog({
                             <span>{c.name}</span>
 
                             <span className="text-muted-foreground">
-                              {c.village ||
-                                "Village not available"}
+                              {c.village || "Village not available"}
                             </span>
                           </button>
                         ))}
 
-                        {filteredCustomers.length ===
-                          0 && (
+                        {filteredCustomers.length === 0 && (
                           <p className="px-3 py-2 text-sm text-muted-foreground">
                             No customers found
                           </p>
@@ -951,16 +820,12 @@ export function KhataSaleDialog({
 
           {/* Products */}
           <div className="space-y-3">
-            <Label>
-              Add products from inventory
-            </Label>
+            <Label>Add products from inventory</Label>
 
             <Input
               placeholder="Search inventory product, stock or price"
               value={productQuery}
-              onChange={(e) =>
-                setProductQuery(e.target.value)
-              }
+              onChange={(e) => setProductQuery(e.target.value)}
             />
 
             <div className="flex flex-wrap gap-2">
@@ -971,22 +836,15 @@ export function KhataSaleDialog({
                   size="sm"
                   variant="outline"
                   className="rounded-full"
-                  onClick={() =>
-                    addProductToCart(
-                      option.inventoryId,
-                    )
-                  }
+                  onClick={() => addProductToCart(option.inventoryId)}
                 >
-                  {option.emoji} {option.title} ·{" "}
-                  {formatCurrency(option.rate)} ·{" "}
-                  {option.stock} {option.unit}
+                  {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock}{" "}
+                  {option.unit}
                 </Button>
               ))}
 
               {catalogOptions.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  No matching inventory items
-                </p>
+                <p className="text-sm text-muted-foreground">No matching inventory items</p>
               )}
             </div>
           </div>
@@ -998,15 +856,9 @@ export function KhataSaleDialog({
                 <TableHeader>
                   <TableRow>
                     <TableHead>Item</TableHead>
-                    <TableHead className="w-20">
-                      Qty
-                    </TableHead>
-                    <TableHead className="w-24">
-                      Rate
-                    </TableHead>
-                    <TableHead className="text-right">
-                      Subtotal
-                    </TableHead>
+                    <TableHead className="w-20">Qty</TableHead>
+                    <TableHead className="w-24">Rate</TableHead>
+                    <TableHead className="text-right">Subtotal</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
@@ -1017,9 +869,7 @@ export function KhataSaleDialog({
                       <TableCell className="font-medium">
                         {item.product}
 
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          ({item.unit})
-                        </span>
+                        <span className="ml-1 text-xs text-muted-foreground">({item.unit})</span>
                       </TableCell>
 
                       <TableCell>
@@ -1031,13 +881,9 @@ export function KhataSaleDialog({
                           value={item.quantity}
                           onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const nextQuantity =
-                              Number(e.target.value) || 0;
+                            const nextQuantity = Number(e.target.value) || 0;
 
-                            if (
-                              item.maxStock !== undefined &&
-                              nextQuantity > item.maxStock
-                            ) {
+                            if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
                               toast.error(
                                 `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
                               );
@@ -1072,9 +918,7 @@ export function KhataSaleDialog({
                       </TableCell>
 
                       <TableCell className="text-right">
-                        {formatCurrency(
-                          item.quantity * item.rate,
-                        )}
+                        {formatCurrency(item.quantity * item.rate)}
                       </TableCell>
 
                       <TableCell>
@@ -1082,9 +926,7 @@ export function KhataSaleDialog({
                           type="button"
                           size="icon"
                           variant="ghost"
-                          onClick={() =>
-                            removeItem(item.key)
-                          }
+                          onClick={() => removeItem(item.key)}
                         >
                           <Trash2 className="size-4 text-destructive" />
                         </Button>
@@ -1101,9 +943,7 @@ export function KhataSaleDialog({
             <Input
               placeholder="Custom item name"
               value={customName}
-              onChange={(e) =>
-                setCustomName(e.target.value)
-              }
+              onChange={(e) => setCustomName(e.target.value)}
             />
 
             <Input
@@ -1147,32 +987,19 @@ export function KhataSaleDialog({
             <div className="space-y-1.5">
               <Label>Payment method</Label>
 
-              <Select
-                value={method}
-                onValueChange={(v) =>
-                  setMethod(v as PaymentMethod)
-                }
-              >
+              <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
 
                 <SelectContent>
-                  <SelectItem value="cash">
-                    Cash
-                  </SelectItem>
+                  <SelectItem value="cash">Cash</SelectItem>
 
-                  <SelectItem value="upi">
-                    UPI
-                  </SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
 
-                  <SelectItem value="bank">
-                    Bank transfer
-                  </SelectItem>
+                  <SelectItem value="bank">Bank transfer</SelectItem>
 
-                  <SelectItem value="cheque">
-                    Cheque
-                  </SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -1180,27 +1007,13 @@ export function KhataSaleDialog({
             <div className="space-y-1.5">
               <Label>Date</Label>
 
-              <Input
-                type="date"
-                value={entryDate}
-                onChange={(e) =>
-                  setEntryDate(e.target.value)
-                }
-              />
+              <Input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
             </div>
 
             <div className="space-y-1.5 sm:col-span-2">
-              <Label>
-                Remarks (optional)
-              </Label>
+              <Label>Remarks (optional)</Label>
 
-              <Textarea
-                rows={2}
-                value={remarks}
-                onChange={(e) =>
-                  setRemarks(e.target.value)
-                }
-              />
+              <Textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
             </div>
           </div>
 
@@ -1219,9 +1032,7 @@ export function KhataSaleDialog({
                   <button
                     key={opt.id}
                     type="button"
-                    onClick={() =>
-                      setReceiptOption(opt.id as "current" | "full" | "none")
-                    }
+                    onClick={() => setReceiptOption(opt.id as "current" | "full" | "none")}
                     className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all ${
                       active
                         ? "border-primary bg-primary/10 text-primary"
@@ -1247,28 +1058,16 @@ export function KhataSaleDialog({
           {/* Summary */}
           <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
             <span>
-              Total:{" "}
-              <strong>
-                {formatCurrency(total)}
-              </strong>
+              Total: <strong>{formatCurrency(total)}</strong>
             </span>
 
             <span>
-              Paid:{" "}
-              <strong className="text-success">
-                {formatCurrency(paidNum)}
-              </strong>
+              Paid: <strong className="text-success">{formatCurrency(paidNum)}</strong>
             </span>
 
             <span>
               Due:{" "}
-              <strong
-                className={
-                  due > 0
-                    ? "text-warning"
-                    : "text-success"
-                }
-              >
+              <strong className={due > 0 ? "text-warning" : "text-success"}>
                 {formatCurrency(due)}
               </strong>
             </span>
@@ -1292,9 +1091,7 @@ export function KhataSaleDialog({
             onClick={handleSubmit}
             disabled={submitting}
           >
-            {submitting && (
-              <Loader2 className="size-4 animate-spin" />
-            )}
+            {submitting && <Loader2 className="size-4 animate-spin" />}
             Save sale
           </Button>
         </DialogFooter>

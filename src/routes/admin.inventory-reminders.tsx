@@ -35,14 +35,14 @@ function InventoryRemindersPage() {
     return reminders
       .filter((reminder) => reminder.target === "inventory" && reminder.sourceId)
       .map((reminder) => {
-        const item = reminder.sourceId
-          ? inventoryById.get(reminder.sourceId)
-          : undefined;
+        const item = reminder.sourceId ? inventoryById.get(reminder.sourceId) : undefined;
 
         return item ? { reminder, item } : null;
       })
       .filter(
-        (entry): entry is {
+        (
+          entry,
+        ): entry is {
           reminder: (typeof reminders)[number];
           item: (typeof inventory)[number];
         } => entry !== null,
@@ -64,9 +64,7 @@ function InventoryRemindersPage() {
       await loadShopData();
     } catch (toggleError) {
       setError(
-        toggleError instanceof Error
-          ? toggleError.message
-          : "Failed to update inventory reminder.",
+        toggleError instanceof Error ? toggleError.message : "Failed to update inventory reminder.",
       );
     } finally {
       setBusyId(null);
@@ -80,19 +78,14 @@ function InventoryRemindersPage() {
     setError(null);
 
     try {
-      const { error: deleteError } = await supabase
-        .from("reminders")
-        .delete()
-        .eq("id", reminderId);
+      const { error: deleteError } = await supabase.from("reminders").delete().eq("id", reminderId);
 
       if (deleteError) throw deleteError;
 
       await loadShopData();
     } catch (deleteErr) {
       setError(
-        deleteErr instanceof Error
-          ? deleteErr.message
-          : "Failed to delete inventory reminder.",
+        deleteErr instanceof Error ? deleteErr.message : "Failed to delete inventory reminder.",
       );
     } finally {
       setBusyId(null);
@@ -132,7 +125,8 @@ function InventoryRemindersPage() {
                 Configured reminders
               </CardTitle>
               <p className="mt-1 text-sm text-muted-foreground">
-                Configure or disable reminders from the Inventory module. The popup uses these active records.
+                Configure or disable reminders from the Inventory module. The popup uses these
+                active records.
               </p>
             </div>
             <Badge variant="outline" className="rounded-full">
@@ -177,13 +171,17 @@ function InventoryRemindersPage() {
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-2">
                     <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Current stock</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Current stock
+                      </p>
                       <p className="mt-1 text-xl font-bold">
                         {item.quantity} {item.unit}
                       </p>
                     </div>
                     <div className="rounded-xl bg-muted/50 p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">Minimum stock</p>
+                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                        Minimum stock
+                      </p>
                       <p className="mt-1 text-xl font-bold">
                         {item.minStockLevel} {item.unit}
                       </p>

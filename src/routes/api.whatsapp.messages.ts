@@ -1,10 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 
-const SUPABASE_URL =
-  process.env.SUPABASE_URL || "https://cmfqlpcrnkswgxrszoog.supabase.co";
+const SUPABASE_URL = process.env.SUPABASE_URL || "https://cmfqlpcrnkswgxrszoog.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY =
-  process.env.SUPABASE_PUBLISHABLE_KEY ||
-  "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i";
+  process.env.SUPABASE_PUBLISHABLE_KEY || "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i";
 const EDGE_FUNCTION_NAME = "whatsapp-meta-messages";
 
 const json = (body: unknown, status = 200) =>
@@ -62,26 +60,22 @@ export const Route = createFileRoute("/api/whatsapp/messages")({
         }
 
         try {
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/${EDGE_FUNCTION_NAME}`,
-            {
-              method: "POST",
-              headers: {
-                "Content-Type": "application/json",
-                Authorization: authorization,
-                apikey: SUPABASE_PUBLISHABLE_KEY,
-              },
-              body,
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/${EDGE_FUNCTION_NAME}`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: authorization,
+              apikey: SUPABASE_PUBLISHABLE_KEY,
             },
-          );
+            body,
+          });
 
           const responseBody = await response.text();
 
           return new Response(responseBody, {
             status: response.status,
             headers: {
-              "Content-Type":
-                response.headers.get("content-type") || "application/json",
+              "Content-Type": response.headers.get("content-type") || "application/json",
             },
           });
         } catch (error) {

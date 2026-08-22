@@ -29,25 +29,101 @@ import { useI18n } from "@/lib/i18n";
 const RECENTS_KEY = "agrikisan-recent-searches";
 
 const pages = [
-  { labelKey: "commandPalette.dashboard", defaultLabel: "Dashboard", to: "/admin", icon: LayoutDashboard },
-  { labelKey: "commandPalette.customers", defaultLabel: "Customers", to: "/admin/customers", icon: Users },
-  { labelKey: "commandPalette.suppliers", defaultLabel: "Suppliers", to: "/admin/suppliers", icon: Truck },
-  { labelKey: "commandPalette.inventory", defaultLabel: "Inventory", to: "/admin/inventory", icon: Boxes },
-  { labelKey: "commandPalette.products", defaultLabel: "Products", to: "/admin/products", icon: Package },
-  { labelKey: "commandPalette.ordersSales", defaultLabel: "Orders & Sales", to: "/admin/sales", icon: ReceiptText },
-  { labelKey: "commandPalette.payments", defaultLabel: "Payments", to: "/admin/payments", icon: Wallet },
-  { labelKey: "commandPalette.reports", defaultLabel: "Reports", to: "/admin/reports", icon: FileBarChart },
-  { labelKey: "commandPalette.analytics", defaultLabel: "Analytics", to: "/admin/analytics", icon: FileBarChart },
-  { labelKey: "commandPalette.reminders", defaultLabel: "Reminders", to: "/admin/reminders", icon: Clock },
-  { labelKey: "commandPalette.homepageCms", defaultLabel: "Homepage CMS", to: "/admin/cms", icon: BookOpen },
-  { labelKey: "commandPalette.settings", defaultLabel: "Settings", to: "/admin/settings", icon: Settings },
+  {
+    labelKey: "commandPalette.dashboard",
+    defaultLabel: "Dashboard",
+    to: "/admin",
+    icon: LayoutDashboard,
+  },
+  {
+    labelKey: "commandPalette.customers",
+    defaultLabel: "Customers",
+    to: "/admin/customers",
+    icon: Users,
+  },
+  {
+    labelKey: "commandPalette.suppliers",
+    defaultLabel: "Suppliers",
+    to: "/admin/suppliers",
+    icon: Truck,
+  },
+  {
+    labelKey: "commandPalette.inventory",
+    defaultLabel: "Inventory",
+    to: "/admin/inventory",
+    icon: Boxes,
+  },
+  {
+    labelKey: "commandPalette.products",
+    defaultLabel: "Products",
+    to: "/admin/products",
+    icon: Package,
+  },
+  {
+    labelKey: "commandPalette.ordersSales",
+    defaultLabel: "Orders & Sales",
+    to: "/admin/sales",
+    icon: ReceiptText,
+  },
+  {
+    labelKey: "commandPalette.payments",
+    defaultLabel: "Payments",
+    to: "/admin/payments",
+    icon: Wallet,
+  },
+  {
+    labelKey: "commandPalette.reports",
+    defaultLabel: "Reports",
+    to: "/admin/reports",
+    icon: FileBarChart,
+  },
+  {
+    labelKey: "commandPalette.analytics",
+    defaultLabel: "Analytics",
+    to: "/admin/analytics",
+    icon: FileBarChart,
+  },
+  {
+    labelKey: "commandPalette.reminders",
+    defaultLabel: "Reminders",
+    to: "/admin/reminders",
+    icon: Clock,
+  },
+  {
+    labelKey: "commandPalette.homepageCms",
+    defaultLabel: "Homepage CMS",
+    to: "/admin/cms",
+    icon: BookOpen,
+  },
+  {
+    labelKey: "commandPalette.settings",
+    defaultLabel: "Settings",
+    to: "/admin/settings",
+    icon: Settings,
+  },
 ];
 
 const quickActions = [
-  { labelKey: "commandPalette.newOfflineSale", defaultLabel: "New offline sale", to: "/admin/sales" },
-  { labelKey: "commandPalette.addCustomer", defaultLabel: "Add customer", to: "/admin/customers/new" },
-  { labelKey: "commandPalette.newStockEntry", defaultLabel: "New stock entry", to: "/admin/inventory/new" },
-  { labelKey: "commandPalette.publishProduct", defaultLabel: "Publish product", to: "/admin/products/publish" },
+  {
+    labelKey: "commandPalette.newOfflineSale",
+    defaultLabel: "New offline sale",
+    to: "/admin/sales",
+  },
+  {
+    labelKey: "commandPalette.addCustomer",
+    defaultLabel: "Add customer",
+    to: "/admin/customers/new",
+  },
+  {
+    labelKey: "commandPalette.newStockEntry",
+    defaultLabel: "New stock entry",
+    to: "/admin/inventory/new",
+  },
+  {
+    labelKey: "commandPalette.publishProduct",
+    defaultLabel: "Publish product",
+    to: "/admin/products/publish",
+  },
 ];
 
 export function useCommandPalette() {

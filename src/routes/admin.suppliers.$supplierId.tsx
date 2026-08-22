@@ -12,7 +12,10 @@ export const Route = createFileRoute("/admin/suppliers/$supplierId")({
   head: () => ({
     meta: [
       { title: "Supplier Details — Admin" },
-      { name: "description", content: "Supplier profile with products supplied, purchases and dues." },
+      {
+        name: "description",
+        content: "Supplier profile with products supplied, purchases and dues.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),
@@ -60,8 +63,17 @@ function SupplierDetailPage() {
 
       <SummaryCards
         items={[
-          { label: "Total purchases", value: formatCurrency(supplier.totalPurchases), icon: IndianRupee },
-          { label: "Total paid", value: formatCurrency(supplier.totalPaid), icon: Wallet, tone: "success" },
+          {
+            label: "Total purchases",
+            value: formatCurrency(supplier.totalPurchases),
+            icon: IndianRupee,
+          },
+          {
+            label: "Total paid",
+            value: formatCurrency(supplier.totalPaid),
+            icon: Wallet,
+            tone: "success",
+          },
           { label: "Advance", value: formatCurrency(supplier.advance), icon: Wallet },
           {
             label: "Due balance",

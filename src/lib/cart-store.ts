@@ -52,7 +52,10 @@ export const cartStore = {
     emit();
   },
   setQty(id: string, qty: number) {
-    items = qty <= 0 ? items.filter((i) => i.id !== id) : items.map((i) => (i.id === id ? { ...i, qty } : i));
+    items =
+      qty <= 0
+        ? items.filter((i) => i.id !== id)
+        : items.map((i) => (i.id === id ? { ...i, qty } : i));
     emit();
   },
   remove(id: string) {

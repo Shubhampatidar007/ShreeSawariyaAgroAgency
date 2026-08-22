@@ -1,27 +1,27 @@
-import { createClient } from '@supabase/supabase-js';
-import type { Database } from './types';
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./types";
 
 // Browser-safe Supabase project configuration.
 // Environment variables take priority; the fallback matches the connected
 // Shree Sawariya Agro Agency Supabase project so local/GitHub builds do not
 // silently connect to the retired project.
-const DEFAULT_SUPABASE_URL = 'https://cmfqlpcrnkswgxrszoog.supabase.co';
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = 'sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i';
+const DEFAULT_SUPABASE_URL = "https://cmfqlpcrnkswgxrszoog.supabase.co";
+const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i";
 
 function createSupabaseClient() {
   const SUPABASE_URL =
     import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_URL : undefined) ||
+    (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined) ||
     DEFAULT_SUPABASE_URL;
 
   const SUPABASE_PUBLISHABLE_KEY =
     import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    (typeof process !== 'undefined' ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined) ||
+    (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
-      storage: typeof window !== 'undefined' ? localStorage : undefined,
+      storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
       autoRefreshToken: true,
     },

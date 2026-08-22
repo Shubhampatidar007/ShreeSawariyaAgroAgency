@@ -59,7 +59,10 @@ export function SiteHeader() {
           <div className="relative ml-4 hidden flex-1 lg:block">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
-              placeholder={t("storefront.searchPlaceholder", "Search products, invoices, customers…")}
+              placeholder={t(
+                "storefront.searchPlaceholder",
+                "Search products, invoices, customers…",
+              )}
               className="h-11 rounded-full bg-muted pl-10"
             />
           </div>
@@ -67,49 +70,45 @@ export function SiteHeader() {
           <div className="ml-auto flex items-center gap-1.5">
             <LanguageToggle className="rounded-full" />
             <ThemeToggle className="rounded-full" />
-           {user ? (
-  <DropdownMenu>
-    <DropdownMenuTrigger asChild>
-      <Button variant="ghost" className="rounded-full">
-        <User className="size-4" />
-        <span className="hidden sm:inline">
-          {user.name.split(" ")[0]}
-        </span>
-      </Button>
-    </DropdownMenuTrigger>
+            {user ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" className="rounded-full">
+                    <User className="size-4" />
+                    <span className="hidden sm:inline">{user.name.split(" ")[0]}</span>
+                  </Button>
+                </DropdownMenuTrigger>
 
-    <DropdownMenuContent align="end" className="w-52">
-      <DropdownMenuLabel className="flex flex-col">
-        <span>{user.name}</span>
-        <span className="text-xs font-normal text-muted-foreground">
-          {user.mobile}
-        </span>
-      </DropdownMenuLabel>
+                <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuLabel className="flex flex-col">
+                    <span>{user.name}</span>
+                    <span className="text-xs font-normal text-muted-foreground">{user.mobile}</span>
+                  </DropdownMenuLabel>
 
-      <DropdownMenuSeparator />
+                  <DropdownMenuSeparator />
 
-      <DropdownMenuItem asChild>
-        <Link to="/admin">
-          <User className="size-4" />
-          Admin Panel
-        </Link>
-      </DropdownMenuItem>
+                  <DropdownMenuItem asChild>
+                    <Link to="/admin">
+                      <User className="size-4" />
+                      Admin Panel
+                    </Link>
+                  </DropdownMenuItem>
 
-      <DropdownMenuItem onClick={() => authStore.logout()}>
-        <LogOut className="size-4" />
-        {t("common.logout", "Logout")}
-      </DropdownMenuItem>
-    </DropdownMenuContent>
-  </DropdownMenu>
-) : (
-             <Button
-  variant="ghost"
-  className="hidden rounded-full sm:inline-flex"
-  onClick={() => openAuth("login")}
->
-  <User className="size-4" />
-  {t("auth.login", "Login")}
-</Button>
+                  <DropdownMenuItem onClick={() => authStore.logout()}>
+                    <LogOut className="size-4" />
+                    {t("common.logout", "Logout")}
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : (
+              <Button
+                variant="ghost"
+                className="hidden rounded-full sm:inline-flex"
+                onClick={() => openAuth("login")}
+              >
+                <User className="size-4" />
+                {t("auth.login", "Login")}
+              </Button>
             )}
             <CartSheet />
 
@@ -141,7 +140,7 @@ export function SiteHeader() {
                       }}
                       className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
                     >
-                     {t("auth.login", "Login")}
+                      {t("auth.login", "Login")}
                     </button>
                   ) : null}
                 </nav>
