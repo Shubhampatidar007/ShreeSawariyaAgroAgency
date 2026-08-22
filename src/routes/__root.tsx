@@ -1,139 +1,47 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import {
-  Outlet,
-  Link,
-  createRootRouteWithContext,
-  useRouter,
-  HeadContent,
-  Scripts,
-} from "@tanstack/react-router";
+import { Outlet, Link, createRootRouteWithContext, useRouter, HeadContent, Scripts } from "@tanstack/react-router";
 import { useEffect, useRef, type ReactNode } from "react";
-
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
 import { initTheme } from "@/hooks/use-theme";
 import { initLanguage } from "@/lib/i18n";
 import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
-import { initShopData, loadShopData } from "@/lib/shop-store";
+import { initPublicShopData } from "@/lib/public-shop-store";
 
 function NotFoundComponent() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
-        <p className="mt-2 text-sm text-muted-foreground">
-          The page you're looking for doesn't exist or has been moved.
-        </p>
-        <div className="mt-6">
-          <Link
-            to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Go home
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-7xl font-bold text-foreground">404</h1><h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2><p className="mt-2 text-sm text-muted-foreground">The page you're looking for doesn't exist or has been moved.</p><div className="mt-6"><Link to="/" className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Go home</Link></div></div></div>;
 }
 
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-2">
-          <button
-            onClick={() => {
-              router.invalidate();
-              reset();
-            }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Try again
-          </button>
-          <a
-            href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
-          >
-            Go home
-          </a>
-        </div>
-      </div>
-    </div>
-  );
+  return <div className="flex min-h-screen items-center justify-center bg-background px-4"><div className="max-w-md text-center"><h1 className="text-xl font-semibold tracking-tight text-foreground">This page didn't load</h1><p className="mt-2 text-sm text-muted-foreground">Something went wrong on our end. You can try refreshing or head back home.</p><div className="mt-6 flex flex-wrap justify-center gap-2"><button onClick={() => { router.invalidate(); reset(); }} className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90">Try again</button><a href="/" className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent">Go home</a></div></div></div>;
 }
 
 export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()({
   head: () => ({
     meta: [
-      { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Shree Sawariya Agro Agency" },
-      {
-        name: "description",
-        content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
-      },
-      { property: "og:title", content: "Shree Sawariya Agro Agency" },
-      {
-        property: "og:description",
-        content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
+      { charSet: "utf-8" }, { name: "viewport", content: "width=device-width, initial-scale=1" }, { title: "Shree Sawariya Agro Agency" },
+      { name: "description", content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency." },
+      { property: "og:title", content: "Shree Sawariya Agro Agency" }, { property: "og:description", content: "A storefront and shop management platform for managing Shree Sawariya Agro Agency." },
+      { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary_large_image" },
     ],
     links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-      { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
-      { rel: "preconnect", href: "https://fonts.googleapis.com" },
-      { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap",
-      },
+      { rel: "stylesheet", href: appCss }, { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
+      { rel: "preconnect", href: "https://fonts.googleapis.com" }, { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
+      { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700&family=Nunito:wght@400;600;700&display=swap" },
     ],
   }),
-  shellComponent: RootShell,
-  component: RootComponent,
-  notFoundComponent: NotFoundComponent,
-  errorComponent: ErrorComponent,
+  shellComponent: RootShell, component: RootComponent, notFoundComponent: NotFoundComponent, errorComponent: ErrorComponent,
 });
 
-function RootShell({ children }: { children: ReactNode }) {
-  return (
-    <html lang="en">
-      <head>
-        <HeadContent />
-      </head>
-      <body>
-        {children}
-        <Scripts />
-      </body>
-    </html>
-  );
-}
+function RootShell({ children }: { children: ReactNode }) { return <html lang="en"><head><HeadContent /></head><body>{children}<Scripts /></body></html>; }
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const authReady = useAuthReady();
   const authUser = useAuth();
-  // `undefined` means the auth lifecycle has not been observed yet.
-  // `null` is a real state: auth was ready and there was no signed-in user.
-  // This distinction prevents the first login from being mistaken for the
-  // initial auth render, which previously left the admin store at zero values.
   const previousUserId = useRef<string | null | undefined>(undefined);
 
   useEffect(() => {
@@ -141,38 +49,15 @@ function RootComponent() {
     initLanguage();
     initAuth();
     initCart();
+    // Application startup may load ONLY public storefront data.
+    // Private/admin shop data is loaded by the protected admin route.
+    initPublicShopData();
   }, []);
 
   useEffect(() => {
     if (!authReady) return;
-
-    const currentUserId = authUser?.id ?? null;
-    const isFirstReadyRender = previousUserId.current === undefined;
-    const userChanged = !isFirstReadyRender && previousUserId.current !== currentUserId;
-
-    previousUserId.current = currentUserId;
-
-    if (isFirstReadyRender) {
-      void initShopData().catch((error) => {
-        console.error("Initial shop data load failed:", error);
-      });
-      return;
-    }
-
-    // A login changes the authenticated Supabase session after the initial
-    // public render. Reload the shop data with the new user's RLS context
-    // before/while the admin route is rendered, so no restart is required.
-    if (userChanged && currentUserId) {
-      void loadShopData().catch((error) => {
-        console.error("Shop data refresh after authentication change failed:", error);
-      });
-    }
+    previousUserId.current = authUser?.id ?? null;
   }, [authReady, authUser?.id]);
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Outlet />
-      <Toaster />
-    </QueryClientProvider>
-  );
+  return <QueryClientProvider client={queryClient}><Outlet /><Toaster /></QueryClientProvider>;
 }
