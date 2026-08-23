@@ -3,11 +3,23 @@ import type { PaymentMethod } from "@/types/business";
 export type OrderChannel = "online" | "offline";
 
 export type OrderStatus =
-  "pending" | "confirmed" | "packed" | "shipped" | "delivered" | "cancelled" | "returned";
+  | "pending"
+  | "confirmed"
+  | "packed"
+  | "shipped"
+  | "delivered"
+  | "cancelled"
+  | "returned";
 
 export type PaymentStatus = "paid" | "partial" | "pending" | "refunded";
+
 export type DeliveryStatus =
-  "not-required" | "scheduled" | "out-for-delivery" | "delivered" | "failed";
+  | "not-required"
+  | "scheduled"
+  | "out-for-delivery"
+  | "delivered"
+  | "failed";
+
 export type InvoiceStatus = "generated" | "draft" | "not-generated";
 
 export type OrderLine = {
@@ -30,23 +42,37 @@ export type Order = {
   id: string;
   code: string;
   channel: OrderChannel;
+
   customerId?: string | undefined;
   customerName: string;
   customerType: "registered" | "guest" | "walk-in";
+
   village: string;
   mobile: string;
   placedOn: string;
+
   items: OrderLine[];
+
   subtotal: number;
   discount: number;
   tax: number;
   total: number;
+
+  // Advance payment / amount already received.
   paid: number;
+
+deliveryAddress: string;
+pincode: string;
+packageSentOn?: string | undefined;
+paymentDueOn?: string | undefined;
+
   paymentMethod: PaymentMethod;
   paymentStatus: PaymentStatus;
+
   deliveryStatus: DeliveryStatus;
   orderStatus: OrderStatus;
   invoiceStatus: InvoiceStatus;
+
   remarks?: string | undefined;
   timeline: OrderTimelineEvent[];
 };
@@ -68,7 +94,12 @@ export type PaymentRecord = {
 };
 
 export type ReminderChannel = "sms" | "whatsapp" | "call" | "email";
-export type ReminderSchedule = "immediate" | "daily" | "weekly" | "monthly" | "custom";
+export type ReminderSchedule =
+  | "immediate"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "custom";
 
 export type Reminder = {
   id: string;
@@ -95,7 +126,13 @@ export type ReminderLog = {
 };
 
 export type CmsSectionType =
-  "hero" | "poster" | "featured" | "categories" | "offers" | "announcement" | "marketing";
+  | "hero"
+  | "poster"
+  | "featured"
+  | "categories"
+  | "offers"
+  | "announcement"
+  | "marketing";
 
 export type CmsSection = {
   id: string;

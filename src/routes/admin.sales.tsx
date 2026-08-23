@@ -1,10 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { IndianRupee, ShoppingBag, Truck, Send, History, WalletCards } from "lucide-react";
+import {
+  CalendarDays,
+  IndianRupee,
+  MapPin,
+  PackageCheck,
+  Phone,
+  ShoppingBag,
+  Truck,
+  UserRound,
+  WalletCards,
+} from "lucide-react";
 import { toast } from "sonner";
+
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +24,8 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -29,19 +41,21 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { SearchToolbar } from "@/components/shared/SearchToolbar";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
-import { Timeline } from "@/components/shared/Timeline";
-import { ExportMenu } from "@/components/shared/ExportMenu";
 import { EmptyState } from "@/components/admin/EmptyState";
-import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
-import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
-import { sendWhatsAppBatch, type WhatsAppMessageKind } from "@/lib/whatsapp";
+import { ExportMenu } from "@/components/shared/ExportMenu";
+
+import {
+  formatCurrency,
+  formatDate,
+  shopStore,
+  useShopStore,
+} from "@/lib/shop-store";
+
 import type { Order, OrderStatus } from "@/types/operations";
-import type { CustomerLedgerEntry, CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/sales")({
   head: () => ({
@@ -49,7 +63,7 @@ export const Route = createFileRoute("/admin/sales")({
       { title: "Orders & Sales — Admin" },
       {
         name: "description",
-        content: "Track sales and share customer purchase records after a khata sale.",
+        content: "Manage online customer orders and payment delivery details.",
       },
       { name: "robots", content: "noindex" },
     ],
@@ -69,107 +83,134 @@ const orderStatuses: OrderStatus[] = [
 
 function SalesPage() {
   const orders = useShopStore((s) => s.orders);
-  const ledger = useShopStore((s) => s.customerLedger);
-  const [channel, setChannel] = useState<"all" | "online" | "offline">("all");
+  const customers = useShopStore((s) => s.customers);
+
   const [status, setStatus] = useState("all");
   const [query, setQuery] = useState("");
   const [active, setActive] = useState<Order | null>(null);
-  const [shareTransactionId, setShareTransactionId] = useState<string | null>(null);
+
+  const onlineOrders = useMemo(
+    () => orders.filter((order) => order.channel === "online"),
+    [orders],
+  );
 
   const filtered = useMemo(
     () =>
-      orders.filter((order) => {
-        const matchesChannel = channel === "all" || order.channel === channel;
-        const matchesStatus = status === "all" || order.orderStatus === status;
+      onlineOrders.filter((order) => {
+        const matchesStatus =
+          status === "all" || order.orderStatus === status;
+
         const q = query.trim().toLowerCase();
+
+        const customer = order.customerId
+          ? customers.find((item) => item.id === order.customerId)
+          : undefined;
+
         const matchesQuery =
           !q ||
           order.code.toLowerCase().includes(q) ||
           order.customerName.toLowerCase().includes(q) ||
-          order.village.toLowerCase().includes(q);
-        return matchesChannel && matchesStatus && matchesQuery;
+          order.mobile.toLowerCase().includes(q) ||
+          order.village.toLowerCase().includes(q) ||
+          customer?.address?.toLowerCase().includes(q);
+
+        return matchesStatus && matchesQuery;
       }),
-    [orders, channel, status, query],
+    [onlineOrders, status, query, customers],
   );
 
-  const revenue = orders.reduce((sum, order) => sum + order.total, 0);
-  const collected = orders.reduce((sum, order) => sum + order.paid, 0);
-  const pendingDeliveries = orders.filter(
-    (order) => order.deliveryStatus === "scheduled" || order.deliveryStatus === "out-for-delivery",
+  const revenue = onlineOrders.reduce(
+    (sum, order) => sum + order.total,
+    0,
+  );
+
+  const collected = onlineOrders.reduce(
+    (sum, order) => sum + order.paid,
+    0,
+  );
+
+  const outstanding = onlineOrders.reduce(
+    (sum, order) => sum + Math.max(order.total - order.paid, 0),
+    0,
+  );
+
+  const pendingDeliveries = onlineOrders.filter(
+    (order) =>
+      order.deliveryStatus === "scheduled" ||
+      order.deliveryStatus === "out-for-delivery",
   ).length;
-  const shareEntry = ledger.find((entry) => entry.id === shareTransactionId) ?? null;
 
   return (
     <div className="space-y-6">
       <ModulePageHeader
-        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Orders & Sales" }]}
-        eyebrow="Operations"
+        crumbs={[
+          { label: "Admin", to: "/admin" },
+          { label: "Orders & Sales" },
+        ]}
+        eyebrow="Online operations"
         title="Orders & sales"
-        description="Record sales in khata. After a customer purchase is saved, choose exactly what customer record should be shared."
-        actions={
-          <div className="flex flex-wrap items-center gap-2">
-            <KhataSaleDialog
-              trigger={
-                <Button className="rounded-full">
-                  <ShoppingBag className="size-4" />
-                  New Khata Sale
-                </Button>
-              }
-              onCreated={setShareTransactionId}
-            />
-            <ExportMenu />
-          </div>
-        }
+        description="Manage customers and orders that came through the online storefront."
+        actions={<ExportMenu />}
       />
+
       <SummaryCards
         items={[
-          { label: "Order value", value: formatCurrency(revenue), icon: IndianRupee },
           {
-            label: "Payments collected",
+            label: "Online order value",
+            value: formatCurrency(revenue),
+            icon: IndianRupee,
+          },
+          {
+            label: "Advance collected",
             value: formatCurrency(collected),
             icon: WalletCards,
             tone: "success",
           },
           {
-            label: "Outstanding",
-            value: formatCurrency(revenue - collected),
+            label: "Remaining due",
+            value: formatCurrency(outstanding),
             icon: IndianRupee,
             tone: "warning",
           },
-          { label: "Pending deliveries", value: String(pendingDeliveries), icon: Truck },
+          {
+            label: "Pending deliveries",
+            value: String(pendingDeliveries),
+            icon: Truck,
+          },
         ]}
       />
-      <Tabs value={channel} onValueChange={(value) => setChannel(value as typeof channel)}>
-        <TabsList>
-          <TabsTrigger value="all">All</TabsTrigger>
-          <TabsTrigger value="online">Online orders</TabsTrigger>
-          <TabsTrigger value="offline">Offline counter</TabsTrigger>
-        </TabsList>
-      </Tabs>
+
       <SearchToolbar
         value={query}
         onChange={setQuery}
-        placeholder="Search order, customer or village"
+        placeholder="Search order, customer, mobile or village"
       >
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-44 rounded-full">
             <SelectValue placeholder="Status" />
           </SelectTrigger>
+
           <SelectContent>
             <SelectItem value="all">All statuses</SelectItem>
+
             {orderStatuses.map((value) => (
-              <SelectItem key={value} value={value} className="capitalize">
+              <SelectItem
+                key={value}
+                value={value}
+                className="capitalize"
+              >
                 {value}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
       </SearchToolbar>
+
       {filtered.length === 0 ? (
         <EmptyState
           icon={ShoppingBag}
-          title="No orders"
-          description="No sales match the current filters."
+          title="No online orders"
+          description="No online customer orders match the current filters."
         />
       ) : (
         <Card className="shadow-soft">
@@ -181,347 +222,554 @@ function SalesPage() {
                   <TableHead>Customer</TableHead>
                   <TableHead className="text-right">Items</TableHead>
                   <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Payment</TableHead>
+                  <TableHead>Advance</TableHead>
+                  <TableHead>Due</TableHead>
                   <TableHead>Delivery</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
-                {filtered.map((order) => (
-                  <TableRow key={order.id}>
-                    <TableCell>
-                      <p className="font-semibold">{order.code}</p>
-                      <p className="text-xs text-muted-foreground">{formatDate(order.placedOn)}</p>
-                    </TableCell>
-                    <TableCell>
-                      <p className="font-medium">{order.customerName}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {order.village} · {order.customerType}
-                      </p>
-                    </TableCell>
-                    <TableCell className="text-right">{order.items.length}</TableCell>
-                    <TableCell className="text-right font-medium">
-                      {formatCurrency(order.total)}
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge status={order.paymentStatus} />
-                    </TableCell>
-                    <TableCell className="text-xs capitalize text-muted-foreground">
-                      {order.deliveryStatus.replace(/-/g, " ")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline" className="rounded-full capitalize">
-                        {order.orderStatus}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="rounded-full"
-                        onClick={() => setActive(order)}
-                      >
-                        View
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
+                {filtered.map((order) => {
+                  const due = Math.max(order.total - order.paid, 0);
+
+                  return (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        <p className="font-semibold">{order.code}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(order.placedOn)}
+                        </p>
+                      </TableCell>
+
+                      <TableCell>
+                        <p className="font-medium">{order.customerName}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {order.mobile} · {order.village}
+                        </p>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        {order.items.length}
+                      </TableCell>
+
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(order.total)}
+                      </TableCell>
+
+                      <TableCell>{formatCurrency(order.paid)}</TableCell>
+
+                      <TableCell>{formatCurrency(due)}</TableCell>
+
+                      <TableCell className="text-xs capitalize text-muted-foreground">
+                        {order.deliveryStatus.replace(/-/g, " ")}
+                      </TableCell>
+
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className="rounded-full capitalize"
+                        >
+                          {order.orderStatus}
+                        </Badge>
+                      </TableCell>
+
+                      <TableCell className="text-right">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="rounded-full"
+                          onClick={() => setActive(order)}
+                        >
+                          View
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
       )}
 
-      <Dialog open={Boolean(active)} onOpenChange={(open) => !open && setActive(null)}>
-        <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
-          {active ? (
-            <>
-              <DialogHeader>
-                <DialogTitle>{active.code}</DialogTitle>
-                <DialogDescription>
-                  {active.customerName} · {active.village} · {formatDate(active.placedOn)}
-                </DialogDescription>
-              </DialogHeader>
-              <div className="space-y-5">
-                <div className="grid gap-2 sm:grid-cols-5">
-                  {orderStatuses.slice(0, 5).map((value) => (
-                    <Button
-                      key={value}
-                      size="sm"
-                      variant={active.orderStatus === value ? "default" : "outline"}
-                      className="rounded-full capitalize"
-                      onClick={() => {
-                        void shopStore.updateOrder(active.id, { orderStatus: value });
-                        setActive({ ...active, orderStatus: value });
-                      }}
-                    >
-                      {value}
-                    </Button>
-                  ))}
-                </div>
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Rate</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {active.items.map((line) => (
-                      <TableRow key={line.id}>
-                        <TableCell>{line.product}</TableCell>
-                        <TableCell className="text-right">
-                          {line.quantity} {line.unit}
-                        </TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.rate)}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(line.amount)}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-                <div className="grid gap-2 rounded-xl border bg-muted/40 p-4 text-sm">
-                  <Row label="Subtotal" value={formatCurrency(active.subtotal)} />
-                  <Row label="Discount" value={`- ${formatCurrency(active.discount)}`} />
-                  <Row label="Tax" value={formatCurrency(active.tax)} />
-                  <Row label="Total" value={formatCurrency(active.total)} bold />
-                  <Row label="Paid" value={formatCurrency(active.paid)} />
-                  <Row label="Balance" value={formatCurrency(active.total - active.paid)} bold />
-                </div>
-                <Timeline
-                  items={active.timeline.map((event) => ({
-                    id: event.id,
-                    title: event.label,
-                    meta: formatDate(event.at),
-                    ...(event.note ? { description: event.note } : {}),
-                  }))}
-                />
-              </div>
-            </>
-          ) : null}
-        </DialogContent>
-      </Dialog>
-      <SaleShareDialog
-        entry={shareEntry}
-        ledger={ledger}
-        onClose={() => setShareTransactionId(null)}
+      <OrderViewDialog
+        order={active}
+        customers={customers}
+        onClose={() => setActive(null)}
       />
     </div>
   );
 }
 
-function SaleShareDialog({
-  entry,
-  ledger,
+function OrderViewDialog({
+  order,
+  customers,
   onClose,
 }: {
-  entry: CustomerLedgerEntry | null;
-  ledger: CustomerLedgerEntry[];
+  order: Order | null;
+  customers: any[];
   onClose: () => void;
 }) {
-  const customers = useShopStore((s) => s.customers);
-  const customer = entry ? (customers.find((item) => item.id === entry.customerId) ?? null) : null;
-  const [kind, setKind] = useState<WhatsAppMessageKind>("purchase-summary");
-  const [message, setMessage] = useState("");
-  const [items, setItems] = useState<CustomerSaleItem[]>([]);
-  const [sending, setSending] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [packageSentOn, setPackageSentOn] = useState("");
+  const [orderStatus, setOrderStatus] = useState<OrderStatus>("pending");
+  const [deliveryStatus, setDeliveryStatus] =
+    useState<Order["deliveryStatus"]>("scheduled");
+  const [remarks, setRemarks] = useState("");
 
-  const customerRecords = useMemo(
-    () =>
-      customer
-        ? ledger
-            .filter((record) => record.customerId === customer.id)
-            .sort((a, b) => b.date.localeCompare(a.date))
-        : [],
-    [customer, ledger],
-  );
+  const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<
+    "cash" | "upi" | "bank" | "card" | "online" | "cheque"
+  >("upi");
+  const [paymentRemarks, setPaymentRemarks] = useState("");
+  const [paymentSaving, setPaymentSaving] = useState(false);
 
-  useEffect(() => {
-    let alive = true;
-    setItems([]);
-    if (!entry || !customer) return;
-    void shopStore
-      .fetchTransactionItems(entry.id)
-      .then((next) => {
-        if (alive) setItems(next);
-      })
-      .catch(() => {
-        if (alive) setItems([]);
-      });
-    return () => {
-      alive = false;
-    };
-  }, [entry?.id, customer?.id]);
+  const customer = order?.customerId
+    ? customers.find((item) => item.id === order.customerId)
+    : undefined;
 
   useEffect(() => {
-    if (!entry || !customer) return;
-    setMessage(buildShareMessage(kind, customer, entry, customerRecords, items));
-  }, [entry?.id, customer?.id, kind, customerRecords, items]);
+    if (!order) return;
 
-  if (!entry || !customer) return null;
+    setPackageSentOn(
+      order.packageSentOn
+        ? new Date(order.packageSentOn).toISOString().slice(0, 10)
+        : "",
+    );
+    setOrderStatus(order.orderStatus);
+    setDeliveryStatus(order.deliveryStatus);
+    setRemarks(order.remarks ?? "");
+  }, [order]);
 
-  const send = async () => {
-    if (!customer.mobile?.trim())
-      return toast.error("This customer does not have a mobile number.");
-    setSending(true);
+  if (!order) return null;
+
+  const due = Math.max(order.total - order.paid, 0);
+
+  const handleAddPayment = async () => {
+    const amount = Number(paymentAmount);
+
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error("Enter a valid payment amount.");
+      return;
+    }
+
+    if (amount > due) {
+      toast.error(`Payment cannot exceed ${formatCurrency(due)}.`);
+      return;
+    }
+
+    setPaymentSaving(true);
+
     try {
-      const response = await sendWhatsAppBatch({
-        kind,
-        recipients: [
-          {
-            id: customer.id,
-            name: customer.name,
-            mobile: customer.mobile,
-            due: customer.currentDue,
-            village: customer.village,
-            lastPurchase: customer.lastPurchase,
-          },
-        ],
-        message,
+      await shopStore.addOnlineOrderPayment({
+        orderId: order.id,
+        amount,
+        method: paymentMethod,
+        remarks: paymentRemarks,
       });
-      if (!response.ok) throw new Error(response.note || "WhatsApp delivery failed.");
-      toast.success("Customer record sent through WhatsApp.");
+
+      toast.success("Payment added successfully.");
+      setPaymentAmount("");
+      setPaymentRemarks("");
+      setPaymentDialogOpen(false);
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Unable to add payment.",
+      );
+    } finally {
+      setPaymentSaving(false);
+    }
+  };
+
+  const save = async () => {
+    setSaving(true);
+
+    try {
+      await shopStore.updateOrder(order.id, {
+        orderStatus,
+        deliveryStatus,
+        packageSentOn: packageSentOn
+          ? new Date(`${packageSentOn}T00:00:00`).toISOString()
+          : "",
+        remarks,
+      });
+
+      toast.success("Order updated.");
       onClose();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "WhatsApp delivery failed.");
+      toast.error(
+        error instanceof Error ? error.message : "Unable to update order.",
+      );
     } finally {
-      setSending(false);
+      setSaving(false);
     }
   };
 
   return (
-    <Dialog open={Boolean(entry)} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
-        <DialogHeader>
-          <DialogTitle>Share purchase record?</DialogTitle>
-          <DialogDescription>
-            {customer.name} · {formatDate(entry.date)} · Sale {formatCurrency(entry.amount)}
-          </DialogDescription>
-        </DialogHeader>
-        <div className="grid gap-3 md:grid-cols-2">
-          <Card className={kind === "purchase-summary" ? "border-primary" : ""}>
-            <CardContent className="p-4">
-              <Button
-                variant={kind === "purchase-summary" ? "default" : "outline"}
-                className="w-full rounded-full"
-                onClick={() => setKind("purchase-summary")}
-              >
-                <History className="size-4" />
-                Complete purchase record
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Current sale + total purchases + old payment status + current due.
-              </p>
-            </CardContent>
-          </Card>
-          <Card className={kind === "custom" ? "border-primary" : ""}>
-            <CardContent className="p-4">
-              <Button
-                variant={kind === "custom" ? "default" : "outline"}
-                className="w-full rounded-full"
-                onClick={() => setKind("custom")}
-              >
-                <Send className="size-4" />
-                Custom share
-              </Button>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Edit the record message before sending.
-              </p>
-            </CardContent>
-          </Card>
-        </div>
-        <div className="rounded-xl border p-4">
-          <div className="grid gap-3 sm:grid-cols-4">
-            <Summary label="Current sale" value={formatCurrency(entry.amount)} />
-            <Summary label="Paid / advance" value={formatCurrency(entry.payment)} />
-            <Summary label="That-day due" value={formatCurrency(entry.remainingDue)} />
-            <Summary label="Current due" value={formatCurrency(customer.currentDue)} />
-          </div>
-          <div className="mt-4 space-y-2">
-            {items.length ? (
-              items.map((item) => (
-                <div
-                  key={item.id}
-                  className="flex justify-between rounded-lg bg-muted/40 px-3 py-2 text-sm"
-                >
-                  <span>
-                    {item.product} · {item.quantity} {item.unit} × {formatCurrency(item.rate)}
-                  </span>
-                  <span className="font-semibold">{formatCurrency(item.amount)}</span>
+    <>
+      <Dialog
+        open={Boolean(order)}
+        onOpenChange={(open) => !open && onClose()}
+      >
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>{order.code}</DialogTitle>
+            <DialogDescription>
+              Online order · {order.customerName} ·{" "}
+              {formatDate(order.placedOn)}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6">
+            {/* CUSTOMER & DELIVERY ADDRESS */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <UserRound className="size-4 text-primary" />
+                  Customer & Delivery Address
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <Info label="Name" value={order.customerName} />
+                <Info label="Customer type" value={order.customerType} />
+                <Info
+                  label="Mobile"
+                  value={order.mobile || customer?.mobile || "—"}
+                  icon={<Phone className="size-3.5" />}
+                />
+                <Info
+                  label="Village"
+                  value={order.village || customer?.village || "—"}
+                  icon={<MapPin className="size-3.5" />}
+                />
+                <Info
+                  label="Delivery address"
+                  value={
+                    order.deliveryAddress || customer?.address || "—"
+                  }
+                />
+                <Info label="Pincode" value={order.pincode || "—"} />
+              </CardContent>
+            </Card>
+
+            {/* PRODUCTS */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <PackageCheck className="size-4 text-primary" />
+                  Ordered products
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-right">Quantity</TableHead>
+                      <TableHead className="text-right">Rate</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                    </TableRow>
+                  </TableHeader>
+
+                  <TableBody>
+                    {order.items.map((item) => (
+                      <TableRow key={item.id}>
+                        <TableCell>{item.product}</TableCell>
+                        <TableCell className="text-right">
+                          {item.quantity} {item.unit}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {formatCurrency(item.rate)}
+                        </TableCell>
+                        <TableCell className="text-right font-medium">
+                          {formatCurrency(item.amount)}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+
+            {/* MONEY */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <WalletCards className="size-4 text-primary" />
+                  Payment
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-5">
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <Info
+                    label="Order total"
+                    value={formatCurrency(order.total)}
+                  />
+                  <Info
+                    label="Total paid"
+                    value={formatCurrency(order.paid)}
+                  />
+                  <Info
+                    label="Remaining"
+                    value={formatCurrency(due)}
+                  />
                 </div>
-              ))
-            ) : (
-              <p className="text-sm">{entry.product}</p>
-            )}
+
+                {due === 0 ? (
+                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                    Payment Completed
+                  </div>
+                ) : (
+                  <Button
+                    className="w-full rounded-full"
+                    onClick={() => setPaymentDialogOpen(true)}
+                  >
+                    <WalletCards className="mr-2 size-4" />
+                    Add Payment
+                  </Button>
+                )}
+
+                <Info
+                  label="Initial payment method"
+                  value={order.paymentMethod}
+                />
+              </CardContent>
+            </Card>
+
+            {/* SHIPPING */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Truck className="size-4 text-primary" />
+                  Package & delivery
+                </CardTitle>
+              </CardHeader>
+
+              <CardContent className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="package-sent-on">Package sent date</Label>
+                  <Input
+                    id="package-sent-on"
+                    type="date"
+                    value={packageSentOn}
+                    onChange={(e) => setPackageSentOn(e.target.value)}
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Order status</Label>
+                  <Select
+                    value={orderStatus}
+                    onValueChange={(value) =>
+                      setOrderStatus(value as OrderStatus)
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orderStatuses.map((value) => (
+                        <SelectItem
+                          key={value}
+                          value={value}
+                          className="capitalize"
+                        >
+                          {value}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Delivery status</Label>
+                  <Select
+                    value={deliveryStatus}
+                    onValueChange={(value) =>
+                      setDeliveryStatus(
+                        value as Order["deliveryStatus"],
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="not-required">
+                        Not required
+                      </SelectItem>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="out-for-delivery">
+                        Out for delivery
+                      </SelectItem>
+                      <SelectItem value="delivered">Delivered</SelectItem>
+                      <SelectItem value="failed">Failed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <Info
+                  label="Current delivery status"
+                  value={order.deliveryStatus.replace(/-/g, " ")}
+                  icon={<CalendarDays className="size-3.5" />}
+                />
+              </CardContent>
+            </Card>
+
+            {/* REMARKS */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base">Other information</CardTitle>
+              </CardHeader>
+
+              <CardContent className="space-y-2">
+                <Label htmlFor="order-remarks">Remarks / internal notes</Label>
+                <Input
+                  id="order-remarks"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="Add any additional order information..."
+                />
+              </CardContent>
+            </Card>
+
+            <div className="rounded-xl border bg-muted/40 p-4 text-sm">
+              <div className="flex items-center justify-between">
+                <span className="text-muted-foreground">Remaining due</span>
+                <span className="font-display text-xl font-semibold">
+                  {formatCurrency(due)}
+                </span>
+              </div>
+            </div>
           </div>
-        </div>
-        <div className="rounded-xl border p-4">
-          <p className="mb-2 text-sm font-semibold">Edit before sending</p>
-          <Textarea
-            value={message}
-            onChange={(event) => setMessage(event.target.value)}
-            className="min-h-44"
-          />
-          <div className="mt-3 rounded-lg bg-muted/40 p-3 text-sm whitespace-pre-wrap leading-6">
-            {message}
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={onClose}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              className="rounded-full"
+              onClick={() => void save()}
+              disabled={saving}
+            >
+              {saving ? "Saving..." : "Save order"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ADD PAYMENT DIALOG */}
+      <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Add payment</DialogTitle>
+            <DialogDescription>
+              Record an additional payment for {order.code}.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div className="rounded-xl border bg-muted/40 p-4">
+              <div className="flex justify-between text-sm">
+                <span>Remaining due</span>
+                <span className="font-semibold">{formatCurrency(due)}</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-amount">Payment amount</Label>
+              <Input
+                id="payment-amount"
+                value={paymentAmount}
+                onChange={(e) => setPaymentAmount(e.target.value)}
+                inputMode="decimal"
+                placeholder="Enter amount"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Payment method</Label>
+              <Select
+                value={paymentMethod}
+                onValueChange={(value) =>
+                  setPaymentMethod(value as typeof paymentMethod)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank">Bank</SelectItem>
+                  <SelectItem value="card">Card</SelectItem>
+                  <SelectItem value="online">Online</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="payment-remarks">Remarks</Label>
+              <Input
+                id="payment-remarks"
+                value={paymentRemarks}
+                onChange={(e) => setPaymentRemarks(e.target.value)}
+                placeholder="Optional"
+              />
+            </div>
           </div>
-        </div>
-        <DialogFooter>
-          <Button variant="outline" className="rounded-full" onClick={onClose}>
-            Not now
-          </Button>
-          <Button className="rounded-full" disabled={sending} onClick={() => void send()}>
-            <Send className="size-4" />
-            {sending ? "Sending…" : "Edit & send"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              className="rounded-full"
+              onClick={() => setPaymentDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+
+            <Button
+              className="rounded-full"
+              disabled={paymentSaving}
+              onClick={() => void handleAddPayment()}
+            >
+              {paymentSaving ? "Saving..." : "Save payment"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
 
-function buildShareMessage(
-  kind: WhatsAppMessageKind,
-  customer: { name: string; totalPurchases: number; totalPaid: number; currentDue: number },
-  current: CustomerLedgerEntry,
-  records: CustomerLedgerEntry[],
-  items: CustomerSaleItem[],
-) {
-  const itemLines = items.length
-    ? items
-        .map(
-          (item) =>
-            `• ${item.product} — ${item.quantity} ${item.unit} × ${formatCurrency(item.rate)} = ${formatCurrency(item.amount)}`,
-        )
-        .join("\n")
-    : `• ${current.product}`;
-  if (kind === "custom")
-    return `Hello ${customer.name},\n\nYour purchase record is below.\n\n${itemLines}\n\nEdit this message before sending.\n\n— Shree Sawariya Agro Agency`;
-  const history = records
-    .slice(0, 10)
-    .map(
-      (record) =>
-        `• ${formatDate(record.date)} — ${record.entryType === "purchase" ? record.product : "Payment"} | amount ${formatCurrency(record.amount)} | paid ${formatCurrency(record.payment)} | due ${formatCurrency(record.remainingDue)}`,
-    )
-    .join("\n");
-  return `Hello ${customer.name},\n\nHere is your purchase record from Shree Sawariya Agro Agency.\n\nCURRENT SALE\nDate: ${formatDate(current.date)}\n${itemLines}\nSale amount: ${formatCurrency(current.amount)}\nAdvance / paid: ${formatCurrency(current.payment)}\nThat-day due: ${formatCurrency(current.remainingDue)}\n\nACCOUNT SUMMARY\nTotal purchases: ${formatCurrency(customer.totalPurchases)}\nTotal paid: ${formatCurrency(customer.totalPaid)}\nCurrent due: ${formatCurrency(customer.currentDue)}\n\nPURCHASE / PAYMENT HISTORY\n${history || "No previous records."}\n\nThank you.`;
-}
-
-function Summary({ label, value }: { label: string; value: string }) {
+function Info({
+  label,
+  value,
+  icon,
+}: {
+  label: string;
+  value: string;
+  icon?: React.ReactNode;
+}) {
   return (
-    <div>
-      <p className="text-xs text-muted-foreground">{label}</p>
-      <p className="font-semibold">{value}</p>
-    </div>
-  );
-}
-function Row({ label, value, bold }: { label: string; value: string; bold?: boolean }) {
-  return (
-    <div className="flex items-center justify-between">
-      <span className="text-muted-foreground">{label}</span>
-      <span className={bold ? "font-semibold" : ""}>{value}</span>
+    <div className="space-y-1">
+      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+        {icon}
+        {label}
+      </p>
+      <p className="font-medium capitalize">{value}</p>
     </div>
   );
 }

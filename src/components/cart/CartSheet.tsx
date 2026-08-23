@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -7,10 +8,17 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { cartCount, cartStore, cartSubtotal, useCart } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/shop-store";
 import { useI18n } from "@/lib/i18n";
+import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
+import { useAuth } from "@/lib/auth-store";
 
 export function CartSheet() {
   const items = useCart();
   const { t } = useI18n();
+  const authUser = useAuth();
+
+  const [authOpen, setAuthOpen] = useState(false);
+  const [authMode, setAuthMode] = useState<AuthMode>("register");
+
   const count = cartCount(items);
   const subtotal = cartSubtotal(items);
 
@@ -101,11 +109,17 @@ export function CartSheet() {
               </div>
               <Button
                 className="w-full rounded-full"
-                onClick={() =>
+                onClick={() => {
+                  if (!authUser) {
+                    setAuthMode("register");
+                    setAuthOpen(true);
+                    return;
+                  }
+
                   toast.info(
                     t("cart.checkoutSoon", "Checkout will be connected to online payments next."),
-                  )
-                }
+                  );
+                }}
               >
                 {t("cart.checkout", "Proceed to checkout")}
               </Button>
@@ -119,6 +133,13 @@ export function CartSheet() {
             </div>
           </>
         )}
+
+        <AuthDialog
+          open={authOpen}
+          onOpenChange={setAuthOpen}
+          mode={authMode}
+          onModeChange={setAuthMode}
+        />
       </SheetContent>
     </Sheet>
   );

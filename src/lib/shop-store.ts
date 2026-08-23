@@ -179,12 +179,19 @@ const toOrder = (r: any): Order => ({
   id: r.id,
   code: r.code,
   channel: r.channel,
+
   customerId: r.customer_id ?? undefined,
   customerName: r.customer_name ?? "",
   customerType: r.customer_type,
+
   village: r.village ?? "",
   mobile: r.mobile ?? "",
+
+  deliveryAddress: r.delivery_address ?? "",
+  pincode: r.pincode ?? "",
+
   placedOn: r.placed_on,
+
   items: (r.order_items ?? []).map((i: any) => ({
     id: i.id,
     product: i.product,
@@ -193,16 +200,23 @@ const toOrder = (r: any): Order => ({
     rate: num(i.rate),
     amount: num(i.amount),
   })),
+
   subtotal: num(r.subtotal),
   discount: num(r.discount),
   tax: num(r.tax),
   total: num(r.total),
   paid: num(r.paid),
+
+  packageSentOn: r.package_sent_on ?? undefined,
+  paymentDueOn: r.payment_due_on ?? undefined,
+
   paymentMethod: r.payment_method,
   paymentStatus: r.payment_status,
+
   deliveryStatus: r.delivery_status,
   orderStatus: r.order_status,
   invoiceStatus: r.invoice_status,
+
   remarks: r.remarks ?? undefined,
   timeline: r.timeline ?? [],
 });
@@ -442,6 +456,7 @@ export const shopStore = {
     payment: number;
     method: CustomerLedgerEntry["method"];
     remarks?: string;
+    
   }) {
     const { error } = await supabase
       .from("customer_transactions")
@@ -659,33 +674,40 @@ export const shopStore = {
     await supabase.from("products").delete().eq("id", id);
     return after(undefined);
   },
-  async addOrder(order: Omit<Order, "id">) {
-    const { data, error } = await supabase
-      .from("orders")
-      .insert({
-        code: order.code,
-        channel: order.channel,
-        customer_id: order.customerId ?? null,
-        customer_name: order.customerName,
-        customer_type: order.customerType,
-        village: order.village,
-        mobile: order.mobile,
-        placed_on: order.placedOn,
-        subtotal: order.subtotal,
-        discount: order.discount,
-        tax: order.tax,
-        total: order.total,
-        paid: order.paid,
-        payment_method: order.paymentMethod,
-        payment_status: order.paymentStatus,
-        delivery_status: order.deliveryStatus,
-        order_status: order.orderStatus,
-        invoice_status: order.invoiceStatus,
-        remarks: order.remarks ?? null,
-        timeline: order.timeline,
-      })
-      .select()
-      .single();
+ async addOrder(order: Omit<Order, "id">) {
+  const payload: any = {
+    delivery_address: order.deliveryAddress,
+    pincode: order.pincode,
+    package_sent_on: order.packageSentOn ?? null,
+    payment_due_on: order.paymentDueOn ?? null,
+
+    code: order.code,
+    channel: order.channel,
+    customer_id: order.customerId ?? null,
+    customer_name: order.customerName,
+    customer_type: order.customerType,
+    village: order.village,
+    mobile: order.mobile,
+    placed_on: order.placedOn,
+    subtotal: order.subtotal,
+    discount: order.discount,
+    tax: order.tax,
+    total: order.total,
+    paid: order.paid,
+    payment_method: order.paymentMethod,
+    payment_status: order.paymentStatus,
+    delivery_status: order.deliveryStatus,
+    order_status: order.orderStatus,
+    invoice_status: order.invoiceStatus,
+    remarks: order.remarks ?? null,
+    timeline: order.timeline,
+  };
+
+  const { data, error } = await supabase
+    .from("orders")
+    .insert(payload)
+    .select()
+    .single();
     if (error) throw error;
     if (order.items.length)
       await supabase
@@ -702,35 +724,97 @@ export const shopStore = {
         );
     return after(toOrder(data));
   },
-  async updateOrder(id: string, patch: Partial<Order>) {
-    const payload: any = {};
-    if (patch.orderStatus !== undefined) payload.order_status = patch.orderStatus;
-    if (patch.paymentStatus !== undefined) payload.payment_status = patch.paymentStatus;
-    if (patch.deliveryStatus !== undefined) payload.delivery_status = patch.deliveryStatus;
-    if (patch.invoiceStatus !== undefined) payload.invoice_status = patch.invoiceStatus;
-    if (patch.paid !== undefined) payload.paid = patch.paid;
-    if (patch.timeline !== undefined) payload.timeline = patch.timeline;
-    const { error } = await supabase.from("orders").update(payload).eq("id", id);
+ async updateOrder(id: string, patch: Partial<Order>) {
+  const payload: any = {};
+
+  if (patch.orderStatus !== undefined) {
+    payload.order_status = patch.orderStatus;
+  }
+
+  if (patch.paymentStatus !== undefined) {
+    payload.payment_status = patch.paymentStatus;
+  }
+
+  if (patch.deliveryStatus !== undefined) {
+    payload.delivery_status = patch.deliveryStatus;
+  }
+
+  if (patch.invoiceStatus !== undefined) {
+    payload.invoice_status = patch.invoiceStatus;
+  }
+
+  if (patch.paid !== undefined) {
+    payload.paid = patch.paid;
+  }
+
+  if (patch.packageSentOn !== undefined) {
+    payload.package_sent_on = patch.packageSentOn || null;
+  }
+
+  if (patch.paymentDueOn !== undefined) {
+    payload.payment_due_on = patch.paymentDueOn || null;
+  }
+
+  if (patch.remarks !== undefined) {
+    payload.remarks = patch.remarks || null;
+  }
+
+  if (patch.timeline !== undefined) {
+    payload.timeline = patch.timeline;
+  }
+
+  const { error } = await supabase
+    .from("orders")
+    .update(payload)
+    .eq("id", id);
+
+  if (error) throw error;
+
+  return after(undefined);
+},
+  async addOnlineOrderPayment(input: {
+    orderId: string;
+    amount: number;
+    method: "cash" | "upi" | "bank" | "card" | "online" | "cheque";
+    remarks?: string;
+  }) {
+    const { data, error } = await supabase.rpc(
+      "add_online_order_payment",
+      {
+        _order_id: input.orderId,
+        _amount: input.amount,
+        _method: input.method,
+        _remarks: input.remarks ?? null,
+      },
+    );
+
     if (error) throw error;
-    return after(undefined);
+
+    return after(data);
   },
-  async addPayment(payment: Omit<PaymentRecord, "id">) {
-    const { error } = await supabase
-      .from("payments")
-      .insert({
-        reference: payment.reference,
-        direction: payment.direction,
-        party_name: payment.partyName,
-        entry_date: payment.date,
-        amount: payment.amount,
-        method: payment.method,
-        status: payment.status,
-        order_code: payment.orderCode ?? null,
-        remarks: payment.remarks ?? null,
-      });
-    if (error) throw error;
-    return after(undefined);
-  },
+ async addPayment(payment: Omit<PaymentRecord, "id">) {
+  const p = payment as any;
+
+  const payload: any = {
+    reference: p.reference,
+    direction: p.direction,
+    party_name: p.partyName,
+    entry_date: p.date,
+    amount: p.amount,
+    method: p.method,
+    status: p.status,
+    order_code: p.orderCode ?? null,
+    remarks: p.remarks ?? null,
+  };
+
+  const { error } = await supabase
+    .from("payments")
+    .insert(payload);
+
+  if (error) throw error;
+
+  return after(undefined);
+},
   async updateReminder(id: string, patch: Partial<Reminder>) {
     const payload: any = {};
     if (patch.status !== undefined) payload.status = patch.status;
