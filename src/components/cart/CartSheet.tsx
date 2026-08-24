@@ -9,6 +9,7 @@ import { cartCount, cartStore, cartSubtotal, useCart } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/shop-store";
 import { useI18n } from "@/lib/i18n";
 import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
+import { CheckoutDialog } from "@/components/cart/CheckoutDialog";
 import { useAuth } from "@/lib/auth-store";
 
 export function CartSheet() {
@@ -18,6 +19,7 @@ export function CartSheet() {
 
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("register");
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
   const count = cartCount(items);
   const subtotal = cartSubtotal(items);
@@ -115,10 +117,7 @@ export function CartSheet() {
                     setAuthOpen(true);
                     return;
                   }
-
-                  toast.info(
-                    t("cart.checkoutSoon", "Checkout will be connected to online payments next."),
-                  );
+                  setCheckoutOpen(true);
                 }}
               >
                 {t("cart.checkout", "Proceed to checkout")}
@@ -139,6 +138,12 @@ export function CartSheet() {
           onOpenChange={setAuthOpen}
           mode={authMode}
           onModeChange={setAuthMode}
+        />
+        <CheckoutDialog
+          open={checkoutOpen}
+          onOpenChange={setCheckoutOpen}
+          items={items}
+          subtotal={subtotal}
         />
       </SheetContent>
     </Sheet>
