@@ -7,10 +7,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { cartStore } from "@/lib/cart-store";
 import { useI18n } from "@/lib/i18n";
+import { useAuth } from "@/lib/auth-store";
 import type { Product } from "@/types";
 
 export function ProductCard({ product }: { product: Product }) {
   const { t } = useI18n();
+  const authUser = useAuth();
   const variants = product.variants ?? [];
   const [selectedVariantId, setSelectedVariantId] = useState(variants[0]?.id ?? "");
   const selectedVariant = useMemo(
@@ -87,15 +89,17 @@ export function ProductCard({ product }: { product: Product }) {
             <p className="font-display text-lg font-semibold">₹{price.toLocaleString("en-IN")}</p>
             <p className="text-xs text-muted-foreground">per {unit}</p>
           </div>
-          <Button
-            size="icon"
-            className="rounded-full"
-            aria-label={`Add ${product.name} ${unit} to cart`}
-            disabled={stock <= 0}
-            onClick={addToCart}
-          >
-            <ShoppingCart className="size-4" />
-          </Button>
+          {authUser?.role !== "admin" ? (
+            <Button
+              size="icon"
+              className="rounded-full"
+              aria-label={`Add ${product.name} ${unit} to cart`}
+              disabled={stock <= 0}
+              onClick={addToCart}
+            >
+              <ShoppingCart className="size-4" />
+            </Button>
+          ) : null}
         </div>
       </CardContent>
     </Card>
