@@ -39,32 +39,19 @@ export function SiteHeader() {
       <div className="hidden border-b border-border bg-muted text-muted-foreground md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2 text-xs">
           <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1.5">
-              <Phone className="size-3.5" /> {shopInfo.phone}
-            </span>
-            <span className="flex items-center gap-1.5">
-              <Mail className="size-3.5" /> {shopInfo.email}
-            </span>
+            <span className="flex items-center gap-1.5"><Phone className="size-3.5" /> {shopInfo.phone}</span>
+            <span className="flex items-center gap-1.5"><Mail className="size-3.5" /> {shopInfo.email}</span>
           </div>
-          <span className="flex items-center gap-1.5">
-            <Clock className="size-3.5" /> {shopInfo.hours}
-          </span>
+          <span className="flex items-center gap-1.5"><Clock className="size-3.5" /> {shopInfo.hours}</span>
         </div>
       </div>
 
       <div className="border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
           <Logo />
-
           <div className="relative ml-4 hidden flex-1 lg:block">
             <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder={t(
-                "storefront.searchPlaceholder",
-                "Search products, invoices, customers…",
-              )}
-              className="h-11 rounded-full bg-muted pl-10"
-            />
+            <Input placeholder={t("storefront.searchPlaceholder", "Search products, invoices, customers…")} className="h-11 rounded-full bg-muted pl-10" />
           </div>
 
           <div className="ml-auto flex items-center gap-1.5">
@@ -73,73 +60,41 @@ export function SiteHeader() {
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="ghost" className="rounded-full">
-                    <User className="size-4" />
-                    <span className="hidden sm:inline">{user.name.split(" ")[0]}</span>
-                  </Button>
+                  <Button variant="ghost" className="rounded-full"><User className="size-4" /><span className="hidden sm:inline">{user.name.split(" ")[0]}</span></Button>
                 </DropdownMenuTrigger>
-
                 <DropdownMenuContent align="end" className="w-52">
                   <DropdownMenuLabel className="flex flex-col">
                     <span>{user.name}</span>
                     <span className="text-xs font-normal text-muted-foreground">{user.mobile}</span>
                   </DropdownMenuLabel>
-
                   <DropdownMenuSeparator />
-
-                  <DropdownMenuItem asChild>
-                    <Link to="/admin">
-                      <User className="size-4" />
-                      Admin Panel
-                    </Link>
-                  </DropdownMenuItem>
-
-                  <DropdownMenuItem onClick={() => authStore.logout()}>
-                    <LogOut className="size-4" />
-                    {t("common.logout", "Logout")}
-                  </DropdownMenuItem>
+                  {user.role === "admin" || user.role === "staff" ? (
+                    <DropdownMenuItem asChild>
+                      <Link to="/admin"><User className="size-4" />Admin Panel</Link>
+                    </DropdownMenuItem>
+                  ) : null}
+                  <DropdownMenuItem onClick={() => authStore.logout()}><LogOut className="size-4" />{t("common.logout", "Logout")}</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
             ) : (
-              <Button
-                variant="ghost"
-                className="hidden rounded-full sm:inline-flex"
-                onClick={() => openAuth("login")}
-              >
-                <User className="size-4" />
-                {t("auth.login", "Login")}
+              <Button variant="ghost" className="hidden rounded-full sm:inline-flex" onClick={() => openAuth("login")}>
+                <User className="size-4" />{t("auth.login", "Login")}
               </Button>
             )}
-            <CartSheet />
+            {user?.role !== "admin" ? <CartSheet /> : null}
 
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu">
-                  <Menu className="size-5" />
-                </Button>
-              </SheetTrigger>
+              <SheetTrigger asChild><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu"><Menu className="size-5" /></Button></SheetTrigger>
               <SheetContent side="right" className="w-72">
                 <SheetTitle>{t("common.menu", "Menu")}</SheetTitle>
                 <nav className="mt-6 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
-                    <a
-                      key={item.label}
-                      href={item.to}
-                      onClick={() => setOpen(false)}
-                      className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"
-                    >
+                    <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
                       {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
                     </a>
                   ))}
                   {!user ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setOpen(false);
-                        openAuth("login");
-                      }}
-                      className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted"
-                    >
+                    <button type="button" onClick={() => { setOpen(false); openAuth("login"); }} className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted">
                       {t("auth.login", "Login")}
                     </button>
                   ) : null}
@@ -153,23 +108,14 @@ export function SiteHeader() {
       <nav className="hidden border-b border-border bg-background/95 backdrop-blur lg:block">
         <div className="mx-auto flex max-w-7xl items-center gap-1 px-6">
           {storefrontNav.map((item) => (
-            <a
-              key={item.label}
-              href={item.to}
-              className="px-3.5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-primary"
-            >
+            <a key={item.label} href={item.to} className="px-3.5 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-primary">
               {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
             </a>
           ))}
         </div>
       </nav>
 
-      <AuthDialog
-        open={authOpen}
-        onOpenChange={setAuthOpen}
-        mode={authMode}
-        onModeChange={setAuthMode}
-      />
+      <AuthDialog open={authOpen} onOpenChange={setAuthOpen} mode={authMode} onModeChange={setAuthMode} />
     </header>
   );
 }
