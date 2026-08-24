@@ -1,5 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./types";
+import type { DatabaseWithVariants } from "./types-variants";
 
 // Browser-safe Supabase project configuration.
 // Environment variables take priority; the fallback matches the connected
@@ -19,7 +19,7 @@ function createSupabaseClient() {
     (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined) ||
     DEFAULT_SUPABASE_PUBLISHABLE_KEY;
 
-  return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  return createClient<DatabaseWithVariants>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== "undefined" ? localStorage : undefined,
       persistSession: true,
