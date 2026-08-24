@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { formatCurrency } from "@/lib/shop-store";
 import { cartStore, type CartItem } from "@/lib/cart-store";
+import { useAuth } from "@/lib/auth-store";
 import { supabase } from "@/integrations/supabase/client";
 
 type CheckoutDialogProps = {
@@ -17,11 +18,19 @@ type CheckoutDialogProps = {
 };
 
 export function CheckoutDialog({ open, onOpenChange, items, subtotal }: CheckoutDialogProps) {
+  const user = useAuth();
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [village, setVillage] = useState("");
   const [address, setAddress] = useState("");
   const [placing, setPlacing] = useState(false);
+
+  useEffect(() => {
+    if (!open || !user) return;
+    setName(user.name);
+    setMobile(user.mobile ?? "");
+    setVillage(user.village ?? "");
+  }, [open, user]);
 
   const placeOrder = async () => {
     if (!items.length) return;
@@ -104,11 +113,11 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="checkout-name">Name</Label>
-              <Input id="checkout-name" value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+              <Input id="checkout-name" value={name} disabled placeholder="Your name" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="checkout-mobile">Mobile</Label>
-              <Input id="checkout-mobile" value={mobile} onChange={(e) => setMobile(e.target.value)} placeholder="Mobile number" inputMode="tel" />
+              <Input id="checkout-mobile" value={mobile} disabled placeholder="Mobile number" inputMode="tel" />
             </div>
           </div>
 
