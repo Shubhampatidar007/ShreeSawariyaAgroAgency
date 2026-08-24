@@ -58,19 +58,30 @@ let state: ShopState = {
   backups: [],
   loading: true,
 };
-
 const listeners = new Set<() => void>();
-function setState(update: Partial<ShopState>) {
+
+const notify = () => listeners.forEach((listener) => listener());
+const setState = (update: Partial<typeof state>) => {
   state = { ...state, ...update };
-  listeners.forEach((listener) => listener());
-}
-function subscribe(listener: () => void) {
+  notify();
+};
+
+const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
-}
+};
+
 const getSnapshot = () => state;
-export function useShopStore<T>(selector: (s: ShopState) => T): T {
-  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
+
+export function usePublicShopStore<T>(
+  selector: (state: typeof state) => T,
+): T {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot,
+  );
+
   return selector(snapshot);
 }
 
@@ -484,14 +495,15 @@ export const shopStore = {
   }) {
     const { data, error } = await supabase.rpc("create_khata_sale" as any, {
       _customer_id: input.customerId,
-      _items: input.items.map((i) => ({
-        inventory_id: i.inventoryId ?? null,
-        product_id: i.productId ?? null,
-        product: i.product,
-        quantity: i.quantity,
-        unit: i.unit,
-        rate: i.rate,
-      })),
+    _items: input.items.map((i) => ({
+  inventory_id: i.inventoryId ?? null,
+  product_id: i.productId ?? null,
+  product_variant_id: i.productVariantId ?? null,
+  product: i.product,
+  quantity: i.quantity,
+  unit: i.unit,
+  rate: i.rate,
+})),
       _paid: input.paid,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),

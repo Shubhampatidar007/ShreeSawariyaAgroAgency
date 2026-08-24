@@ -110,9 +110,9 @@ export type CustomerSaleItem = {
 };
 
 export type KhataSaleItemInput = {
-  inventoryId?: string | undefined;
-  productId?: string | undefined;
-  productVariantId?: string | undefined;
+  inventoryId?: string;
+  productId?: string;
+  productVariantId?: string;
   product: string;
   quantity: number;
   unit: string;

@@ -38,6 +38,7 @@ type CartItem = {
   key: string;
   inventoryId?: string;
   productId?: string;
+  productVariantId?: string;
   product: string;
   unit: string;
   rate: number;
@@ -170,14 +171,17 @@ async function sendKhataReceiptToEdgeFunction({
       sale: {
         date: saleDate,
 
-        items: items.map((item) => ({
-          product: item.product,
-          quantity: item.quantity,
-          unit: item.unit,
-          rate: item.rate,
-          amount: item.quantity * item.rate,
-        })),
-
+       items: items.map((item) => ({
+  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+  ...(item.productId ? { productId: item.productId } : {}),
+  ...(item.productVariantId
+    ? { productVariantId: item.productVariantId }
+    : {}),
+  product: item.product,
+  quantity: item.quantity,
+  unit: item.unit,
+  rate: item.rate,
+})),
         total,
 
         paid,
@@ -309,35 +313,34 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     [customers, selectedCustomerId],
   );
 
-  const catalogOptions = useMemo(() => {
-    const q = productQuery.trim().toLowerCase();
+const catalogOptions = useMemo(() => {
+  const q = productQuery.trim().toLowerCase();
 
-    return inventory
-      .map((item) => {
-        const product = products.find((p) => p.inventoryId === item.id);
+  return products
+    .flatMap((product) =>
+      (product.variants ?? []).map((variant) => ({
+        key: variant.id,
+        inventoryId: variant.inventoryId,
+        productId: product.id,
+        productVariantId: variant.id,
+        title: product.title,
+        subtitle: product.category ?? "Inventory",
+        emoji: product.emoji ?? "🌾",
+       unit: variant.label ?? "unit",
+rate: Number(variant.discountPrice ?? variant.sellingPrice),
+stock: Number(variant.stock),
+      })),
+    )
+    .filter((option) => option.stock > 0)
+    .filter((option) => {
+      if (!q) return true;
 
-        return {
-          key: item.id,
-          inventoryId: item.id,
-          productId: product?.id,
-          title: product?.title ?? item.productName,
-          subtitle: product?.category ?? "Inventory",
-          emoji: product?.emoji ?? "🌾",
-          unit: item.unit,
-          rate: product?.sellingPrice ?? item.purchasePrice,
-          stock: item.quantity,
-        };
-      })
-      .filter((option) => option.stock > 0)
-      .filter((option) => {
-        if (!q) return true;
-
-        return `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
-          .toLowerCase()
-          .includes(q);
-      })
-      .slice(0, 8);
-  }, [inventory, products, productQuery]);
+      return `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
+        .toLowerCase()
+        .includes(q);
+    })
+    .slice(0, 8);
+}, [products, productQuery]);
 
   const reset = () => {
     setCustomerMode("select");
@@ -362,53 +365,54 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setReceiptOption("current");
   };
 
-  const addProductToCart = (inventoryId: string) => {
-    const inv = inventory.find((i) => i.id === inventoryId);
-    if (!inv) return;
+ const addProductToCart = (option: (typeof catalogOptions)[number]) => {
+  if (option.stock <= 0) {
+    toast.error(`${option.title} (${option.unit}) is out of stock`);
+    return;
+  }
 
-    const product = products.find((p) => p.inventoryId === inv.id);
-    if (inv.quantity <= 0) {
-      toast.error(`${inv.productName} is out of stock`);
-      return;
-    }
-    setItems((prev): CartItem[] => {
-      const existing = prev.find(
-        (i) =>
-          i.inventoryId === inv.id || (product?.id !== undefined && i.productId === product.id),
-      );
-
-      if (existing) {
-        if (existing.maxStock !== undefined && existing.quantity >= existing.maxStock) {
-          toast.error(`Only ${existing.maxStock} ${existing.unit} of ${existing.product} in stock`);
-
-          return prev;
-        }
-
-        return prev.map((i) =>
-          i.key === existing.key
-            ? {
-                ...i,
-                quantity: i.quantity + 1,
-              }
-            : i,
-        );
-      }
-
-      const newItem: CartItem = {
-        key: crypto.randomUUID(),
-        inventoryId: inv.id,
-        ...(product?.id ? { productId: product.id } : {}),
-        product: product?.title ?? inv.productName,
-        unit: inv.unit,
-        rate: product?.sellingPrice ?? inv.purchasePrice,
-        quantity: 1,
-        maxStock: inv.quantity,
-      };
-
-      return [...prev, newItem];
-    });
+  const newItem: CartItem = {
+    key: crypto.randomUUID(),
+    inventoryId: option.inventoryId,
+    productId: option.productId,
+    productVariantId: option.productVariantId,
+    product: option.title,
+    unit: option.unit,
+    rate: option.rate,
+    quantity: 1,
+    maxStock: option.stock,
   };
 
+  setItems((prev) => {
+    const existing = prev.find(
+      (item) => item.productVariantId === option.productVariantId,
+    );
+
+    if (existing) {
+      if (
+        existing.maxStock !== undefined &&
+        existing.quantity >= existing.maxStock
+      ) {
+        toast.error(
+          `Only ${existing.maxStock} ${existing.unit} of ${existing.product} is in stock`,
+        );
+
+        return prev;
+      }
+
+      return prev.map((item) =>
+        item.key === existing.key
+          ? {
+              ...item,
+              quantity: item.quantity + 1,
+            }
+          : item,
+      );
+    }
+
+    return [...prev, newItem];
+  });
+};
   const addCustomItem = () => {
     const rate = Number(customRate);
 
@@ -520,23 +524,22 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       const txId = await shopStore.createKhataSale({
         customerId,
 
-        items: items.map((item) => ({
-          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-
-          ...(item.productId ? { productId: item.productId } : {}),
-
-          product: item.product,
-          quantity: item.quantity,
-          unit: item.unit,
-          rate: item.rate,
-        })),
+      items: items.map((item) => ({
+  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+  ...(item.productId ? { productId: item.productId } : {}),
+  ...(item.productVariantId
+    ? { productVariantId: item.productVariantId }
+    : {}),
+  product: item.product,
+  quantity: item.quantity,
+  unit: item.unit,
+  rate: item.rate,
+})),
 
         paid: paidNum,
         method,
         date: entryDate,
 
-        // Prevent createKhataSale from sending another receipt.
-        receiptOption: "none",
 
         ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
       });
@@ -836,7 +839,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   size="sm"
                   variant="outline"
                   className="rounded-full"
-                  onClick={() => addProductToCart(option.inventoryId)}
+                 onClick={() => addProductToCart(option)}
                 >
                   {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock}{" "}
                   {option.unit}

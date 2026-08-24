@@ -18,16 +18,32 @@ let state: PublicShopState = {
 };
 
 const listeners = new Set<() => void>();
+
 const notify = () => listeners.forEach((listener) => listener());
+
 const setState = (update: Partial<PublicShopState>) => {
   state = { ...state, ...update };
   notify();
 };
+
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
+
 const getSnapshot = () => state;
+
+export function usePublicShopStore<T>(
+  selector: (state: PublicShopState) => T,
+): T {
+  const snapshot = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getSnapshot,
+  );
+
+  return selector(snapshot);
+};
 
 const toVariant = (row: any): ProductVariant => ({
   id: row.id,
@@ -35,18 +51,27 @@ const toVariant = (row: any): ProductVariant => ({
   inventoryId: row.inventory_id ?? undefined,
   label: row.label,
   sellingPrice: Number(row.selling_price ?? 0),
-  discountPrice: row.discount_price == null ? undefined : Number(row.discount_price),
+  discountPrice:
+    row.discount_price == null
+      ? undefined
+      : Number(row.discount_price),
   stock: Number(row.stock ?? 0),
   status: row.status ?? "active",
 });
 
-const toProduct = (row: any, variants: ProductVariant[]): PublishedProduct => ({
+const toProduct = (
+  row: any,
+  variants: ProductVariant[],
+): PublishedProduct => ({
   id: row.id,
   inventoryId: row.inventory_id ?? "",
   title: row.title,
   category: row.category,
   sellingPrice: Number(row.selling_price ?? 0),
-  discountPrice: row.discount_price == null ? undefined : Number(row.discount_price),
+  discountPrice:
+    row.discount_price == null
+      ? undefined
+      : Number(row.discount_price),
   stock: Number(row.stock ?? 0),
   description: row.description ?? "",
   tags: row.tags ?? [],
@@ -73,23 +98,37 @@ const toCmsSection = (row: any): CmsSection => ({
   imageLabel: row.image_label ?? "",
 });
 
+let loadPromise: Promise<void> | null = null;
+
 export async function loadPublicShopData() {
   if (loadPromise) return loadPromise;
 
   loadPromise = (async () => {
-    setState({ loading: true, error: null });
+    setState({
+      loading: true,
+      error: null,
+    });
+
     try {
-      const [productsResult, variantsResult, cmsResult] = await Promise.all([
+      const [
+        productsResult,
+        variantsResult,
+        cmsResult,
+      ] = await Promise.all([
         supabase
           .from("products")
           .select("*")
           .eq("visibility", "public")
           .eq("status", "published")
-          .order("published_on", { ascending: false }),
+          .order("published_on", {
+            ascending: false,
+          }),
+
         supabase
           .from("product_variants")
           .select("*")
           .eq("status", "active"),
+
         supabase
           .from("cms_sections")
           .select("*")
@@ -98,30 +137,65 @@ export async function loadPublicShopData() {
           .order("sort_order"),
       ]);
 
-      if (productsResult.error) throw productsResult.error;
-      if (variantsResult.error) throw variantsResult.error;
-      if (cmsResult.error) throw cmsResult.error;
+      if (productsResult.error) {
+        throw productsResult.error;
+      }
 
-      const variantsByProduct = new Map<string, ProductVariant[]>();
+      if (variantsResult.error) {
+        throw variantsResult.error;
+      }
+
+      if (cmsResult.error) {
+        throw cmsResult.error;
+      }
+
+      const variantsByProduct =
+        new Map<string, ProductVariant[]>();
+
       for (const row of variantsResult.data ?? []) {
         const variant = toVariant(row);
-        if (!variant.productId) continue;
-        const list = variantsByProduct.get(variant.productId) ?? [];
+
+        if (!variant.productId) {
+          continue;
+        }
+
+        const list =
+          variantsByProduct.get(variant.productId) ?? [];
+
         list.push(variant);
-        variantsByProduct.set(variant.productId, list);
+
+        variantsByProduct.set(
+          variant.productId,
+          list,
+        );
       }
 
       setState({
-        products: (productsResult.data ?? []).map((row) =>
-          toProduct(row, variantsByProduct.get(row.id) ?? []),
+        products: (productsResult.data ?? []).map(
+          (row) =>
+            toProduct(
+              row,
+              variantsByProduct.get(row.id) ?? [],
+            ),
         ),
-        cmsSections: (cmsResult.data ?? []).map(toCmsSection),
+
+        cmsSections:
+          (cmsResult.data ?? []).map(toCmsSection),
+
         loading: false,
         error: null,
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Unable to load public shop data";
-      setState({ loading: false, error: message });
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Unable to load public shop data";
+
+      setState({
+        loading: false,
+        error: message,
+      });
+
       throw error;
     } finally {
       loadPromise = null;
@@ -132,11 +206,22 @@ export async function loadPublicShopData() {
 }
 
 export function initPublicShopData() {
-  if (typeof window === "undefined") return null;
-  if (!loadPromise && state.products.length === 0 && state.cmsSections.length === 0) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  if (
+    !loadPromise &&
+    state.products.length === 0 &&
+    state.cmsSections.length === 0
+  ) {
     void loadPublicShopData().catch((error) => {
-      console.error("Public shop data load failed:", error);
+      console.error(
+        "Public shop data load failed:",
+        error,
+      );
     });
   }
+
   return loadPromise;
 }
