@@ -10,18 +10,19 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
   const { t } = useI18n();
   const published = usePublicShopStore((s) => s.products);
   const publishedCards = published
-    .filter((p) => p.stock > 0)
+    .filter((p) => p.stock > 0 || (p.variants ?? []).some((v) => v.stock > 0))
     .map((p) => ({
       id: p.id,
       name: p.title,
       category: p.category,
       price: p.discountPrice ?? p.sellingPrice,
-      unit: "unit",
+      unit: p.variants?.[0]?.label ?? "unit",
       ...(p.featured ? { tag: "Featured" } : {}),
       rating: 4.6,
       emoji: p.emoji || "🌾",
       image: p.images[0],
       stock: p.stock,
+      variants: p.variants,
     }));
   const cards = [...publishedCards, ...featuredProducts].slice(0, 8);
   return (
