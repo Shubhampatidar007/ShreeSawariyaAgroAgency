@@ -6,6 +6,7 @@ import type {
   CustomerSaleItem,
   InventoryItem,
   KhataSaleItemInput,
+  ProductVariant,
   PublishedProduct,
   Supplier,
   SupplierLedgerEntry,
@@ -84,7 +85,7 @@ export function usePublicShopStore<T>(
 
   return selector(snapshot);
 }
-
+export const useShopStore = usePublicShopStore;
 const num = (value: unknown) => Number(value ?? 0);
 const toCustomer = (r: any): Customer => ({
   id: r.id,
@@ -131,7 +132,23 @@ const toInventory = (r: any): InventoryItem => ({
   status: r.status,
   lastUpdated: r.last_updated,
 });
-const toProduct = (r: any): PublishedProduct => ({
+
+
+const toProductVariant = (r: any): ProductVariant => ({
+  id: r.id,
+  productId: r.product_id ?? undefined,
+  inventoryId: r.inventory_id ?? undefined,
+  label: r.label ?? "unit",
+  sellingPrice: num(r.selling_price),
+  discountPrice:
+    r.discount_price == null ? undefined : num(r.discount_price),
+  stock: num(r.stock),
+  status: r.status ?? "active",
+});
+const toProduct = (
+  r: any,
+  variants: ProductVariant[] = [],
+): PublishedProduct => ({
   id: r.id,
   inventoryId: r.inventory_id ?? "",
   title: r.title,
@@ -147,6 +164,7 @@ const toProduct = (r: any): PublishedProduct => ({
   featured: !!r.featured,
   status: r.status,
   publishedOn: r.published_on,
+  variants,
 });
 const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   id: r.id,
@@ -165,6 +183,7 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
   id: r.id,
   transactionId: r.transaction_id,
   productId: r.product_id ?? undefined,
+  productVariantId: r.product_variant_id ?? undefined,
   product: r.product,
   quantity: num(r.quantity),
   unit: r.unit,
@@ -315,22 +334,23 @@ let loadPromise: Promise<void> | null = null;
 export async function loadShopData() {
   setState({ loading: true });
   try {
-    const [
-      notifications,
-      customers,
-      suppliers,
-      inventory,
-      products,
-      customerLedger,
-      supplierLedger,
-      orders,
-      payments,
-      reminders,
-      reminderLogs,
-      cmsSections,
-      ads,
-      backupRows,
-    ] = await Promise.all([
+   const [
+  notifications,
+  customers,
+  suppliers,
+  inventory,
+  products,
+  variants,
+  customerLedger,
+  supplierLedger,
+  orders,
+  payments,
+  reminders,
+  reminderLogs,
+  cmsSections,
+  ads,
+  backupRows,
+] = await Promise.all([
       supabase
         .from("notifications")
         .select("*")
@@ -340,6 +360,7 @@ export async function loadShopData() {
       supabase.from("suppliers").select("*").order("name"),
       supabase.from("inventory_items").select("*").order("product_name"),
       supabase.from("products").select("*").order("published_on", { ascending: false }),
+      supabase.from("product_variants" as any).select("*").eq("status", "active"),
       supabase.from("customer_transactions").select("*").order("entry_date"),
       supabase.from("supplier_transactions").select("*").order("entry_date"),
       supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
@@ -350,13 +371,27 @@ export async function loadShopData() {
       supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
       supabase.from("backups").select("*").order("created_at", { ascending: false }),
     ]);
-    const firstError = [
-      notifications,
-      customers,
-      suppliers,
-      inventory,
-      products,
-      customerLedger,
+    const variantsByProduct = new Map<string, ProductVariant[]>();
+
+for (const row of variants.data ?? []) {
+  const variant = toProductVariant(row);
+
+  if (!variant.productId) {
+    continue;
+  }
+
+  const list = variantsByProduct.get(variant.productId) ?? [];
+  list.push(variant);
+  variantsByProduct.set(variant.productId, list);
+}
+   const firstError = [
+  notifications,
+  customers,
+  suppliers,
+  inventory,
+  products,
+  variants,
+  customerLedger,
       supplierLedger,
       orders,
       payments,
@@ -372,7 +407,7 @@ export async function loadShopData() {
       customers: (customers.data ?? []).map(toCustomer),
       suppliers: (suppliers.data ?? []).map(toSupplier),
       inventory: (inventory.data ?? []).map(toInventory),
-      products: (products.data ?? []).map(toProduct),
+    products: (products.data ?? []).map((row) =>toProduct(row,variantsByProduct.get(row.id) ?? [],),),
       customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
       supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
       orders: (orders.data ?? []).map(toOrder),

@@ -171,17 +171,15 @@ async function sendKhataReceiptToEdgeFunction({
       sale: {
         date: saleDate,
 
-       items: items.map((item) => ({
-  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-  ...(item.productId ? { productId: item.productId } : {}),
-  ...(item.productVariantId
-    ? { productVariantId: item.productVariantId }
-    : {}),
-  product: item.product,
-  quantity: item.quantity,
-  unit: item.unit,
-  rate: item.rate,
-})),
+        items: items.map((item) => ({
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
+          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+        })),
         total,
 
         paid,
@@ -313,34 +311,34 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     [customers, selectedCustomerId],
   );
 
-const catalogOptions = useMemo(() => {
-  const q = productQuery.trim().toLowerCase();
+  const catalogOptions = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
 
-  return products
-    .flatMap((product) =>
-      (product.variants ?? []).map((variant) => ({
-        key: variant.id,
-        inventoryId: variant.inventoryId,
-        productId: product.id,
-        productVariantId: variant.id,
-        title: product.title,
-        subtitle: product.category ?? "Inventory",
-        emoji: product.emoji ?? "🌾",
-       unit: variant.label ?? "unit",
-rate: Number(variant.discountPrice ?? variant.sellingPrice),
-stock: Number(variant.stock),
-      })),
-    )
-    .filter((option) => option.stock > 0)
-    .filter((option) => {
-      if (!q) return true;
+    return products
+      .flatMap((product) =>
+        (product.variants ?? []).map((variant) => ({
+          key: variant.id,
+          inventoryId: variant.inventoryId,
+          productId: product.id,
+          productVariantId: variant.id,
+          title: product.title,
+          subtitle: product.category ?? "Inventory",
+          emoji: product.emoji ?? "🌾",
+          unit: variant.label ?? "unit",
+          rate: Number(variant.discountPrice ?? variant.sellingPrice),
+          stock: Number(variant.stock),
+        })),
+      )
+      .filter((option) => option.stock > 0)
+      .filter((option) => {
+        if (!q) return true;
 
-      return `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
-        .toLowerCase()
-        .includes(q);
-    })
-    .slice(0, 8);
-}, [products, productQuery]);
+        return `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
+          .toLowerCase()
+          .includes(q);
+      })
+      .slice(0, 8);
+  }, [products, productQuery]);
 
   const reset = () => {
     setCustomerMode("select");
@@ -365,54 +363,49 @@ stock: Number(variant.stock),
     setReceiptOption("current");
   };
 
- const addProductToCart = (option: (typeof catalogOptions)[number]) => {
-  if (option.stock <= 0) {
-    toast.error(`${option.title} (${option.unit}) is out of stock`);
-    return;
-  }
-
-  const newItem: CartItem = {
-    key: crypto.randomUUID(),
-    inventoryId: option.inventoryId,
-    productId: option.productId,
-    productVariantId: option.productVariantId,
-    product: option.title,
-    unit: option.unit,
-    rate: option.rate,
-    quantity: 1,
-    maxStock: option.stock,
-  };
-
-  setItems((prev) => {
-    const existing = prev.find(
-      (item) => item.productVariantId === option.productVariantId,
-    );
-
-    if (existing) {
-      if (
-        existing.maxStock !== undefined &&
-        existing.quantity >= existing.maxStock
-      ) {
-        toast.error(
-          `Only ${existing.maxStock} ${existing.unit} of ${existing.product} is in stock`,
-        );
-
-        return prev;
-      }
-
-      return prev.map((item) =>
-        item.key === existing.key
-          ? {
-              ...item,
-              quantity: item.quantity + 1,
-            }
-          : item,
-      );
+  const addProductToCart = (option: (typeof catalogOptions)[number]) => {
+    if (option.stock <= 0) {
+      toast.error(`${option.title} (${option.unit}) is out of stock`);
+      return;
     }
 
-    return [...prev, newItem];
-  });
-};
+    const newItem: CartItem = {
+      key: crypto.randomUUID(),
+      inventoryId: option.inventoryId,
+      productId: option.productId,
+      productVariantId: option.productVariantId,
+      product: option.title,
+      unit: option.unit,
+      rate: option.rate,
+      quantity: 1,
+      maxStock: option.stock,
+    };
+
+    setItems((prev) => {
+      const existing = prev.find((item) => item.productVariantId === option.productVariantId);
+
+      if (existing) {
+        if (existing.maxStock !== undefined && existing.quantity >= existing.maxStock) {
+          toast.error(
+            `Only ${existing.maxStock} ${existing.unit} of ${existing.product} is in stock`,
+          );
+
+          return prev;
+        }
+
+        return prev.map((item) =>
+          item.key === existing.key
+            ? {
+                ...item,
+                quantity: item.quantity + 1,
+              }
+            : item,
+        );
+      }
+
+      return [...prev, newItem];
+    });
+  };
   const addCustomItem = () => {
     const rate = Number(customRate);
 
@@ -524,22 +517,19 @@ stock: Number(variant.stock),
       const txId = await shopStore.createKhataSale({
         customerId,
 
-      items: items.map((item) => ({
-  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-  ...(item.productId ? { productId: item.productId } : {}),
-  ...(item.productVariantId
-    ? { productVariantId: item.productVariantId }
-    : {}),
-  product: item.product,
-  quantity: item.quantity,
-  unit: item.unit,
-  rate: item.rate,
-})),
+        items: items.map((item) => ({
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
+          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+        })),
 
         paid: paidNum,
         method,
         date: entryDate,
-
 
         ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
       });
@@ -839,7 +829,7 @@ stock: Number(variant.stock),
                   size="sm"
                   variant="outline"
                   className="rounded-full"
-                 onClick={() => addProductToCart(option)}
+                  onClick={() => addProductToCart(option)}
                 >
                   {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock}{" "}
                   {option.unit}
@@ -872,7 +862,10 @@ stock: Number(variant.stock),
                       <TableCell className="font-medium">
                         {item.product}
 
-                        <span className="ml-1 text-xs text-muted-foreground">({item.unit})</span>
+                      <div>{item.product}</div>
+<div className="text-xs text-muted-foreground">
+  {item.unit} · Stock {item.maxStock ?? "—"}
+</div>
                       </TableCell>
 
                       <TableCell>
