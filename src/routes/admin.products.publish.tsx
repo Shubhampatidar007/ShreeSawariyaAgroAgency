@@ -139,6 +139,11 @@ function PublishProductPage() {
       return;
     }
 
+    if (!item || item.quantity <= 0) {
+      toast.error("Selected inventory item is out of stock");
+      return;
+    }
+
     setPublishing(true);
     try {
       let imageUrl: string | undefined;
@@ -199,7 +204,7 @@ function PublishProductPage() {
                   <SelectValue placeholder="Select stock to publish" />
                 </SelectTrigger>
                 <SelectContent>
-                  {inventory.map((i) => (
+                  {inventory.filter((i) => i.quantity > 0).map((i) => (
                     <SelectItem key={i.id} value={i.id}>
                       {i.productName} · {i.quantity} {i.unit}
                     </SelectItem>
