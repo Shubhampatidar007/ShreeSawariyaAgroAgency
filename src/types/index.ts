@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ProductVariant } from "./business";
 
 export type NavItem = {
   label: string;
@@ -45,6 +46,7 @@ export type Product = {
   tag?: string;
   emoji: string;
   image?: string;
+  variants?: ProductVariant[];
 };
 
 export type Advertisement = {
