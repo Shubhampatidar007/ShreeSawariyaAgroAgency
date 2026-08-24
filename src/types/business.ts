@@ -1,5 +1,16 @@
 export type EntityStatus = "active" | "inactive" | "blocked";
 
+export type ProductVariant = {
+  id: string;
+  productId?: string;
+  inventoryId?: string;
+  label: string;
+  sellingPrice: number;
+  discountPrice?: number;
+  stock: number;
+  status: "active" | "inactive" | "archived";
+};
+
 export type Customer = {
   id: string;
   name: string;
@@ -35,7 +46,7 @@ export type Supplier = {
 };
 
 export type InventoryStatus =
-  "inventory-only" | "published" | "hidden" | "out-of-stock" | "archived";
+  "inventory-only" | "published" | "hidden" | "out-of-stock" | "archived" | "in-stock";
 
 export type InventoryItem = {
   id: string;
@@ -49,6 +60,7 @@ export type InventoryItem = {
   minStockLevel: number;
   status: InventoryStatus;
   lastUpdated: string;
+  productVariantId?: string;
 };
 
 export type PublishedProduct = {
@@ -67,6 +79,7 @@ export type PublishedProduct = {
   featured: boolean;
   status: "published" | "draft" | "archived";
   publishedOn: string;
+  variants?: ProductVariant[];
 };
 
 export type PaymentMethod = "cash" | "upi" | "bank" | "cheque" | "credit";
@@ -88,6 +101,7 @@ export type CustomerSaleItem = {
   id: string;
   transactionId: string;
   productId?: string | undefined;
+  productVariantId?: string | undefined;
   product: string;
   quantity: number;
   unit: string;
@@ -98,6 +112,7 @@ export type CustomerSaleItem = {
 export type KhataSaleItemInput = {
   inventoryId?: string | undefined;
   productId?: string | undefined;
+  productVariantId?: string | undefined;
   product: string;
   quantity: number;
   unit: string;
