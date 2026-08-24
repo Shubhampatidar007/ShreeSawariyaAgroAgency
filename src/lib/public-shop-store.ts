@@ -124,8 +124,11 @@ export async function loadPublicShopData() {
             ascending: false,
           }),
 
+        // The generated database types predate product_variants. Keep the
+        // existing shared client unchanged and scope the type escape to this
+        // one query until the generated schema is refreshed.
         supabase
-          .from("product_variants")
+          .from("product_variants" as any)
           .select("*")
           .eq("status", "active"),
 
