@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -34,18 +34,31 @@ export const Route = createFileRoute("/admin/inventory/new")({
   component: InventoryEntryPage,
 });
 
+type VariantDraft = {
+  id: string;
+  quantity: string;
+  unit: string;
+  price: string;
+};
+
+const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
+  id: crypto.randomUUID(),
+  quantity: "",
+  unit: "bags",
+  price: "",
+  ...overrides,
+});
+
 function InventoryEntryPage() {
   const inventoryItems = useShopStore((s) => s.inventory);
+  const navigate = useNavigate();
+  const suppliers = useShopStore((s) => s.suppliers);
 
   const [productSearch, setProductSearch] = useState("");
   const [selectedInventoryId, setSelectedInventoryId] = useState("");
-  const navigate = useNavigate();
-  const suppliers = useShopStore((s) => s.suppliers);
   const [supplierId, setSupplierId] = useState("");
   const [productName, setProductName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState("bags");
-  const [price, setPrice] = useState("");
+  const [variants, setVariants] = useState<VariantDraft[]>([createVariantDraft()]);
   const [advancePaid, setAdvancePaid] = useState("");
   const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [minStock, setMinStock] = useState("10");
@@ -54,30 +67,81 @@ function InventoryEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [savingSupplier, setSavingSupplier] = useState(false);
 
-  const totalPrice = (Number(quantity) || 0) * (Number(price) || 0);
+  const totalPrice = useMemo(
+    () => variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0) * (Number(variant.price) || 0), 0),
+    [variants],
+  );
+
+  const updateVariant = (id: string, patch: Partial<VariantDraft>) => {
+    setVariants((current) => current.map((variant) => (variant.id === id ? { ...variant, ...patch } : variant)));
+  };
+
+  const addVariant = () => {
+    setVariants((current) => [...current, createVariantDraft()]);
+  };
+
+  const removeVariant = (id: string) => {
+    setVariants((current) => (current.length === 1 ? current : current.filter((variant) => variant.id !== id)));
+  };
+
+  const resetVariants = () => setVariants([createVariantDraft()]);
 
   const submit = async () => {
     if (submitting) return;
-    const supplier = suppliers.find((s) => s.id === supplierId);
-    if (!supplier || !productName || !quantity || !price) {
-      toast.error("Fill supplier, product, quantity and purchase price");
+
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    const cleanedVariants = variants.map((variant) => ({
+      ...variant,
+      quantity: Number(variant.quantity),
+      price: Number(variant.price),
+      unit: variant.unit.trim(),
+    }));
+
+    if (!supplier || !productName.trim()) {
+      toast.error("Fill supplier and product name");
       return;
     }
+
+    if (cleanedVariants.some((variant) => variant.quantity <= 0 || !variant.unit || variant.price < 0)) {
+      toast.error("Fill a valid quantity, unit and purchase price for every variant");
+      return;
+    }
+
+    const advance = Math.max(Number(advancePaid) || 0, 0);
+    if (advance > totalPrice) {
+      toast.error("Advance paid cannot exceed the total purchase value");
+      return;
+    }
+
     setSubmitting(true);
+
     try {
-      await shopStore.addInventoryItem({
-        productName,
-        supplierId: supplier.id,
-        supplierName: supplier.company,
-        quantity: Number(quantity),
-        unit,
-        purchasePrice: Number(price),
-        advancePaid: Number(advancePaid) || 0,
-        advanceMethod,
-        minStockLevel: Number(minStock) || 10,
-        lastUpdated: new Date().toISOString().slice(0, 10),
-      });
-      toast.success("Stock entry recorded");
+      let remainingAdvance = advance;
+      for (const variant of cleanedVariants) {
+        const variantTotal = variant.quantity * variant.price;
+        const variantAdvance = Math.min(remainingAdvance, variantTotal);
+
+        await shopStore.addInventoryItem({
+          productName: productName.trim(),
+          supplierId: supplier.id,
+          supplierName: supplier.company,
+          quantity: variant.quantity,
+          unit: variant.unit,
+          purchasePrice: variant.price,
+          advancePaid: variantAdvance,
+          advanceMethod,
+          minStockLevel: Number(minStock) || 10,
+          lastUpdated: new Date().toISOString().slice(0, 10),
+        });
+
+        remainingAdvance -= variantAdvance;
+      }
+
+      toast.success(
+        cleanedVariants.length === 1
+          ? "Stock entry recorded"
+          : `${cleanedVariants.length} product variants recorded`,
+      );
       navigate({ to: "/admin/inventory" });
     } catch (err) {
       toast.error("Failed to save entry. Please try again.");
@@ -95,10 +159,10 @@ function InventoryEntryPage() {
         ]}
         eyebrow="Inventory"
         title="Add stock entry"
-        description="Keep it simple: supplier, product, quantity and purchase price."
+        description="Add one product with one or more quantity variants and their purchase prices."
       />
 
-      <Card className="max-w-2xl shadow-soft">
+      <Card className="max-w-3xl shadow-soft">
         <CardHeader>
           <CardTitle className="text-base">Stock details</CardTitle>
         </CardHeader>
@@ -110,10 +174,7 @@ function InventoryEntryPage() {
                 value={supplierId}
                 onValueChange={(value) => {
                   setSupplierId(value);
-
-                  if (selectedInventoryId) {
-                    setSelectedInventoryId("");
-                  }
+                  setSelectedInventoryId("");
                 }}
               >
                 <SelectTrigger className="flex-1">
@@ -200,7 +261,6 @@ function InventoryEntryPage() {
 
           <div className="space-y-2 sm:col-span-2">
             <Label>Product</Label>
-
             <Input
               value={productSearch}
               onChange={(e) => {
@@ -214,12 +274,11 @@ function InventoryEntryPage() {
             {productSearch.trim() && (
               <div className="rounded-md border bg-background shadow-sm">
                 {inventoryItems
-
-               .filter(
-  (item) =>
-    item.quantity > 0 &&
-    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
-)
+                  .filter(
+                    (item) =>
+                      item.quantity > 0 &&
+                      item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+                  )
                   .slice(0, 8)
                   .map((item) => (
                     <button
@@ -231,37 +290,36 @@ function InventoryEntryPage() {
                         setProductName(item.productName);
                         setProductSearch(item.productName);
                         setSupplierId(item.supplierId);
-                        setUnit(item.unit);
-                        setPrice(String(item.purchasePrice));
+                        setVariants([
+                          createVariantDraft({
+                            quantity: String(item.quantity),
+                            unit: item.unit,
+                            price: String(item.purchasePrice),
+                          }),
+                        ]);
                       }}
                     >
                       <div className="min-w-0">
                         <p className="font-medium truncate">{item.productName}</p>
-
                         <p className="text-xs text-muted-foreground">
                           Supplier: {item.supplierName}
                         </p>
-
                         <p className="text-xs text-muted-foreground">
                           Stock: {item.quantity} {item.unit}
                         </p>
                       </div>
-
                       <div className="shrink-0 text-right">
-                        <p className="text-sm font-semibold">
-                          {formatCurrency(item.purchasePrice)}
-                        </p>
-
+                        <p className="text-sm font-semibold">{formatCurrency(item.purchasePrice)}</p>
                         <p className="text-xs text-muted-foreground">per {item.unit}</p>
                       </div>
                     </button>
                   ))}
 
-            {inventoryItems.filter(
-  (item) =>
-    item.quantity > 0 &&
-    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
-).length === 0 && (
+                {inventoryItems.filter(
+                  (item) =>
+                    item.quantity > 0 &&
+                    item.productName.toLowerCase().includes(productSearch.toLowerCase()),
+                ).length === 0 && (
                   <div className="px-3 py-3 text-sm text-muted-foreground">
                     No existing product found. You can add it as a new product.
                   </div>
@@ -269,109 +327,98 @@ function InventoryEntryPage() {
               </div>
             )}
 
-            {selectedInventoryId &&
-              (() => {
-                const selectedItem = inventoryItems.find((item) => item.id === selectedInventoryId);
+            {selectedInventoryId && (
+              <div className="rounded-lg border bg-muted/30 p-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="text-sm font-medium">Existing inventory selected</p>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      You can keep this variant and add another size/quantity below.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="text-xs text-muted-foreground hover:text-foreground"
+                    onClick={() => {
+                      setSelectedInventoryId("");
+                      setProductSearch("");
+                      setProductName("");
+                      resetVariants();
+                    }}
+                  >
+                    Clear
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
 
-                if (!selectedItem) return null;
+          <div className="space-y-3 sm:col-span-2">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <Label>Product variants</Label>
+                <p className="text-xs text-muted-foreground">
+                  Each row becomes its own quantity/price variant.
+                </p>
+              </div>
+              <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                + Add variant
+              </Button>
+            </div>
 
-                const priceChanged = Number(price) !== Number(selectedItem.purchasePrice);
-
-                const supplierChanged = supplierId !== selectedItem.supplierId;
-
-                const unitChanged =
-                  unit.trim().toLowerCase() !== selectedItem.unit.trim().toLowerCase();
-
-                const productChanged =
-                  productName.trim().toLowerCase() !==
-                  selectedItem.productName.trim().toLowerCase();
-
-                const willCreateNewEntry =
-                  priceChanged || supplierChanged || unitChanged || productChanged;
-                return (
-                  <div className="rounded-lg border bg-muted/30 p-3">
-                    <div className="flex items-start justify-between gap-4">
-                      <div>
-                        <p className="text-sm font-medium">Existing inventory selected</p>
-
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          Current stock: {selectedItem.quantity} {selectedItem.unit}
-                        </p>
-
-                        <p className="text-xs text-muted-foreground">
-                          Current purchase price: {formatCurrency(selectedItem.purchasePrice)}
-                        </p>
-
-                        <p className="text-xs text-muted-foreground">
-                          Supplier: {selectedItem.supplierName}
-                        </p>
-                      </div>
-
+            <div className="space-y-3">
+              {variants.map((variant, index) => (
+                <div key={variant.id} className="rounded-lg border p-3">
+                  <div className="mb-3 flex items-center justify-between">
+                    <p className="text-sm font-medium">Variant {index + 1}</p>
+                    {variants.length > 1 && (
                       <button
                         type="button"
                         className="text-xs text-muted-foreground hover:text-foreground"
-                        onClick={() => {
-                          setSelectedInventoryId("");
-                          setProductSearch("");
-                          setProductName("");
-                        }}
+                        onClick={() => removeVariant(variant.id)}
                       >
-                        Clear
+                        Remove
                       </button>
-                    </div>
-
-                    {willCreateNewEntry ? (
-                      <div className="mt-3 space-y-1">
-                        <p className="text-xs font-medium text-amber-600">
-                          A new inventory entry will be created.
-                        </p>
-
-                        {priceChanged && (
-                          <p className="text-xs text-muted-foreground">
-                            • Purchase price is different
-                          </p>
-                        )}
-
-                        {supplierChanged && (
-                          <p className="text-xs text-muted-foreground">• Supplier is different</p>
-                        )}
-
-                        {unitChanged && (
-                          <p className="text-xs text-muted-foreground">• Unit is different</p>
-                        )}
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-xs text-muted-foreground">
-                        Same product, supplier, unit and purchase price. New quantity will be added
-                        to this existing inventory.
-                      </p>
                     )}
                   </div>
-                );
-              })()}
+
+                  <div className="grid gap-3 sm:grid-cols-3">
+                    <div className="space-y-2">
+                      <Label>Quantity / stock</Label>
+                      <Input
+                        value={variant.quantity}
+                        onChange={(e) => updateVariant(variant.id, { quantity: e.target.value })}
+                        inputMode="decimal"
+                        placeholder="500"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Unit / size</Label>
+                      <Input
+                        value={variant.unit}
+                        onChange={(e) => updateVariant(variant.id, { unit: e.target.value })}
+                        placeholder="ml / L / bags"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Purchase price (per unit)</Label>
+                      <Input
+                        value={variant.price}
+                        onChange={(e) => updateVariant(variant.id, { price: e.target.value })}
+                        inputMode="decimal"
+                        placeholder="250"
+                      />
+                    </div>
+                  </div>
+
+                  <p className="mt-2 text-right text-xs text-muted-foreground">
+                    Variant total: {formatCurrency((Number(variant.quantity) || 0) * (Number(variant.price) || 0))}
+                  </p>
+                </div>
+              ))}
+            </div>
           </div>
-          <div className="space-y-2">
-            <Label>Quantity</Label>
-            <Input
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-              inputMode="numeric"
-              placeholder="100"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Unit</Label>
-            <Input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="bags" />
-          </div>
-          <div className="space-y-2">
-            <Label>Purchase price (per unit)</Label>
-            <Input
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              inputMode="numeric"
-              placeholder="266"
-            />
-          </div>
+
           <div className="space-y-2">
             <Label>Advance paid to supplier</Label>
             <Input
@@ -394,7 +441,6 @@ function InventoryEntryPage() {
               <SelectTrigger>
                 <SelectValue placeholder="Payment method" />
               </SelectTrigger>
-
               <SelectContent>
                 <SelectItem value="cash">Cash</SelectItem>
                 <SelectItem value="upi">UPI</SelectItem>
@@ -414,34 +460,25 @@ function InventoryEntryPage() {
             />
           </div>
 
-          {/* New Totals Section */}
           <div className="grid grid-cols-1 gap-4 sm:col-span-2 sm:grid-cols-2">
-            {/* Total price */}
             <div className="space-y-2">
-              <Label>Total price</Label>
-              <div className="rounded-md border px-3 py-2 bg-muted/50">
-                ₹{(Number(quantity || 0) * Number(price || 0)).toLocaleString("en-IN")}
+              <Label>Total purchase value</Label>
+              <div className="rounded-md border bg-muted/50 px-3 py-2">
+                {formatCurrency(totalPrice)}
               </div>
             </div>
-
-            {/* Advance paid */}
             <div className="space-y-2">
               <Label>Advance paid</Label>
-              <div className="rounded-md border px-3 py-2 bg-muted/50">
-                ₹{Number(advancePaid || 0).toLocaleString("en-IN")}
+              <div className="rounded-md border bg-muted/50 px-3 py-2">
+                {formatCurrency(Number(advancePaid) || 0)}
               </div>
             </div>
           </div>
 
-          {/* Remaining amount */}
           <div className="space-y-2 sm:col-span-2">
             <Label>Total after advance paid</Label>
-            <div className="rounded-md border px-3 py-2 font-semibold bg-muted/50">
-              ₹
-              {Math.max(
-                0,
-                Number(quantity || 0) * Number(price || 0) - Number(advancePaid || 0),
-              ).toLocaleString("en-IN")}
+            <div className="rounded-md border bg-muted/50 px-3 py-2 font-semibold">
+              {formatCurrency(Math.max(0, totalPrice - (Number(advancePaid) || 0)))}
             </div>
           </div>
 
