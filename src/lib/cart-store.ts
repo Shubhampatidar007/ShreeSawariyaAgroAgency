@@ -7,6 +7,8 @@ export type CartItem = {
   unit: string;
   emoji: string;
   qty: number;
+  productId?: string;
+  productVariantId?: string;
 };
 
 const STORAGE_KEY = "agrikisan-cart";
