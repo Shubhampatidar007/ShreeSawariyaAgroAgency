@@ -27,7 +27,7 @@ export function SmartShoppingSection() {
   };
 
   return (
-    <section className="mx-auto max-w-7xl px-6 pb-8 pt-2 lg:pb-10">
+    <section id="smart-shopping" className="mx-auto max-w-7xl px-6 pb-8 pt-2 lg:pb-10">
       <div className="overflow-hidden rounded-3xl border border-border bg-card shadow-soft">
         <div className="p-5 sm:p-7 lg:p-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
@@ -44,13 +44,14 @@ export function SmartShoppingSection() {
           <div className="relative mt-5">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-5 -translate-y-1/2 text-muted-foreground" />
             <Input
+              id="smart-shopping-input"
               value={searchQuery}
               onChange={(event) => storefrontFilterStore.setSearchQuery(event.target.value)}
               onKeyDown={(event) => {
                 if (event.key === "Enter") showMatchingProducts();
               }}
               placeholder="Search seeds, fertilizers, pesticides, brands..."
-              className="h-12 rounded-2xl bg-background pl-12 pr-4"
+              className="h-12 rounded-2xl bg-background pl-12 pr-4 text-base sm:h-13"
               aria-label="Search the published catalog"
             />
           </div>
@@ -70,7 +71,7 @@ export function SmartShoppingSection() {
                   storefrontFilterStore.setSearchQuery(term);
                   showMatchingProducts();
                 }}
-                className="rounded-full border border-border bg-background px-3 py-1.5 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
+                className="min-h-10 rounded-full border border-border bg-background px-3.5 py-2 text-xs font-medium transition-colors hover:border-primary/40 hover:bg-primary/5 hover:text-primary"
               >
                 {term}
               </button>
@@ -79,7 +80,7 @@ export function SmartShoppingSection() {
               <span className="text-sm text-muted-foreground">Popular searches will appear as products are published.</span>
             ) : null}
             {searchQuery ? (
-              <Button type="button" variant="ghost" size="sm" className="rounded-full" onClick={() => storefrontFilterStore.clear()}>
+              <Button type="button" variant="ghost" size="sm" className="min-h-10 rounded-full" onClick={() => storefrontFilterStore.clear()}>
                 Clear search
               </Button>
             ) : null}

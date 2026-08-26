@@ -41,7 +41,7 @@ function Index() {
   const sections = usePublicShopStore((s) => [...s.cmsSections].sort((a, b) => a.order - b.order));
   const cms = sections.length ? sections.filter(isActive) : null;
   return (
-    <div className="min-h-screen bg-background">
+    <div id="top" className="min-h-screen bg-background pb-20 md:pb-0">
       <SiteHeader />
       <main>
         {!cms ? (
