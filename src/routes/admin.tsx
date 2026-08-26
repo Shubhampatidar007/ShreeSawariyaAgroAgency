@@ -9,7 +9,7 @@ import { DashboardEnhancements } from "@/components/admin/DashboardEnhancements"
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
-import { loadShopData, useShopStore } from "@/lib/shop-store";
+import { initShopData, useShopStore } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -27,23 +27,17 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
-  const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const shopLoading = useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 2800);
-    return () => window.clearTimeout(timer);
-  }, []);
-
   // IMPORTANT: private shop tables are fetched only after the auth state is
   // ready and the current account has staff/admin access.
   useEffect(() => {
     if (!ready || !user || (user.role !== "admin" && user.role !== "staff")) return;
-    void loadShopData().catch((error) => {
+    void initShopData()?.catch((error) => {
       console.error("Admin shop data load failed:", error);
     });
   }, [ready, user?.id, user?.role]);
@@ -69,8 +63,6 @@ function AdminLayout() {
       </div>
     );
   }
-
-  if (!minimumLoaderDone || shopLoading) return <AdminDataLoader />;
 
   return (
     <div className="min-h-screen bg-background">
