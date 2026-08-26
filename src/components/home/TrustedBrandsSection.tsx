@@ -11,10 +11,8 @@ export function TrustedBrandsSection() {
   const brands = useMemo(() => {
     const unique = new Set<string>();
     for (const product of products) {
-      for (const tag of product.tags ?? []) {
-        const value = tag.trim();
-        if (value) unique.add(value);
-      }
+      const value = product.brand?.trim();
+      if (value) unique.add(value);
     }
     return [...unique].sort((a, b) => a.localeCompare(b));
   }, [products]);
