@@ -13,6 +13,8 @@ export type ShopUser = {
 let user: ShopUser | null = null;
 let ready = false;
 let started = false;
+let sessionHydrationUserId: string | null = null;
+let sessionHydrationPromise: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
 const emit = () => listeners.forEach((l) => l());
@@ -52,18 +54,38 @@ async function hydrate(userId: string, email: string) {
   emit();
 }
 
+async function hydrateSessionOnce(userId: string, email: string) {
+  if (sessionHydrationUserId === userId && user?.id === userId) return;
+
+  if (sessionHydrationPromise && sessionHydrationUserId === userId) {
+    await sessionHydrationPromise;
+    return;
+  }
+
+  sessionHydrationUserId = userId;
+  sessionHydrationPromise = hydrate(userId, email);
+
+  try {
+    await sessionHydrationPromise;
+  } finally {
+    sessionHydrationPromise = null;
+  }
+}
+
 export function initAuth() {
   if (typeof window === "undefined" || started) return;
   started = true;
 
   supabase.auth.onAuthStateChange((_event, session) => {
     if (session?.user) {
-      void hydrate(session.user.id, session.user.email ?? "").catch((error) => {
+      void hydrateSessionOnce(session.user.id, session.user.email ?? "").catch((error) => {
         console.error("[Auth] Failed to hydrate account data:", error);
         user = null;
         emit();
       });
     } else {
+      sessionHydrationUserId = null;
+      sessionHydrationPromise = null;
       user = null;
       emit();
     }
@@ -74,11 +96,13 @@ export function initAuth() {
       console.error("[Auth] Failed to restore session:", error);
     } else if (data.session?.user) {
       try {
-        await hydrate(data.session.user.id, data.session.user.email ?? "");
+        await hydrateSessionOnce(data.session.user.id, data.session.user.email ?? "");
       } catch (hydrateError) {
         console.error("[Auth] Failed to hydrate account data:", hydrateError);
         user = null;
       }
+    } else {
+      sessionHydrationUserId = null;
     }
     ready = true;
     emit();
@@ -162,6 +186,8 @@ export const authStore = {
   },
   async logout() {
     await supabase.auth.signOut();
+    sessionHydrationUserId = null;
+    sessionHydrationPromise = null;
     user = null;
     emit();
   },
