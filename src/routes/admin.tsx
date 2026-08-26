@@ -32,8 +32,6 @@ function AdminLayout() {
   const user = useAuth();
   const ready = useAuthReady();
 
-  // IMPORTANT: private shop tables are fetched only after the auth state is
-  // ready and the current account has staff/admin access.
   useEffect(() => {
     if (!ready || !user || (user.role !== "admin" && user.role !== "staff")) return;
     void initShopData()?.catch((error) => {
@@ -41,7 +39,6 @@ function AdminLayout() {
     });
   }, [ready, user?.id, user?.role]);
 
-  // Do not wait for private tables when the visitor is not staff.
   if (!ready) return <AdminDataLoader />;
 
   if (!user || (user.role !== "admin" && user.role !== "staff")) {
