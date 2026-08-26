@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { ProductCard } from "@/components/home/ProductCard";
@@ -9,22 +10,26 @@ import type { CmsSection } from "@/types/operations";
 export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "headline" | "body"> }) {
   const { t } = useI18n();
   const published = usePublicShopStore((s) => s.products);
-  const publishedCards = published
-    .filter((p) => p.stock > 0 || (p.variants ?? []).some((v) => v.stock > 0))
-    .map((p) => ({
-      id: p.id,
-      name: p.title,
-      category: p.category,
-      price: p.discountPrice ?? p.sellingPrice,
-      unit: p.variants?.[0]?.label ?? "unit",
-      ...(p.featured ? { tag: "Featured" } : {}),
-      rating: 4.6,
-      emoji: p.emoji || "🌾",
-      image: p.images[0],
-      stock: p.stock,
-      variants: p.variants,
-    }));
-  const cards = [...publishedCards, ...featuredProducts].slice(0, 8);
+  const cards = useMemo(() => {
+    const publishedCards = published
+      .filter((p) => p.stock > 0 || (p.variants ?? []).some((v) => v.stock > 0))
+      .map((p) => ({
+        id: p.id,
+        name: p.title,
+        category: p.category,
+        price: p.discountPrice ?? p.sellingPrice,
+        unit: p.variants?.[0]?.label ?? "unit",
+        ...(p.featured ? { tag: "Featured" } : {}),
+        rating: 4.6,
+        emoji: p.emoji || "🌾",
+        image: p.images[0],
+        stock: p.stock,
+        variants: p.variants,
+      }));
+
+    return [...publishedCards, ...featuredProducts].slice(0, 8);
+  }, [published]);
+
   return (
     <section id="products" className="bg-muted/50 py-16">
       <div className="mx-auto max-w-7xl px-6">
