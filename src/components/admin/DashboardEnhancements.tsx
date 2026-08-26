@@ -116,14 +116,13 @@ export function DashboardEnhancements() {
       });
     });
 
-    customerLedger
-      .filter((entry) => (entry.entryType as string) === "sale")
-      .forEach((entry) => {
-        const row = ensure(entry.product);
-        row.quantity += entry.quantity;
-        row.revenue += entry.amount;
-        row.cost += entry.quantity * getPurchasePrice(entry.product);
-      });
+    customerLedger.forEach((entry) => {
+      if ((entry.entryType as string) !== "sale") return;
+      const row = ensure(entry.product);
+      row.quantity += entry.quantity;
+      row.revenue += entry.amount;
+      row.cost += entry.quantity * getPurchasePrice(entry.product);
+    });
 
     return [...map.values()]
       .map((row) => ({ ...row, profit: row.revenue - row.cost }))
@@ -142,10 +141,26 @@ export function DashboardEnhancements() {
   );
 
   const grossMargin = totals.revenue > 0 ? (totals.profit / totals.revenue) * 100 : 0;
-  const outstanding = customers.reduce((sum, customer) => sum + customer.currentDue, 0);
-  const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
+  const accountSummary = useMemo(() => {
+    let outstanding = 0;
+    let dueCustomerCount = 0;
+    let stockValue = 0;
+    let stockUnits = 0;
 
-  const values: Record<
+    for (const customer of customers) {
+      outstanding += customer.currentDue;
+      if (customer.currentDue > 0) dueCustomerCount += 1;
+    }
+
+    for (const item of inventory) {
+      stockValue += item.quantity * item.purchasePrice;
+      stockUnits += item.quantity;
+    }
+
+    return { outstanding, dueCustomerCount, stockValue, stockUnits };
+  }, [customers, inventory]);
+
+  const values = useMemo<Record<
     InsightId,
     {
       label: string;
@@ -155,44 +170,47 @@ export function DashboardEnhancements() {
       icon: LucideIcon;
       accent: string;
     }
-  > = {
-    "top-profit": {
-      label: "Top profit product",
-      title: topProduct?.name ?? "No sales yet",
-      value: topProduct ? formatIndianCompactCurrency(topProduct.profit) : "₹0",
-      helper: topProduct
-        ? `${formatIndianQuantity(topProduct.quantity)} sold · ${formatIndianCompactCurrency(topProduct.revenue)} revenue`
-        : "Create a sale to start product profitability tracking",
-      icon: TrendingUp,
-      accent: topProduct && topProduct.profit >= 0 ? "text-primary" : "text-destructive",
-    },
-    margin: {
-      label: "Gross margin",
-      title: "Across recorded sales",
-      value: `${grossMargin.toFixed(1)}%`,
-      helper: `${formatIndianCompactCurrency(totals.profit)} profit on ${formatIndianCompactCurrency(totals.revenue)} revenue`,
-      icon: Percent,
-      accent: grossMargin >= 0 ? "text-primary" : "text-destructive",
-    },
-    outstanding: {
-      label: "Customer outstanding",
-      title: "Receivables",
-      value: formatIndianCompactCurrency(outstanding),
-      helper: `${customers.filter((customer) => customer.currentDue > 0).length} customer account(s) with dues`,
-      icon: WalletCards,
-      accent: outstanding > 0 ? "text-warning" : "text-primary",
-    },
-    "stock-value": {
-      label: "Inventory value",
-      title: "Current stock at purchase cost",
-      value: formatIndianCompactCurrency(stockValue),
-      helper: `${formatIndianQuantity(inventory.reduce((sum, item) => sum + item.quantity, 0))} total units across ${inventory.length} items`,
-      icon: Package,
-      accent: "text-primary",
-    },
-  };
+  >>(
+    () => ({
+      "top-profit": {
+        label: "Top profit product",
+        title: topProduct?.name ?? "No sales yet",
+        value: topProduct ? formatIndianCompactCurrency(topProduct.profit) : "₹0",
+        helper: topProduct
+          ? `${formatIndianQuantity(topProduct.quantity)} sold · ${formatIndianCompactCurrency(topProduct.revenue)} revenue`
+          : "Create a sale to start product profitability tracking",
+        icon: TrendingUp,
+        accent: topProduct && topProduct.profit >= 0 ? "text-primary" : "text-destructive",
+      },
+      margin: {
+        label: "Gross margin",
+        title: "Across recorded sales",
+        value: `${grossMargin.toFixed(1)}%`,
+        helper: `${formatIndianCompactCurrency(totals.profit)} profit on ${formatIndianCompactCurrency(totals.revenue)} revenue`,
+        icon: Percent,
+        accent: grossMargin >= 0 ? "text-primary" : "text-destructive",
+      },
+      outstanding: {
+        label: "Customer outstanding",
+        title: "Receivables",
+        value: formatIndianCompactCurrency(accountSummary.outstanding),
+        helper: `${accountSummary.dueCustomerCount} customer account(s) with dues`,
+        icon: WalletCards,
+        accent: accountSummary.outstanding > 0 ? "text-warning" : "text-primary",
+      },
+      "stock-value": {
+        label: "Inventory value",
+        title: "Current stock at purchase cost",
+        value: formatIndianCompactCurrency(accountSummary.stockValue),
+        helper: `${formatIndianQuantity(accountSummary.stockUnits)} total units across ${inventory.length} items`,
+        icon: Package,
+        accent: "text-primary",
+      },
+    }),
+    [accountSummary, grossMargin, inventory.length, topProduct, totals],
+  );
 
-  const visible = preferences.filter((item) => item.visible);
+  const visible = useMemo(() => preferences.filter((item) => item.visible), [preferences]);
 
   const move = (id: InsightId, direction: -1 | 1) => {
     setPreferences((current) => {
