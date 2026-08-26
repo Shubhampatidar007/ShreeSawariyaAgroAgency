@@ -212,15 +212,22 @@ export async function loadPublicShopData() {
       ]);
 
       if (productsResult.error) throw productsResult.error;
-      if (testimonialsResult.error) throw testimonialsResult.error;
-      if (cmsResult.error) throw cmsResult.error;
-      if (advertisementsResult.error) throw advertisementsResult.error;
 
       const publishedProductIds = (productsResult.data ?? []).map((product) => product.id);
       const variantsResult = publishedProductIds.length
         ? await supabase.from("product_variants" as any).select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status").eq("status", "active").in("product_id", publishedProductIds)
         : { data: [], error: null };
       if (variantsResult.error) throw variantsResult.error;
+
+      if (testimonialsResult.error) {
+        console.warn("Unable to load public testimonials:", testimonialsResult.error);
+      }
+      if (cmsResult.error) {
+        console.warn("Unable to load public CMS sections:", cmsResult.error);
+      }
+      if (advertisementsResult.error) {
+        console.warn("Unable to load public Deals campaigns:", advertisementsResult.error);
+      }
 
       const variantsByProduct = new Map<string, ProductVariant[]>();
       for (const row of (variantsResult.data ?? []) as VariantRow[]) {
@@ -233,9 +240,9 @@ export async function loadPublicShopData() {
 
       setState({
         products: (productsResult.data ?? []).map((row) => toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? [])),
-        testimonials: (testimonialsResult.data ?? []).map((row) => toTestimonial(row as TestimonialRow)),
-        cmsSections: (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
-        advertisements: (advertisementsResult.data ?? []).map((row) => toAdvertisement(row as AdvertisementRow)),
+        testimonials: testimonialsResult.error ? [] : (testimonialsResult.data ?? []).map((row) => toTestimonial(row as TestimonialRow)),
+        cmsSections: cmsResult.error ? [] : (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
+        advertisements: advertisementsResult.error ? [] : (advertisementsResult.data ?? []).map((row) => toAdvertisement(row as AdvertisementRow)),
         loading: false,
         error: null,
       });
