@@ -26,17 +26,22 @@ export function ProductCard({ product }: { product: Product }) {
   const lowStock = stock < 25;
 
   const addToCart = () => {
-    const cartId = selectedVariant ? `${product.id}:${selectedVariant.id}` : product.id;
+    if (!selectedVariant) {
+      toast.error("This product is missing a product variant.");
+      return;
+    }
+
     cartStore.add({
-      id: cartId,
+      id: `${product.id}:${selectedVariant.id}`,
       title: product.name,
       price,
       unit,
       emoji: product.emoji,
-      ...(selectedVariant ? { productId: product.id, productVariantId: selectedVariant.id } : {}),
+      productId: product.id,
+      productVariantId: selectedVariant.id,
     });
     toast.success(t("cart.added", "Added to cart"), {
-      description: selectedVariant ? `${product.name} · ${unit}` : product.name,
+      description: `${product.name} · ${unit}`,
     });
   };
 
