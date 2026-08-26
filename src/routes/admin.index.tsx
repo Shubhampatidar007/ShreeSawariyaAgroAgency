@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
@@ -27,10 +27,7 @@ import { StatCard } from "@/components/admin/StatCard";
 import { useAuth } from "@/lib/auth-store";
 import { formatCurrency, useShopStore } from "@/lib/shop-store";
 import { useI18n } from "@/lib/i18n";
-import {
-  getCachedAdminOverviewMetrics,
-  loadAdminOverviewMetrics,
-} from "@/lib/admin-overview-metrics";
+import { buildDailyMetrics } from "@/lib/business-metrics";
 import type { StatItem } from "@/types";
 
 export const Route = createFileRoute("/admin/")({ component: AdminOverview });
@@ -53,32 +50,25 @@ function AdminOverview() {
   const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [salesRange, setSalesRange] = useState<"7D" | "1M" | "3M" | "1Y" | "ALL">("1M");
-  const [metrics, setMetrics] = useState(() => getCachedAdminOverviewMetrics());
-  const [metricsLoading, setMetricsLoading] = useState(() => !getCachedAdminOverviewMetrics());
-  const { customers, inventory, loading } = useShopStore((s) => s);
-
-  useEffect(() => {
-    let active = true;
-    void loadAdminOverviewMetrics()
-      .then((next) => {
-        if (active) setMetrics(next);
-      })
-      .catch((error) => {
-        console.error("Admin overview metrics load failed:", error);
-      })
-      .finally(() => {
-        if (active) setMetricsLoading(false);
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
-
-  const dailyRows = metrics?.dailyRows ?? [];
-  const todayMetrics = metrics?.today;
-  const visibleProfitRows = useMemo(() => dailyRows.slice(-7), [dailyRows]);
+  const { orders, customers, inventory, supplierLedger, customerLedger, payments, loading } =
+    useShopStore((s) => s);
   const today = new Date().toISOString().slice(0, 10);
+  const dailyRows = useMemo(
+    () => buildDailyMetrics(orders, customerLedger, supplierLedger, inventory, "yearly"),
+    [orders, customerLedger, supplierLedger, inventory],
+  );
+  const visibleProfitRows = useMemo(() => dailyRows.slice(-7), [dailyRows]);
+  const todaysOrders = orders.filter((order) => order.placedOn.slice(0, 10) === today);
+  const todaysKhataSales = customerLedger.filter(
+    (entry) => (entry.entryType as string) === "sale" && entry.date.slice(0, 10) === today,
+  );
+  const todaysSales =
+    todaysOrders.reduce((sum, order) => sum + order.total, 0) +
+    todaysKhataSales.reduce((sum, entry) => sum + entry.amount, 0);
+  const todaysCollected =
+    todaysOrders.reduce((sum, order) => sum + order.paid, 0) +
+    todaysKhataSales.reduce((sum, entry) => sum + entry.payment, 0);
+  const todaysBillCount = todaysOrders.length + todaysKhataSales.length;
   const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
   const lowStockItems = inventory.filter((item) => item.quantity <= item.minStockLevel);
   const activeCustomers = customers.filter((customer) => customer.status === "active");
@@ -86,11 +76,9 @@ function AdminOverview() {
     {
       id: "sales",
       label: t("admin.overview.stats.sales"),
-      value: formatCurrency(todayMetrics?.sales ?? 0),
-      helper: t("admin.overview.stats.salesHelper", { count: todayMetrics?.billCount ?? 0 }),
-      change: t("admin.overview.stats.collected", {
-        amount: formatCurrency(todayMetrics?.collected ?? 0),
-      }),
+      value: formatCurrency(todaysSales),
+      helper: t("admin.overview.stats.salesHelper", { count: todaysBillCount }),
+      change: t("admin.overview.stats.collected", { amount: formatCurrency(todaysCollected) }),
       trend: "up",
       icon: IndianRupee,
     },
@@ -108,12 +96,10 @@ function AdminOverview() {
     {
       id: "customers",
       label: t("admin.overview.stats.customers"),
-      value: String(todayMetrics?.activeCustomers ?? activeCustomers.length),
-      helper: t("admin.overview.stats.customersHelper", {
-        count: todayMetrics?.customerCount ?? customers.length,
-      }),
+      value: String(activeCustomers.length),
+      helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
       change: t("admin.overview.stats.due", {
-        amount: formatCurrency(todayMetrics?.customerDue ?? 0),
+        amount: formatCurrency(customers.reduce((sum, customer) => sum + customer.currentDue, 0)),
       }),
       trend: "flat",
       icon: Users,
@@ -121,13 +107,12 @@ function AdminOverview() {
     {
       id: "alerts",
       label: t("admin.overview.stats.alerts"),
-      value: String(todayMetrics?.lowStockCount ?? lowStockItems.length),
+      value: String(lowStockItems.length),
       helper: t("admin.overview.stats.alertsHelper"),
-      change:
-        (todayMetrics?.lowStockCount ?? lowStockItems.length) > 0
-          ? t("admin.overview.stats.actionNeeded")
-          : t("admin.overview.stats.allHealthy"),
-      trend: (todayMetrics?.lowStockCount ?? lowStockItems.length) ? "down" : "up",
+      change: lowStockItems.length
+        ? t("admin.overview.stats.actionNeeded")
+        : t("admin.overview.stats.allHealthy"),
+      trend: lowStockItems.length ? "down" : "up",
       icon: AlertTriangle,
     },
   ];
@@ -151,8 +136,6 @@ function AdminOverview() {
     [salesChartRows],
   );
   const overallProfit = visibleProfitRows.reduce((sum, row) => sum + row.profit, 0);
-  const viewLoading = loading || metricsLoading;
-
   return (
     <div className="space-y-6">
       <ScrollReveal direction="up" distance={18} duration={550}>
@@ -183,7 +166,7 @@ function AdminOverview() {
             scale={0.97}
             blur={2}
           >
-            <StatCard stat={stat} loading={viewLoading} />
+            <StatCard stat={stat} loading={loading} />
           </ScrollReveal>
         ))}
       </div>
@@ -235,7 +218,7 @@ function AdminOverview() {
             </div>
           </CardHeader>
           <CardContent className="h-[370px] pt-0">
-            {viewLoading ? (
+            {loading ? (
               <div className="flex h-full flex-col justify-end gap-4 py-6">
                 <Skeleton className="h-1/2 w-full" />
               </div>
@@ -302,7 +285,7 @@ function AdminOverview() {
             </Badge>
           </CardHeader>
           <CardContent className="p-0">
-            {viewLoading ? (
+            {loading ? (
               <div className="space-y-3 p-6">
                 {Array.from({ length: 5 }).map((_, index) => (
                   <Skeleton key={index} className="h-10 w-full" />
@@ -362,31 +345,35 @@ function AdminOverview() {
           <div className="space-y-2 text-sm">
             <SummaryRow
               label={t("admin.overview.dayCloseBillsGenerated")}
-              value={viewLoading ? "—" : String(todayMetrics?.billCount ?? 0)}
+              value={loading ? "—" : String(todaysBillCount)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseTotalSales")}
-              value={viewLoading ? "—" : formatCurrency(todayMetrics?.sales ?? 0)}
+              value={loading ? "—" : formatCurrency(todaysSales)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseAmountCollected")}
-              value={viewLoading ? "—" : formatCurrency(todayMetrics?.collected ?? 0)}
+              value={loading ? "—" : formatCurrency(todaysCollected)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseOutstanding")}
-              value={
-                viewLoading
-                  ? "—"
-                  : formatCurrency(Math.max((todayMetrics?.sales ?? 0) - (todayMetrics?.collected ?? 0), 0))
-              }
+              value={loading ? "—" : formatCurrency(Math.max(todaysSales - todaysCollected, 0))}
             />
             <SummaryRow
               label={t("admin.overview.dayClosePaymentsRecorded")}
-              value={viewLoading ? "—" : String(todayMetrics?.paymentsCount ?? 0)}
+              value={
+                loading
+                  ? "—"
+                  : String(payments.filter((payment) => payment.date.slice(0, 10) === today).length)
+              }
             />
             <SummaryRow
               label="Today's gross profit"
-              value={viewLoading ? "—" : formatCurrency(todayMetrics?.profit ?? 0)}
+              value={
+                loading
+                  ? "—"
+                  : formatCurrency(dailyRows.find((row) => row.date === today)?.profit ?? 0)
+              }
             />
           </div>
           <Button className="w-full rounded-full" onClick={() => window.print()}>

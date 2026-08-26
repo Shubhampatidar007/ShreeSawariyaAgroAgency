@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
@@ -23,7 +23,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { useShopStore } from "@/lib/shop-store";
-import { loadAdminOverviewMetrics, getCachedAdminOverviewMetrics } from "@/lib/admin-overview-metrics";
 import { formatIndianCompactCurrency, formatIndianQuantity } from "@/lib/indian-format";
 
 type InsightId = "top-profit" | "margin" | "outstanding" | "stock-value";
@@ -50,24 +49,9 @@ const labels: Record<InsightId, string> = {
 };
 
 export function DashboardEnhancements() {
-  const { inventory, customers } = useShopStore((s) => s);
-  const [metrics, setMetrics] = useState(() => getCachedAdminOverviewMetrics());
+  const { orders, customerLedger, inventory, customers } = useShopStore((s) => s);
   const [preferences, setPreferences] = useState<InsightPreference[]>(DEFAULT_PREFERENCES);
   const [customizeOpen, setCustomizeOpen] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-    void loadAdminOverviewMetrics()
-      .then((next) => {
-        if (active) setMetrics(next);
-      })
-      .catch((error) => {
-        console.error("Dashboard insight metrics load failed:", error);
-      });
-    return () => {
-      active = false;
-    };
-  }, []);
 
   useEffect(() => {
     try {
@@ -93,22 +77,73 @@ export function DashboardEnhancements() {
     }
   }, [preferences]);
 
-  const productProfit = metrics?.productProfit ?? [];
+  const inventoryCostByName = useMemo(
+    () =>
+      new Map(inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice])),
+    [inventory],
+  );
+
+  const getPurchasePrice = (name: string) =>
+    inventoryCostByName.get(name.trim().toLowerCase()) ?? 0;
+
+  const productProfit = useMemo(() => {
+    const map = new Map<
+      string,
+      { name: string; quantity: number; revenue: number; cost: number }
+    >();
+
+    const ensure = (name: string) => {
+      const key = name.trim().toLowerCase();
+      const current = map.get(key) ?? {
+        name: name.trim() || "Unknown product",
+        quantity: 0,
+        revenue: 0,
+        cost: 0,
+      };
+      map.set(key, current);
+      return current;
+    };
+
+    orders.forEach((order) => {
+      const subtotal = order.items.reduce((sum, item) => sum + item.amount, 0);
+      const netSubtotal = Math.max(order.subtotal - order.discount, 0);
+      order.items.forEach((item) => {
+        const row = ensure(item.product);
+        const itemRevenue = subtotal > 0 ? (item.amount / subtotal) * netSubtotal : item.amount;
+        row.quantity += item.quantity;
+        row.revenue += itemRevenue;
+        row.cost += item.quantity * getPurchasePrice(item.product);
+      });
+    });
+
+    customerLedger
+      .filter((entry) => (entry.entryType as string) === "sale")
+      .forEach((entry) => {
+        const row = ensure(entry.product);
+        row.quantity += entry.quantity;
+        row.revenue += entry.amount;
+        row.cost += entry.quantity * getPurchasePrice(entry.product);
+      });
+
+    return [...map.values()]
+      .map((row) => ({ ...row, profit: row.revenue - row.cost }))
+      .filter((row) => row.revenue !== 0 || row.cost !== 0)
+      .sort((a, b) => b.profit - a.profit);
+  }, [customerLedger, inventoryCostByName, orders]);
+
   const topProduct = productProfit[0] ?? null;
-  const totals = productProfit.reduce(
-    (acc, row) => ({ revenue: acc.revenue + row.revenue, profit: acc.profit + row.profit }),
-    { revenue: 0, profit: 0 },
+  const totals = useMemo(
+    () =>
+      productProfit.reduce(
+        (acc, row) => ({ revenue: acc.revenue + row.revenue, profit: acc.profit + row.profit }),
+        { revenue: 0, profit: 0 },
+      ),
+    [productProfit],
   );
 
   const grossMargin = totals.revenue > 0 ? (totals.profit / totals.revenue) * 100 : 0;
-  const outstanding = metrics?.today.customerDue ?? customers.reduce((sum, customer) => sum + customer.currentDue, 0);
-  const customersWithDue =
-    metrics?.today.customersWithDue ?? customers.filter((customer) => customer.currentDue > 0).length;
-  const stockValue =
-    metrics?.today.stockValue ?? inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
-  const stockUnits =
-    metrics?.today.stockUnits ?? inventory.reduce((sum, item) => sum + item.quantity, 0);
-  const stockCount = metrics?.today.stockCount ?? inventory.length;
+  const outstanding = customers.reduce((sum, customer) => sum + customer.currentDue, 0);
+  const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
 
   const values: Record<
     InsightId,
@@ -143,7 +178,7 @@ export function DashboardEnhancements() {
       label: "Customer outstanding",
       title: "Receivables",
       value: formatIndianCompactCurrency(outstanding),
-      helper: `${customersWithDue} customer account(s) with dues`,
+      helper: `${customers.filter((customer) => customer.currentDue > 0).length} customer account(s) with dues`,
       icon: WalletCards,
       accent: outstanding > 0 ? "text-warning" : "text-primary",
     },
@@ -151,7 +186,7 @@ export function DashboardEnhancements() {
       label: "Inventory value",
       title: "Current stock at purchase cost",
       value: formatIndianCompactCurrency(stockValue),
-      helper: `${formatIndianQuantity(stockUnits)} total units across ${stockCount} items`,
+      helper: `${formatIndianQuantity(inventory.reduce((sum, item) => sum + item.quantity, 0))} total units across ${inventory.length} items`,
       icon: Package,
       accent: "text-primary",
     },

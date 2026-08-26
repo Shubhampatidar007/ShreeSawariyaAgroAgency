@@ -13,7 +13,6 @@ import {
   isAdminSectionLoaded,
   loadAdminRouteData,
 } from "@/lib/admin-route-data-v2";
-import { loadAdminOverviewData } from "@/lib/admin-overview-data";
 import { ensureAdminProductCatalog } from "@/lib/admin-supporting-data";
 import { cn } from "@/lib/utils";
 
@@ -65,11 +64,7 @@ function AdminLayout() {
     let cancelled = false;
     setSectionLoading(true);
 
-    const loader = location.pathname === "/admin"
-      ? loadAdminOverviewData()
-      : loadAdminRouteData(location.pathname);
-
-    void loader
+    void loadAdminRouteData(location.pathname)
       .then(async () => {
         if (
           location.pathname.startsWith("/admin/customers") ||
