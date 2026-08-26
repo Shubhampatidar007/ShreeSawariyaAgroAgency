@@ -194,7 +194,7 @@ const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
   supplierId: r.supplier_id,
   date: r.entry_date,
-  type: r.entry_type,
+  entryType: r.entry_type,
   reference: r.reference ?? "",
   amount: num(r.amount),
   balance: num(r.balance),
@@ -202,6 +202,7 @@ const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   remarks: r.remarks ?? undefined,
   productName: r.product_name ?? undefined,
   quantity: r.quantity !== undefined ? num(r.quantity) : undefined,
+  unit: r.unit ?? undefined,
   unitPrice: r.rate !== undefined ? num(r.rate) : undefined,
 });
 const toOrder = (r: any): Order => ({
@@ -377,14 +378,9 @@ export async function loadShopData() {
       ]);
 
       const variantsByProduct = new Map<string, ProductVariant[]>();
-
       for (const row of variants.data ?? []) {
         const variant = toProductVariant(row);
-
-        if (!variant.productId) {
-          continue;
-        }
-
+        if (!variant.productId) continue;
         const list = variantsByProduct.get(variant.productId) ?? [];
         list.push(variant);
         variantsByProduct.set(variant.productId, list);
@@ -407,7 +403,6 @@ export async function loadShopData() {
         ads,
         backupRows,
       ].find((result) => result.error);
-
       if (firstError?.error) throw firstError.error;
 
       setState({
