@@ -202,7 +202,6 @@ const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   remarks: r.remarks ?? undefined,
   productName: r.product_name ?? undefined,
   quantity: r.quantity !== undefined ? num(r.quantity) : undefined,
-  unit: r.unit ?? undefined,
   unitPrice: r.rate !== undefined ? num(r.rate) : undefined,
 });
 const toOrder = (r: any): Order => ({
@@ -331,98 +330,114 @@ const toBackup = (r: any): Backup => ({
 });
 
 let loadPromise: Promise<void> | null = null;
+let inFlightLoadPromise: Promise<void> | null = null;
+
 export async function loadShopData() {
-  setState({ loading: true });
-  try {
-   const [
-  notifications,
-  customers,
-  suppliers,
-  inventory,
-  products,
-  variants,
-  customerLedger,
-  supplierLedger,
-  orders,
-  payments,
-  reminders,
-  reminderLogs,
-  cmsSections,
-  ads,
-  backupRows,
-] = await Promise.all([
-      supabase
-        .from("notifications")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(50),
-      supabase.from("customers").select("*").order("name"),
-      supabase.from("suppliers").select("*").order("name"),
-      supabase.from("inventory_items").select("*").order("product_name"),
-      supabase.from("products").select("*").order("published_on", { ascending: false }),
-      supabase.from("product_variants" as any).select("*").eq("status", "active"),
-      supabase.from("customer_transactions").select("*").order("entry_date"),
-      supabase.from("supplier_transactions").select("*").order("entry_date"),
-      supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
-      supabase.from("payments").select("*").order("entry_date", { ascending: false }),
-      supabase.from("reminders").select("*").order("created_at", { ascending: false }),
-      supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
-      supabase.from("cms_sections").select("*").order("sort_order"),
-      supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
-      supabase.from("backups").select("*").order("created_at", { ascending: false }),
-    ]);
-    const variantsByProduct = new Map<string, ProductVariant[]>();
+  if (inFlightLoadPromise) return inFlightLoadPromise;
 
-for (const row of variants.data ?? []) {
-  const variant = toProductVariant(row);
+  inFlightLoadPromise = (async () => {
+    setState({ loading: true });
+    try {
+      const [
+        notifications,
+        customers,
+        suppliers,
+        inventory,
+        products,
+        variants,
+        customerLedger,
+        supplierLedger,
+        orders,
+        payments,
+        reminders,
+        reminderLogs,
+        cmsSections,
+        ads,
+        backupRows,
+      ] = await Promise.all([
+        supabase
+          .from("notifications")
+          .select("*")
+          .order("created_at", { ascending: false })
+          .limit(50),
+        supabase.from("customers").select("*").order("name"),
+        supabase.from("suppliers").select("*").order("name"),
+        supabase.from("inventory_items").select("*").order("product_name"),
+        supabase.from("products").select("*").order("published_on", { ascending: false }),
+        supabase.from("product_variants" as any).select("*").eq("status", "active"),
+        supabase.from("customer_transactions").select("*").order("entry_date"),
+        supabase.from("supplier_transactions").select("*").order("entry_date"),
+        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+        supabase.from("payments").select("*").order("entry_date", { ascending: false }),
+        supabase.from("reminders").select("*").order("created_at", { ascending: false }),
+        supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
+        supabase.from("cms_sections").select("*").order("sort_order"),
+        supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
+        supabase.from("backups").select("*").order("created_at", { ascending: false }),
+      ]);
 
-  if (!variant.productId) {
-    continue;
-  }
+      const variantsByProduct = new Map<string, ProductVariant[]>();
 
-  const list = variantsByProduct.get(variant.productId) ?? [];
-  list.push(variant);
-  variantsByProduct.set(variant.productId, list);
-}
-   const firstError = [
-  notifications,
-  customers,
-  suppliers,
-  inventory,
-  products,
-  variants,
-  customerLedger,
-      supplierLedger,
-      orders,
-      payments,
-      reminders,
-      reminderLogs,
-      cmsSections,
-      ads,
-      backupRows,
-    ].find((result) => result.error);
-    if (firstError?.error) throw firstError.error;
-    setState({
-      notifications: (notifications.data ?? []).map(toNotification),
-      customers: (customers.data ?? []).map(toCustomer),
-      suppliers: (suppliers.data ?? []).map(toSupplier),
-      inventory: (inventory.data ?? []).map(toInventory),
-    products: (products.data ?? []).map((row) =>toProduct(row,variantsByProduct.get(row.id) ?? [],),),
-      customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-      supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-      orders: (orders.data ?? []).map(toOrder),
-      payments: (payments.data ?? []).map(toPayment),
-      reminders: (reminders.data ?? []).map(toReminder),
-      reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
-      cmsSections: (cmsSections.data ?? []).map(toCms),
-      advertisements: (ads.data ?? []).map(toAd),
-      backups: (backupRows.data ?? []).map(toBackup),
-      loading: false,
-    });
-  } catch (error) {
-    setState({ loading: false });
-    throw error;
-  }
+      for (const row of variants.data ?? []) {
+        const variant = toProductVariant(row);
+
+        if (!variant.productId) {
+          continue;
+        }
+
+        const list = variantsByProduct.get(variant.productId) ?? [];
+        list.push(variant);
+        variantsByProduct.set(variant.productId, list);
+      }
+
+      const firstError = [
+        notifications,
+        customers,
+        suppliers,
+        inventory,
+        products,
+        variants,
+        customerLedger,
+        supplierLedger,
+        orders,
+        payments,
+        reminders,
+        reminderLogs,
+        cmsSections,
+        ads,
+        backupRows,
+      ].find((result) => result.error);
+
+      if (firstError?.error) throw firstError.error;
+
+      setState({
+        notifications: (notifications.data ?? []).map(toNotification),
+        customers: (customers.data ?? []).map(toCustomer),
+        suppliers: (suppliers.data ?? []).map(toSupplier),
+        inventory: (inventory.data ?? []).map(toInventory),
+        products: (products.data ?? []).map((row) =>
+          toProduct(row, variantsByProduct.get(row.id) ?? []),
+        ),
+        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+        supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+        orders: (orders.data ?? []).map(toOrder),
+        payments: (payments.data ?? []).map(toPayment),
+        reminders: (reminders.data ?? []).map(toReminder),
+        reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
+        cmsSections: (cmsSections.data ?? []).map(toCms),
+        advertisements: (ads.data ?? []).map(toAd),
+        backups: (backupRows.data ?? []).map(toBackup),
+        loading: false,
+      });
+    } catch (error) {
+      setState({ loading: false });
+      throw error;
+    } finally {
+      inFlightLoadPromise = null;
+    }
+  })();
+
+  return inFlightLoadPromise;
 }
 
 /** Loads once per session and refreshes whenever any table changes. */
@@ -530,15 +545,15 @@ export const shopStore = {
   }) {
     const { data, error } = await supabase.rpc("create_khata_sale" as any, {
       _customer_id: input.customerId,
-    _items: input.items.map((i) => ({
-  inventory_id: i.inventoryId ?? null,
-  product_id: i.productId ?? null,
-  product_variant_id: i.productVariantId ?? null,
-  product: i.product,
-  quantity: i.quantity,
-  unit: i.unit,
-  rate: i.rate,
-})),
+      _items: input.items.map((i) => ({
+        inventory_id: i.inventoryId ?? null,
+        product_id: i.productId ?? null,
+        product_variant_id: i.productVariantId ?? null,
+        product: i.product,
+        quantity: i.quantity,
+        unit: i.unit,
+        rate: i.rate,
+      })),
       _paid: input.paid,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
