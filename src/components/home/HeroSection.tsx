@@ -1,12 +1,8 @@
 import { motion } from "motion/react";
 import {
   BadgeCheck,
-  Clock,
-  ExternalLink,
   LayoutGrid,
   Leaf,
-  MapPin,
-  Navigation,
   Package,
   Phone,
   ShieldCheck,
@@ -21,8 +17,6 @@ import { usePublicShopStore } from "@/lib/public-shop-store";
 import agroStore from "@/assets/hero-field.jpg";
 import { shopInfo } from "@/data/storefront";
 import type { CmsSection } from "@/types/operations";
-
-const storeLocationUrl = "https://maps.app.goo.gl/CzHvPWcfpA1WQkca6";
 
 export function HeroSection({
   content,
@@ -149,84 +143,6 @@ export function HeroSection({
               decoding="async"
             />
             <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-black/10 to-transparent" />
-
-            <motion.div
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.45, delay: 0.35 }}
-              className="absolute right-5 top-5 left-5 sm:right-7 sm:top-7 sm:left-auto sm:w-[310px]"
-            >
-              <div className="rounded-2xl border border-white/20 bg-card/95 p-4 shadow-xl backdrop-blur-md">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Store location</p>
-                    <h2 className="mt-1 text-base font-bold text-foreground">Visit Shree Sawariya Agro Agency</h2>
-                  </div>
-                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
-                    <MapPin className="size-5" />
-                  </span>
-                </div>
-
-                <div className="mt-4 overflow-hidden rounded-xl border border-border bg-muted">
-                  <a
-                    href={storeLocationUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    aria-label="View Shree Sawariya Agro Agency on Google Maps"
-                    className="relative block aspect-[16/9] overflow-hidden"
-                  >
-                    <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--muted))_0%,hsl(var(--background))_50%,hsl(var(--muted))_100%)]" />
-                    <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(90deg,transparent_0,transparent_48%,hsl(var(--border))_49%,transparent_51%),linear-gradient(0deg,transparent_0,transparent_48%,hsl(var(--border))_49%,transparent_51%)] [background-size:52px_52px]" />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="rounded-full bg-primary/15 p-3 text-primary ring-8 ring-primary/5">
-                        <MapPin className="size-7" />
-                      </div>
-                    </div>
-                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between rounded-lg bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm">
-                      <span>Google Maps location</span>
-                      <ExternalLink className="size-3.5" />
-                    </div>
-                  </a>
-                </div>
-
-                <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-                  <span>{shopInfo.address}</span>
-                </div>
-
-                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-                  <div className="rounded-lg border border-border bg-background/70 p-2.5">
-                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                      <Clock className="size-3.5 text-primary" /> Hours
-                    </div>
-                    <p className="mt-1 text-muted-foreground">{shopInfo.hours}</p>
-                  </div>
-                  <div className="rounded-lg border border-border bg-background/70 p-2.5">
-                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
-                      <Phone className="size-3.5 text-primary" /> Contact
-                    </div>
-                    <a href={`tel:${shopInfo.phone}`} className="mt-1 block text-muted-foreground hover:text-primary">
-                      {shopInfo.phone}
-                    </a>
-                  </div>
-                </div>
-
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Button size="sm" className="rounded-full" asChild>
-                    <a href={storeLocationUrl} target="_blank" rel="noreferrer">
-                      <Navigation className="size-3.5" />
-                      Get Directions
-                    </a>
-                  </Button>
-                  <Button size="sm" variant="outline" className="rounded-full" asChild>
-                    <a href={storeLocationUrl} target="_blank" rel="noreferrer">
-                      <ExternalLink className="size-3.5" />
-                      Open in Google Maps
-                    </a>
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
 
             <motion.div
               initial={{ opacity: 0, y: 20 }}
