@@ -46,7 +46,7 @@ const statusStyles: Record<string, string> = {
   expired: "bg-muted text-muted-foreground",
 };
 
-const placements = ["Homepage hero", "Category banner", "Storefront strip", "Product sidebar"];
+const placements = ["Homepage hero", "Deals", "Category banner", "Storefront strip", "Product sidebar"];
 const audiences = ["All visitors", "Repeat customers", "Wheat growers", "Dairy farmers"];
 
 const today = () => new Date().toISOString().slice(0, 10);

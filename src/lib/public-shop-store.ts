@@ -1,11 +1,13 @@
 import { useSyncExternalStore } from "react";
 import type { PublishedProduct, ProductVariant } from "@/types/business";
+import type { Advertisement } from "@/types";
 import type { CmsSection } from "@/types/operations";
 import { supabase } from "@/integrations/supabase/client";
 
 type PublicShopState = {
   products: PublishedProduct[];
   cmsSections: CmsSection[];
+  advertisements: Advertisement[];
   loading: boolean;
   error: string | null;
 };
@@ -13,6 +15,7 @@ type PublicShopState = {
 let state: PublicShopState = {
   products: [],
   cmsSections: [],
+  advertisements: [],
   loading: true,
   error: null,
 };
@@ -83,6 +86,18 @@ type CmsRow = {
   image_label: string | null;
 };
 
+type AdvertisementRow = {
+  id: string;
+  title: string;
+  placement: string;
+  audience: string;
+  status: Advertisement["status"];
+  impressions: number | null;
+  clicks: number | null;
+  starts_on: string;
+  runs_until: string;
+};
+
 const toVariant = (row: VariantRow): ProductVariant => ({
   id: row.id,
   productId: row.product_id ?? undefined,
@@ -127,6 +142,18 @@ const toCmsSection = (row: CmsRow): CmsSection => ({
   imageLabel: row.image_label ?? "",
 });
 
+const toAdvertisement = (row: AdvertisementRow): Advertisement => ({
+  id: row.id,
+  title: row.title,
+  placement: row.placement,
+  audience: row.audience,
+  status: row.status,
+  impressions: row.impressions ?? 0,
+  clicks: row.clicks ?? 0,
+  startsOn: row.starts_on,
+  runsUntil: row.runs_until,
+});
+
 let loadPromise: Promise<void> | null = null;
 
 export async function loadPublicShopData() {
@@ -137,7 +164,7 @@ export async function loadPublicShopData() {
     setState({ loading: true, error: null });
 
     try {
-      const [productsResult, cmsResult] = await Promise.all([
+      const [productsResult, cmsResult, advertisementsResult] = await Promise.all([
         supabase
           .from("products")
           .select(
@@ -154,10 +181,19 @@ export async function loadPublicShopData() {
           .eq("enabled", true)
           .eq("visibility", "public")
           .order("sort_order"),
+        supabase
+          .from("advertisements")
+          .select("id, title, placement, audience, status, impressions, clicks, starts_on, runs_until")
+          .eq("placement", "Deals")
+          .eq("status", "live")
+          .lte("starts_on", new Date().toISOString().slice(0, 10))
+          .gte("runs_until", new Date().toISOString().slice(0, 10))
+          .order("created_at", { ascending: false }),
       ]);
 
       if (productsResult.error) throw productsResult.error;
       if (cmsResult.error) throw cmsResult.error;
+      if (advertisementsResult.error) throw advertisementsResult.error;
 
       const publishedProductIds = (productsResult.data ?? []).map((product) => product.id);
       const variantsResult = publishedProductIds.length
@@ -184,6 +220,7 @@ export async function loadPublicShopData() {
           toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? []),
         ),
         cmsSections: (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
+        advertisements: (advertisementsResult.data ?? []).map((row) => toAdvertisement(row as AdvertisementRow)),
         loading: false,
         error: null,
       });
