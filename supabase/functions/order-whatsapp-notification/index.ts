@@ -80,6 +80,33 @@ Please check the admin order section for full details.
 🌾 Shree Sawariya Agro Agency`;
 };
 
+const buildPaymentReceiptMessage = (order: any, payment: any) => {
+  const remaining = Math.max(Number(order.total || 0) - Number(order.paid || 0), 0);
+  return `🌾 SHREE SAWARIYA AGRO AGENCY
+
+✅ PAYMENT RECEIVED
+
+Dear ${order.customer_name || "Customer"},
+
+Your payment for order ${order.code} has been recorded successfully.
+
+💰 PAYMENT DETAILS
+━━━━━━━━━━━━━━━━━━
+Amount Collected: ₹${money(payment?.amount)}
+Payment Method: ${payment?.method || order.payment_method || "—"}
+Payment Date: ${formatDateTime(payment?.created_at || new Date().toISOString())}
+
+🧾 ORDER SUMMARY
+━━━━━━━━━━━━━━━━━━
+Order Total: ₹${money(order.total)}
+Total Paid: ₹${money(order.paid)}
+Remaining Due: ₹${money(remaining)}
+
+Thank you for your payment. 🙏
+
+🌾 Shree Sawariya Agro Agency`;
+};
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return json({ ok: false, error: "Only POST is supported." }, 405);
@@ -107,7 +134,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Invalid or expired session." }, 401);
   }
 
-  let payload: { orderId?: string };
+  let payload: { orderId?: string; action?: "order_notification" | "payment_receipt" };
   try {
     payload = await req.json();
   } catch {
@@ -118,7 +145,9 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "orderId is required." }, 400);
   }
 
+  const action = payload.action || "order_notification";
   const admin = createClient(supabaseUrl, serviceRoleKey);
+
   const { data: order, error: orderError } = await admin
     .from("orders")
     .select("*, order_items(*)")
@@ -127,6 +156,92 @@ Deno.serve(async (req) => {
 
   if (orderError || !order) {
     return json({ ok: false, error: orderError?.message || "Order not found." }, 404);
+  }
+
+  if (action === "payment_receipt") {
+    const { data: roleRow, error: roleError } = await admin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+
+    if (roleError || !roleRow) {
+      return json({ ok: false, error: "Admin access required." }, 403);
+    }
+
+    const to = normalizePhone(order.mobile || "");
+    if (!to) return json({ ok: false, error: "Customer mobile number is empty." }, 400);
+
+    const { data: payment, error: paymentError } = await admin
+      .from("payments")
+      .select("amount, method, created_at, entry_date, reference")
+      .eq("order_code", order.code)
+      .eq("direction", "incoming")
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (paymentError) return json({ ok: false, error: paymentError.message }, 500);
+    if (!payment) return json({ ok: false, error: "No collected payment was found for this order." }, 400);
+
+    const endpoint = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`;
+    const message = buildPaymentReceiptMessage(order, payment);
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          recipient_type: "individual",
+          to,
+          type: "text",
+          text: { preview_url: false, body: message },
+        }),
+      });
+
+      const body = await response.json().catch(() => null) as {
+        messages?: Array<{ id?: string }>;
+        error?: { message?: string };
+      } | null;
+
+      const messageId = body?.messages?.[0]?.id;
+
+      if (!response.ok || !messageId) {
+        return json(
+          { ok: false, error: body?.error?.message || `Meta returned HTTP ${response.status}.` },
+          502,
+        );
+      }
+
+      await admin.from("reminder_logs").insert({
+        reminder_title: "WhatsApp online order payment receipt",
+        recipient: order.customer_name || order.mobile || "Online customer",
+        channel: "whatsapp",
+        sent_at: new Date().toISOString(),
+        delivery: "sent",
+        retries: 0,
+      });
+
+      return json({
+        ok: true,
+        action: "payment_receipt",
+        messageId,
+        orderId: order.id,
+        orderCode: order.code,
+        recipient: order.mobile,
+        note: "Payment receipt accepted by Meta Cloud API.",
+      });
+    } catch (error) {
+      return json(
+        { ok: false, error: error instanceof Error ? error.message : "Payment receipt failed." },
+        502,
+      );
+    }
   }
 
   if (!order.customer_id) {
@@ -195,6 +310,7 @@ Deno.serve(async (req) => {
 
     return json({
       ok: true,
+      action: "order_notification",
       messageId,
       orderId: order.id,
       orderCode: order.code,
