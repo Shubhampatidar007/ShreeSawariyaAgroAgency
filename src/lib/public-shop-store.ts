@@ -43,7 +43,7 @@ export function usePublicShopStore<T>(
   );
 
   return selector(snapshot);
-}
+};
 
 const toVariant = (row: any): ProductVariant => ({
   id: row.id,
@@ -117,9 +117,7 @@ export async function loadPublicShopData() {
       ] = await Promise.all([
         supabase
           .from("products")
-          .select(
-            "id, inventory_id, title, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on",
-          )
+          .select("*")
           .eq("visibility", "public")
           .eq("status", "published")
           .order("published_on", {
@@ -131,16 +129,12 @@ export async function loadPublicShopData() {
         // one query until the generated schema is refreshed.
         supabase
           .from("product_variants" as any)
-          .select(
-            "id, product_id, inventory_id, label, selling_price, discount_price, stock, status",
-          )
+          .select("*")
           .eq("status", "active"),
 
         supabase
           .from("cms_sections")
-          .select(
-            "id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label",
-          )
+          .select("*")
           .eq("enabled", true)
           .eq("visibility", "public")
           .order("sort_order"),
@@ -158,7 +152,8 @@ export async function loadPublicShopData() {
         throw cmsResult.error;
       }
 
-      const variantsByProduct = new Map<string, ProductVariant[]>();
+      const variantsByProduct =
+        new Map<string, ProductVariant[]>();
 
       for (const row of variantsResult.data ?? []) {
         const variant = toVariant(row);
@@ -167,19 +162,28 @@ export async function loadPublicShopData() {
           continue;
         }
 
-        const list = variantsByProduct.get(variant.productId) ?? [];
+        const list =
+          variantsByProduct.get(variant.productId) ?? [];
 
         list.push(variant);
 
-        variantsByProduct.set(variant.productId, list);
+        variantsByProduct.set(
+          variant.productId,
+          list,
+        );
       }
 
       setState({
-        products: (productsResult.data ?? []).map((row) =>
-          toProduct(row, variantsByProduct.get(row.id) ?? []),
+        products: (productsResult.data ?? []).map(
+          (row) =>
+            toProduct(
+              row,
+              variantsByProduct.get(row.id) ?? [],
+            ),
         ),
 
-        cmsSections: (cmsResult.data ?? []).map(toCmsSection),
+        cmsSections:
+          (cmsResult.data ?? []).map(toCmsSection),
 
         loading: false,
         error: null,
