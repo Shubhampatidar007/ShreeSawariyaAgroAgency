@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
@@ -50,6 +50,25 @@ function AdminOverview() {
   const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [salesRange, setSalesRange] = useState<"7D" | "1M" | "3M" | "1Y" | "ALL">("1M");
+  const [chartReady, setChartReady] = useState(false);
+
+useEffect(() => {
+  let active = true;
+  let frame1 = 0;
+  let frame2 = 0;
+
+  frame1 = requestAnimationFrame(() => {
+    frame2 = requestAnimationFrame(() => {
+      if (active) setChartReady(true);
+    });
+  });
+
+  return () => {
+    active = false;
+    cancelAnimationFrame(frame1);
+    cancelAnimationFrame(frame2);
+  };
+}, []);
   const { orders, customers, inventory, supplierLedger, customerLedger, payments, loading } =
     useShopStore((s) => s);
   const today = new Date().toISOString().slice(0, 10);
@@ -58,37 +77,83 @@ function AdminOverview() {
     [orders, customerLedger, supplierLedger, inventory],
   );
   const visibleProfitRows = useMemo(() => dailyRows.slice(-7), [dailyRows]);
-  const todaysOrders = orders.filter((order) => order.placedOn.slice(0, 10) === today);
-  const todaysKhataSales = customerLedger.filter(
-    (entry) => (entry.entryType as string) === "sale" && entry.date.slice(0, 10) === today,
+  const dashboardDerived = useMemo(() => {
+    let todaysSales = 0;
+    let todaysCollected = 0;
+    let todaysBillCount = 0;
+    let stockValue = 0;
+    let stockUnits = 0;
+    let lowStockCount = 0;
+    let activeCustomersCount = 0;
+    let customerDue = 0;
+    let todaysPaymentsCount = 0;
+
+    for (const order of orders) {
+      if (order.placedOn.slice(0, 10) !== today) continue;
+      todaysSales += order.total;
+      todaysCollected += order.paid;
+      todaysBillCount += 1;
+    }
+
+    for (const entry of customerLedger) {
+      if ((entry.entryType as string) !== "sale" || entry.date.slice(0, 10) !== today) continue;
+      todaysSales += entry.amount;
+      todaysCollected += entry.payment;
+      todaysBillCount += 1;
+    }
+
+    for (const item of inventory) {
+      stockValue += item.quantity * item.purchasePrice;
+      stockUnits += item.quantity;
+      if (item.quantity <= item.minStockLevel) lowStockCount += 1;
+    }
+
+    for (const customer of customers) {
+      if (customer.status === "active") activeCustomersCount += 1;
+      customerDue += customer.currentDue;
+    }
+
+    for (const payment of payments) {
+      if (payment.date.slice(0, 10) === today) todaysPaymentsCount += 1;
+    }
+
+    return {
+      todaysSales,
+      todaysCollected,
+      todaysBillCount,
+      stockValue,
+      stockUnits,
+      lowStockCount,
+      activeCustomersCount,
+      customerDue,
+      todaysPaymentsCount,
+    };
+  }, [customers, customerLedger, inventory, orders, payments, today]);
+
+  const todaysProfit = useMemo(
+    () => dailyRows.find((row) => row.date === today)?.profit ?? 0,
+    [dailyRows, today],
   );
-  const todaysSales =
-    todaysOrders.reduce((sum, order) => sum + order.total, 0) +
-    todaysKhataSales.reduce((sum, entry) => sum + entry.amount, 0);
-  const todaysCollected =
-    todaysOrders.reduce((sum, order) => sum + order.paid, 0) +
-    todaysKhataSales.reduce((sum, entry) => sum + entry.payment, 0);
-  const todaysBillCount = todaysOrders.length + todaysKhataSales.length;
-  const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
-  const lowStockItems = inventory.filter((item) => item.quantity <= item.minStockLevel);
-  const activeCustomers = customers.filter((customer) => customer.status === "active");
+
   const stats: StatItem[] = [
     {
       id: "sales",
       label: t("admin.overview.stats.sales"),
-      value: formatCurrency(todaysSales),
-      helper: t("admin.overview.stats.salesHelper", { count: todaysBillCount }),
-      change: t("admin.overview.stats.collected", { amount: formatCurrency(todaysCollected) }),
+      value: formatCurrency(dashboardDerived.todaysSales),
+      helper: t("admin.overview.stats.salesHelper", { count: dashboardDerived.todaysBillCount }),
+      change: t("admin.overview.stats.collected", {
+        amount: formatCurrency(dashboardDerived.todaysCollected),
+      }),
       trend: "up",
       icon: IndianRupee,
     },
     {
       id: "stock",
       label: t("admin.overview.stats.stock"),
-      value: formatCurrency(stockValue),
+      value: formatCurrency(dashboardDerived.stockValue),
       helper: t("admin.overview.stats.stockHelper", { count: inventory.length }),
       change: t("admin.overview.stats.units", {
-        count: inventory.reduce((sum, item) => sum + item.quantity, 0),
+        count: dashboardDerived.stockUnits,
       }),
       trend: "flat",
       icon: Package,
@@ -96,10 +161,10 @@ function AdminOverview() {
     {
       id: "customers",
       label: t("admin.overview.stats.customers"),
-      value: String(activeCustomers.length),
+      value: String(dashboardDerived.activeCustomersCount),
       helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
       change: t("admin.overview.stats.due", {
-        amount: formatCurrency(customers.reduce((sum, customer) => sum + customer.currentDue, 0)),
+        amount: formatCurrency(dashboardDerived.customerDue),
       }),
       trend: "flat",
       icon: Users,
@@ -107,12 +172,12 @@ function AdminOverview() {
     {
       id: "alerts",
       label: t("admin.overview.stats.alerts"),
-      value: String(lowStockItems.length),
+      value: String(dashboardDerived.lowStockCount),
       helper: t("admin.overview.stats.alertsHelper"),
-      change: lowStockItems.length
+      change: dashboardDerived.lowStockCount
         ? t("admin.overview.stats.actionNeeded")
         : t("admin.overview.stats.allHealthy"),
-      trend: lowStockItems.length ? "down" : "up",
+      trend: dashboardDerived.lowStockCount ? "down" : "up",
       icon: AlertTriangle,
     },
   ];
@@ -138,7 +203,7 @@ function AdminOverview() {
   const overallProfit = visibleProfitRows.reduce((sum, row) => sum + row.profit, 0);
   return (
     <div className="space-y-6">
-      <ScrollReveal direction="up" distance={18} duration={550}>
+      <ScrollReveal direction="up" distance={12} duration={300}>
         <PageHeader
           eyebrow={t("admin.overview.title")}
           title={`${greeting(t)}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
@@ -159,12 +224,10 @@ function AdminOverview() {
         {stats.map((stat, index) => (
           <ScrollReveal
             key={stat.id}
-            delay={index * 80}
+            delay={index * 40}
             direction="up"
-            distance={24}
-            duration={600}
-            scale={0.97}
-            blur={2}
+            distance={12}
+            duration={300}
           >
             <StatCard stat={stat} loading={loading} />
           </ScrollReveal>
@@ -218,51 +281,58 @@ function AdminOverview() {
             </div>
           </CardHeader>
           <CardContent className="h-[370px] pt-0">
-            {loading ? (
-              <div className="flex h-full flex-col justify-end gap-4 py-6">
-                <Skeleton className="h-1/2 w-full" />
-              </div>
-            ) : !salesChartRows.length ? (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No sales yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesChartRows}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    vertical={false}
-                  />
-                  <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <Tooltip
-                    labelFormatter={(_, payload) =>
-                      payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
-                    }
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
-                      name === "sales" ? "Sales" : "Purchases",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="purchases"
-                    name="purchases"
-                    stroke="var(--color-chart-3)"
-                    fillOpacity={0}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="sales"
-                    name="sales"
-                    stroke="var(--color-chart-1)"
-                    fillOpacity={0.18}
-                    fill="var(--color-chart-1)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+         {loading || !chartReady ? (
+  <div className="flex h-full flex-col justify-end gap-4 py-6">
+    <Skeleton className="h-1/2 w-full" />
+  </div>
+) : !salesChartRows.length ? (
+  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+    No sales yet
+  </div>
+) : (
+  <ResponsiveContainer width="100%" height="100%">
+    <AreaChart data={salesChartRows}>
+      <CartesianGrid
+        strokeDasharray="3 3"
+        stroke="var(--color-border)"
+        vertical={false}
+      />
+      <XAxis
+        dataKey="label"
+        stroke="var(--color-muted-foreground)"
+        fontSize={11}
+      />
+      <YAxis
+        stroke="var(--color-muted-foreground)"
+        fontSize={11}
+      />
+      <Tooltip
+        labelFormatter={(_, payload) =>
+          payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
+        }
+        formatter={(value: number, name: string) => [
+          formatCurrency(value),
+          name === "sales" ? "Sales" : "Purchases",
+        ]}
+      />
+      <Area
+        type="monotone"
+        dataKey="purchases"
+        name="purchases"
+        stroke="var(--color-chart-3)"
+        fillOpacity={0}
+      />
+      <Area
+        type="monotone"
+        dataKey="sales"
+        name="sales"
+        stroke="var(--color-chart-1)"
+        fillOpacity={0.18}
+        fill="var(--color-chart-1)"
+      />
+    </AreaChart>
+  </ResponsiveContainer>
+)}
           </CardContent>
           <div className="flex gap-5 border-t border-border px-6 py-4 text-xs text-muted-foreground">
             <span>Sales: {formatCurrency(chartTotals.sales)}</span>
@@ -345,35 +415,33 @@ function AdminOverview() {
           <div className="space-y-2 text-sm">
             <SummaryRow
               label={t("admin.overview.dayCloseBillsGenerated")}
-              value={loading ? "—" : String(todaysBillCount)}
+              value={loading ? "—" : String(dashboardDerived.todaysBillCount)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseTotalSales")}
-              value={loading ? "—" : formatCurrency(todaysSales)}
+              value={loading ? "—" : formatCurrency(dashboardDerived.todaysSales)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseAmountCollected")}
-              value={loading ? "—" : formatCurrency(todaysCollected)}
+              value={loading ? "—" : formatCurrency(dashboardDerived.todaysCollected)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseOutstanding")}
-              value={loading ? "—" : formatCurrency(Math.max(todaysSales - todaysCollected, 0))}
+              value={
+                loading
+                  ? "—"
+                  : formatCurrency(
+                      Math.max(dashboardDerived.todaysSales - dashboardDerived.todaysCollected, 0),
+                    )
+              }
             />
             <SummaryRow
               label={t("admin.overview.dayClosePaymentsRecorded")}
-              value={
-                loading
-                  ? "—"
-                  : String(payments.filter((payment) => payment.date.slice(0, 10) === today).length)
-              }
+              value={loading ? "—" : String(dashboardDerived.todaysPaymentsCount)}
             />
             <SummaryRow
               label="Today's gross profit"
-              value={
-                loading
-                  ? "—"
-                  : formatCurrency(dailyRows.find((row) => row.date === today)?.profit ?? 0)
-              }
+              value={loading ? "—" : formatCurrency(todaysProfit)}
             />
           </div>
           <Button className="w-full rounded-full" onClick={() => window.print()}>

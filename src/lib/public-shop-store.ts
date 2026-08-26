@@ -18,6 +18,8 @@ let state: PublicShopState = {
 };
 
 const listeners = new Set<() => void>();
+const PUBLIC_CACHE_TTL_MS = 5 * 60 * 1000;
+let loadedAt = 0;
 
 const notify = () => listeners.forEach((listener) => listener());
 
@@ -33,45 +35,72 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => state;
 
-export function usePublicShopStore<T>(
-  selector: (state: PublicShopState) => T,
-): T {
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getSnapshot,
-  );
-
+export function usePublicShopStore<T>(selector: (state: PublicShopState) => T): T {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
   return selector(snapshot);
+}
+
+type VariantRow = {
+  id: string;
+  product_id: string | null;
+  inventory_id: string | null;
+  label: string;
+  selling_price: number | string | null;
+  discount_price: number | string | null;
+  stock: number | string | null;
+  status: string | null;
 };
 
-const toVariant = (row: any): ProductVariant => ({
+type ProductRow = {
+  id: string;
+  inventory_id: string | null;
+  title: string;
+  category: string;
+  selling_price: number | string | null;
+  discount_price: number | string | null;
+  stock: number | string | null;
+  description: string | null;
+  tags: string[] | null;
+  images: string[] | null;
+  emoji: string | null;
+  visibility: string;
+  featured: boolean | null;
+  status: string;
+  published_on: string;
+};
+
+type CmsRow = {
+  id: string;
+  name: string;
+  type: string;
+  enabled: boolean | null;
+  visibility: string;
+  sort_order: number | null;
+  headline: string | null;
+  body: string | null;
+  scheduled_from: string | null;
+  scheduled_to: string | null;
+  image_label: string | null;
+};
+
+const toVariant = (row: VariantRow): ProductVariant => ({
   id: row.id,
   productId: row.product_id ?? undefined,
   inventoryId: row.inventory_id ?? undefined,
   label: row.label,
   sellingPrice: Number(row.selling_price ?? 0),
-  discountPrice:
-    row.discount_price == null
-      ? undefined
-      : Number(row.discount_price),
+  discountPrice: row.discount_price == null ? undefined : Number(row.discount_price),
   stock: Number(row.stock ?? 0),
   status: row.status ?? "active",
 });
 
-const toProduct = (
-  row: any,
-  variants: ProductVariant[],
-): PublishedProduct => ({
+const toProduct = (row: ProductRow, variants: ProductVariant[]): PublishedProduct => ({
   id: row.id,
   inventoryId: row.inventory_id ?? "",
   title: row.title,
   category: row.category,
   sellingPrice: Number(row.selling_price ?? 0),
-  discountPrice:
-    row.discount_price == null
-      ? undefined
-      : Number(row.discount_price),
+  discountPrice: row.discount_price == null ? undefined : Number(row.discount_price),
   stock: Number(row.stock ?? 0),
   description: row.description ?? "",
   tags: row.tags ?? [],
@@ -84,13 +113,13 @@ const toProduct = (
   variants,
 });
 
-const toCmsSection = (row: any): CmsSection => ({
+const toCmsSection = (row: CmsRow): CmsSection => ({
   id: row.id,
   name: row.name,
   type: row.type,
   enabled: !!row.enabled,
   visibility: row.visibility,
-  order: row.sort_order,
+  order: row.sort_order ?? 0,
   headline: row.headline ?? "",
   body: row.body ?? "",
   scheduledFrom: row.scheduled_from ?? undefined,
@@ -102,103 +131,63 @@ let loadPromise: Promise<void> | null = null;
 
 export async function loadPublicShopData() {
   if (loadPromise) return loadPromise;
+  if (loadedAt && Date.now() - loadedAt < PUBLIC_CACHE_TTL_MS) return;
 
   loadPromise = (async () => {
-    setState({
-      loading: true,
-      error: null,
-    });
+    setState({ loading: true, error: null });
 
     try {
-      const [
-        productsResult,
-        variantsResult,
-        cmsResult,
-      ] = await Promise.all([
+      const [productsResult, variantsResult, cmsResult] = await Promise.all([
         supabase
           .from("products")
-          .select("*")
+          .select(
+            "id, inventory_id, title, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on",
+          )
           .eq("visibility", "public")
           .eq("status", "published")
-          .order("published_on", {
-            ascending: false,
-          }),
-
-        // The generated database types predate product_variants. Keep the
-        // existing shared client unchanged and scope the type escape to this
-        // one query until the generated schema is refreshed.
+          .order("published_on", { ascending: false }),
         supabase
           .from("product_variants" as any)
-          .select("*")
+          .select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status")
           .eq("status", "active"),
-
         supabase
           .from("cms_sections")
-          .select("*")
+          .select(
+            "id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label",
+          )
           .eq("enabled", true)
           .eq("visibility", "public")
           .order("sort_order"),
       ]);
 
-      if (productsResult.error) {
-        throw productsResult.error;
-      }
+      if (productsResult.error) throw productsResult.error;
+      if (variantsResult.error) throw variantsResult.error;
+      if (cmsResult.error) throw cmsResult.error;
 
-      if (variantsResult.error) {
-        throw variantsResult.error;
-      }
-
-      if (cmsResult.error) {
-        throw cmsResult.error;
-      }
-
-      const variantsByProduct =
-        new Map<string, ProductVariant[]>();
-
-      for (const row of variantsResult.data ?? []) {
+      const variantsByProduct = new Map<string, ProductVariant[]>();
+      for (const row of (variantsResult.data ?? []) as VariantRow[]) {
         const variant = toVariant(row);
-
-        if (!variant.productId) {
-          continue;
-        }
-
-        const list =
-          variantsByProduct.get(variant.productId) ?? [];
-
+        if (!variant.productId) continue;
+        const list = variantsByProduct.get(variant.productId) ?? [];
         list.push(variant);
-
-        variantsByProduct.set(
-          variant.productId,
-          list,
-        );
+        variantsByProduct.set(variant.productId, list);
       }
 
       setState({
-        products: (productsResult.data ?? []).map(
-          (row) =>
-            toProduct(
-              row,
-              variantsByProduct.get(row.id) ?? [],
-            ),
+        products: (productsResult.data ?? []).map((row) =>
+          toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? []),
         ),
-
-        cmsSections:
-          (cmsResult.data ?? []).map(toCmsSection),
-
+        cmsSections: (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
         loading: false,
         error: null,
       });
+      loadedAt = Date.now();
     } catch (error) {
-      const message =
-        error instanceof Error
-          ? error.message
-          : "Unable to load public shop data";
-
+      loadedAt = 0;
       setState({
         loading: false,
-        error: message,
+        error: error instanceof Error ? error.message : "Unable to load public shop data",
       });
-
       throw error;
     } finally {
       loadPromise = null;
@@ -209,22 +198,11 @@ export async function loadPublicShopData() {
 }
 
 export function initPublicShopData() {
-  if (typeof window === "undefined") {
-    return null;
-  }
+  if (typeof window === "undefined") return null;
 
-  if (
-    !loadPromise &&
-    state.products.length === 0 &&
-    state.cmsSections.length === 0
-  ) {
-    void loadPublicShopData().catch((error) => {
-      console.error(
-        "Public shop data load failed:",
-        error,
-      );
-    });
-  }
+  void loadPublicShopData().catch((error) => {
+    console.error("Public shop data load failed:", error);
+  });
 
   return loadPromise;
 }

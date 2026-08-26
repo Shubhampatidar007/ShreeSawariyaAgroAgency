@@ -185,12 +185,7 @@ export function HeroSection({
           {/* =========================================================
               RIGHT IMAGE
           ========================================================== */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.97 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.1 }}
-            className="relative min-h-[360px] overflow-hidden lg:min-h-full"
-          >
+          <div className="relative min-h-[360px] overflow-hidden lg:min-h-full">
             {/* MAIN IMAGE */}
             <img
               src={agroStore}
@@ -201,6 +196,8 @@ export function HeroSection({
               }
               className="absolute inset-0 size-full object-cover"
               loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
 
             {/* IMAGE OVERLAY */}
@@ -238,7 +235,7 @@ export function HeroSection({
                 </div>
               </div>
             </motion.div>
-          </motion.div>
+          </div>
         </div>
       </div>
     </section>

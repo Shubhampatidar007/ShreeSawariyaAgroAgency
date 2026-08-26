@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, BellRing, PackageCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -15,13 +15,6 @@ import type { InventoryItem } from "@/types/business";
 import { useShopStore } from "@/lib/shop-store";
 
 const SESSION_KEY = "agroshop_low_stock_dismissed";
-
-type LowStockReminder = {
-  id: string;
-  status: string;
-  target: string;
-  sourceId?: string;
-};
 
 function readDismissedIds(): Set<string> {
   if (typeof window === "undefined") return new Set<string>();
@@ -46,34 +39,25 @@ function persistDismissedIds(ids: Set<string>) {
 }
 
 export function LowStockReminderPopup() {
-  const reminders = useShopStore((state) => state.reminders);
   const inventory = useShopStore((state) => state.inventory);
   const [dismissedIds, setDismissedIds] = useState<Set<string>>(() => readDismissedIds());
 
-  const lowStockItems = useMemo(() => {
-    const inventoryById = new Map(inventory.map((item) => [item.id, item]));
+  useEffect(() => {
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      // Ignore storage errors.
+    }
+    setDismissedIds(new Set<string>());
+  }, []);
 
-    return (reminders as LowStockReminder[])
-      .filter(
-        (reminder) =>
-          reminder.status === "active" && reminder.target === "inventory" && !!reminder.sourceId,
-      )
-      .map((reminder) => {
-        const item = reminder.sourceId ? inventoryById.get(reminder.sourceId) : undefined;
-
-        if (!item || item.quantity > item.minStockLevel) return null;
-
-        return { reminder, item };
-      })
-      .filter(
-        (
-          value,
-        ): value is {
-          reminder: LowStockReminder;
-          item: InventoryItem;
-        } => value !== null,
-      );
-  }, [reminders, inventory]);
+  const lowStockItems = useMemo(
+    () =>
+      inventory
+        .filter((item) => item.quantity <= item.minStockLevel)
+        .map((item) => ({ item })),
+    [inventory],
+  );
 
   const visibleItems = useMemo(
     () => lowStockItems.filter(({ item }) => !dismissedIds.has(item.id)),

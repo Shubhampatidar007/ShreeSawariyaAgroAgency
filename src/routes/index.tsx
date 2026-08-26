@@ -10,7 +10,7 @@ import { AboutSection } from "@/components/home/AboutSection";
 import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
 
-const title = "Your Shop";
+const title = "Shree Sawariya Agro Agency";
 const description = "Add your own products, offers, and story to this storefront.";
 
 export const Route = createFileRoute("/")({
