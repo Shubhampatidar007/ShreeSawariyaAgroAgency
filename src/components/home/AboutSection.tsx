@@ -7,10 +7,12 @@ import {
   PackageCheck,
   ShoppingCart,
   Tag,
+  Quote,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { getBusinessStats, type BusinessStats } from "@/lib/business-stats";
+import { shopInfo } from "@/data/storefront";
 import type { CmsSection } from "@/types/operations";
 
 const trustBenefits = [
@@ -69,11 +71,11 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
     <section id="about" className="bg-card py-16">
       <div className="mx-auto max-w-7xl px-6">
         <SectionHeading
-          eyebrow="Why farmers choose us"
-          title={content?.headline || "Practical support from a local agricultural partner"}
+          eyebrow="Why Shree Sawariya Agro Agency"
+          title={content?.headline || "A local agricultural store built around clear, dependable service"}
           description={
             content?.body ||
-            "We focus on genuine products, clear pricing, dependable availability, and straightforward support for local farming needs."
+            `Shree Sawariya Agro Agency serves customers from ${shopInfo.address}. Our published catalog and live stock information are used to keep online ordering clear, while our verified business data reflects ${stats?.yearsInBusiness ?? "our"} years of business and ${stats?.customersServed?.toLocaleString("en-IN") ?? "our customers"} customers served.`
           }
         />
 
@@ -117,6 +119,36 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
               Business statistics are unavailable right now.
             </div>
           )}
+        </div>
+
+        <div className="mt-10 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
+          <Card className="border-border bg-background shadow-soft">
+            <CardContent className="p-6 sm:p-7">
+              <div className="flex items-center gap-2 text-primary">
+                <Quote className="size-5" />
+                <p className="text-xs font-semibold uppercase tracking-[0.15em]">Real business story</p>
+              </div>
+              <h3 className="mt-3 font-display text-2xl font-semibold">Local service, real catalog, clear availability</h3>
+              <p className="mt-3 text-sm leading-7 text-muted-foreground">
+                The storefront is connected to the published catalog, current variant pricing, stock availability, and the store&apos;s business statistics. That keeps what customers see online aligned with the information maintained for the shop.
+              </p>
+              <p className="mt-4 text-sm font-medium text-foreground">{shopInfo.name}</p>
+              <p className="mt-1 text-xs text-muted-foreground">{shopInfo.address} · {shopInfo.hours}</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-border bg-background shadow-soft">
+            <CardContent className="flex h-full flex-col justify-center p-6 sm:p-7">
+              <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">What Our Farmers Say</p>
+              <h3 className="mt-2 font-display text-xl font-semibold">Verified testimonials will appear here</h3>
+              <p className="mt-3 text-sm leading-6 text-muted-foreground">
+                No verified farmer testimonials are currently published. Once real feedback is added, this area can show the farmer&apos;s name, location, and crop without using fabricated quotes.
+              </p>
+              <div className="mt-5 rounded-2xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">
+                No testimonial content to display yet.
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </section>

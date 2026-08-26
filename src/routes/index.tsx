@@ -8,6 +8,7 @@ import { FarmerAdvisorySection } from "@/components/home/FarmerAdvisorySection";
 import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
+import { TrustedBrandsSection } from "@/components/home/TrustedBrandsSection";
 import { AboutSection } from "@/components/home/AboutSection";
 import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
@@ -50,6 +51,7 @@ function Index() {
             <FeaturedProducts />
             <OffersSection />
             <FarmerAdvisorySection />
+            <TrustedBrandsSection />
             <AboutSection />
           </>
         ) : (
