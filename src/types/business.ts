@@ -83,6 +83,15 @@ export type PublishedProduct = {
   variants?: ProductVariant[];
 };
 
+export type Testimonial = {
+  id: string;
+  name: string;
+  location: string;
+  crop: string;
+  quote: string;
+  enabled: boolean;
+};
+
 export type PaymentMethod = "cash" | "upi" | "bank" | "cheque" | "credit";
 
 export type CustomerLedgerEntry = {
