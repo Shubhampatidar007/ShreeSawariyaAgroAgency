@@ -27,11 +27,17 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminLayout() {
+  const [minimumLoaderDone, setMinimumLoaderDone] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
   const shopLoading = useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMinimumLoaderDone(true), 2800);
+    return () => window.clearTimeout(timer);
+  }, []);
 
   // IMPORTANT: private shop tables are fetched only after the auth state is
   // ready and the current account has staff/admin access.
@@ -64,7 +70,7 @@ function AdminLayout() {
     );
   }
 
-  if (shopLoading) return <AdminDataLoader />;
+  if (!minimumLoaderDone || shopLoading) return <AdminDataLoader />;
 
   return (
     <div className="min-h-screen bg-background">
