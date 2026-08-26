@@ -1,95 +1,101 @@
 import { useMemo } from "react";
-import { ArrowUpRight, Check, CircleX } from "lucide-react";
+import {
+  ArrowUpRight,
+  Bug,
+  Check,
+  Droplets,
+  FlaskConical,
+  Sprout,
+  Wheat,
+  Wrench,
+} from "lucide-react";
 import { motion } from "motion/react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SectionHeading } from "@/components/home/SectionHeading";
-import { categories } from "@/data/storefront";
 import { useI18n } from "@/lib/i18n";
 import { usePublicShopStore } from "@/lib/public-shop-store";
 import { storefrontFilterStore, useStorefrontFilters } from "@/lib/storefront-filter-store";
 import type { CmsSection } from "@/types/operations";
 
+const categoryMeta = [
+  { name: "Seeds", icon: Sprout },
+  { name: "Fertilizers", icon: FlaskConical },
+  { name: "Crop Protection", icon: Bug },
+  { name: "Agricultural Supplies", icon: Wheat },
+  { name: "Irrigation", icon: Droplets },
+  { name: "Farm Tools", icon: Wrench },
+] as const;
+
 export function CategorySection({ content }: { content?: Pick<CmsSection, "headline" | "body"> }) {
   const { t } = useI18n();
-  const published = usePublicShopStore((s) => s.products);
-  const loading = usePublicShopStore((s) => s.loading);
-  const selectedCategory = useStorefrontFilters((s) => s.selectedCategory);
+  const published = usePublicShopStore((state) => state.products);
+  const loading = usePublicShopStore((state) => state.loading);
+  const selectedCategory = useStorefrontFilters((state) => state.selectedCategory);
 
-  const catalogCategories = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const product of published) counts.set(product.category, (counts.get(product.category) ?? 0) + 1);
-    return [...counts.entries()]
-      .map(([name, itemCount]) => ({
-        id: name,
+  const categories = useMemo(
+    () =>
+      categoryMeta.map(({ name, icon }) => ({
         name,
-        itemCount,
-        description: "Published products in this catalog category",
-        emoji: categories.find((item) => item.name.toLowerCase() === name.toLowerCase())?.emoji ?? "📦",
-      }))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [published]);
-
-  const cards = catalogCategories.length ? catalogCategories : categories;
+        icon,
+        count: published.filter((product) => product.category.toLowerCase() === name.toLowerCase()).length,
+      })),
+    [published],
+  );
 
   return (
-    <section id="categories" className="mx-auto max-w-7xl px-6 py-16">
-      <SectionHeading
-        eyebrow={t("home.category.eyebrow", "Shop by category")}
-        title={content?.headline || t("home.category.title", "Find products by category")}
-        description={content?.body || t("home.category.description", "Browse the published catalog by category.")}
-      />
-
-      <div className="mt-6 flex flex-wrap items-center gap-2">
-        <Button
-          type="button"
-          variant={selectedCategory === null ? "default" : "outline"}
-          className="rounded-full"
-          onClick={() => storefrontFilterStore.setCategory(null)}
-        >
-          All Products {published.length > 0 ? `· ${published.length}` : ""}
-        </Button>
-        {selectedCategory ? (
-          <Button type="button" variant="ghost" className="rounded-full" onClick={() => storefrontFilterStore.setCategory(null)}>
-            <CircleX className="size-4" /> Clear filter
+    <section id="categories" className="mx-auto max-w-7xl px-6 py-10 sm:py-12 lg:py-14">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <SectionHeading
+          eyebrow={t("home.category.eyebrow", "Shop by category")}
+          title={content?.headline || t("home.category.title", "Find what your farm needs")}
+          description={content?.body || t("home.category.description", "Browse the categories in the live published catalog.")}
+        />
+        <div className="flex items-center gap-2">
+          <p className="text-sm text-muted-foreground">
+            {loading ? "Loading catalog…" : `${published.length} published ${published.length === 1 ? "product" : "products"}`}
+          </p>
+          <Button
+            type="button"
+            variant={selectedCategory === null ? "default" : "outline"}
+            className="rounded-full"
+            onClick={() => storefrontFilterStore.setCategory(null)}
+          >
+            All Products
           </Button>
-        ) : null}
+        </div>
       </div>
 
-      {loading && cards.length === 0 ? (
-        <p className="mt-5 text-sm text-muted-foreground">Loading catalog categories…</p>
-      ) : null}
-
-      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {cards.map((category, index) => {
-          const isSelected = selectedCategory === category.id;
+      <div className="mt-7 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3 xl:grid-cols-6">
+        {categories.map((category, index) => {
+          const isSelected = selectedCategory === category.name;
           return (
             <motion.button
-              key={category.id}
+              key={category.name}
               type="button"
-              className="text-left"
               onClick={() => {
-                storefrontFilterStore.setCategory(isSelected ? null : category.id);
+                storefrontFilterStore.setCategory(isSelected ? null : category.name);
                 document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
-              initial={{ opacity: 0, y: 12 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-60px" }}
-              transition={{ duration: 0.35, delay: index * 0.05 }}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.04 }}
+              className="min-w-[158px] shrink-0 text-left sm:min-w-0"
             >
-              <Card className={`group h-full shadow-soft transition-shadow hover:shadow-lg ${isSelected ? "ring-2 ring-primary" : ""}`}>
-                <CardContent className="flex h-full items-start gap-4 p-5">
-                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-accent/20 text-2xl">{category.emoji}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between gap-2">
-                      <h3 className="font-display text-base font-semibold">{category.name}</h3>
-                      {isSelected ? <Check className="size-4 text-primary" /> : <ArrowUpRight className="size-4 text-muted-foreground transition-colors group-hover:text-primary" />}
-                    </div>
-                    <p className="mt-1 text-sm text-muted-foreground">{category.description}</p>
-                    <p className="mt-3 text-xs font-semibold text-primary">
-                      {category.itemCount} {category.itemCount === 1 ? "product" : "products"} in catalog
-                    </p>
+              <Card className={`h-full rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-lg ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}`}>
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                      <category.icon className="size-5" />
+                    </span>
+                    {isSelected ? <Check className="mt-1 size-4 text-primary" /> : <ArrowUpRight className="mt-1 size-4 text-muted-foreground" />}
                   </div>
+                  <h3 className="mt-4 font-display text-sm font-semibold">{category.name}</h3>
+                  <p className={`mt-1 text-xs ${category.count > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                    {category.count > 0
+                      ? `${category.count} ${category.count === 1 ? "product" : "products"}`
+                      : "Not stocked yet"}
+                  </p>
                 </CardContent>
               </Card>
             </motion.button>
