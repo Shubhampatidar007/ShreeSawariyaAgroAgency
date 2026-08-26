@@ -377,12 +377,9 @@ function OrderViewDialog({
 
       if (sendReceipt) {
         const { error } = await supabase.functions.invoke(
-          "order-whatsapp-notification",
+          "payment-whatsapp-receipt",
           {
-            body: {
-              orderId: order.id,
-              action: "payment_receipt",
-            },
+            body: { orderId: order.id },
           },
         );
 
