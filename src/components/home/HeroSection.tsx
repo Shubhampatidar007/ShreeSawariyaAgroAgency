@@ -1,117 +1,85 @@
 import { motion } from "motion/react";
 import {
   BadgeCheck,
+  Clock,
+  ExternalLink,
+  LayoutGrid,
   Leaf,
+  MapPin,
+  Navigation,
+  Package,
   Phone,
   ShieldCheck,
   ShoppingCart,
   Sprout,
+  Store,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
+import { usePublicShopStore } from "@/lib/public-shop-store";
 import agroStore from "@/assets/hero-field.jpg";
+import { shopInfo } from "@/data/storefront";
 import type { CmsSection } from "@/types/operations";
+
+const storeLocationUrl = "https://maps.app.goo.gl/CzHvPWcfpA1WQkca6";
 
 export function HeroSection({
   content,
 }: {
   content?: Pick<CmsSection, "headline" | "body">;
 }) {
-  const { language, t } = useI18n();
+  const { language } = useI18n();
+  const publishedProducts = usePublicShopStore((s) => s.products);
+  const catalogLoading = usePublicShopStore((s) => s.loading);
 
-  /*
-   * CMS values take priority.
-   * If Homepage CMS has a headline/body, those are displayed.
-   * Otherwise the translated default values are used.
-   */
-  const title =
-    content?.headline ||
-    t("home.hero.title", "श्री सांवरिया एग्रो एजेंसी");
-
+  const title = content?.headline || "Quality agricultural inputs. Better farming outcomes.";
   const subtitle =
     content?.body ||
-    t(
-      "home.hero.subtitle",
-      "उच्च गुणवत्ता के बीज, खाद और कृषि उत्पाद किसानों की समृद्धि के लिए।",
-    );
+    "Trusted seeds, crop inputs, and practical farmer support from Shree Sawariya Agro Agency.";
+
+  const categoryCount = new Set(publishedProducts.map((product) => product.category)).size;
+  const productCount = publishedProducts.length;
 
   const benefits =
     language === "hi"
       ? [
-          {
-            icon: BadgeCheck,
-            title: "गुणवत्तापूर्ण उत्पाद",
-            text: "बेहतर फसल, बेहतर भविष्य",
-          },
-          {
-            icon: ShieldCheck,
-            title: "विश्वसनीय सेवा",
-            text: "हमेशा आपके साथ",
-          },
-          {
-            icon: Sprout,
-            title: "किसानों की प्रगति",
-            text: "हमारी प्राथमिकता",
-          },
+          { icon: BadgeCheck, title: "असली उत्पाद" },
+          { icon: ShieldCheck, title: "तेज़ स्थानीय सेवा" },
+          { icon: Sprout, title: "किसान सहायता" },
         ]
       : [
-          {
-            icon: BadgeCheck,
-            title: "Quality Products",
-            text: "Better crops, better future",
-          },
-          {
-            icon: ShieldCheck,
-            title: "Reliable Service",
-            text: "Always with you",
-          },
-          {
-            icon: Sprout,
-            title: "Farmer Growth",
-            text: "Our priority",
-          },
+          { icon: BadgeCheck, title: "Genuine Products" },
+          { icon: ShieldCheck, title: "Fast Local Service" },
+          { icon: Sprout, title: "Farmer Support" },
         ];
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-5 sm:px-6 lg:px-8 lg:py-7">
-      {/* HERO CONTAINER */}
       <div className="overflow-hidden rounded-[2rem] border border-border/70 bg-card shadow-soft">
-        <div className="grid min-h-[480px] lg:grid-cols-[0.9fr_1.1fr]">
-          {/* =========================================================
-              LEFT CONTENT
-          ========================================================== */}
+        <div className="grid min-h-[560px] lg:grid-cols-[0.92fr_1.08fr]">
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.55 }}
-            className="flex flex-col justify-center px-7 py-9 sm:px-10 lg:px-12 lg:py-12"
+            className="flex flex-col justify-center px-7 py-10 sm:px-10 lg:px-12 lg:py-12"
           >
-            {/* BADGE */}
             <div className="w-fit">
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
                 <Leaf className="size-3.5" />
-
-                {t(
-                  "home.hero.badge",
-                  "आपके भरोसे का साथी",
-                )}
+                Shree Sawariya Agro Agency
               </span>
             </div>
 
-            {/* TITLE */}
-            <h1 className="mt-6 max-w-lg font-display text-4xl font-bold leading-[1.02] tracking-tight text-primary sm:text-5xl lg:text-[3.5rem]">
+            <h1 className="mt-6 max-w-xl font-display text-4xl font-bold leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-[3.65rem]">
               {title}
             </h1>
 
-            {/* DESCRIPTION */}
             <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
               {subtitle}
             </p>
 
-            {/* CTA BUTTONS */}
             <div className="mt-7 flex flex-wrap gap-3">
-              {/* PRODUCTS */}
               <Button
                 size="lg"
                 className="h-12 rounded-xl bg-primary px-6 text-primary-foreground shadow-none hover:bg-primary/90"
@@ -119,119 +87,160 @@ export function HeroSection({
               >
                 <a href="#products">
                   <ShoppingCart className="size-4" />
-
-                  {t(
-                    "home.hero.shopNow",
-                    "हमारे उत्पाद देखें",
-                  )}
+                  Shop Products
                 </a>
               </Button>
 
-              {/* CONTACT */}
               <Button
                 size="lg"
                 variant="outline"
                 className="h-12 rounded-xl border-primary/40 bg-transparent px-6 text-primary shadow-none hover:bg-primary/10 hover:text-primary"
                 asChild
               >
-                <a href="#contact">
+                <a href={`tel:${shopInfo.phone}`}>
                   <Phone className="size-4" />
-
-                  {t(
-                    "home.hero.explore",
-                    "संपर्क करें",
-                  )}
+                  Talk to an Expert
                 </a>
               </Button>
             </div>
 
-            {/* BENEFITS */}
-            <div className="mt-9 grid gap-6 sm:grid-cols-3 lg:gap-5">
+            <div className="mt-9 grid gap-4 sm:grid-cols-3 lg:gap-5">
               {benefits.map((benefit, index) => {
                 const Icon = benefit.icon;
-
                 return (
                   <motion.div
                     key={benefit.title}
                     initial={{ opacity: 0, y: 12 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{
-                      duration: 0.4,
-                      delay: 0.15 + index * 0.08,
-                    }}
+                    transition={{ duration: 0.4, delay: 0.15 + index * 0.08 }}
                     className="flex items-start gap-3"
                   >
-                    {/* ICON */}
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-primary/50 text-primary">
                       <Icon className="size-5" />
                     </span>
-
-                    {/* TEXT */}
-                    <div>
-                      <p className="text-sm font-bold leading-5 text-foreground">
-                        {benefit.title}
-                      </p>
-
-                      <p className="mt-1 text-xs leading-5 text-muted-foreground">
-                        {benefit.text}
-                      </p>
-                    </div>
+                    <p className="pt-1 text-sm font-bold leading-5 text-foreground">{benefit.title}</p>
                   </motion.div>
                 );
               })}
             </div>
+
+            <div className="mt-9 grid max-w-xl grid-cols-2 gap-3 sm:grid-cols-3">
+              <TrustMetric
+                icon={Package}
+                value={catalogLoading ? "—" : String(productCount)}
+                label="Published products"
+              />
+              <TrustMetric
+                icon={LayoutGrid}
+                value={catalogLoading ? "—" : String(categoryCount)}
+                label="Catalog categories"
+              />
+              <TrustMetric icon={Store} value="Local" label="Sitamau service" />
+            </div>
           </motion.div>
 
-          {/* =========================================================
-              RIGHT IMAGE
-          ========================================================== */}
-          <div className="relative min-h-[360px] overflow-hidden lg:min-h-full">
-            {/* MAIN IMAGE */}
+          <div className="relative min-h-[440px] overflow-hidden lg:min-h-full">
             <img
               src={agroStore}
-              alt={
-                language === "hi"
-                  ? "कृषि उत्पाद और बीज की दुकान"
-                  : "Agricultural products and seeds store"
-              }
+              alt="Agricultural field and farm inputs"
               className="absolute inset-0 size-full object-cover"
               loading="eager"
               fetchPriority="high"
               decoding="async"
             />
+            <div className="absolute inset-0 bg-gradient-to-tr from-black/40 via-black/10 to-transparent" />
 
-            {/* IMAGE OVERLAY */}
-            <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent" />
+            <motion.div
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.45, delay: 0.35 }}
+              className="absolute right-5 top-5 left-5 sm:right-7 sm:top-7 sm:left-auto sm:w-[310px]"
+            >
+              <div className="rounded-2xl border border-white/20 bg-card/95 p-4 shadow-xl backdrop-blur-md">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-primary">Store location</p>
+                    <h2 className="mt-1 text-base font-bold text-foreground">Visit Shree Sawariya Agro Agency</h2>
+                  </div>
+                  <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-primary/10 text-primary">
+                    <MapPin className="size-5" />
+                  </span>
+                </div>
 
-            {/* FLOATING CARD */}
+                <div className="mt-4 overflow-hidden rounded-xl border border-border bg-muted">
+                  <a
+                    href={storeLocationUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    aria-label="View Shree Sawariya Agro Agency on Google Maps"
+                    className="relative block aspect-[16/9] overflow-hidden"
+                  >
+                    <div className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--muted))_0%,hsl(var(--background))_50%,hsl(var(--muted))_100%)]" />
+                    <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(90deg,transparent_0,transparent_48%,hsl(var(--border))_49%,transparent_51%),linear-gradient(0deg,transparent_0,transparent_48%,hsl(var(--border))_49%,transparent_51%)] [background-size:52px_52px]" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="rounded-full bg-primary/15 p-3 text-primary ring-8 ring-primary/5">
+                        <MapPin className="size-7" />
+                      </div>
+                    </div>
+                    <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between rounded-lg bg-card/90 px-3 py-2 text-xs font-medium backdrop-blur-sm">
+                      <span>Google Maps location</span>
+                      <ExternalLink className="size-3.5" />
+                    </div>
+                  </a>
+                </div>
+
+                <div className="mt-3 flex items-start gap-2 text-sm text-muted-foreground">
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
+                  <span>{shopInfo.address}</span>
+                </div>
+
+                <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                  <div className="rounded-lg border border-border bg-background/70 p-2.5">
+                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <Clock className="size-3.5 text-primary" /> Hours
+                    </div>
+                    <p className="mt-1 text-muted-foreground">{shopInfo.hours}</p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background/70 p-2.5">
+                    <div className="flex items-center gap-1.5 font-semibold text-foreground">
+                      <Phone className="size-3.5 text-primary" /> Contact
+                    </div>
+                    <a href={`tel:${shopInfo.phone}`} className="mt-1 block text-muted-foreground hover:text-primary">
+                      {shopInfo.phone}
+                    </a>
+                  </div>
+                </div>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Button size="sm" className="rounded-full" asChild>
+                    <a href={storeLocationUrl} target="_blank" rel="noreferrer">
+                      <Navigation className="size-3.5" />
+                      Get Directions
+                    </a>
+                  </Button>
+                  <Button size="sm" variant="outline" className="rounded-full" asChild>
+                    <a href={storeLocationUrl} target="_blank" rel="noreferrer">
+                      <ExternalLink className="size-3.5" />
+                      Open in Google Maps
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            </motion.div>
+
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{
-                duration: 0.45,
-                delay: 0.45,
-              }}
-              className="absolute bottom-7 left-6 right-6 sm:left-7 sm:right-auto sm:max-w-[330px]"
+              transition={{ duration: 0.45, delay: 0.5 }}
+              className="absolute bottom-5 left-5 sm:bottom-7 sm:left-7"
             >
-              <div className="flex items-center gap-4 rounded-2xl border border-primary-foreground/20 bg-primary/95 px-5 py-4 text-primary-foreground shadow-xl backdrop-blur-md">
-                {/* ICON */}
-                <span className="flex size-11 shrink-0 items-center justify-center rounded-full border border-primary-foreground/20 bg-primary-foreground/10">
-                  <Leaf className="size-5" />
+              <div className="flex items-center gap-3 rounded-2xl border border-white/20 bg-primary/95 px-4 py-3 text-primary-foreground shadow-xl backdrop-blur-md">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/10">
+                  <Sprout className="size-5" />
                 </span>
-
-                {/* CONTENT */}
                 <div>
-                  <p className="text-sm font-bold">
-                    {language === "hi"
-                      ? "गुणवत्तापूर्ण कृषि उत्पाद"
-                      : "Quality Agricultural Products"}
-                  </p>
-
-                  <p className="mt-1 text-xs text-primary-foreground/80">
-                    {language === "hi"
-                      ? "बेहतर फसल, बेहतर भविष्य"
-                      : "Better crops, better future"}
-                  </p>
+                  <p className="text-sm font-bold">Farmer-first service</p>
+                  <p className="mt-0.5 text-xs text-primary-foreground/80">Local support for your next crop decision</p>
                 </div>
               </div>
             </motion.div>
@@ -239,5 +248,25 @@ export function HeroSection({
         </div>
       </div>
     </section>
+  );
+}
+
+function TrustMetric({
+  icon: Icon,
+  value,
+  label,
+}: {
+  icon: typeof Package;
+  value: string;
+  label: string;
+}) {
+  return (
+    <div className="rounded-xl border border-border bg-muted/40 px-3 py-3">
+      <div className="flex items-center gap-2 text-primary">
+        <Icon className="size-4" />
+        <span className="font-display text-lg font-bold text-foreground">{value}</span>
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{label}</p>
+    </div>
   );
 }
