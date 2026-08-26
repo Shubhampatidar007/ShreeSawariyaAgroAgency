@@ -29,7 +29,7 @@ export const Route = createFileRoute("/admin")({
 function AdminLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const location = useLocation();
-  const shopLoading = useShopStore((state) => state.loading);
+  useShopStore((state) => state.loading);
   const user = useAuth();
   const ready = useAuthReady();
 
