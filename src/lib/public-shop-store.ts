@@ -58,6 +58,7 @@ type ProductRow = {
   id: string;
   inventory_id: string | null;
   title: string;
+  brand: string | null;
   category: string;
   selling_price: number | string | null;
   discount_price: number | string | null;
@@ -113,6 +114,7 @@ const toProduct = (row: ProductRow, variants: ProductVariant[]): PublishedProduc
   id: row.id,
   inventoryId: row.inventory_id ?? "",
   title: row.title,
+  brand: row.brand?.trim() || undefined,
   category: row.category,
   sellingPrice: Number(row.selling_price ?? 0),
   discountPrice: row.discount_price == null ? undefined : Number(row.discount_price),
@@ -164,11 +166,12 @@ export async function loadPublicShopData() {
     setState({ loading: true, error: null });
 
     try {
+      const today = new Date().toISOString().slice(0, 10);
       const [productsResult, cmsResult, advertisementsResult] = await Promise.all([
         supabase
           .from("products")
           .select(
-            "id, inventory_id, title, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on",
+            "id, inventory_id, title, brand, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on",
           )
           .eq("visibility", "public")
           .eq("status", "published")
@@ -186,8 +189,8 @@ export async function loadPublicShopData() {
           .select("id, title, placement, audience, status, impressions, clicks, starts_on, runs_until")
           .eq("placement", "Deals")
           .eq("status", "live")
-          .lte("starts_on", new Date().toISOString().slice(0, 10))
-          .gte("runs_until", new Date().toISOString().slice(0, 10))
+          .lte("starts_on", today)
+          .gte("runs_until", today)
           .order("created_at", { ascending: false }),
       ]);
 
