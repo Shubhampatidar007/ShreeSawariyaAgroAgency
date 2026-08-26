@@ -12,7 +12,7 @@ import { useAuth, useAuthReady } from "@/lib/auth-store";
 import {
   isAdminSectionLoaded,
   loadAdminRouteData,
-} from "@/lib/admin-route-data";
+} from "@/lib/admin-route-data-v2";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
