@@ -171,6 +171,24 @@ function PublishProductPage() {
         ...draft,
         images: imageUrl ? [imageUrl] : [],
       });
+
+      if (brand.trim()) {
+        const { data: createdProduct, error: lookupError } = await supabase
+          .from("products")
+          .select("id")
+          .eq("inventory_id", inventoryId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        if (lookupError) throw lookupError;
+
+        const { error: brandError } = await supabase
+          .from("products")
+          .update({ brand: brand.trim() } as never)
+          .eq("id", createdProduct.id);
+        if (brandError) throw brandError;
+      }
+
       toast.success("Product published to the storefront");
       navigate({ to: "/admin/products" });
     } catch (error) {
