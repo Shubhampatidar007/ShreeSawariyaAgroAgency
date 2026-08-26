@@ -12,11 +12,6 @@ export type CartItem = {
   productVariantId?: string;
 };
 
-type StoredCartItem = CartItem & {
-  productId?: string;
-  productVariantId?: string;
-};
-
 const STORAGE_KEY = "agrikisan-cart";
 const LEGACY_STORAGE_KEY = "agrikisan-cart-legacy";
 
@@ -88,7 +83,9 @@ export function initCart() {
   listeners.forEach((l) => l());
 }
 
-function effectivePrice(variant: PublishedProduct["variants"][number]) {
+type ProductVariant = NonNullable<PublishedProduct["variants"]>[number];
+
+function effectivePrice(variant: ProductVariant) {
   return variant.discountPrice ?? variant.sellingPrice;
 }
 
