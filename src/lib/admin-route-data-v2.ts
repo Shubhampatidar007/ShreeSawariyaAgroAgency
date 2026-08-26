@@ -318,8 +318,8 @@ async function loadSharedAdminData() {
         .select(NOTIFICATION_FULL)
         .order("created_at", { ascending: false })
         .limit(50),
-      supabase.from("customers").select(CUSTOMER_SUMMARY).order("id").limit(500),
-      supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(500),
+      supabase.from("customers").select(CUSTOMER_SUMMARY).order("id"),
+      supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name"),
       supabase
         .from("reminders")
         .select(REMINDER_FULL)
@@ -365,9 +365,9 @@ async function runSectionLoad(section: AdminSection) {
   switch (section) {
     case "overview": {
       const [orders, customerLedger, supplierLedger] = await Promise.all([
-        supabase.from("orders").select(ORDER_OVERVIEW).order("placed_on", { ascending: false }).limit(500),
-        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(1000),
-        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(1000),
+        supabase.from("orders").select(ORDER_OVERVIEW).order("placed_on", { ascending: false }),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),
       ]);
       const result = [orders, customerLedger, supplierLedger].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -380,8 +380,8 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "customers": {
       const [customers, customerLedger] = await Promise.all([
-        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(1000),
-        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(2000),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name"),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
       ]);
       const result = [customers, customerLedger].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -393,7 +393,7 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "inventory": {
       const [inventory, reminders] = await Promise.all([
-        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(1000),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name"),
         supabase.from("reminders").select(REMINDER_FULL).order("created_at", { ascending: false }).limit(500),
       ]);
       const result = [inventory, reminders].find((r) => r.error);
@@ -406,8 +406,8 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "suppliers": {
       const [suppliers, supplierLedger] = await Promise.all([
-        supabase.from("suppliers").select(SUPPLIER_FULL).order("name").limit(1000),
-        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(2000),
+        supabase.from("suppliers").select(SUPPLIER_FULL).order("name"),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),
       ]);
       const result = [suppliers, supplierLedger].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -419,9 +419,9 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "products": {
       const [products, variants, inventory] = await Promise.all([
-        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
-        supabase.from("product_variants" as any).select(VARIANT_ACTIVE).eq("status", "active").limit(1000),
-        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(1000),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }),
+        supabase.from("product_variants" as any).select(VARIANT_ACTIVE).eq("status", "active"),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name"),
       ]);
       const result = [products, variants, inventory].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -441,8 +441,8 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "sales": {
       const [orders, customers] = await Promise.all([
-        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(1000),
-        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(1000),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name"),
       ]);
       const result = [orders, customers].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -454,8 +454,8 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "payments": {
       const [payments, orders] = await Promise.all([
-        supabase.from("payments").select(PAYMENT_FULL).order("entry_date", { ascending: false }).limit(1000),
-        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(1000),
+        supabase.from("payments").select(PAYMENT_FULL).order("entry_date", { ascending: false }),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }),
       ]);
       const result = [payments, orders].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -498,12 +498,12 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "analytics": {
       const [orders, customerLedger, supplierLedger, inventory, customers, products] = await Promise.all([
-        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(2000),
-        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(5000),
-        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(5000),
-        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(2000),
-        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(2000),
-        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name"),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name"),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }),
       ]);
       const result = [orders, customerLedger, supplierLedger, inventory, customers, products].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -519,9 +519,9 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "search": {
       const [customers, products, orders] = await Promise.all([
-        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(2000),
-        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
-        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(2000),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name"),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }),
       ]);
       const result = [customers, products, orders].find((r) => r.error);
       if (result?.error) throw result.error;
