@@ -379,16 +379,12 @@ async function runSectionLoad(section: AdminSection) {
       return;
     }
     case "customers": {
-      const [customers, customerLedger] = await Promise.all([
-        supabase.from("customers").select(CUSTOMER_FULL).order("name"),
-        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
-      ]);
-      const result = [customers, customerLedger].find((r) => r.error);
-      if (result?.error) throw result.error;
-      applyState({
-        customers: (customers.data ?? []).map(toCustomer),
-        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-      });
+      const { data, error } = await supabase
+        .from("customers")
+        .select(CUSTOMER_FULL)
+        .order("name");
+      if (error) throw error;
+      applyState({ customers: (data ?? []).map(toCustomer) });
       return;
     }
     case "inventory": {
