@@ -10,6 +10,7 @@ import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
 import { TrustedBrandsSection } from "@/components/home/TrustedBrandsSection";
 import { AboutSection } from "@/components/home/AboutSection";
+import { LocationSection } from "@/components/home/LocationSection";
 import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
 
@@ -53,6 +54,7 @@ function Index() {
             <FarmerAdvisorySection />
             <TrustedBrandsSection />
             <AboutSection />
+            <LocationSection />
           </>
         ) : (
           cms.map((section) => <CmsRender key={section.id} section={section} />)
