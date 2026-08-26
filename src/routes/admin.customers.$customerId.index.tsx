@@ -39,7 +39,15 @@ function CustomerDetailPage() {
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
   const ledger = useShopStore((s) => s.customerLedger.filter((e) => e.customerId === customerId));
 
-  const sorted = useMemo(() => [...ledger].sort((a, b) => b.date.localeCompare(a.date)), [ledger]);
+  const sorted = useMemo(() => {
+    return ledger
+      .map((entry, index) => ({ entry, index }))
+      .sort((a, b) => {
+        const dateOrder = b.entry.date.localeCompare(a.entry.date);
+        return dateOrder !== 0 ? dateOrder : b.index - a.index;
+      })
+      .map(({ entry }) => entry);
+  }, [ledger]);
 
   if (!customer) {
     return (
