@@ -30,11 +30,12 @@ export async function loadCustomerKhataPage(
   const { data, error, count } = await supabase
     .from("customer_transactions")
     .select(
-      "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks",
+      "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks,created_at",
       { count: "exact" },
     )
     .eq("customer_id", customerId)
     .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false })
     .range(from, to);
 
   if (error) throw error;
