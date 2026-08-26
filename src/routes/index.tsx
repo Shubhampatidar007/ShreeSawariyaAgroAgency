@@ -4,6 +4,7 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SmartShoppingSection } from "@/components/home/SmartShoppingSection";
+import { FarmerAdvisorySection } from "@/components/home/FarmerAdvisorySection";
 import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
@@ -48,6 +49,7 @@ function Index() {
             <CategorySection />
             <FeaturedProducts />
             <OffersSection />
+            <FarmerAdvisorySection />
             <AboutSection />
           </>
         ) : (
