@@ -106,7 +106,7 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Admin access required." }, 403);
   }
 
-  let payload: { orderId?: string };
+  let payload: { orderId?: string; paymentReference?: string };
   try {
     payload = await req.json();
   } catch {
@@ -132,18 +132,34 @@ Deno.serve(async (req) => {
   const to = normalizePhone(order.mobile || "");
   if (!to) return json({ ok: false, error: "Customer mobile number is empty." }, 400);
 
-  const { data: payment, error: paymentError } = await admin
+  let paymentQuery = admin
     .from("payments")
     .select("amount, method, created_at, entry_date, reference")
     .eq("order_code", order.code)
     .eq("direction", "incoming")
-    .eq("status", "success")
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+    .eq("status", "success");
+
+  const { data: payment, error: paymentError } = payload.paymentReference
+    ? await paymentQuery
+        .eq("reference", payload.paymentReference)
+        .maybeSingle()
+    : await paymentQuery
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
   if (paymentError) return json({ ok: false, error: paymentError.message }, 500);
-  if (!payment) return json({ ok: false, error: "No collected payment was found for this order." }, 400);
+  if (!payment) {
+    return json(
+      {
+        ok: false,
+        error: payload.paymentReference
+          ? "The requested payment record was not found for this order."
+          : "No collected payment was found for this order.",
+      },
+      400,
+    );
+  }
 
   const endpoint = `https://graph.facebook.com/${WHATSAPP_API_VERSION}/${phoneNumberId}/messages`;
   const message = buildPaymentReceiptMessage(order, payment);
@@ -192,6 +208,7 @@ Deno.serve(async (req) => {
       messageId,
       orderId: order.id,
       orderCode: order.code,
+      paymentReference: payment.reference,
       recipient: order.mobile,
       note: "Payment receipt accepted by Meta Cloud API.",
     });
