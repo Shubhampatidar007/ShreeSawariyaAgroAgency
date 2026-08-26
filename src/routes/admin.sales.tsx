@@ -306,7 +306,7 @@ function SalesPage() {
 }
 
 function OrderViewDialog({
-  order,
+  order: incomingOrder,
   customers,
   onClose,
 }: {
@@ -314,6 +314,14 @@ function OrderViewDialog({
   customers: any[];
   onClose: () => void;
 }) {
+  const liveOrder = useShopStore(
+    (s) =>
+      incomingOrder
+        ? s.orders.find((item) => item.id === incomingOrder.id) ?? incomingOrder
+        : null,
+  );
+  const order = liveOrder;
+
   const [saving, setSaving] = useState(false);
   const [packageSentOn, setPackageSentOn] = useState("");
   const [orderStatus, setOrderStatus] = useState<OrderStatus>("pending");
@@ -368,6 +376,8 @@ function OrderViewDialog({
     if (sendReceipt) setPaymentReceiptSending(true);
 
     try {
+      const paymentAttemptStartedAt = new Date().toISOString();
+
       await shopStore.addOnlineOrderPayment({
         orderId: order.id,
         amount,
@@ -376,19 +386,45 @@ function OrderViewDialog({
       });
 
       if (sendReceipt) {
-        const { error } = await supabase.functions.invoke(
-          "payment-whatsapp-receipt",
-          {
-            body: { orderId: order.id },
-          },
-        );
+        const { data: paymentRecord, error: paymentLookupError } = await supabase
+          .from("payments")
+          .select("reference")
+          .eq("order_code", order.code)
+          .eq("direction", "incoming")
+          .eq("status", "success")
+          .eq("amount", amount)
+          .eq("method", paymentMethod)
+          .gte("created_at", paymentAttemptStartedAt)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
 
-        if (error) {
+        if (paymentLookupError) {
           toast.warning(
-            "Payment saved, but the WhatsApp receipt could not be sent.",
+            "Payment saved, but the payment receipt could not be linked to the exact payment record.",
+          );
+        } else if (!paymentRecord?.reference) {
+          toast.warning(
+            "Payment saved, but the exact payment receipt could not be identified, so no receipt was sent.",
           );
         } else {
-          toast.success("Payment saved and receipt sent to the customer.");
+          const { error } = await supabase.functions.invoke(
+            "payment-whatsapp-receipt",
+            {
+              body: {
+                orderId: order.id,
+                paymentReference: paymentRecord.reference,
+              },
+            },
+          );
+
+          if (error) {
+            toast.warning(
+              "Payment saved, but the WhatsApp receipt could not be sent.",
+            );
+          } else {
+            toast.success("Payment saved and receipt sent to the customer.");
+          }
         }
       } else {
         toast.success("Payment added successfully.");
@@ -446,7 +482,6 @@ function OrderViewDialog({
           </DialogHeader>
 
           <div className="space-y-6">
-            {/* CUSTOMER & DELIVERY ADDRESS */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -470,15 +505,12 @@ function OrderViewDialog({
                 />
                 <Info
                   label="Delivery address"
-                  value={
-                    order.deliveryAddress || customer?.address || "—"
-                  }
+                  value={order.deliveryAddress || customer?.address || "—"}
                 />
                 <Info label="Pincode" value={order.pincode || "—"} />
               </CardContent>
             </Card>
 
-            {/* PRODUCTS */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -518,7 +550,6 @@ function OrderViewDialog({
               </CardContent>
             </Card>
 
-            {/* MONEY */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -529,18 +560,9 @@ function OrderViewDialog({
 
               <CardContent className="space-y-5">
                 <div className="grid gap-4 sm:grid-cols-3">
-                  <Info
-                    label="Order total"
-                    value={formatCurrency(order.total)}
-                  />
-                  <Info
-                    label="Total paid"
-                    value={formatCurrency(order.paid)}
-                  />
-                  <Info
-                    label="Remaining"
-                    value={formatCurrency(due)}
-                  />
+                  <Info label="Order total" value={formatCurrency(order.total)} />
+                  <Info label="Total paid" value={formatCurrency(order.paid)} />
+                  <Info label="Remaining" value={formatCurrency(due)} />
                 </div>
 
                 {due === 0 ? (
@@ -557,14 +579,10 @@ function OrderViewDialog({
                   </Button>
                 )}
 
-                <Info
-                  label="Initial payment method"
-                  value={order.paymentMethod}
-                />
+                <Info label="Initial payment method" value={order.paymentMethod} />
               </CardContent>
             </Card>
 
-            {/* SHIPPING */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -588,20 +606,14 @@ function OrderViewDialog({
                   <Label>Order status</Label>
                   <Select
                     value={orderStatus}
-                    onValueChange={(value) =>
-                      setOrderStatus(value as OrderStatus)
-                    }
+                    onValueChange={(value) => setOrderStatus(value as OrderStatus)}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {orderStatuses.map((value) => (
-                        <SelectItem
-                          key={value}
-                          value={value}
-                          className="capitalize"
-                        >
+                        <SelectItem key={value} value={value} className="capitalize">
                           {value}
                         </SelectItem>
                       ))}
@@ -613,23 +625,15 @@ function OrderViewDialog({
                   <Label>Delivery status</Label>
                   <Select
                     value={deliveryStatus}
-                    onValueChange={(value) =>
-                      setDeliveryStatus(
-                        value as Order["deliveryStatus"],
-                      )
-                    }
+                    onValueChange={(value) => setDeliveryStatus(value as Order["deliveryStatus"])}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="not-required">
-                        Not required
-                      </SelectItem>
+                      <SelectItem value="not-required">Not required</SelectItem>
                       <SelectItem value="scheduled">Scheduled</SelectItem>
-                      <SelectItem value="out-for-delivery">
-                        Out for delivery
-                      </SelectItem>
+                      <SelectItem value="out-for-delivery">Out for delivery</SelectItem>
                       <SelectItem value="delivered">Delivered</SelectItem>
                       <SelectItem value="failed">Failed</SelectItem>
                     </SelectContent>
@@ -644,7 +648,6 @@ function OrderViewDialog({
               </CardContent>
             </Card>
 
-            {/* REMARKS */}
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Other information</CardTitle>
@@ -672,26 +675,17 @@ function OrderViewDialog({
           </div>
 
           <DialogFooter>
-            <Button
-              variant="outline"
-              className="rounded-full"
-              onClick={onClose}
-            >
+            <Button variant="outline" className="rounded-full" onClick={onClose}>
               Cancel
             </Button>
 
-            <Button
-              className="rounded-full"
-              onClick={() => void save()}
-              disabled={saving}
-            >
+            <Button className="rounded-full" onClick={() => void save()} disabled={saving}>
               {saving ? "Saving..." : "Save order"}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* ADD PAYMENT DIALOG */}
       <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -724,9 +718,7 @@ function OrderViewDialog({
               <Label>Payment method</Label>
               <Select
                 value={paymentMethod}
-                onValueChange={(value) =>
-                  setPaymentMethod(value as typeof paymentMethod)
-                }
+                onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -778,9 +770,7 @@ function OrderViewDialog({
               onClick={() => void handleAddPayment(true)}
             >
               <MessageCircle className="size-4" />
-              {paymentReceiptSending
-                ? "Saving & sending..."
-                : "Save & send payment receipt"}
+              {paymentReceiptSending ? "Saving & sending..." : "Save & send payment receipt"}
             </Button>
           </DialogFooter>
         </DialogContent>
