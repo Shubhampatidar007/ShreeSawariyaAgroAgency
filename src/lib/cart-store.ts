@@ -90,27 +90,36 @@ function effectivePrice(variant: ProductVariant) {
 }
 
 function resolveItem(item: CartItem, products: PublishedProduct[]): CartItem | null {
-  const product =
-    (item.productId && products.find((candidate) => candidate.id === item.productId)) ??
-    products.find((candidate) => candidate.id === item.id) ??
-    (item.title
-      ? products.find(
-          (candidate) =>
-            candidate.title.trim().toLowerCase() === item.title.trim().toLowerCase(),
-        )
-      : undefined);
+  const productById = item.productId
+    ? products.find((candidate) => candidate.id === item.productId)
+    : undefined;
+
+  const titleMatches = item.title
+    ? products.filter(
+        (candidate) =>
+          candidate.title.trim().toLowerCase() === item.title.trim().toLowerCase(),
+      )
+    : [];
+
+  const product = productById ?? (titleMatches.length === 1 ? titleMatches[0] : undefined);
 
   if (!product) return null;
 
   const variants = product.variants ?? [];
+  const variantById = item.productVariantId
+    ? variants.find((candidate) => candidate.id === item.productVariantId)
+    : undefined;
+
+  const matchingVariants = variants.filter((candidate) => {
+    const sameUnit = !item.unit || candidate.label === item.unit;
+    const samePrice = !Number.isFinite(item.price) || effectivePrice(candidate) === item.price;
+    return sameUnit && samePrice;
+  });
+
   const variant =
-    (item.productVariantId && variants.find((candidate) => candidate.id === item.productVariantId)) ??
+    variantById ??
     (variants.length === 1 ? variants[0] : undefined) ??
-    variants.find((candidate) => {
-      const sameUnit = !item.unit || candidate.label === item.unit;
-      const samePrice = !Number.isFinite(item.price) || effectivePrice(candidate) === item.price;
-      return sameUnit && samePrice;
-    });
+    (matchingVariants.length === 1 ? matchingVariants[0] : undefined);
 
   if (!variant) {
     return {
