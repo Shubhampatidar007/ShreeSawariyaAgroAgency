@@ -95,9 +95,40 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
 
       if (error) throw error;
 
+      const orderId = data ? String(data) : "";
+      let notificationSent = false;
+      let notificationError = "";
+
+      if (orderId) {
+        try {
+          const { data: notification, error: notifyError } = await supabase.functions.invoke(
+            "order-whatsapp-notification",
+            { body: { orderId } },
+          );
+
+          if (notifyError) {
+            notificationError = notifyError.message;
+          } else if (!notification?.ok) {
+            notificationError = notification?.error || "Admin WhatsApp notification failed.";
+          } else {
+            notificationSent = true;
+          }
+        } catch (error) {
+          notificationError = error instanceof Error ? error.message : "Admin WhatsApp notification failed.";
+        }
+      }
+
       cartStore.clear();
       onOpenChange(false);
-      toast.success(`Order placed successfully${data ? ` · ${String(data).slice(0, 8)}` : ""}.`);
+      toast.success(`Order placed successfully${orderId ? ` · ${orderId.slice(0, 8)}` : ""}.`);
+
+      if (notificationSent) {
+        toast.success("Admin WhatsApp notification sent.");
+      } else if (notificationError) {
+        toast.warning("Order was created, but the admin WhatsApp notification could not be sent.");
+        console.error("Order WhatsApp notification failed:", notificationError);
+      }
+
       setName("");
       setMobile("");
       setVillage("");
