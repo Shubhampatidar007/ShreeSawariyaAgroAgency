@@ -23,6 +23,7 @@ type MetricsCacheEntry = {
   range: MetricsRange;
   customFrom: string;
   customTo: string;
+  today: string;
   result: DailyMetric[];
 };
 
@@ -63,6 +64,7 @@ const findCachedMetrics = (
   inventory: InventoryItem[],
   range: MetricsRange,
   custom: MetricsCustomRange,
+  today: string,
 ) =>
   metricsCache.find(
     (entry) =>
@@ -72,7 +74,8 @@ const findCachedMetrics = (
       entry.inventory === inventory &&
       entry.range === range &&
       entry.customFrom === custom.from &&
-      entry.customTo === custom.to,
+      entry.customTo === custom.to &&
+      entry.today === today,
   )?.result;
 
 export const buildDailyMetrics = (
@@ -83,6 +86,7 @@ export const buildDailyMetrics = (
   range: MetricsRange = "yearly",
   custom: MetricsCustomRange = { from: "", to: "" },
 ): DailyMetric[] => {
+  const today = isoDay(new Date().toISOString());
   const cached = findCachedMetrics(
     orders,
     customerLedger,
@@ -90,6 +94,7 @@ export const buildDailyMetrics = (
     inventory,
     range,
     custom,
+    today,
   );
   if (cached) return cached;
 
@@ -103,7 +108,6 @@ export const buildDailyMetrics = (
     return row;
   };
 
-  const today = isoDay(new Date().toISOString());
   const rangeStart =
     range === "custom"
       ? custom.from
@@ -166,6 +170,7 @@ export const buildDailyMetrics = (
     range,
     customFrom: custom.from,
     customTo: custom.to,
+    today,
     result,
   });
   if (metricsCache.length > METRICS_CACHE_LIMIT) metricsCache.pop();
