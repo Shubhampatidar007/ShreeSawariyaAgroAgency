@@ -1,11 +1,12 @@
 import { useSyncExternalStore } from "react";
-import type { PublishedProduct, ProductVariant } from "@/types/business";
+import type { PublishedProduct, ProductVariant, Testimonial } from "@/types/business";
 import type { Advertisement } from "@/types";
 import type { CmsSection } from "@/types/operations";
 import { supabase } from "@/integrations/supabase/client";
 
 type PublicShopState = {
   products: PublishedProduct[];
+  testimonials: Testimonial[];
   cmsSections: CmsSection[];
   advertisements: Advertisement[];
   loading: boolean;
@@ -14,6 +15,7 @@ type PublicShopState = {
 
 let state: PublicShopState = {
   products: [],
+  testimonials: [],
   cmsSections: [],
   advertisements: [],
   loading: true,
@@ -25,17 +27,14 @@ const PUBLIC_CACHE_TTL_MS = 5 * 60 * 1000;
 let loadedAt = 0;
 
 const notify = () => listeners.forEach((listener) => listener());
-
 const setState = (update: Partial<PublicShopState>) => {
   state = { ...state, ...update };
   notify();
 };
-
 const subscribe = (listener: () => void) => {
   listeners.add(listener);
   return () => listeners.delete(listener);
 };
-
 const getSnapshot = () => state;
 
 export function usePublicShopStore<T>(selector: (state: PublicShopState) => T): T {
@@ -71,6 +70,15 @@ type ProductRow = {
   featured: boolean | null;
   status: string;
   published_on: string;
+};
+
+type TestimonialRow = {
+  id: string;
+  name: string;
+  location: string;
+  crop: string;
+  quote: string;
+  enabled: boolean;
 };
 
 type CmsRow = {
@@ -130,6 +138,15 @@ const toProduct = (row: ProductRow, variants: ProductVariant[]): PublishedProduc
   variants,
 });
 
+const toTestimonial = (row: TestimonialRow): Testimonial => ({
+  id: row.id,
+  name: row.name,
+  location: row.location,
+  crop: row.crop,
+  quote: row.quote,
+  enabled: row.enabled,
+});
+
 const toCmsSection = (row: CmsRow): CmsSection => ({
   id: row.id,
   name: row.name,
@@ -164,23 +181,23 @@ export async function loadPublicShopData() {
 
   loadPromise = (async () => {
     setState({ loading: true, error: null });
-
     try {
       const today = new Date().toISOString().slice(0, 10);
-      const [productsResult, cmsResult, advertisementsResult] = await Promise.all([
+      const [productsResult, testimonialsResult, cmsResult, advertisementsResult] = await Promise.all([
         supabase
           .from("products")
-          .select(
-            "id, inventory_id, title, brand, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on",
-          )
+          .select("id, inventory_id, title, brand, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on")
           .eq("visibility", "public")
           .eq("status", "published")
           .order("published_on", { ascending: false }),
         supabase
+          .from("testimonials")
+          .select("id, name, location, crop, quote, enabled")
+          .eq("enabled", true)
+          .order("created_at", { ascending: false }),
+        supabase
           .from("cms_sections")
-          .select(
-            "id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label",
-          )
+          .select("id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label")
           .eq("enabled", true)
           .eq("visibility", "public")
           .order("sort_order"),
@@ -195,18 +212,14 @@ export async function loadPublicShopData() {
       ]);
 
       if (productsResult.error) throw productsResult.error;
+      if (testimonialsResult.error) throw testimonialsResult.error;
       if (cmsResult.error) throw cmsResult.error;
       if (advertisementsResult.error) throw advertisementsResult.error;
 
       const publishedProductIds = (productsResult.data ?? []).map((product) => product.id);
       const variantsResult = publishedProductIds.length
-        ? await supabase
-            .from("product_variants" as any)
-            .select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status")
-            .eq("status", "active")
-            .in("product_id", publishedProductIds)
+        ? await supabase.from("product_variants" as any).select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status").eq("status", "active").in("product_id", publishedProductIds)
         : { data: [], error: null };
-
       if (variantsResult.error) throw variantsResult.error;
 
       const variantsByProduct = new Map<string, ProductVariant[]>();
@@ -219,9 +232,8 @@ export async function loadPublicShopData() {
       }
 
       setState({
-        products: (productsResult.data ?? []).map((row) =>
-          toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? []),
-        ),
+        products: (productsResult.data ?? []).map((row) => toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? [])),
+        testimonials: (testimonialsResult.data ?? []).map((row) => toTestimonial(row as TestimonialRow)),
         cmsSections: (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
         advertisements: (advertisementsResult.data ?? []).map((row) => toAdvertisement(row as AdvertisementRow)),
         loading: false,
@@ -230,25 +242,17 @@ export async function loadPublicShopData() {
       loadedAt = Date.now();
     } catch (error) {
       loadedAt = 0;
-      setState({
-        loading: false,
-        error: error instanceof Error ? error.message : "Unable to load public shop data",
-      });
+      setState({ loading: false, error: error instanceof Error ? error.message : "Unable to load public shop data" });
       throw error;
     } finally {
       loadPromise = null;
     }
   })();
-
   return loadPromise;
 }
 
 export function initPublicShopData() {
   if (typeof window === "undefined") return null;
-
-  void loadPublicShopData().catch((error) => {
-    console.error("Public shop data load failed:", error);
-  });
-
+  void loadPublicShopData().catch((error) => console.error("Public shop data load failed:", error));
   return loadPromise;
 }
