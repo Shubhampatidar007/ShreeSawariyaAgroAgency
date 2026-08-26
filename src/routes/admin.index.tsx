@@ -58,37 +58,83 @@ function AdminOverview() {
     [orders, customerLedger, supplierLedger, inventory],
   );
   const visibleProfitRows = useMemo(() => dailyRows.slice(-7), [dailyRows]);
-  const todaysOrders = orders.filter((order) => order.placedOn.slice(0, 10) === today);
-  const todaysKhataSales = customerLedger.filter(
-    (entry) => (entry.entryType as string) === "sale" && entry.date.slice(0, 10) === today,
+  const dashboardDerived = useMemo(() => {
+    let todaysSales = 0;
+    let todaysCollected = 0;
+    let todaysBillCount = 0;
+    let stockValue = 0;
+    let stockUnits = 0;
+    let lowStockCount = 0;
+    let activeCustomersCount = 0;
+    let customerDue = 0;
+    let todaysPaymentsCount = 0;
+
+    for (const order of orders) {
+      if (order.placedOn.slice(0, 10) !== today) continue;
+      todaysSales += order.total;
+      todaysCollected += order.paid;
+      todaysBillCount += 1;
+    }
+
+    for (const entry of customerLedger) {
+      if ((entry.entryType as string) !== "sale" || entry.date.slice(0, 10) !== today) continue;
+      todaysSales += entry.amount;
+      todaysCollected += entry.payment;
+      todaysBillCount += 1;
+    }
+
+    for (const item of inventory) {
+      stockValue += item.quantity * item.purchasePrice;
+      stockUnits += item.quantity;
+      if (item.quantity <= item.minStockLevel) lowStockCount += 1;
+    }
+
+    for (const customer of customers) {
+      if (customer.status === "active") activeCustomersCount += 1;
+      customerDue += customer.currentDue;
+    }
+
+    for (const payment of payments) {
+      if (payment.date.slice(0, 10) === today) todaysPaymentsCount += 1;
+    }
+
+    return {
+      todaysSales,
+      todaysCollected,
+      todaysBillCount,
+      stockValue,
+      stockUnits,
+      lowStockCount,
+      activeCustomersCount,
+      customerDue,
+      todaysPaymentsCount,
+    };
+  }, [customers, customerLedger, inventory, orders, payments, today]);
+
+  const todaysProfit = useMemo(
+    () => dailyRows.find((row) => row.date === today)?.profit ?? 0,
+    [dailyRows, today],
   );
-  const todaysSales =
-    todaysOrders.reduce((sum, order) => sum + order.total, 0) +
-    todaysKhataSales.reduce((sum, entry) => sum + entry.amount, 0);
-  const todaysCollected =
-    todaysOrders.reduce((sum, order) => sum + order.paid, 0) +
-    todaysKhataSales.reduce((sum, entry) => sum + entry.payment, 0);
-  const todaysBillCount = todaysOrders.length + todaysKhataSales.length;
-  const stockValue = inventory.reduce((sum, item) => sum + item.quantity * item.purchasePrice, 0);
-  const lowStockItems = inventory.filter((item) => item.quantity <= item.minStockLevel);
-  const activeCustomers = customers.filter((customer) => customer.status === "active");
+
   const stats: StatItem[] = [
     {
       id: "sales",
       label: t("admin.overview.stats.sales"),
-      value: formatCurrency(todaysSales),
-      helper: t("admin.overview.stats.salesHelper", { count: todaysBillCount }),
-      change: t("admin.overview.stats.collected", { amount: formatCurrency(todaysCollected) }),
+      value: formatCurrency(dashboardDerived.todaysSales),
+      helper: t("admin.overview.stats.salesHelper", { count: dashboardDerived.todaysBillCount }),
+      change: t("admin.overview.stats.collected", {
+        amount: formatCurrency(dashboardDerived.todaysCollected),
+      }),
       trend: "up",
       icon: IndianRupee,
     },
     {
       id: "stock",
       label: t("admin.overview.stats.stock"),
-      value: formatCurrency(stockValue),
+      value: formatCurrency(dashboardDerived.stockValue),
       helper: t("admin.overview.stats.stockHelper", { count: inventory.length }),
       change: t("admin.overview.stats.units", {
-        count: inventory.reduce((sum, item) => sum + item.quantity, 0),
+        count: dashboardDerived.stockUnits,
       }),
       trend: "flat",
       icon: Package,
@@ -96,10 +142,10 @@ function AdminOverview() {
     {
       id: "customers",
       label: t("admin.overview.stats.customers"),
-      value: String(activeCustomers.length),
+      value: String(dashboardDerived.activeCustomersCount),
       helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
       change: t("admin.overview.stats.due", {
-        amount: formatCurrency(customers.reduce((sum, customer) => sum + customer.currentDue, 0)),
+        amount: formatCurrency(dashboardDerived.customerDue),
       }),
       trend: "flat",
       icon: Users,
@@ -107,12 +153,12 @@ function AdminOverview() {
     {
       id: "alerts",
       label: t("admin.overview.stats.alerts"),
-      value: String(lowStockItems.length),
+      value: String(dashboardDerived.lowStockCount),
       helper: t("admin.overview.stats.alertsHelper"),
-      change: lowStockItems.length
+      change: dashboardDerived.lowStockCount
         ? t("admin.overview.stats.actionNeeded")
         : t("admin.overview.stats.allHealthy"),
-      trend: lowStockItems.length ? "down" : "up",
+      trend: dashboardDerived.lowStockCount ? "down" : "up",
       icon: AlertTriangle,
     },
   ];
@@ -345,35 +391,33 @@ function AdminOverview() {
           <div className="space-y-2 text-sm">
             <SummaryRow
               label={t("admin.overview.dayCloseBillsGenerated")}
-              value={loading ? "—" : String(todaysBillCount)}
+              value={loading ? "—" : String(dashboardDerived.todaysBillCount)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseTotalSales")}
-              value={loading ? "—" : formatCurrency(todaysSales)}
+              value={loading ? "—" : formatCurrency(dashboardDerived.todaysSales)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseAmountCollected")}
-              value={loading ? "—" : formatCurrency(todaysCollected)}
+              value={loading ? "—" : formatCurrency(dashboardDerived.todaysCollected)}
             />
             <SummaryRow
               label={t("admin.overview.dayCloseOutstanding")}
-              value={loading ? "—" : formatCurrency(Math.max(todaysSales - todaysCollected, 0))}
+              value={
+                loading
+                  ? "—"
+                  : formatCurrency(
+                      Math.max(dashboardDerived.todaysSales - dashboardDerived.todaysCollected, 0),
+                    )
+              }
             />
             <SummaryRow
               label={t("admin.overview.dayClosePaymentsRecorded")}
-              value={
-                loading
-                  ? "—"
-                  : String(payments.filter((payment) => payment.date.slice(0, 10) === today).length)
-              }
+              value={loading ? "—" : String(dashboardDerived.todaysPaymentsCount)}
             />
             <SummaryRow
               label="Today's gross profit"
-              value={
-                loading
-                  ? "—"
-                  : formatCurrency(dailyRows.find((row) => row.date === today)?.profit ?? 0)
-              }
+              value={loading ? "—" : formatCurrency(todaysProfit)}
             />
           </div>
           <Button className="w-full rounded-full" onClick={() => window.print()}>
