@@ -9,7 +9,7 @@ import { DashboardEnhancements } from "@/components/admin/DashboardEnhancements"
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
-import { initShopData, useShopStore } from "@/lib/shop-store";
+import { initShopData } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
