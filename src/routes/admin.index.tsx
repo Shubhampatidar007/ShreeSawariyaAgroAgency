@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
@@ -50,6 +50,25 @@ function AdminOverview() {
   const { t } = useI18n();
   const [dayCloseOpen, setDayCloseOpen] = useState(false);
   const [salesRange, setSalesRange] = useState<"7D" | "1M" | "3M" | "1Y" | "ALL">("1M");
+  const [chartReady, setChartReady] = useState(false);
+
+useEffect(() => {
+  let active = true;
+  let frame1 = 0;
+  let frame2 = 0;
+
+  frame1 = requestAnimationFrame(() => {
+    frame2 = requestAnimationFrame(() => {
+      if (active) setChartReady(true);
+    });
+  });
+
+  return () => {
+    active = false;
+    cancelAnimationFrame(frame1);
+    cancelAnimationFrame(frame2);
+  };
+}, []);
   const { orders, customers, inventory, supplierLedger, customerLedger, payments, loading } =
     useShopStore((s) => s);
   const today = new Date().toISOString().slice(0, 10);
@@ -262,51 +281,58 @@ function AdminOverview() {
             </div>
           </CardHeader>
           <CardContent className="h-[370px] pt-0">
-            {loading ? (
-              <div className="flex h-full flex-col justify-end gap-4 py-6">
-                <Skeleton className="h-1/2 w-full" />
-              </div>
-            ) : !salesChartRows.length ? (
-              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-                No sales yet
-              </div>
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={salesChartRows}>
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    stroke="var(--color-border)"
-                    vertical={false}
-                  />
-                  <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
-                  <Tooltip
-                    labelFormatter={(_, payload) =>
-                      payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
-                    }
-                    formatter={(value: number, name: string) => [
-                      formatCurrency(value),
-                      name === "sales" ? "Sales" : "Purchases",
-                    ]}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="purchases"
-                    name="purchases"
-                    stroke="var(--color-chart-3)"
-                    fillOpacity={0}
-                  />
-                  <Area
-                    type="monotone"
-                    dataKey="sales"
-                    name="sales"
-                    stroke="var(--color-chart-1)"
-                    fillOpacity={0.18}
-                    fill="var(--color-chart-1)"
-                  />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
+         {loading || !chartReady ? (
+  <div className="flex h-full flex-col justify-end gap-4 py-6">
+    <Skeleton className="h-1/2 w-full" />
+  </div>
+) : !salesChartRows.length ? (
+  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+    No sales yet
+  </div>
+) : (
+  <ResponsiveContainer width="100%" height="100%">
+    <AreaChart data={salesChartRows}>
+      <CartesianGrid
+        strokeDasharray="3 3"
+        stroke="var(--color-border)"
+        vertical={false}
+      />
+      <XAxis
+        dataKey="label"
+        stroke="var(--color-muted-foreground)"
+        fontSize={11}
+      />
+      <YAxis
+        stroke="var(--color-muted-foreground)"
+        fontSize={11}
+      />
+      <Tooltip
+        labelFormatter={(_, payload) =>
+          payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
+        }
+        formatter={(value: number, name: string) => [
+          formatCurrency(value),
+          name === "sales" ? "Sales" : "Purchases",
+        ]}
+      />
+      <Area
+        type="monotone"
+        dataKey="purchases"
+        name="purchases"
+        stroke="var(--color-chart-3)"
+        fillOpacity={0}
+      />
+      <Area
+        type="monotone"
+        dataKey="sales"
+        name="sales"
+        stroke="var(--color-chart-1)"
+        fillOpacity={0.18}
+        fill="var(--color-chart-1)"
+      />
+    </AreaChart>
+  </ResponsiveContainer>
+)}
           </CardContent>
           <div className="flex gap-5 border-t border-border px-6 py-4 text-xs text-muted-foreground">
             <span>Sales: {formatCurrency(chartTotals.sales)}</span>
