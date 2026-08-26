@@ -137,7 +137,7 @@ export async function loadPublicShopData() {
     setState({ loading: true, error: null });
 
     try {
-      const [productsResult, variantsResult, cmsResult] = await Promise.all([
+      const [productsResult, cmsResult] = await Promise.all([
         supabase
           .from("products")
           .select(
@@ -146,10 +146,6 @@ export async function loadPublicShopData() {
           .eq("visibility", "public")
           .eq("status", "published")
           .order("published_on", { ascending: false }),
-        supabase
-          .from("product_variants" as any)
-          .select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status")
-          .eq("status", "active"),
         supabase
           .from("cms_sections")
           .select(
@@ -161,8 +157,18 @@ export async function loadPublicShopData() {
       ]);
 
       if (productsResult.error) throw productsResult.error;
-      if (variantsResult.error) throw variantsResult.error;
       if (cmsResult.error) throw cmsResult.error;
+
+      const publishedProductIds = (productsResult.data ?? []).map((product) => product.id);
+      const variantsResult = publishedProductIds.length
+        ? await supabase
+            .from("product_variants" as any)
+            .select("id, product_id, inventory_id, label, selling_price, discount_price, stock, status")
+            .eq("status", "active")
+            .in("product_id", publishedProductIds)
+        : { data: [], error: null };
+
+      if (variantsResult.error) throw variantsResult.error;
 
       const variantsByProduct = new Map<string, ProductVariant[]>();
       for (const row of (variantsResult.data ?? []) as VariantRow[]) {

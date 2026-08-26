@@ -11,6 +11,7 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
   const { t } = useI18n();
   const published = usePublicShopStore((s) => s.products);
   const loading = usePublicShopStore((s) => s.loading);
+  const error = usePublicShopStore((s) => s.error);
   const searchQuery = useStorefrontFilters((s) => s.searchQuery);
   const selectedCategory = useStorefrontFilters((s) => s.selectedCategory);
 
@@ -60,10 +61,36 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
           </div>
         </div>
 
-        {loading && published.length === 0 ? (
-          <p className="mt-8 text-sm text-muted-foreground">Loading published products…</p>
+        {error && published.length > 0 ? (
+          <div role="status" className="mt-6 rounded-2xl border border-amber-300/50 bg-amber-50/70 px-4 py-3 text-sm text-amber-900 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+            We’re showing the last available catalog while we retry the latest update.
+          </div>
         ) : null}
-        {!loading && cards.length === 0 ? (
+
+        {loading && published.length === 0 ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4" aria-label="Loading products">
+            {Array.from({ length: 4 }).map((_, index) => (
+              <div key={index} className="overflow-hidden rounded-2xl border border-border bg-card shadow-soft">
+                <div className="aspect-[4/3] animate-pulse bg-muted" />
+                <div className="space-y-3 p-4">
+                  <div className="h-3 w-20 animate-pulse rounded bg-muted" />
+                  <div className="h-5 w-3/4 animate-pulse rounded bg-muted" />
+                  <div className="h-4 w-1/2 animate-pulse rounded bg-muted" />
+                  <div className="h-10 animate-pulse rounded-xl bg-muted" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
+
+        {!loading && error && published.length === 0 ? (
+          <div role="alert" className="mt-8 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+            <p className="font-semibold">We couldn’t load the catalog</p>
+            <p className="mt-1 text-sm text-muted-foreground">Please refresh and try again. Your existing cart items are not affected.</p>
+          </div>
+        ) : null}
+
+        {!loading && !error && cards.length === 0 ? (
           <div className="mt-8 rounded-2xl border border-dashed border-border bg-card p-8 text-center">
             <p className="font-semibold">No matching products</p>
             <p className="mt-1 text-sm text-muted-foreground">
@@ -75,11 +102,13 @@ export function FeaturedProducts({ content }: { content?: Pick<CmsSection, "head
           </div>
         ) : null}
 
-        <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {cards.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {cards.length > 0 ? (
+          <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {cards.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        ) : null}
       </div>
     </section>
   );
