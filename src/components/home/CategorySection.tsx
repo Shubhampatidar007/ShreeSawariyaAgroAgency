@@ -35,9 +35,9 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
   return (
     <section id="categories" className="mx-auto max-w-7xl px-6 py-16">
       <SectionHeading
-        eyebrow={t("home.category.eyebrow")}
-        title={content?.headline || t("home.category.title")}
-        description={content?.body || t("home.category.description")}
+        eyebrow={t("home.category.eyebrow", "Shop by category")}
+        title={content?.headline || t("home.category.title", "Find products by category")}
+        description={content?.body || t("home.category.description", "Browse the published catalog by category.")}
       />
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
