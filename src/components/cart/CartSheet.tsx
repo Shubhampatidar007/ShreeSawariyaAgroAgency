@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Minus, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -7,6 +7,7 @@ import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cartCount, cartStore, cartSubtotal, useCart } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/shop-store";
+import { usePublicShopStore } from "@/lib/public-shop-store";
 import { useI18n } from "@/lib/i18n";
 import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
 import { CheckoutDialog } from "@/components/cart/CheckoutDialog";
@@ -14,6 +15,7 @@ import { useAuth } from "@/lib/auth-store";
 
 export function CartSheet() {
   const items = useCart();
+  const products = usePublicShopStore((state) => state.products);
   const { t } = useI18n();
   const authUser = useAuth();
 
@@ -21,8 +23,15 @@ export function CartSheet() {
   const [authMode, setAuthMode] = useState<AuthMode>("register");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
+  useEffect(() => {
+    if (products.length) {
+      cartStore.hydrateFromProducts(products);
+    }
+  }, [products]);
+
   const count = cartCount(items);
   const subtotal = cartSubtotal(items);
+  const cartReady = items.length > 0 && items.every((item) => item.productId && item.productVariantId);
 
   return (
     <Sheet>
@@ -111,6 +120,7 @@ export function CartSheet() {
               </div>
               <Button
                 className="w-full rounded-full"
+                disabled={!cartReady}
                 onClick={() => {
                   if (!authUser) {
                     setAuthMode("register");
