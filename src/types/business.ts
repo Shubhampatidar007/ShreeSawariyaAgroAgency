@@ -67,6 +67,7 @@ export type PublishedProduct = {
   id: string;
   inventoryId: string;
   title: string;
+  brand?: string;
   category: string;
   sellingPrice: number;
   discountPrice?: number | undefined;
