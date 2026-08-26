@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from "react";
+import type { PublishedProduct } from "@/types/business";
 
 export type CartItem = {
   id: string;
@@ -11,16 +12,43 @@ export type CartItem = {
   productVariantId?: string;
 };
 
+type StoredCartItem = CartItem & {
+  productId?: string;
+  productVariantId?: string;
+};
+
 const STORAGE_KEY = "agrikisan-cart";
+const LEGACY_STORAGE_KEY = "agrikisan-cart-legacy";
 
 let items: CartItem[] = [];
 let hydrated = false;
 const listeners = new Set<() => void>();
 
-const emit = () => {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+const isResolved = (item: CartItem) => Boolean(item.productId && item.productVariantId);
+
+const toStoredItem = (item: CartItem) => ({
+  productId: item.productId,
+  productVariantId: item.productVariantId,
+  qty: item.qty,
+});
+
+const persist = () => {
+  if (typeof window === "undefined") return;
+
+  const resolved = items.filter(isResolved).map(toStoredItem);
+  const legacy = items.filter((item) => !isResolved(item));
+
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(resolved));
+
+  if (legacy.length) {
+    window.localStorage.setItem(LEGACY_STORAGE_KEY, JSON.stringify(legacy));
+  } else {
+    window.localStorage.removeItem(LEGACY_STORAGE_KEY);
   }
+};
+
+const emit = () => {
+  persist();
   listeners.forEach((l) => l());
 };
 
@@ -33,16 +61,79 @@ const getSnapshot = () => items;
 const emptySnapshot: CartItem[] = [];
 const getServerSnapshot = () => emptySnapshot;
 
+function parseStoredItems(raw: string | null): CartItem[] {
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
 export function initCart() {
   if (typeof window === "undefined" || hydrated) return;
   hydrated = true;
+
   try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (raw) items = JSON.parse(raw) as CartItem[];
+    const current = parseStoredItems(window.localStorage.getItem(STORAGE_KEY));
+    const legacy = parseStoredItems(window.localStorage.getItem(LEGACY_STORAGE_KEY));
+    items = [...current, ...legacy];
+    persist();
   } catch {
     items = [];
   }
+
   listeners.forEach((l) => l());
+}
+
+function effectivePrice(variant: PublishedProduct["variants"][number]) {
+  return variant.discountPrice ?? variant.sellingPrice;
+}
+
+function resolveItem(item: CartItem, products: PublishedProduct[]): CartItem | null {
+  const product =
+    (item.productId && products.find((candidate) => candidate.id === item.productId)) ??
+    products.find((candidate) => candidate.id === item.id) ??
+    (item.title
+      ? products.find(
+          (candidate) =>
+            candidate.title.trim().toLowerCase() === item.title.trim().toLowerCase(),
+        )
+      : undefined);
+
+  if (!product) return null;
+
+  const variants = product.variants ?? [];
+  const variant =
+    (item.productVariantId && variants.find((candidate) => candidate.id === item.productVariantId)) ??
+    (variants.length === 1 ? variants[0] : undefined) ??
+    variants.find((candidate) => {
+      const sameUnit = !item.unit || candidate.label === item.unit;
+      const samePrice = !Number.isFinite(item.price) || effectivePrice(candidate) === item.price;
+      return sameUnit && samePrice;
+    });
+
+  if (!variant) {
+    return {
+      ...item,
+      productId: product.id,
+      title: product.title,
+      emoji: product.emoji,
+    };
+  }
+
+  return {
+    id: `${product.id}:${variant.id}`,
+    title: product.title,
+    price: effectivePrice(variant),
+    unit: variant.label,
+    emoji: product.emoji,
+    qty: item.qty,
+    productId: product.id,
+    productVariantId: variant.id,
+  };
 }
 
 export const cartStore = {
@@ -66,6 +157,26 @@ export const cartStore = {
   },
   clear() {
     items = [];
+    emit();
+  },
+  hydrateFromProducts(products: PublishedProduct[]) {
+    if (!products.length || !items.length) return;
+
+    const resolvedItems = items.map((item) => resolveItem(item, products));
+    const merged = new Map<string, CartItem>();
+
+    for (const resolved of resolvedItems) {
+      if (!resolved) continue;
+
+      const existing = merged.get(resolved.id);
+      if (existing) {
+        existing.qty += resolved.qty;
+      } else {
+        merged.set(resolved.id, resolved);
+      }
+    }
+
+    items = Array.from(merged.values());
     emit();
   },
 };
