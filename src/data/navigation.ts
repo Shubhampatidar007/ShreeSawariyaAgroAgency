@@ -10,6 +10,7 @@ import {
   LineChart,
   Megaphone,
   LayoutTemplate,
+  MessageSquareQuote,
   BellRing,
   DatabaseBackup,
   Search,
@@ -36,13 +37,9 @@ export const adminNavSections: NavSection[] = [
     items: [
       { label: "Reports", labelKey: "nav.reports", to: "/admin/reports", icon: FileBarChart },
       { label: "Analytics", labelKey: "nav.analytics", to: "/admin/analytics", icon: LineChart },
-      {
-        label: "Advertisements",
-        labelKey: "nav.advertisements",
-        to: "/admin/advertisements",
-        icon: Megaphone,
-      },
+      { label: "Advertisements", labelKey: "nav.advertisements", to: "/admin/advertisements", icon: Megaphone },
       { label: "Homepage CMS", labelKey: "nav.cms", to: "/admin/cms", icon: LayoutTemplate },
+      { label: "Testimonials", to: "/admin/testimonials", icon: MessageSquareQuote },
     ],
   },
   {
@@ -50,11 +47,7 @@ export const adminNavSections: NavSection[] = [
     titleKey: "nav.system",
     items: [
       { label: "Reminders", labelKey: "nav.reminders", to: "/admin/reminders", icon: BellRing },
-      {
-        label: "Inventory Reminders",
-        to: "/admin/inventory-reminders",
-        icon: BellRing,
-      },
+      { label: "Inventory Reminders", to: "/admin/inventory-reminders", icon: BellRing },
       { label: "Backups", labelKey: "nav.backups", to: "/admin/backups", icon: DatabaseBackup },
       { label: "Search", labelKey: "nav.search", to: "/admin/search", icon: Search },
     ],
