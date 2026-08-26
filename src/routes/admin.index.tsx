@@ -184,7 +184,7 @@ function AdminOverview() {
   const overallProfit = visibleProfitRows.reduce((sum, row) => sum + row.profit, 0);
   return (
     <div className="space-y-6">
-      <ScrollReveal direction="up" distance={18} duration={550}>
+      <ScrollReveal direction="up" distance={12} duration={300}>
         <PageHeader
           eyebrow={t("admin.overview.title")}
           title={`${greeting(t)}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
@@ -205,12 +205,10 @@ function AdminOverview() {
         {stats.map((stat, index) => (
           <ScrollReveal
             key={stat.id}
-            delay={index * 80}
+            delay={index * 40}
             direction="up"
-            distance={24}
-            duration={600}
-            scale={0.97}
-            blur={2}
+            distance={12}
+            duration={300}
           >
             <StatCard stat={stat} loading={loading} />
           </ScrollReveal>
