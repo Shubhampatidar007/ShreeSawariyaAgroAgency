@@ -42,6 +42,35 @@ let sharedLoadPromise: Promise<void> | null = null;
 
 const num = (value: unknown) => Number(value ?? 0);
 
+const CUSTOMER_FULL =
+  "id,name,mobile,village,address,joined_on,credit_limit,credit_balance,total_purchases,total_paid,current_due,last_purchase,status,notes";
+const CUSTOMER_SUMMARY = "id,status,total_purchases,current_due";
+const SUPPLIER_FULL =
+  "id,name,company,mobile,email,gstin,address,products_supplied,total_purchases,total_paid,advance,due_balance,last_order,status";
+const INVENTORY_FULL =
+  "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,total_price,min_stock_level,status,last_updated";
+const PRODUCT_FULL =
+  "id,inventory_id,title,category,selling_price,discount_price,stock,description,tags,images,emoji,visibility,featured,status,published_on";
+const VARIANT_ACTIVE = "id,product_id,inventory_id,label,selling_price,discount_price,stock,status";
+const CUSTOMER_TX =
+  "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks";
+const SUPPLIER_TX =
+  "id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks,product_name,quantity,unit,rate";
+const ORDER_FULL =
+  "id,code,channel,customer_id,customer_name,customer_type,village,mobile,delivery_address,pincode,placed_on,subtotal,discount,tax,total,paid,package_sent_on,payment_due_on,payment_method,payment_status,delivery_status,order_status,invoice_status,remarks,timeline,order_items(id,product,quantity,unit,rate,amount)";
+const ORDER_OVERVIEW =
+  "id,placed_on,total,paid,order_items(id,product,quantity,unit,rate,amount)";
+const PAYMENT_FULL =
+  "id,reference,direction,party_id,party_name,entry_date,amount,method,status,order_code,remarks";
+const REMINDER_FULL =
+  "id,title,audience,target,filter_summary,schedule,channel,due_amount,status,next_run,message,source_id";
+const REMINDER_LOG_FULL = "id,reminder_title,recipient,channel,sent_at,delivery,retries";
+const NOTIFICATION_FULL = "id,title,body,type,link,is_read,source_id,created_at";
+const CMS_FULL =
+  "id,name,type,enabled,visibility,sort_order,headline,body,scheduled_from,scheduled_to,image_label";
+const AD_FULL = "id,title,placement,audience,status,impressions,clicks,starts_on,runs_until";
+const BACKUP_FULL = "id,name,type,size,created_at,status,destination";
+
 const toCustomer = (r: any): Customer => ({
   id: r.id,
   name: r.name ?? "",
@@ -284,18 +313,20 @@ async function loadSharedAdminData() {
 
   sharedLoadPromise = (async () => {
     const [notifications, customers, inventory, reminders] = await Promise.all([
-      supabase.from("notifications").select("*").order("created_at", { ascending: false }).limit(50),
-      supabase.from("customers").select("id,status,current_due,total_purchases").order("id"),
       supabase
-        .from("inventory_items")
-        .select("id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,total_price,min_stock_level,status,last_updated")
-        .order("product_name"),
+        .from("notifications")
+        .select(NOTIFICATION_FULL)
+        .order("created_at", { ascending: false })
+        .limit(50),
+      supabase.from("customers").select(CUSTOMER_SUMMARY).order("id").limit(500),
+      supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(500),
       supabase
         .from("reminders")
-        .select("id,title,audience,target,filter_summary,schedule,channel,due_amount,status,next_run,message,source_id")
+        .select(REMINDER_FULL)
         .eq("status", "active")
         .eq("target", "inventory")
-        .order("created_at", { ascending: false }),
+        .order("created_at", { ascending: false })
+        .limit(100),
     ]);
 
     const result = [notifications, customers, inventory, reminders].find((r) => r.error);
@@ -334,9 +365,9 @@ async function runSectionLoad(section: AdminSection) {
   switch (section) {
     case "overview": {
       const [orders, customerLedger, supplierLedger] = await Promise.all([
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
-        supabase.from("customer_transactions").select("*").order("entry_date"),
-        supabase.from("supplier_transactions").select("*").order("entry_date"),
+        supabase.from("orders").select(ORDER_OVERVIEW).order("placed_on", { ascending: false }).limit(500),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(1000),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(1000),
       ]);
       const result = [orders, customerLedger, supplierLedger].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -349,39 +380,48 @@ async function runSectionLoad(section: AdminSection) {
     }
     case "customers": {
       const [customers, customerLedger] = await Promise.all([
-        supabase.from("customers").select("*").order("name"),
-        supabase.from("customer_transactions").select("*").order("entry_date"),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(1000),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(2000),
       ]);
       const result = [customers, customerLedger].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ customers: (customers.data ?? []).map(toCustomer), customerLedger: (customerLedger.data ?? []).map(toCustomerLedger) });
+      applyState({
+        customers: (customers.data ?? []).map(toCustomer),
+        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+      });
       return;
     }
     case "inventory": {
       const [inventory, reminders] = await Promise.all([
-        supabase.from("inventory_items").select("*").order("product_name"),
-        supabase.from("reminders").select("*").order("created_at", { ascending: false }),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(1000),
+        supabase.from("reminders").select(REMINDER_FULL).order("created_at", { ascending: false }).limit(500),
       ]);
       const result = [inventory, reminders].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ inventory: (inventory.data ?? []).map(toInventory), reminders: (reminders.data ?? []).map(toReminder) });
+      applyState({
+        inventory: (inventory.data ?? []).map(toInventory),
+        reminders: (reminders.data ?? []).map(toReminder),
+      });
       return;
     }
     case "suppliers": {
       const [suppliers, supplierLedger] = await Promise.all([
-        supabase.from("suppliers").select("*").order("name"),
-        supabase.from("supplier_transactions").select("*").order("entry_date"),
+        supabase.from("suppliers").select(SUPPLIER_FULL).order("name").limit(1000),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(2000),
       ]);
       const result = [suppliers, supplierLedger].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ suppliers: (suppliers.data ?? []).map(toSupplier), supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger) });
+      applyState({
+        suppliers: (suppliers.data ?? []).map(toSupplier),
+        supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+      });
       return;
     }
     case "products": {
       const [products, variants, inventory] = await Promise.all([
-        supabase.from("products").select("*").order("published_on", { ascending: false }),
-        supabase.from("product_variants" as any).select("*").eq("status", "active"),
-        supabase.from("inventory_items").select("*").order("product_name"),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
+        supabase.from("product_variants" as any).select(VARIANT_ACTIVE).eq("status", "active").limit(1000),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(1000),
       ]);
       const result = [products, variants, inventory].find((r) => r.error);
       if (result?.error) throw result.error;
@@ -393,80 +433,103 @@ async function runSectionLoad(section: AdminSection) {
         list.push(variant);
         byProduct.set(variant.productId, list);
       }
-      applyState({ products: (products.data ?? []).map((row) => toProduct(row, byProduct.get(row.id) ?? [])), inventory: (inventory.data ?? []).map(toInventory) });
+      applyState({
+        products: (products.data ?? []).map((row) => toProduct(row, byProduct.get(row.id) ?? [])),
+        inventory: (inventory.data ?? []).map(toInventory),
+      });
       return;
     }
     case "sales": {
       const [orders, customers] = await Promise.all([
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
-        supabase.from("customers").select("*").order("name"),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(1000),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(1000),
       ]);
       const result = [orders, customers].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ orders: (orders.data ?? []).map(toOrder), customers: (customers.data ?? []).map(toCustomer) });
+      applyState({
+        orders: (orders.data ?? []).map(toOrder),
+        customers: (customers.data ?? []).map(toCustomer),
+      });
       return;
     }
     case "payments": {
       const [payments, orders] = await Promise.all([
-        supabase.from("payments").select("*").order("entry_date", { ascending: false }),
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+        supabase.from("payments").select(PAYMENT_FULL).order("entry_date", { ascending: false }).limit(1000),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(1000),
       ]);
       const result = [payments, orders].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ payments: (payments.data ?? []).map(toPayment), orders: (orders.data ?? []).map(toOrder) });
+      applyState({
+        payments: (payments.data ?? []).map(toPayment),
+        orders: (orders.data ?? []).map(toOrder),
+      });
       return;
     }
     case "reminders": {
       const [reminders, logs] = await Promise.all([
-        supabase.from("reminders").select("*").order("created_at", { ascending: false }),
-        supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
+        supabase.from("reminders").select(REMINDER_FULL).order("created_at", { ascending: false }).limit(500),
+        supabase.from("reminder_logs").select(REMINDER_LOG_FULL).order("sent_at", { ascending: false }).limit(500),
       ]);
       const result = [reminders, logs].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ reminders: (reminders.data ?? []).map(toReminder), reminderLogs: (logs.data ?? []).map(toReminderLog) });
+      applyState({
+        reminders: (reminders.data ?? []).map(toReminder),
+        reminderLogs: (logs.data ?? []).map(toReminderLog),
+      });
       return;
     }
     case "cms": {
-      const { data, error } = await supabase.from("cms_sections").select("*").order("sort_order");
+      const { data, error } = await supabase.from("cms_sections").select(CMS_FULL).order("sort_order");
       if (error) throw error;
       applyState({ cmsSections: (data ?? []).map(toCms) });
       return;
     }
     case "advertisements": {
-      const { data, error } = await supabase.from("advertisements").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("advertisements").select(AD_FULL).order("created_at", { ascending: false }).limit(500);
       if (error) throw error;
       applyState({ advertisements: (data ?? []).map(toAd) });
       return;
     }
     case "backups": {
-      const { data, error } = await supabase.from("backups").select("*").order("created_at", { ascending: false });
+      const { data, error } = await supabase.from("backups").select(BACKUP_FULL).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
       applyState({ backups: (data ?? []).map(toBackup) });
       return;
     }
     case "analytics": {
       const [orders, customerLedger, supplierLedger, inventory, customers, products] = await Promise.all([
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
-        supabase.from("customer_transactions").select("*").order("entry_date"),
-        supabase.from("supplier_transactions").select("*").order("entry_date"),
-        supabase.from("inventory_items").select("*").order("product_name"),
-        supabase.from("customers").select("*").order("name"),
-        supabase.from("products").select("*").order("published_on", { ascending: false }),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(2000),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date").limit(5000),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date").limit(5000),
+        supabase.from("inventory_items").select(INVENTORY_FULL).order("product_name").limit(2000),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(2000),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
       ]);
       const result = [orders, customerLedger, supplierLedger, inventory, customers, products].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ orders: (orders.data ?? []).map(toOrder), customerLedger: (customerLedger.data ?? []).map(toCustomerLedger), supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger), inventory: (inventory.data ?? []).map(toInventory), customers: (customers.data ?? []).map(toCustomer), products: (products.data ?? []).map((row) => toProduct(row)) });
+      applyState({
+        orders: (orders.data ?? []).map(toOrder),
+        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+        supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+        inventory: (inventory.data ?? []).map(toInventory),
+        customers: (customers.data ?? []).map(toCustomer),
+        products: (products.data ?? []).map((row) => toProduct(row)),
+      });
       return;
     }
     case "search": {
       const [customers, products, orders] = await Promise.all([
-        supabase.from("customers").select("*").order("name"),
-        supabase.from("products").select("*").order("published_on", { ascending: false }),
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+        supabase.from("customers").select(CUSTOMER_FULL).order("name").limit(2000),
+        supabase.from("products").select(PRODUCT_FULL).order("published_on", { ascending: false }).limit(1000),
+        supabase.from("orders").select(ORDER_FULL).order("placed_on", { ascending: false }).limit(2000),
       ]);
       const result = [customers, products, orders].find((r) => r.error);
       if (result?.error) throw result.error;
-      applyState({ customers: (customers.data ?? []).map(toCustomer), products: (products.data ?? []).map((row) => toProduct(row)), orders: (orders.data ?? []).map(toOrder) });
+      applyState({
+        customers: (customers.data ?? []).map(toCustomer),
+        products: (products.data ?? []).map((row) => toProduct(row)),
+        orders: (orders.data ?? []).map(toOrder),
+      });
       return;
     }
   }
