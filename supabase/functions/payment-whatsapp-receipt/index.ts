@@ -1,6 +1,24 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 
+type OnlineOrderRow = {
+  id: string;
+  code: string;
+  customer_name: string | null;
+  mobile: string | null;
+  total: number | null;
+  paid: number | null;
+  payment_method: string | null;
+};
+
+type PaymentRow = {
+  amount: number | null;
+  method: string | null;
+  created_at: string | null;
+  entry_date: string | null;
+  reference: string | null;
+};
+
 const CORS = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
@@ -40,7 +58,7 @@ const formatDateTime = (value: string) => {
   });
 };
 
-const buildPaymentReceiptMessage = (order: any, payment: any) => {
+const buildPaymentReceiptMessage = (order: OnlineOrderRow, payment: PaymentRow) => {
   const remaining = Math.max(Number(order.total || 0) - Number(order.paid || 0), 0);
 
   return `🌾 SHREE SAWARIYA AGRO AGENCY
@@ -53,9 +71,9 @@ Your payment for order ${order.code} has been recorded successfully.
 
 💰 PAYMENT DETAILS
 ━━━━━━━━━━━━━━━━━━
-Amount Collected: ₹${money(payment?.amount)}
-Payment Method: ${payment?.method || order.payment_method || "—"}
-Payment Date: ${formatDateTime(payment?.created_at || new Date().toISOString())}
+Amount Collected: ₹${money(payment.amount)}
+Payment Method: ${payment.method || order.payment_method || "—"}
+Payment Date: ${formatDateTime(payment.created_at || new Date().toISOString())}
 
 🧾 ORDER SUMMARY
 ━━━━━━━━━━━━━━━━━━
@@ -90,7 +108,10 @@ Deno.serve(async (req) => {
   const userClient = createClient(supabaseUrl, anonKey, {
     global: { headers: { Authorization: authorization } },
   });
-  const { data: { user }, error: userError } = await userClient.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await userClient.auth.getUser();
   if (userError || !user) {
     return json({ ok: false, error: "Invalid or expired session." }, 401);
   }
@@ -118,12 +139,13 @@ Deno.serve(async (req) => {
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
-  const { data: order, error: orderError } = await admin
+  const { data: orderData, error: orderError } = await admin
     .from("orders")
     .select("*, order_items(*)")
     .eq("id", payload.orderId)
     .eq("channel", "online")
     .maybeSingle();
+  const order = orderData as OnlineOrderRow | null;
 
   if (orderError || !order) {
     return json({ ok: false, error: orderError?.message || "Online order not found." }, 404);
@@ -132,21 +154,20 @@ Deno.serve(async (req) => {
   const to = normalizePhone(order.mobile || "");
   if (!to) return json({ ok: false, error: "Customer mobile number is empty." }, 400);
 
-  let paymentQuery = admin
+  const paymentQuery = admin
     .from("payments")
     .select("amount, method, created_at, entry_date, reference")
     .eq("order_code", order.code)
     .eq("direction", "incoming")
     .eq("status", "success");
 
-  const { data: payment, error: paymentError } = payload.paymentReference
-    ? await paymentQuery
-        .eq("reference", payload.paymentReference)
-        .maybeSingle()
+  const { data: paymentData, error: paymentError } = payload.paymentReference
+    ? await paymentQuery.eq("reference", payload.paymentReference).maybeSingle()
     : await paymentQuery
         .order("created_at", { ascending: false })
         .limit(1)
         .maybeSingle();
+  const payment = paymentData as PaymentRow | null;
 
   if (paymentError) return json({ ok: false, error: paymentError.message }, 500);
   if (!payment) {
@@ -180,7 +201,7 @@ Deno.serve(async (req) => {
       }),
     });
 
-    const body = await response.json().catch(() => null) as {
+    const body = (await response.json().catch(() => null)) as {
       messages?: Array<{ id?: string }>;
       error?: { message?: string };
     } | null;
