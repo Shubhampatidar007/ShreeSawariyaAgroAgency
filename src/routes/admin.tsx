@@ -13,6 +13,7 @@ import {
   isAdminSectionLoaded,
   loadAdminRouteData,
 } from "@/lib/admin-route-data-v2";
+import { ensureAdminProductCatalog } from "@/lib/admin-supporting-data";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -64,6 +65,14 @@ function AdminLayout() {
     setSectionLoading(true);
 
     void loadAdminRouteData(location.pathname)
+      .then(async () => {
+        if (
+          location.pathname.startsWith("/admin/customers") ||
+          location.pathname.startsWith("/admin/khata")
+        ) {
+          await ensureAdminProductCatalog();
+        }
+      })
       .catch((error) => {
         console.error("Admin section data load failed:", error);
       })
