@@ -8,7 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { AdminProductCard } from "@/components/shared/EntityCards";
 import { supabase } from "@/integrations/supabase/client";
@@ -159,31 +165,55 @@ function PublishProductPage() {
             <div className="space-y-2 sm:col-span-2">
               <Label>Product image</Label>
               <div className="rounded-lg border border-dashed border-border p-4">
-                <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />
-                <p className="mt-2 text-xs text-muted-foreground">Maximum 1 MB after compression. JPEG, PNG and WebP are supported.</p>
+                <Input
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+                />
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Maximum 1 MB after compression. JPEG, PNG and WebP are supported.
+                </p>
                 {imagePreview ? (
                   <div className="mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-lg bg-muted p-2">
-                    <img src={imagePreview} alt="Product preview" className="max-h-full max-w-full object-contain" />
+                    <img
+                      src={imagePreview}
+                      alt="Product preview"
+                      className="max-h-full max-w-full object-contain"
+                    />
                   </div>
                 ) : null}
               </div>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Title</Label>
-              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={item?.productName ?? "Product title"} />
+              <Input
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder={item?.productName ?? "Product title"}
+              />
             </div>
             <div className="space-y-2">
               <Label>Selling price</Label>
-              <Input value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="numeric" />
+              <Input
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+                inputMode="numeric"
+              />
             </div>
             <div className="space-y-2">
               <Label>Discount price</Label>
-              <Input value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} inputMode="numeric" />
+              <Input
+                value={discountPrice}
+                onChange={(e) => setDiscountPrice(e.target.value)}
+                inputMode="numeric"
+              />
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
               <Select value={category} onValueChange={setCategory}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Seeds">Seeds</SelectItem>
                   <SelectItem value="Fertilizers">Fertilizers</SelectItem>
@@ -195,27 +225,57 @@ function PublishProductPage() {
             </div>
             <div className="space-y-2">
               <Label>Tags (comma separated)</Label>
-              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags, categories" />
+              <Input
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="tags, categories"
+              />
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Description</Label>
-              <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+              <Textarea
+                rows={4}
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <div><p className="text-sm font-medium">Public visibility</p><p className="text-xs text-muted-foreground">Show on the storefront</p></div>
-              <Switch checked={visibility === "public"} onCheckedChange={(checked) => setVisibility(checked ? "public" : "hidden")} />
+              <div>
+                <p className="text-sm font-medium">Public visibility</p>
+                <p className="text-xs text-muted-foreground">Show on the storefront</p>
+              </div>
+              <Switch
+                checked={visibility === "public"}
+                onCheckedChange={(checked) => setVisibility(checked ? "public" : "hidden")}
+              />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
-              <div><p className="text-sm font-medium">Featured</p><p className="text-xs text-muted-foreground">Highlight in featured section</p></div>
+              <div>
+                <p className="text-sm font-medium">Featured</p>
+                <p className="text-xs text-muted-foreground">Highlight in featured section</p>
+              </div>
               <Switch checked={featured} onCheckedChange={setFeatured} />
             </div>
             <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Button className="rounded-full" onClick={publish} disabled={publishing}><Upload className="size-4" />{publishing ? "Publishing…" : "Publish product"}</Button>
-              <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/products" })}>Cancel</Button>
+              <Button className="rounded-full" onClick={publish} disabled={publishing}>
+                <Upload className="size-4" />
+                {publishing ? "Publishing…" : "Publish product"}
+              </Button>
+              <Button
+                variant="outline"
+                className="rounded-full"
+                onClick={() => navigate({ to: "/admin/products" })}
+              >
+                Cancel
+              </Button>
             </div>
           </CardContent>
         </Card>
-        <div className="space-y-3"><p className="text-sm font-semibold">Live preview</p><AdminProductCard product={draft} /></div>
+
+        <div className="space-y-3">
+          <p className="text-sm font-semibold">Live preview</p>
+          <AdminProductCard product={draft} />
+        </div>
       </div>
     </div>
   );
