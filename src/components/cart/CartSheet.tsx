@@ -13,7 +13,7 @@ import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
 import { CheckoutDialog } from "@/components/cart/CheckoutDialog";
 import { useAuth } from "@/lib/auth-store";
 
-export function CartSheet({ mobile = false }: { mobile?: boolean }) {
+export function CartSheet() {
   const items = useCart();
   const products = usePublicShopStore((state) => state.products);
   const { t } = useI18n();
@@ -38,12 +38,11 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
       <SheetTrigger asChild>
         <Button
           variant="ghost"
-          size={mobile ? "default" : "icon"}
-          className={mobile ? "relative min-h-12 w-full flex-col gap-0.5 rounded-xl px-1 text-[11px] font-medium text-muted-foreground" : "relative rounded-full"}
+          size="icon"
+          className="relative rounded-full"
           aria-label={t("cart.title", "Your cart")}
         >
           <ShoppingCart className="size-5" />
-          {mobile ? <span>Cart</span> : null}
           {count > 0 ? (
             <Badge className="absolute -right-0.5 -top-0.5 size-5 justify-center rounded-full p-0 text-[10px]">
               {count}
@@ -79,7 +78,7 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="size-8 rounded-full"
+                        className="size-7 rounded-full"
                         aria-label={t("cart.decrease", "Decrease quantity")}
                         onClick={() => cartStore.setQty(item.id, item.qty - 1)}
                       >
@@ -89,7 +88,7 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="size-8 rounded-full"
+                        className="size-7 rounded-full"
                         aria-label={t("cart.increase", "Increase quantity")}
                         onClick={() => cartStore.setQty(item.id, item.qty + 1)}
                       >
@@ -98,7 +97,7 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="ml-auto size-8 rounded-full text-muted-foreground"
+                        className="ml-auto size-7 rounded-full text-muted-foreground"
                         aria-label={t("cart.remove", "Remove")}
                         onClick={() => cartStore.remove(item.id)}
                       >
@@ -120,7 +119,7 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
                 </span>
               </div>
               <Button
-                className="min-h-11 w-full rounded-full"
+                className="w-full rounded-full"
                 disabled={!cartReady}
                 onClick={() => {
                   if (!authUser) {
@@ -135,7 +134,7 @@ export function CartSheet({ mobile = false }: { mobile?: boolean }) {
               </Button>
               <Button
                 variant="ghost"
-                className="min-h-11 w-full rounded-full"
+                className="w-full rounded-full"
                 onClick={() => cartStore.clear()}
               >
                 {t("cart.clear", "Clear cart")}
