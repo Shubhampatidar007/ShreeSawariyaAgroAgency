@@ -1,6 +1,5 @@
 import { useState } from "react";
-import { Link } from "@tanstack/react-router";
-import { Clock, LogOut, Mail, Menu, Phone, Search, User } from "lucide-react";
+import { Clock, LogOut, Mail, Menu, Search, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -21,6 +20,7 @@ import { authStore, useAuth } from "@/lib/auth-store";
 import { useI18n } from "@/lib/i18n";
 import { storefrontNav } from "@/data/navigation";
 import { shopInfo } from "@/data/storefront";
+import { storefrontFilterStore, useStorefrontFilters } from "@/lib/storefront-filter-store";
 
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
@@ -28,6 +28,7 @@ export function SiteHeader() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const user = useAuth();
   const { t } = useI18n();
+  const searchQuery = useStorefrontFilters((s) => s.searchQuery);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -39,7 +40,7 @@ export function SiteHeader() {
       <div className="hidden border-b border-border bg-muted text-muted-foreground md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2 text-xs">
           <div className="flex items-center gap-5">
-            <span className="flex items-center gap-1.5"><Phone className="size-3.5" /> {shopInfo.phone}</span>
+            <span className="flex items-center gap-1.5"><span>{shopInfo.phone}</span></span>
             <span className="flex items-center gap-1.5"><Mail className="size-3.5" /> {shopInfo.email}</span>
           </div>
           <span className="flex items-center gap-1.5"><Clock className="size-3.5" /> {shopInfo.hours}</span>
@@ -49,10 +50,7 @@ export function SiteHeader() {
       <div className="border-b border-border bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
           <Logo />
-          <div className="relative ml-4 hidden flex-1 lg:block">
-            <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-            <Input placeholder={t("storefront.searchPlaceholder", "Search products, invoices, customers…")} className="h-11 rounded-full bg-muted pl-10" />
-          </div>
+          <SearchBox />
 
           <div className="ml-auto flex items-center gap-1.5">
             <LanguageToggle className="rounded-full" />
@@ -70,7 +68,7 @@ export function SiteHeader() {
                   <DropdownMenuSeparator />
                   {user.role === "admin" || user.role === "staff" ? (
                     <DropdownMenuItem asChild>
-                      <Link to="/admin"><User className="size-4" />Admin Panel</Link>
+                      <a href="/admin"><User className="size-4" />Admin Panel</a>
                     </DropdownMenuItem>
                   ) : null}
                   <DropdownMenuItem onClick={() => authStore.logout()}><LogOut className="size-4" />{t("common.logout", "Logout")}</DropdownMenuItem>
@@ -84,9 +82,14 @@ export function SiteHeader() {
             {user?.role !== "admin" ? <CartSheet /> : null}
 
             <Sheet open={open} onOpenChange={setOpen}>
-              <SheetTrigger asChild><Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu"><Menu className="size-5" /></Button></SheetTrigger>
-              <SheetContent side="right" className="w-72">
-                <SheetTitle>{t("common.menu", "Menu")}</SheetTitle>
+              <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu"><Menu className="size-5" /></Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-80">
+                <SheetTitle>Store menu</SheetTitle>
+                <div className="mt-5 lg:hidden">
+                  <SearchBox mobile />
+                </div>
                 <nav className="mt-6 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
                     <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
@@ -117,5 +120,35 @@ export function SiteHeader() {
 
       <AuthDialog open={authOpen} onOpenChange={setAuthOpen} mode={authMode} onModeChange={setAuthMode} />
     </header>
+  );
+}
+
+function SearchBox({ mobile = false }: { mobile?: boolean }) {
+  const searchQuery = useStorefrontFilters((s) => s.searchQuery);
+
+  return (
+    <div className={mobile ? "w-full" : "ml-4 hidden flex-1 lg:block"}>
+      <div className="relative">
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          id={mobile ? "mobile-header-search" : undefined}
+          value={searchQuery}
+          onChange={(event) => storefrontFilterStore.setSearchQuery(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && searchQuery.trim()) {
+              document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+            }
+          }}
+          placeholder="Search products, categories, variants…"
+          className="h-11 rounded-full bg-muted pl-10 pr-10"
+          aria-label="Search products"
+        />
+        {searchQuery ? (
+          <button type="button" aria-label="Clear search" onClick={() => storefrontFilterStore.setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground">
+            <X className="size-4" />
+          </button>
+        ) : null}
+      </div>
+    </div>
   );
 }

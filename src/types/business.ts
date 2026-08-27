@@ -67,6 +67,7 @@ export type PublishedProduct = {
   id: string;
   inventoryId: string;
   title: string;
+  brand?: string;
   category: string;
   sellingPrice: number;
   discountPrice?: number | undefined;
@@ -80,6 +81,15 @@ export type PublishedProduct = {
   status: "published" | "draft" | "archived";
   publishedOn: string;
   variants?: ProductVariant[];
+};
+
+export type Testimonial = {
+  id: string;
+  name: string;
+  location: string;
+  crop: string;
+  quote: string;
+  enabled: boolean;
 };
 
 export type PaymentMethod = "cash" | "upi" | "bank" | "cheque" | "credit";

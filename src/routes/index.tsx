@@ -3,10 +3,14 @@ import { AlertCircle, Megaphone } from "lucide-react";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { HeroSection } from "@/components/home/HeroSection";
+import { SmartShoppingSection } from "@/components/home/SmartShoppingSection";
+import { FarmerAdvisorySection } from "@/components/home/FarmerAdvisorySection";
 import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
+import { TrustedBrandsSection } from "@/components/home/TrustedBrandsSection";
 import { AboutSection } from "@/components/home/AboutSection";
+import { LocationSection } from "@/components/home/LocationSection";
 import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
 
@@ -37,16 +41,20 @@ function Index() {
   const sections = usePublicShopStore((s) => [...s.cmsSections].sort((a, b) => a.order - b.order));
   const cms = sections.length ? sections.filter(isActive) : null;
   return (
-    <div className="min-h-screen bg-background">
+    <div id="top" className="min-h-screen bg-background pb-20 md:pb-0">
       <SiteHeader />
       <main>
         {!cms ? (
           <>
             <HeroSection />
+            <SmartShoppingSection />
             <CategorySection />
             <FeaturedProducts />
             <OffersSection />
+            <FarmerAdvisorySection />
+            <TrustedBrandsSection />
             <AboutSection />
+            <LocationSection />
           </>
         ) : (
           cms.map((section) => <CmsRender key={section.id} section={section} />)

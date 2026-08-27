@@ -89,6 +89,7 @@ function PublishProductPage() {
   const inventory = useShopStore((s) => s.inventory);
   const [inventoryId, setInventoryId] = useState("");
   const [title, setTitle] = useState("");
+  const [brand, setBrand] = useState("");
   const [category, setCategory] = useState("Fertilizers");
   const [sellingPrice, setSellingPrice] = useState("");
   const [discountPrice, setDiscountPrice] = useState("");
@@ -116,6 +117,7 @@ function PublishProductPage() {
     id: `p${Date.now()}`,
     inventoryId,
     title: title || item?.productName || "Untitled product",
+    brand: brand.trim() || undefined,
     category,
     sellingPrice: Number(sellingPrice) || 0,
     discountPrice: discountPrice ? Number(discountPrice) : undefined,
@@ -169,6 +171,24 @@ function PublishProductPage() {
         ...draft,
         images: imageUrl ? [imageUrl] : [],
       });
+
+      if (brand.trim()) {
+        const { data: createdProduct, error: lookupError } = await supabase
+          .from("products")
+          .select("id")
+          .eq("inventory_id", inventoryId)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .single();
+        if (lookupError) throw lookupError;
+
+        const { error: brandError } = await supabase
+          .from("products")
+          .update({ brand: brand.trim() } as never)
+          .eq("id", createdProduct.id);
+        if (brandError) throw brandError;
+      }
+
       toast.success("Product published to the storefront");
       navigate({ to: "/admin/products" });
     } catch (error) {
@@ -241,6 +261,15 @@ function PublishProductPage() {
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={item?.productName ?? "Product title"}
               />
+            </div>
+            <div className="space-y-2">
+              <Label>Brand</Label>
+              <Input
+                value={brand}
+                onChange={(e) => setBrand(e.target.value)}
+                placeholder="Verified brand name"
+              />
+              <p className="text-xs text-muted-foreground">Leave blank when the brand is unknown.</p>
             </div>
             <div className="space-y-2">
               <Label>Selling price</Label>
