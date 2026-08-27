@@ -14,7 +14,6 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
-import { MobileCommerceNav } from "@/components/layout/MobileCommerceNav";
 import { AuthDialog, type AuthMode } from "@/components/auth/AuthDialog";
 import { CartSheet } from "@/components/cart/CartSheet";
 import { authStore, useAuth } from "@/lib/auth-store";
@@ -80,7 +79,7 @@ export function SiteHeader() {
                 <User className="size-4" />{t("auth.login", "Login")}
               </Button>
             )}
-            {user?.role !== "admin" ? <div className="hidden md:block"><CartSheet /></div> : null}
+            {user?.role !== "admin" ? <CartSheet /> : null}
 
             <Sheet open={open} onOpenChange={setOpen}>
               <SheetTrigger asChild>
@@ -93,12 +92,12 @@ export function SiteHeader() {
                 </div>
                 <nav className="mt-6 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
-                    <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="min-h-11 rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
+                    <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
                       {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
                     </a>
                   ))}
                   {!user ? (
-                    <button type="button" onClick={() => { setOpen(false); openAuth("login"); }} className="min-h-11 rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted">
+                    <button type="button" onClick={() => { setOpen(false); openAuth("login"); }} className="rounded-lg px-3 py-2.5 text-left text-sm font-medium hover:bg-muted">
                       {t("auth.login", "Login")}
                     </button>
                   ) : null}
@@ -120,7 +119,6 @@ export function SiteHeader() {
       </nav>
 
       <AuthDialog open={authOpen} onOpenChange={setAuthOpen} mode={authMode} onModeChange={setAuthMode} />
-      <MobileCommerceNav />
     </header>
   );
 }
@@ -146,7 +144,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
           aria-label="Search products"
         />
         {searchQuery ? (
-          <button type="button" aria-label="Clear search" onClick={() => storefrontFilterStore.setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1.5 text-muted-foreground hover:bg-background hover:text-foreground">
+          <button type="button" aria-label="Clear search" onClick={() => storefrontFilterStore.setSearchQuery("")} className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-background hover:text-foreground">
             <X className="size-4" />
           </button>
         ) : null}
