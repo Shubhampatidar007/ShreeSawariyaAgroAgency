@@ -17,11 +17,13 @@ import { compressImage, imageExtension, MAX_IMAGE_BYTES } from "@/lib/image-uplo
 import type { PublishedProduct } from "@/types/business";
 
 export const Route = createFileRoute("/admin/products/publish")({
-  head: () => ({ meta: [
-    { title: "Publish Product — Admin" },
-    { name: "description", content: "Turn an inventory item into a customer-facing product." },
-    { name: "robots", content: "noindex" },
-  ] }),
+  head: () => ({
+    meta: [
+      { title: "Publish Product — Admin" },
+      { name: "description", content: "Turn an inventory item into a customer-facing product." },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: PublishProductPage,
 });
 
@@ -42,13 +44,17 @@ function PublishProductPage() {
   const [publishing, setPublishing] = useState(false);
 
   useEffect(() => {
-    if (!imageFile) { setImagePreview(""); return; }
+    if (!imageFile) {
+      setImagePreview("");
+      return;
+    }
     const url = URL.createObjectURL(imageFile);
     setImagePreview(url);
     return () => URL.revokeObjectURL(url);
   }, [imageFile]);
 
   const item = inventory.find((i) => i.id === inventoryId);
+
   const draft: PublishedProduct = {
     id: `p${Date.now()}`,
     inventoryId,
@@ -58,7 +64,10 @@ function PublishProductPage() {
     discountPrice: discountPrice ? Number(discountPrice) : undefined,
     stock: item?.quantity ?? 0,
     description,
-    tags: tags.split(",").map((t) => t.trim()).filter(Boolean),
+    tags: tags
+      .split(",")
+      .map((t) => t.trim())
+      .filter(Boolean),
     images: imagePreview ? [imagePreview] : [],
     emoji: "🌾",
     visibility,
@@ -68,24 +77,42 @@ function PublishProductPage() {
   };
 
   const publish = async () => {
-    if (!inventoryId || !sellingPrice) { toast.error("Select inventory and set a selling price"); return; }
-    if (!item || item.quantity <= 0) { toast.error("Selected inventory item is out of stock"); return; }
+    if (!inventoryId || !sellingPrice) {
+      toast.error("Select inventory and set a selling price");
+      return;
+    }
+
+    if (!item || item.quantity <= 0) {
+      toast.error("Selected inventory item is out of stock");
+      return;
+    }
 
     setPublishing(true);
     try {
       let imageUrl: string | undefined;
+
       if (imageFile) {
         const blob = await compressImage(imageFile);
         if (blob.size > MAX_IMAGE_BYTES) throw new Error("Image must be smaller than 1 MB");
+
         const path = `products/${inventoryId}/${crypto.randomUUID()}.${imageExtension(blob)}`;
-        const { error: uploadError } = await supabase.storage.from("product-images").upload(path, blob, {
-          contentType: blob.type || "image/webp", cacheControl: "31536000", upsert: false,
-        });
+        const { error: uploadError } = await supabase.storage
+          .from("product-images")
+          .upload(path, blob, {
+            contentType: blob.type || "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
         if (uploadError) throw uploadError;
+
         imageUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
       }
 
-      await shopStore.publishProduct({ ...draft, images: imageUrl ? [imageUrl] : [] });
+      await shopStore.publishProduct({
+        ...draft,
+        images: imageUrl ? [imageUrl] : [],
+      });
+
       toast.success("Product published to the storefront");
       navigate({ to: "/admin/products" });
     } catch (error) {
@@ -95,25 +122,101 @@ function PublishProductPage() {
     }
   };
 
-  return <div className="space-y-6">
-    <ModulePageHeader crumbs={[{ label: "Admin", to: "/admin" }, { label: "Products", to: "/admin/products" }, { label: "Publish" }]} eyebrow="Products" title="Publish product" description="Inventory → Publish → Preview → Live on the storefront." />
-    <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
-      <Card className="shadow-soft"><CardHeader><CardTitle className="text-base">Product details</CardTitle></CardHeader>
-        <CardContent className="grid gap-5 sm:grid-cols-2">
-          <div className="space-y-2 sm:col-span-2"><Label>Inventory item</Label><Select value={inventoryId} onValueChange={setInventoryId}><SelectTrigger><SelectValue placeholder="Select stock to publish" /></SelectTrigger><SelectContent>{inventory.filter((i) => i.quantity > 0).map((i) => <SelectItem key={i.id} value={i.id}>{i.productName} · {i.quantity} {i.unit}</SelectItem>)}</SelectContent></Select></div>
-          <div className="space-y-2 sm:col-span-2"><Label>Product image</Label><div className="rounded-lg border border-dashed border-border p-4"><Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} /><p className="mt-2 text-xs text-muted-foreground">Maximum 1 MB after compression. JPEG, PNG and WebP are supported.</p>{imagePreview ? <div className="mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-lg bg-muted p-2"><img src={imagePreview} alt="Product preview" className="max-h-full max-w-full object-contain" /></div> : null}</div></div>
-          <div className="space-y-2 sm:col-span-2"><Label>Title</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={item?.productName ?? "Product title"} /></div>
-          <div className="space-y-2"><Label>Selling price</Label><Input value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="numeric" /></div>
-          <div className="space-y-2"><Label>Discount price</Label><Input value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} inputMode="numeric" /></div>
-          <div className="space-y-2"><Label>Category</Label><Select value={category} onValueChange={setCategory}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="Seeds">Seeds</SelectItem><SelectItem value="Fertilizers">Fertilizers</SelectItem><SelectItem value="Pesticides">Pesticides</SelectItem><SelectItem value="Tools">Tools</SelectItem><SelectItem value="Irrigation">Irrigation</SelectItem></SelectContent></Select></div>
-          <div className="space-y-2"><Label>Tags (comma separated)</Label><Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags, categories" /></div>
-          <div className="space-y-2 sm:col-span-2"><Label>Description</Label><Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} /></div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-3"><div><p className="text-sm font-medium">Public visibility</p><p className="text-xs text-muted-foreground">Show on the storefront</p></div><Switch checked={visibility === "public"} onCheckedChange={(checked) => setVisibility(checked ? "public" : "hidden")} /></div>
-          <div className="flex items-center justify-between rounded-lg border border-border p-3"><div><p className="text-sm font-medium">Featured</p><p className="text-xs text-muted-foreground">Highlight in featured section</p></div><Switch checked={featured} onCheckedChange={setFeatured} /></div>
-          <div className="flex flex-wrap gap-2 sm:col-span-2"><Button className="rounded-full" onClick={publish} disabled={publishing}><Upload className="size-4" />{publishing ? "Publishing…" : "Publish product"}</Button><Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/products" })}>Cancel</Button></div>
-        </CardContent>
-      </Card>
-      <div className="space-y-3"><p className="text-sm font-semibold">Live preview</p><AdminProductCard product={draft} /></div>
+  return (
+    <div className="space-y-6">
+      <ModulePageHeader
+        crumbs={[
+          { label: "Admin", to: "/admin" },
+          { label: "Products", to: "/admin/products" },
+          { label: "Publish" },
+        ]}
+        eyebrow="Products"
+        title="Publish product"
+        description="Inventory → Publish → Preview → Live on the storefront."
+      />
+
+      <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
+        <Card className="shadow-soft">
+          <CardHeader>
+            <CardTitle className="text-base">Product details</CardTitle>
+          </CardHeader>
+          <CardContent className="grid gap-5 sm:grid-cols-2">
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Inventory item</Label>
+              <Select value={inventoryId} onValueChange={setInventoryId}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select stock to publish" />
+                </SelectTrigger>
+                <SelectContent>
+                  {inventory.filter((i) => i.quantity > 0).map((i) => (
+                    <SelectItem key={i.id} value={i.id}>
+                      {i.productName} · {i.quantity} {i.unit}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Product image</Label>
+              <div className="rounded-lg border border-dashed border-border p-4">
+                <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setImageFile(event.target.files?.[0] ?? null)} />
+                <p className="mt-2 text-xs text-muted-foreground">Maximum 1 MB after compression. JPEG, PNG and WebP are supported.</p>
+                {imagePreview ? (
+                  <div className="mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-lg bg-muted p-2">
+                    <img src={imagePreview} alt="Product preview" className="max-h-full max-w-full object-contain" />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Title</Label>
+              <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder={item?.productName ?? "Product title"} />
+            </div>
+            <div className="space-y-2">
+              <Label>Selling price</Label>
+              <Input value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="numeric" />
+            </div>
+            <div className="space-y-2">
+              <Label>Discount price</Label>
+              <Input value={discountPrice} onChange={(e) => setDiscountPrice(e.target.value)} inputMode="numeric" />
+            </div>
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select value={category} onValueChange={setCategory}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Seeds">Seeds</SelectItem>
+                  <SelectItem value="Fertilizers">Fertilizers</SelectItem>
+                  <SelectItem value="Pesticides">Pesticides</SelectItem>
+                  <SelectItem value="Tools">Tools</SelectItem>
+                  <SelectItem value="Irrigation">Irrigation</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>Tags (comma separated)</Label>
+              <Input value={tags} onChange={(e) => setTags(e.target.value)} placeholder="tags, categories" />
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label>Description</Label>
+              <Textarea rows={4} value={description} onChange={(e) => setDescription(e.target.value)} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div><p className="text-sm font-medium">Public visibility</p><p className="text-xs text-muted-foreground">Show on the storefront</p></div>
+              <Switch checked={visibility === "public"} onCheckedChange={(checked) => setVisibility(checked ? "public" : "hidden")} />
+            </div>
+            <div className="flex items-center justify-between rounded-lg border border-border p-3">
+              <div><p className="text-sm font-medium">Featured</p><p className="text-xs text-muted-foreground">Highlight in featured section</p></div>
+              <Switch checked={featured} onCheckedChange={setFeatured} />
+            </div>
+            <div className="flex flex-wrap gap-2 sm:col-span-2">
+              <Button className="rounded-full" onClick={publish} disabled={publishing}><Upload className="size-4" />{publishing ? "Publishing…" : "Publish product"}</Button>
+              <Button variant="outline" className="rounded-full" onClick={() => navigate({ to: "/admin/products" })}>Cancel</Button>
+            </div>
+          </CardContent>
+        </Card>
+        <div className="space-y-3"><p className="text-sm font-semibold">Live preview</p><AdminProductCard product={draft} /></div>
+      </div>
     </div>
-  </div>;
+  );
 }
