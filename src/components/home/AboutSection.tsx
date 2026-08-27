@@ -3,8 +3,8 @@ import { BadgeCheck, CircleCheck, Headphones, MapPinned, PackageCheck, ShoppingC
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { getBusinessStats, type BusinessStats } from "@/lib/business-stats";
-import { usePublicShopStore } from "@/lib/public-shop-store";
 import { shopInfo } from "@/data/storefront";
+import { usePublicShopStore } from "@/lib/public-shop-store";
 import type { CmsSection } from "@/types/operations";
 
 const trustBenefits = [
@@ -78,21 +78,31 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
               {testimonialLoading && testimonials.length === 0 ? (
                 <p className="mt-6 text-sm text-muted-foreground">Checking verified testimonials…</p>
               ) : testimonials.length ? (
-                <div className="mt-6 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-                  {testimonials.slice(0, MAX_VISIBLE_TESTIMONIALS).map((testimonial) => (
-                    <blockquote key={testimonial.id} className="flex h-full flex-col rounded-2xl border border-border bg-muted/30 p-5 sm:p-6">
-                      <div className="flex items-center gap-3">
-                        <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10 text-base font-semibold text-primary">
+                <div className="mt-6 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+                  {testimonials.slice(0, MAX_VISIBLE_TESTIMONIALS).map((testimonial, index) => (
+                    <blockquote
+                      key={testimonial.id}
+                      className="relative flex min-h-[360px] h-full flex-col rounded-3xl border border-border bg-muted/30 p-6 transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+                    >
+                      <div className="absolute right-5 top-5 rounded-full border border-border bg-background px-3 py-1 text-[11px] font-bold tracking-[0.14em] text-muted-foreground">
+                        {String(index + 1).padStart(2, "0")}
+                      </div>
+
+                      <div className="flex flex-col items-center text-center">
+                        <div className="flex size-20 items-center justify-center overflow-hidden rounded-full border-4 border-background bg-primary/10 text-xl font-semibold text-primary shadow-sm">
                           {testimonial.imageUrl ? (
-                            <img src={testimonial.imageUrl} alt={`${testimonial.farmerName} photo`} width={64} height={64} loading="lazy" className="size-16 object-cover" />
+                            <img src={testimonial.imageUrl} alt={`${testimonial.farmerName} photo`} width={80} height={80} loading="lazy" className="size-20 object-cover" />
                           ) : testimonial.farmerName.slice(0, 1).toUpperCase()}
                         </div>
-                        <footer className="min-w-0 text-sm text-muted-foreground">
-                          <span className="block font-semibold text-foreground">{testimonial.farmerName}</span>
-                          {testimonial.farmName ? <span className="block mt-1">{testimonial.farmName}</span> : null}
+                        <footer className="mt-4 min-w-0">
+                          <span className="block font-display text-lg font-semibold text-foreground">{testimonial.farmerName}</span>
+                          {testimonial.farmName ? <span className="mt-1 block text-sm text-muted-foreground">{testimonial.farmName}</span> : null}
                         </footer>
                       </div>
-                      <p className="mt-5 text-base leading-7 text-foreground">“{testimonial.content}”</p>
+
+                      <div className="mt-6 flex-1 border-t border-border pt-5">
+                        <p className="text-center text-base leading-7 text-foreground">“{testimonial.content}”</p>
+                      </div>
                     </blockquote>
                   ))}
                 </div>
