@@ -137,7 +137,7 @@ function TestimonialsPage() {
       return;
     }
     update(item.id, { imageUrl: undefined });
-    toast.success("Testimonial image removed");
+    toast.success("Photo removed");
   };
 
   const save = async (item: Draft) => {
@@ -146,17 +146,17 @@ function TestimonialsPage() {
     const farmName = item.farmName?.trim() || "";
 
     if (!farmerName || !content) {
-      toast.error("Farmer name and testimony are required");
+      toast.error("Enter the farmer's name and feedback");
       return;
     }
 
     if (looksLikeDebugData(content)) {
-      toast.error("This testimony looks like network/debug data. Enter real farmer feedback before saving.");
+      toast.error("Please enter the farmer's feedback, not browser/network details.");
       return;
     }
 
     if (item.verified && content.length < 10) {
-      toast.error("Verified testimonials should contain a meaningful testimony");
+      toast.error("Published feedback should be a little more detailed");
       return;
     }
 
@@ -212,7 +212,7 @@ function TestimonialsPage() {
         if (oldPath) await supabase.storage.from("testimonial-images").remove([oldPath]);
       }
       if (item.imagePreview) URL.revokeObjectURL(item.imagePreview);
-      toast.success(item.verified ? "Verified testimonial published" : "Testimonial saved as draft");
+      toast.success(item.verified ? "Published" : "Saved as draft");
       await load();
     } catch (error) {
       if (uploadedPath) await supabase.storage.from("testimonial-images").remove([uploadedPath]);
@@ -231,7 +231,7 @@ function TestimonialsPage() {
     const { error } = await supabase.functions.invoke("delete-testimonial", { body: { id: item.id } });
     if (error) toast.error(error.message);
     else {
-      toast.success("Testimonial removed");
+      toast.success("Testimonial deleted");
       await load();
     }
   };
@@ -241,8 +241,8 @@ function TestimonialsPage() {
       <ModulePageHeader
         crumbs={[{ label: "Admin", to: "/admin" }, { label: "Testimonials" }]}
         eyebrow="Storefront"
-        title="Verified farmer testimonials"
-        description="Add real farmer feedback, optionally attach a compact avatar, and publish only verified testimonials."
+        title="Farmer testimonials"
+        description="Add a farmer's name, their feedback, and an optional photo. Turn on Publish when it is ready for the website."
         actions={
           <Button className="rounded-full" onClick={() => setItems((current) => [emptyDraft(), ...current])}>
             <Plus className="size-4" /> Add testimonial
@@ -256,7 +256,7 @@ function TestimonialsPage() {
       ) : items.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center text-sm text-muted-foreground">
-            No testimonials stored yet. Add real verified feedback only.
+            No testimonials yet. Add a real farmer's feedback to get started.
           </CardContent>
         </Card>
       ) : (
@@ -268,45 +268,45 @@ function TestimonialsPage() {
                   <CardTitle className="text-base">Farmer testimonial</CardTitle>
                   <div className="flex items-center gap-2 text-sm">
                     <Switch checked={item.verified} onCheckedChange={(verified) => update(item.id, { verified })} />
-                    <span>{item.verified ? "Verified / published" : "Draft"}</span>
+                    <span>{item.verified ? "Published" : "Draft"}</span>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label>Farmer name</Label>
-                  <Input value={item.farmerName} onChange={(e) => update(item.id, { farmerName: e.target.value })} placeholder="Real farmer name" />
+                  <Label>Farmer's name</Label>
+                  <Input value={item.farmerName} onChange={(e) => update(item.id, { farmerName: e.target.value })} placeholder="Example: Ramkishan Patidar" />
                 </div>
                 <div className="space-y-2">
-                  <Label>Farm name <span className="text-muted-foreground">(optional)</span></Label>
-                  <Input value={item.farmName ?? ""} onChange={(e) => update(item.id, { farmName: e.target.value })} placeholder="Farm / village name" />
+                  <Label>Farm / village <span className="text-muted-foreground">(optional)</span></Label>
+                  <Input value={item.farmName ?? ""} onChange={(e) => update(item.id, { farmName: e.target.value })} placeholder="Example: Lachakhedi" />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>Testimony</Label>
-                  <Textarea rows={4} value={item.content} onChange={(e) => update(item.id, { content: e.target.value })} placeholder="Paste the farmer's verified feedback" />
+                  <Label>What the farmer said</Label>
+                  <Textarea rows={4} value={item.content} onChange={(e) => update(item.id, { content: e.target.value })} placeholder="Example: The products are good quality and delivery is reliable." />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
-                  <Label>Farmer image</Label>
+                  <Label>Farmer photo <span className="text-muted-foreground">(optional)</span></Label>
                   <div className="flex flex-wrap items-center gap-4 rounded-lg border border-dashed border-border p-4">
                     <div className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-full bg-muted">
                       {item.imagePreview || item.imageUrl ? (
-                        <img src={item.imagePreview || item.imageUrl} alt={`${item.farmerName || "Farmer"} avatar`} className="size-16 object-cover" width={64} height={64} />
+                        <img src={item.imagePreview || item.imageUrl} alt={`${item.farmerName || "Farmer"} photo`} className="size-16 object-cover" width={64} height={64} />
                       ) : (
                         <ImagePlus className="size-5 text-muted-foreground" />
                       )}
                     </div>
                     <div className="flex flex-wrap gap-2">
                       <label className="inline-flex cursor-pointer items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium">
-                        <ImagePlus className="size-4" /> Upload image
+                        <ImagePlus className="size-4" /> Add photo
                         <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => chooseImage(item, e.target.files?.[0])} />
                       </label>
                       {item.imageUrl || item.imageFile ? (
                         <Button type="button" variant="outline" className="rounded-full" onClick={() => void removeImage(item)}>
-                          <X className="size-4" /> Remove image
+                          <X className="size-4" /> Remove photo
                         </Button>
                       ) : null}
                     </div>
-                    <p className="basis-full text-xs text-muted-foreground">Automatically resized to a compact WebP avatar (max 256px / 200KB).</p>
+                    <p className="basis-full text-xs text-muted-foreground">Photo is automatically resized for fast loading.</p>
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 sm:col-span-2">
