@@ -14,6 +14,8 @@ import {
   loadAdminRouteData,
 } from "@/lib/admin-route-data-v2";
 import { ensureAdminProductCatalog } from "@/lib/admin-supporting-data";
+import { supabase } from "@/integrations/supabase/client";
+import { shopStore } from "@/lib/shop-store";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin")({
@@ -29,6 +31,40 @@ export const Route = createFileRoute("/admin")({
   }),
   component: AdminLayout,
 });
+
+const INVENTORY_SUPPLIER_COLUMNS =
+  "id,name,company,mobile,email,gstin,address,products_supplied,total_purchases,total_paid,advance,due_balance,last_order,status";
+
+function setInventorySuppliers(rows: any[]) {
+  const state = shopStore.get() as any;
+  state.suppliers = rows.map((row) => ({
+    id: row.id,
+    name: row.name ?? "",
+    company: row.company ?? "",
+    mobile: row.mobile ?? "",
+    email: row.email ?? "",
+    gstin: row.gstin ?? "",
+    address: row.address ?? "",
+    productsSupplied: row.products_supplied ?? [],
+    totalPurchases: Number(row.total_purchases ?? 0),
+    totalPaid: Number(row.total_paid ?? 0),
+    advance: Number(row.advance ?? 0),
+    dueBalance: Number(row.due_balance ?? 0),
+    lastOrder: row.last_order ?? "",
+    status: row.status,
+  }));
+  shopStore.setDraftProduct(state.draftProduct ?? null);
+}
+
+async function loadInventorySuppliers() {
+  const { data, error } = await supabase
+    .from("suppliers")
+    .select(INVENTORY_SUPPLIER_COLUMNS)
+    .order("name");
+
+  if (error) throw error;
+  setInventorySuppliers(data ?? []);
+}
 
 function SectionDataLoader() {
   return (
@@ -56,7 +92,10 @@ function AdminLayout() {
   useEffect(() => {
     if (!ready || !user || (user.role !== "admin" && user.role !== "staff")) return;
 
-    if (isAdminSectionLoaded(location.pathname)) {
+    const isInventoryRoute = location.pathname.startsWith("/admin/inventory");
+    const sectionLoaded = isAdminSectionLoaded(location.pathname);
+
+    if (sectionLoaded && !isInventoryRoute) {
       setSectionLoading(false);
       return;
     }
@@ -64,15 +103,19 @@ function AdminLayout() {
     let cancelled = false;
     setSectionLoading(true);
 
-    void loadAdminRouteData(location.pathname)
-      .then(async () => {
-        if (
-          location.pathname.startsWith("/admin/customers") ||
-          location.pathname.startsWith("/admin/khata")
-        ) {
-          await ensureAdminProductCatalog();
-        }
-      })
+    void (async () => {
+      if (!sectionLoaded) {
+        await loadAdminRouteData(location.pathname);
+      }
+
+      if (location.pathname.startsWith("/admin/customers") || location.pathname.startsWith("/admin/khata")) {
+        await ensureAdminProductCatalog();
+      }
+
+      if (isInventoryRoute) {
+        await loadInventorySuppliers();
+      }
+    })()
       .catch((error) => {
         console.error("Admin section data load failed:", error);
       })
