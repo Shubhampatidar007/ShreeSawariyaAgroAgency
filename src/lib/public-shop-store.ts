@@ -24,6 +24,7 @@ let state: PublicShopState = {
 
 const listeners = new Set<() => void>();
 const PUBLIC_CACHE_TTL_MS = 5 * 60 * 1000;
+const MAX_PUBLIC_TESTIMONIALS = 3;
 let loadedAt = 0;
 
 const notify = () => listeners.forEach((listener) => listener());
@@ -195,7 +196,8 @@ export async function loadPublicShopData() {
         (supabase.from("testimonials") as any)
           .select("id, farmer_name, farm_name, content, image_url, created_at, updated_at, verified")
           .eq("verified", true)
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .limit(MAX_PUBLIC_TESTIMONIALS),
         supabase
           .from("cms_sections")
           .select("id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label")
