@@ -140,6 +140,42 @@ function TestimonialsPage() {
     toast.success("Photo removed");
   };
 
+  const togglePublish = async (item: Draft, verified: boolean) => {
+    if (verified) {
+      const farmerName = item.farmerName.trim();
+      const content = item.content.trim();
+      if (!farmerName || !content) {
+        toast.error("Enter the farmer's name and feedback before publishing");
+        return;
+      }
+      if (looksLikeDebugData(content)) {
+        toast.error("Please enter the farmer's feedback, not browser/network details.");
+        return;
+      }
+      if (content.length < 10) {
+        toast.error("Published feedback should be a little more detailed");
+        return;
+      }
+    }
+
+    const previous = item.verified;
+    update(item.id, { verified });
+
+    if (item.isNew) return;
+
+    const { error } = await (supabase.from("testimonials") as any)
+      .update({ verified, enabled: verified })
+      .eq("id", item.id);
+
+    if (error) {
+      update(item.id, { verified: previous });
+      toast.error(error.message);
+      return;
+    }
+
+    toast.success(verified ? "Published on the website" : "Removed from the website");
+  };
+
   const save = async (item: Draft) => {
     const farmerName = item.farmerName.trim();
     const content = item.content.trim();
@@ -267,7 +303,10 @@ function TestimonialsPage() {
                 <div className="flex items-center justify-between gap-3">
                   <CardTitle className="text-base">Farmer testimonial</CardTitle>
                   <div className="flex items-center gap-2 text-sm">
-                    <Switch checked={item.verified} onCheckedChange={(verified) => update(item.id, { verified })} />
+                    <Switch
+                      checked={item.verified}
+                      onCheckedChange={(verified) => void togglePublish(item, verified)}
+                    />
                     <span>{item.verified ? "Published" : "Draft"}</span>
                   </div>
                 </div>
