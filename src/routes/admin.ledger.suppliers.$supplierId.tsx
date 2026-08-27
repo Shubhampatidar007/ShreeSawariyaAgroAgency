@@ -1,8 +1,18 @@
 import { useMemo, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { IndianRupee, Printer, Truck, Wallet, CreditCard } from "lucide-react";
+import {
+  IndianRupee,
+  MessageCircle,
+  Printer,
+  Send,
+  Truck,
+  Wallet,
+  CreditCard,
+} from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +42,16 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { Timeline } from "@/components/shared/Timeline";
-import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import {
+  formatCurrency,
+  formatDate,
+  shopStore,
+  useShopStore,
+} from "@/lib/shop-store";
+import {
+  sendWhatsAppBatch,
+  type WhatsAppRecipient,
+} from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin/ledger/suppliers/$supplierId")({
   head: () => ({
@@ -48,6 +67,45 @@ export const Route = createFileRoute("/admin/ledger/suppliers/$supplierId")({
   component: SupplierLedgerPage,
 });
 
+type SupplierReminderForm = {
+  advancePay: string;
+  otherImportant: string;
+  message: string;
+};
+
+const buildSupplierReminderMessage = ({
+  supplierName,
+  totalRecords,
+  totalPurchases,
+  totalPaid,
+  advancePay,
+  dueBalance,
+  otherImportant,
+}: {
+  supplierName: string;
+  totalRecords: number;
+  totalPurchases: number;
+  totalPaid: number;
+  advancePay: string;
+  dueBalance: number;
+  otherImportant: string;
+}) =>
+  [
+    `Hello ${supplierName || "Supplier"},`,
+    "",
+    "Order update from Shree Sawariya Agro Agency.",
+    "",
+    `Total records: ${totalRecords}`,
+    `Total purchases: ${formatCurrency(totalPurchases)}`,
+    `Total paid: ${formatCurrency(totalPaid)}`,
+    `Advance pay: ${formatCurrency(Number(advancePay) || 0)}`,
+    `Due balance: ${formatCurrency(dueBalance)}`,
+    `Other important: ${otherImportant.trim() || "—"}`,
+    "",
+    "Thank you,",
+    "Shree Sawariya Agro Agency",
+  ].join("\n");
+
 function SupplierLedgerPage() {
   const { supplierId } = Route.useParams();
   const [paymentOpen, setPaymentOpen] = useState(false);
@@ -58,6 +116,14 @@ function SupplierLedgerPage() {
   const [paymentRemarks, setPaymentRemarks] = useState("");
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [paymentError, setPaymentError] = useState("");
+  const [whatsappOpen, setWhatsappOpen] = useState(false);
+  const [whatsappSending, setWhatsappSending] = useState(false);
+  const [whatsappResult, setWhatsappResult] = useState<{ ok: boolean; text: string } | null>(null);
+  const [reminderForm, setReminderForm] = useState<SupplierReminderForm>({
+    advancePay: "0",
+    otherImportant: "",
+    message: "",
+  });
   const supplier = useShopStore((s) => s.suppliers.find((x) => x.id === supplierId));
 
   const ledger = useShopStore((s) =>
@@ -72,6 +138,8 @@ function SupplierLedgerPage() {
     [ledger],
   );
 
+  const totalRecords = sorted.length;
+
   if (!supplier) {
     return (
       <EmptyState
@@ -82,6 +150,92 @@ function SupplierLedgerPage() {
       />
     );
   }
+
+  const openWhatsAppReminder = () => {
+    if (!supplier.mobile?.trim()) {
+      toast.error("Supplier mobile number is missing.");
+      return;
+    }
+
+    const initialForm: SupplierReminderForm = {
+      advancePay: String(supplier.advance || 0),
+      otherImportant: "",
+      message: buildSupplierReminderMessage({
+        supplierName: supplier.name || supplier.company,
+        totalRecords,
+        totalPurchases: supplier.totalPurchases,
+        totalPaid: supplier.totalPaid,
+        advancePay: String(supplier.advance || 0),
+        dueBalance: supplier.dueBalance,
+        otherImportant: "",
+      }),
+    };
+
+    setReminderForm(initialForm);
+    setWhatsappResult(null);
+    setWhatsappOpen(true);
+  };
+
+  const sendSupplierWhatsApp = async () => {
+    if (!supplier.mobile?.trim()) {
+      setWhatsappResult({ ok: false, text: "Supplier mobile number is missing." });
+      return;
+    }
+
+    const advancePay = Number(reminderForm.advancePay);
+    if (!Number.isFinite(advancePay) || advancePay < 0) {
+      setWhatsappResult({ ok: false, text: "Enter a valid advance pay amount." });
+      return;
+    }
+
+    const message = reminderForm.message.trim();
+    if (!message) {
+      setWhatsappResult({ ok: false, text: "Message cannot be empty." });
+      return;
+    }
+
+    setWhatsappSending(true);
+    setWhatsappResult(null);
+
+    const recipient: WhatsAppRecipient = {
+      id: supplier.id,
+      name: supplier.name || supplier.company,
+      mobile: supplier.mobile,
+      due: supplier.dueBalance,
+      village: "",
+      lastPurchase: supplier.lastOrder,
+    };
+
+    try {
+      const response = await sendWhatsAppBatch({
+        kind: "custom",
+        recipients: [recipient],
+        message,
+        metadata: {
+          recordType: "supplier-ledger-reminder",
+          supplierId: supplier.id,
+          totalRecords,
+          advancePay,
+          otherImportant: reminderForm.otherImportant.trim(),
+        },
+      });
+
+      const text = response.note || "Supplier WhatsApp reminder sent successfully.";
+      setWhatsappResult({ ok: response.ok, text });
+
+      if (response.ok) {
+        toast.success("Supplier reminder sent on WhatsApp.");
+      } else {
+        toast.error(text);
+      }
+    } catch (error) {
+      const text = error instanceof Error ? error.message : "WhatsApp delivery failed.";
+      setWhatsappResult({ ok: false, text });
+      toast.error(text);
+    } finally {
+      setWhatsappSending(false);
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -96,6 +250,16 @@ function SupplierLedgerPage() {
         subtitle={`${supplier.name} · ${supplier.mobile} · GSTIN ${supplier.gstin}`}
         actions={
           <div className="flex items-center gap-2">
+            <Button
+              className="rounded-full"
+              variant="outline"
+              onClick={openWhatsAppReminder}
+              disabled={!supplier.mobile?.trim() || whatsappSending}
+            >
+              <MessageCircle className="mr-2 h-4 w-4" />
+              Send via WhatsApp
+            </Button>
+
             <Button
               className="rounded-full"
               onClick={() => {
@@ -150,8 +314,11 @@ function SupplierLedgerPage() {
 
       <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
         <Card className="overflow-hidden shadow-soft">
-          <CardHeader>
+          <CardHeader className="flex flex-row items-center justify-between gap-4">
             <CardTitle className="text-base">Purchase history</CardTitle>
+            <span className="rounded-full border bg-muted/30 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {totalRecords} {totalRecords === 1 ? "record" : "records"}
+            </span>
           </CardHeader>
 
           <CardContent className="p-0">
@@ -162,8 +329,8 @@ function SupplierLedgerPage() {
                     <TableHead>Date</TableHead>
                     <TableHead>Type</TableHead>
                     <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Quantity</TableHead>
-                    <TableHead className="text-right">Rate</TableHead>
+                    <TableHead className="text-right">Advance Pay</TableHead>
+                    <TableHead>Other Important</TableHead>
                     <TableHead className="text-right">Amount</TableHead>
                     <TableHead className="text-right">Balance</TableHead>
                     <TableHead>Method</TableHead>
@@ -172,11 +339,8 @@ function SupplierLedgerPage() {
 
                 <TableBody>
                   {sorted.map((entry) => {
-                    const quantity = Number(entry.quantity) || 0;
-                    const unit = entry.unit || "";
-                    const rate = Number(entry.unitPrice) || 0;
-
-                    const isPurchase = entry.type.toLowerCase() === "purchase";
+                    const advancePay = entry.type.toLowerCase() === "advance" ? entry.amount : 0;
+                    const otherImportant = entry.remarks?.trim() || "—";
 
                     return (
                       <TableRow key={entry.id}>
@@ -191,23 +355,19 @@ function SupplierLedgerPage() {
                         <TableCell>
                           <div className="min-w-[140px]">
                             <p className="font-medium">
-                              {entry.productName || entry.reference || "—"}
+                              {(entry as typeof entry & { productName?: string }).productName ||
+                                entry.reference ||
+                                "—"}
                             </p>
                           </div>
                         </TableCell>
 
                         <TableCell className="text-right whitespace-nowrap">
-                          {isPurchase && quantity > 0 ? (
-                            <span>
-                              {quantity.toLocaleString("en-IN")} {unit}
-                            </span>
-                          ) : (
-                            "—"
-                          )}
+                          {advancePay > 0 ? formatCurrency(advancePay) : "—"}
                         </TableCell>
 
-                        <TableCell className="text-right whitespace-nowrap">
-                          {isPurchase && rate > 0 ? formatCurrency(rate) : "—"}
+                        <TableCell className="min-w-[180px] max-w-[260px] text-sm text-muted-foreground">
+                          {otherImportant}
                         </TableCell>
 
                         <TableCell className="text-right whitespace-nowrap font-medium">
@@ -249,27 +409,21 @@ function SupplierLedgerPage() {
             ) : (
               <Timeline
                 items={sorted.map((entry) => {
-                  const quantity = Number(entry.quantity) || 0;
-                  const unit = entry.unit || "";
-                  const rate = Number(entry.unitPrice) || 0;
-
                   const isPurchase = entry.type.toLowerCase() === "purchase";
+                  const otherImportant = entry.remarks?.trim();
 
                   return {
                     id: entry.id,
 
                     title: isPurchase
-                      ? `Purchase · ${entry.productName || entry.reference || "Item"}`
+                      ? `Purchase · ${(entry as typeof entry & { productName?: string }).productName || entry.reference || "Item"}`
                       : `${entry.type} · ${entry.reference}`,
 
-                    meta:
-                      isPurchase && quantity > 0
-                        ? `${formatDate(entry.date)} · ${quantity.toLocaleString(
-                            "en-IN",
-                          )} ${unit} × ${formatCurrency(rate)} · ${entry.method.toUpperCase()}`
-                        : `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
+                    meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
 
-                    description: `Running balance ${formatCurrency(entry.balance)}`,
+                    description: `Running balance ${formatCurrency(entry.balance)}${
+                      otherImportant ? ` · ${otherImportant}` : ""
+                    }`,
 
                     amount: formatCurrency(entry.amount),
 
@@ -281,6 +435,103 @@ function SupplierLedgerPage() {
           </CardContent>
         </Card>
       </div>
+
+      <Dialog open={whatsappOpen} onOpenChange={setWhatsappOpen}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Send supplier reminder</DialogTitle>
+            <DialogDescription>
+              Compose the account update that will be sent to {supplier.name || supplier.company} on WhatsApp.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            <div className="rounded-lg border bg-muted/30 p-4">
+              <p className="text-sm text-muted-foreground">Supplier</p>
+              <p className="font-semibold">{supplier.company}</p>
+              <p className="text-sm text-muted-foreground">
+                {supplier.name} · {supplier.mobile}
+              </p>
+              <p className="mt-2 text-xs text-muted-foreground">
+                {totalRecords} {totalRecords === 1 ? "record" : "records"} in this ledger view
+              </p>
+            </div>
+
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="supplier-reminder-advance-pay">Advance Pay</Label>
+                <Input
+                  id="supplier-reminder-advance-pay"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={reminderForm.advancePay}
+                  onChange={(event) =>
+                    setReminderForm((current) => ({
+                      ...current,
+                      advancePay: event.target.value,
+                    }))
+                  }
+                  placeholder="0"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="supplier-reminder-other-important">Other Important</Label>
+                <Input
+                  id="supplier-reminder-other-important"
+                  value={reminderForm.otherImportant}
+                  onChange={(event) =>
+                    setReminderForm((current) => ({
+                      ...current,
+                      otherImportant: event.target.value,
+                    }))
+                  }
+                  placeholder="Notes for supplier"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="supplier-reminder-message">WhatsApp message</Label>
+              <Textarea
+                id="supplier-reminder-message"
+                value={reminderForm.message}
+                onChange={(event) =>
+                  setReminderForm((current) => ({
+                    ...current,
+                    message: event.target.value,
+                  }))
+                }
+                rows={11}
+                className="resize-none"
+              />
+            </div>
+
+            {whatsappResult && (
+              <p className={`text-sm ${whatsappResult.ok ? "text-emerald-600" : "text-destructive"}`}>
+                {whatsappResult.text}
+              </p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setWhatsappOpen(false)}
+              disabled={whatsappSending}
+            >
+              Close
+            </Button>
+            <Button onClick={sendSupplierWhatsApp} disabled={whatsappSending || !supplier.mobile?.trim()}>
+              <Send className="mr-2 h-4 w-4" />
+              {whatsappSending ? "Sending…" : "Send via WhatsApp"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

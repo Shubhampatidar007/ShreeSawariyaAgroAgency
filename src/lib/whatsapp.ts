@@ -15,6 +15,7 @@ export type WhatsAppSendRequest = {
   kind: WhatsAppMessageKind;
   recipients: WhatsAppRecipient[];
   message: string;
+  metadata?: Record<string, string | number | boolean | null>;
 };
 
 export type WhatsAppSendResponse = {
