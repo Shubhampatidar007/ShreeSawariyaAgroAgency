@@ -7,7 +7,10 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Shree Sawariya Agro Agency" },
-      { name: "description", content: "Discover the story, profile and technology behind Shree Sawariya Agro Agency." },
+      {
+        name: "description",
+        content: "Discover the story, profile and technology behind Shree Sawariya Agro Agency.",
+      },
       { property: "og:title", content: "About — Shree Sawariya Agro Agency" },
     ],
   }),
@@ -16,7 +19,7 @@ export const Route = createFileRoute("/about")({
 
 function AboutPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="about-page-shell min-h-screen bg-background">
       <SiteHeader />
       <AboutSection />
       <SiteFooter />
