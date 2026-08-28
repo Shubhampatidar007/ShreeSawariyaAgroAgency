@@ -3,8 +3,13 @@
   --about-scroll-velocity: 0;
 }
 
-.about-hero__scroll-stage {
+.about-hero__scroll-stage,
+.about-hero__scroll-copy {
   position: relative;
+  will-change: transform, opacity;
+}
+
+.about-hero__scroll-stage {
   width: 100%;
   height: 100%;
   display: grid;
@@ -12,7 +17,12 @@
   transform: translate3d(0, var(--about-scroll-y, 0px), 0) scale(var(--about-scroll-scale, 1)) rotate(var(--about-scroll-rotate, 0deg));
   opacity: var(--about-scroll-opacity, 1);
   transform-origin: center center;
-  will-change: transform, opacity;
+}
+
+.about-hero__scroll-copy {
+  transform: translate3d(0, calc(var(--about-scroll) * -110px), 0);
+  opacity: calc(1 - (var(--about-scroll) * 0.55));
+  transform-origin: center center;
 }
 
 .about-hero__grid {
@@ -20,16 +30,8 @@
   will-change: transform;
 }
 
-.about-hero__copy {
-  transform: translate3d(0, calc(var(--about-scroll) * -110px), 0);
-  opacity: calc(1 - (var(--about-scroll) * 0.55));
-  will-change: transform, opacity;
-}
-
 .about-hero__visual {
-  transform: translate3d(0, calc(var(--about-scroll) * 45px), 0);
   opacity: calc(1 - (var(--about-scroll) * 0.12));
-  will-change: transform, opacity;
 }
 
 .about-scroll-section {
@@ -42,7 +44,7 @@
 }
 
 @media (max-width: 900px), (pointer: coarse) {
-  .about-hero__copy {
+  .about-hero__scroll-copy {
     transform: translate3d(0, calc(var(--about-scroll) * -55px), 0);
   }
 
@@ -58,7 +60,7 @@
 @media (prefers-reduced-motion: reduce) {
   .about-hero__scroll-stage,
   .about-hero__grid,
-  .about-hero__copy,
+  .about-hero__scroll-copy,
   .about-hero__visual,
   .about-scroll-section > div {
     transform: none !important;
