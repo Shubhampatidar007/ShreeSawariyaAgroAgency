@@ -59,6 +59,6 @@ export const storefrontNav = [
   { label: "Categories", to: "/#categories" },
   { label: "Products", to: "/#products" },
   { label: "Offers", to: "/#offers" },
-  { label: "About", to: "/#about" },
+  { label: "About", to: "/about" },
   { label: "Contact", to: "/#contact" },
 ];
