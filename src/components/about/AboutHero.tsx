@@ -1,0 +1,65 @@
+import { motion, useReducedMotion } from "motion/react";
+import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
+import { DigitalSeed } from "@/components/about/DigitalSeed";
+
+export function AboutHero() {
+  const reducedMotion = useReducedMotion();
+  const instant = reducedMotion === true;
+
+  return (
+    <section id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
+      <div className="about-hero__grid" aria-hidden="true" />
+      <div className="about-hero__noise" aria-hidden="true" />
+
+      <div className="about-container about-hero__content">
+        <div className="about-hero__eyebrow" data-text-reveal="done">
+          <span><Leaf className="size-3.5" /> SHUBHAM PATIDAR</span>
+          <span>AGRICULTURE × TECHNOLOGY</span>
+        </div>
+
+        <div className="about-hero__main">
+          <motion.div
+            initial={instant ? false : { opacity: 0, y: 26 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: instant ? 0 : 0.9, delay: instant ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+            className="about-hero__copy"
+          >
+            <p className="about-kicker" data-text-reveal="done">DIGITAL BUILDER / DEVELOPER / PRODUCT THINKER</p>
+            <h1 id="about-hero-title" className="about-hero__title" data-text-reveal="done">
+              SHUBHAM
+              <span>PATIDAR.</span>
+            </h1>
+            <p className="about-hero__lede" data-text-reveal="done">
+              Turning real-world problems into clear, useful digital experiences — with the discipline of a builder and the curiosity of a grower.
+            </p>
+
+            <button type="button" className="about-hero__scroll" onClick={() => document.getElementById("identity")?.scrollIntoView({ behavior: "smooth" })}>
+              <span>ENTER THE STORY</span>
+              <ArrowDown className="size-4" />
+            </button>
+          </motion.div>
+
+          <motion.div
+            initial={instant ? false : { opacity: 0, scale: 0.88, rotate: -4 }}
+            animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            transition={{ duration: instant ? 0 : 1.1, delay: instant ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
+            className="about-hero__visual"
+          >
+            <DigitalSeed reducedMotion={instant} />
+            <div className="about-hero__visual-label" aria-hidden="true">
+              <span>01</span>
+              <span>DIGITAL SEED</span>
+              <span><CircleArrowOutUpRight className="size-3.5" /></span>
+            </div>
+          </motion.div>
+        </div>
+
+        <div className="about-hero__footer" data-text-reveal="done">
+          <span>BASED IN INDIA</span>
+          <span>BUILDING WITH PURPOSE</span>
+          <span>SCROLL / 01 →</span>
+        </div>
+      </div>
+    </section>
+  );
+}
