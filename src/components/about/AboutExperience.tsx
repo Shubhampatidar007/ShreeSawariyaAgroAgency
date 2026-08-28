@@ -1,5 +1,10 @@
 import { AboutExperienceNavbar } from "@/components/about/AboutExperienceNavbar";
 import { AboutHero } from "@/components/about/AboutHero";
+import { AboutIdentity } from "@/components/about/AboutIdentity";
+import { AboutTechnology } from "@/components/about/AboutTechnology";
+import { AboutAgricultureTech } from "@/components/about/AboutAgricultureTech";
+import { AboutStory } from "@/components/about/AboutStory";
+import { AboutConnect } from "@/components/about/AboutConnect";
 import "@/components/about/about.css";
 
 export function AboutExperience() {
@@ -8,14 +13,11 @@ export function AboutExperience() {
       <AboutExperienceNavbar />
       <main>
         <AboutHero />
-        <section className="about-phase-placeholder" aria-label="About experience continuation">
-          <div className="about-container py-28 sm:py-36">
-            <p className="about-kicker" data-text-reveal="done">SCROLL TO CONTINUE</p>
-            <p className="about-placeholder-copy" data-text-reveal="done">
-              A story about building useful digital experiences from real-world problems.
-            </p>
-          </div>
-        </section>
+        <AboutIdentity />
+        <AboutTechnology />
+        <AboutAgricultureTech />
+        <AboutStory />
+        <AboutConnect />
       </main>
     </div>
   );
