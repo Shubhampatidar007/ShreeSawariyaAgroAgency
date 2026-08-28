@@ -72,6 +72,7 @@ export function SmoothScroll() {
 
     const scan = () => {
       document.querySelectorAll(TEXT_SELECTOR).forEach((element) => {
+        if (element.closest(".about-experience")) return;
         prepareElement(element);
         observer.observe(element);
       });
