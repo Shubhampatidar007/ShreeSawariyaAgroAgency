@@ -1,5 +1,15 @@
 import { useLayoutEffect, useRef } from "react";
-import { ExternalLink, Github, Instagram, Linkedin, Mail, MapPin, Pencil, Sparkles } from "lucide-react";
+import {
+  ExternalLink,
+  Github,
+  Instagram,
+  Linkedin,
+  Mail,
+  MapPin,
+  Pencil,
+  Phone,
+  Sparkles,
+} from "lucide-react";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { AvatarUploader } from "@/components/about/AvatarUploader";
@@ -18,7 +28,16 @@ const socialLinks: SocialLink[] = [
   { id: "linkedin", label: "LinkedIn", url: "https://www.linkedin.com/", Icon: Linkedin },
 ];
 
-const stackItems = ["React", "TypeScript", "TanStack Start", "Supabase", "Tailwind", "GitHub", "Lucide", "Responsive UI"];
+const stackItems = [
+  "React",
+  "TypeScript",
+  "TanStack Start",
+  "Supabase",
+  "Tailwind",
+  "GitHub",
+  "Lucide",
+  "Responsive UI",
+];
 
 export function AboutSection() {
   const rootRef = useRef<HTMLElement | null>(null);
@@ -39,7 +58,11 @@ export function AboutSection() {
   const socialGridRef = useRef<HTMLDivElement | null>(null);
   const adminRef = useRef<HTMLElement | null>(null);
 
-  const { profile: githubProfile, loading: githubLoading, error: githubError } = useGithubProfile("Shubhampatidar007");
+  const {
+    profile: githubProfile,
+    loading: githubLoading,
+    error: githubError,
+  } = useGithubProfile("Shubhampatidar007");
   const localProfile = useAboutProfile();
 
   const fallback: AboutProfile = {
@@ -77,7 +100,25 @@ export function AboutSection() {
     const socialGrid = socialGridRef.current;
     const admin = adminRef.current;
 
-    if (!root || !hero || !heroMedia || !heroTitle || !heroCopy || !heroPill || !photo || !profileCopy || !techBand || !techTrack || !story || !storyLead || !storyCopy || !social || !socialTitle || !socialGrid || !admin) {
+    if (
+      !root ||
+      !hero ||
+      !heroMedia ||
+      !heroTitle ||
+      !heroCopy ||
+      !heroPill ||
+      !photo ||
+      !profileCopy ||
+      !techBand ||
+      !techTrack ||
+      !story ||
+      !storyLead ||
+      !storyCopy ||
+      !social ||
+      !socialTitle ||
+      !socialGrid ||
+      !admin
+    ) {
       return undefined;
     }
 
@@ -86,7 +127,18 @@ export function AboutSection() {
 
       if (mediaQuery.matches) {
         gsap.set(
-          [heroTitle, heroCopy, heroPill, photo, profileCopy, storyLead, storyCopy, socialTitle, socialGrid, admin],
+          [
+            heroTitle,
+            heroCopy,
+            heroPill,
+            photo,
+            profileCopy,
+            storyLead,
+            storyCopy,
+            socialTitle,
+            socialGrid,
+            admin,
+          ],
           { clearProps: "all" },
         );
         return;
@@ -351,18 +403,25 @@ export function AboutSection() {
         </div>
         <div className="about-container about-hero-inner">
           <p className="about-kicker">SHREE SAWARIYA / ABOUT</p>
-          <h1 ref={heroTitleRef} className="about-display-title" aria-label="Local trust. Modern storefront.">
+          <h1
+            ref={heroTitleRef}
+            className="about-display-title"
+            aria-label="Local trust. Modern storefront."
+          >
             <span className="about-hero-line">Local trust.</span>
             <span className="about-hero-line about-hero-line-soft">Modern storefront.</span>
           </h1>
           <p ref={heroCopyRef} className="about-hero-copy">
-            A dedicated profile page for the people, technology and story behind the store — built as a richer destination than the homepage teaser.
+            A dedicated profile page for the people, technology and story behind the store — built
+            as a richer destination than the homepage teaser.
           </p>
           <a ref={heroPillRef} className="about-pill" href="#about-profile">
             Explore profile <span aria-hidden="true">↓</span>
           </a>
         </div>
-        <div className="about-scroll-cue" aria-hidden="true"><span /> Scroll to explore</div>
+        <div className="about-scroll-cue" aria-hidden="true">
+          <span /> Scroll to explore
+        </div>
       </section>
 
       <section id="about-profile" className="about-container about-profile-grid">
@@ -371,7 +430,9 @@ export function AboutSection() {
           {display.photoUrl ? (
             <img src={display.photoUrl} alt={`${display.name} profile`} />
           ) : (
-            <div className="about-photo-placeholder" aria-label="Profile photo placeholder">SA</div>
+            <div className="about-photo-placeholder" aria-label="Profile photo placeholder">
+              SA
+            </div>
           )}
           <div className="about-photo-caption">
             <span>01</span>
@@ -397,7 +458,13 @@ export function AboutSection() {
           </div>
 
           <div className="about-inline-meta">
-            <span>{githubLoading ? "Syncing GitHub profile…" : githubError ? "GitHub fallback active" : "GitHub profile connected"}</span>
+            <span>
+              {githubLoading
+                ? "Syncing GitHub profile…"
+                : githubError
+                  ? "GitHub fallback active"
+                  : "GitHub profile connected"}
+            </span>
             {githubProfile?.html_url ? (
               <a href={githubProfile.html_url} target="_blank" rel="noopener noreferrer">
                 View GitHub <ExternalLink className="size-3.5" aria-hidden="true" />
@@ -407,7 +474,11 @@ export function AboutSection() {
         </div>
       </section>
 
-      <section ref={techBandRef} className="about-tech-band" aria-label="Technology and platform stack">
+      <section
+        ref={techBandRef}
+        className="about-tech-band"
+        aria-label="Technology and platform stack"
+      >
         <div ref={techTrackRef} className="about-tech-track">
           {[...stackItems, ...stackItems].map((item, index) => (
             <span key={`${item}-${index}`} className="about-tech-item">
@@ -422,15 +493,18 @@ export function AboutSection() {
         <div>
           <p className="about-kicker">02 / THE STORY</p>
           <p ref={storyLeadRef} className="about-story-lead">
-            The About page is intentionally more editorial: large type, layered surfaces, subtle movement and content that can grow with the business.
+            The About page is intentionally more editorial: large type, layered surfaces, subtle
+            movement and content that can grow with the business.
           </p>
         </div>
         <div ref={storyCopyRef} className="about-story-copy">
           <p>
-            The homepage remains focused on shopping. This page carries the identity layer: profile information, links, technology, contact context and future media.
+            The homepage remains focused on shopping. This page carries the identity layer: profile
+            information, links, technology, contact context and future media.
           </p>
           <p>
-            The hero artwork is deliberately a replaceable placeholder so the final personal/business image can be swapped later without changing the page structure.
+            The hero artwork is deliberately a replaceable placeholder so the final
+            personal/business image can be swapped later without changing the page structure.
           </p>
         </div>
       </section>
@@ -438,7 +512,9 @@ export function AboutSection() {
       <section ref={socialRef} className="about-container about-social-section">
         <div>
           <p className="about-kicker">03 / CONNECT</p>
-          <h2 ref={socialTitleRef} className="about-section-title">Find the work online.</h2>
+          <h2 ref={socialTitleRef} className="about-section-title">
+            Find the work online.
+          </h2>
         </div>
         <div ref={socialGridRef}>
           <SocialLinks links={socialLinks} />
@@ -461,7 +537,9 @@ export function AboutSection() {
 
       <footer className="about-footer about-container">
         <span>SHREE SAWARIYA AGRO AGENCY</span>
-        <a href="/">Back to store <Phone className="size-3.5" aria-hidden="true" /></a>
+        <a href="/">
+          Back to store <Phone className="size-3.5" aria-hidden="true" />
+        </a>
       </footer>
     </main>
   );
