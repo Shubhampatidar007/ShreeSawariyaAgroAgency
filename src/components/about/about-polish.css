@@ -31,15 +31,6 @@
   will-change: opacity;
 }
 
-.about-scroll-section {
-  --section-progress: 0;
-}
-
-.about-scroll-section > div {
-  transform: translate3d(0, calc((0.5 - var(--section-progress)) * 28px), 0);
-  will-change: transform;
-}
-
 .about-hero__visual-stage {
   position: relative;
   display: grid;
