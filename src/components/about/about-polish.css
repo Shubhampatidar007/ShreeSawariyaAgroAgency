@@ -1,3 +1,72 @@
+.about-experience {
+  --about-scroll: 0;
+  --about-scroll-velocity: 0;
+}
+
+.about-hero__scroll-stage {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: grid;
+  place-items: center;
+  transform: translate3d(0, var(--about-scroll-y, 0px), 0) scale(var(--about-scroll-scale, 1)) rotate(var(--about-scroll-rotate, 0deg));
+  opacity: var(--about-scroll-opacity, 1);
+  transform-origin: center center;
+  will-change: transform, opacity;
+}
+
+.about-hero__grid {
+  transform: translate3d(0, calc(var(--about-scroll) * 120px), 0);
+  will-change: transform;
+}
+
+.about-hero__copy {
+  transform: translate3d(0, calc(var(--about-scroll) * -110px), 0);
+  opacity: calc(1 - (var(--about-scroll) * 0.55));
+  will-change: transform, opacity;
+}
+
+.about-hero__visual {
+  transform: translate3d(0, calc(var(--about-scroll) * 45px), 0);
+  opacity: calc(1 - (var(--about-scroll) * 0.12));
+  will-change: transform, opacity;
+}
+
+.about-scroll-section {
+  --section-progress: 0;
+}
+
+.about-scroll-section > div {
+  transform: translate3d(0, calc((0.5 - var(--section-progress)) * 28px), 0);
+  will-change: transform;
+}
+
+@media (max-width: 900px), (pointer: coarse) {
+  .about-hero__copy {
+    transform: translate3d(0, calc(var(--about-scroll) * -55px), 0);
+  }
+
+  .about-hero__scroll-stage {
+    transform: translate3d(0, calc(var(--about-scroll) * -55px), 0) scale(calc(1 + (var(--about-scroll) * 0.06)));
+  }
+
+  .about-hero__grid {
+    transform: translate3d(0, calc(var(--about-scroll) * 65px), 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-hero__scroll-stage,
+  .about-hero__grid,
+  .about-hero__copy,
+  .about-hero__visual,
+  .about-scroll-section > div {
+    transform: none !important;
+    opacity: 1 !important;
+    will-change: auto;
+  }
+}
+
 .about-hero__visual-stage {
   position: relative;
   display: grid;
@@ -22,10 +91,6 @@
 }
 
 @media (max-width: 640px), (pointer: coarse) {
-  .about-hero__visual-stage {
-    transform: none !important;
-  }
-
   .digital-seed__orbit--two,
   .digital-seed__nodes--two {
     display: none;

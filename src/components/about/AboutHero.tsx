@@ -1,35 +1,18 @@
 import { useRef, type PointerEvent } from "react";
-import { motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
+import { motion, useReducedMotion, useSpring } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
 
 export function AboutHero() {
   const heroRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
-  const { scrollY } = useScroll();
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-  const scrollVelocity = useVelocity(scrollY);
-
-  const heroCopyY = useTransform(scrollYProgress, [0, 0.7, 1], [0, -40, -150]);
-  const heroCopyOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 0.72, 0]);
-  const heroVisualY = useTransform(scrollYProgress, [0, 0.7, 1], [0, 35, 115]);
-  const heroVisualScale = useTransform(scrollYProgress, [0, 0.7, 1], [1, 0.94, 0.82]);
-  const heroVisualOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 0.82, 0.18]);
-  const gridY = useTransform(scrollYProgress, [0, 1], [0, 120]);
-  const velocityTilt = useTransform(scrollVelocity, [-2500, 0, 2500], [7, 0, -7]);
-
   const pointerX = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
   const pointerY = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
   const pointerRotateX = useSpring(0, { stiffness: 100, damping: 20 });
   const pointerRotateY = useSpring(0, { stiffness: 100, damping: 20 });
 
-  const instant = reducedMotion === true;
-
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
-    if (instant || event.pointerType !== "mouse") return;
+    if (reducedMotion || event.pointerType !== "mouse") return;
     const rect = event.currentTarget.getBoundingClientRect();
     const x = (event.clientX - rect.left) / rect.width - 0.5;
     const y = (event.clientY - rect.top) / rect.height - 0.5;
@@ -48,7 +31,7 @@ export function AboutHero() {
 
   return (
     <section ref={heroRef} id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
-      <motion.div className="about-hero__grid" style={instant ? undefined : { y: gridY }} aria-hidden="true" />
+      <div className="about-hero__grid" aria-hidden="true" />
       <div className="about-hero__noise" aria-hidden="true" />
 
       <div className="about-container about-hero__content">
@@ -59,10 +42,9 @@ export function AboutHero() {
 
         <div className="about-hero__main">
           <motion.div
-            initial={instant ? false : { opacity: 0, y: 26 }}
+            initial={reducedMotion ? false : { opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
-            style={instant ? undefined : { y: heroCopyY, opacity: heroCopyOpacity }}
-            transition={{ duration: instant ? 0 : 0.9, delay: instant ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+            transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="about-hero__copy"
           >
             <p className="about-kicker" data-text-reveal="done">DIGITAL BUILDER / DEVELOPER / PRODUCT THINKER</p>
@@ -81,20 +63,21 @@ export function AboutHero() {
           </motion.div>
 
           <motion.div
-            initial={instant ? false : { opacity: 0, scale: 0.88, rotate: -4 }}
+            initial={reducedMotion ? false : { opacity: 0, scale: 0.88, rotate: -4 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
-            style={instant ? undefined : { y: heroVisualY, scale: heroVisualScale, opacity: heroVisualOpacity }}
-            transition={{ duration: instant ? 0 : 1.1, delay: instant ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: reducedMotion ? 0 : 1.1, delay: reducedMotion ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="about-hero__visual"
             onPointerMove={handlePointerMove}
             onPointerLeave={resetPointer}
           >
-            <motion.div
-              style={instant ? undefined : { x: pointerX, y: pointerY, rotateX: pointerRotateX, rotateY: pointerRotateY, rotateZ: velocityTilt, transformPerspective: 900 }}
-              className="about-hero__visual-stage"
-            >
-              <DigitalSeed reducedMotion={instant} />
-            </motion.div>
+            <div className="about-hero__scroll-stage">
+              <motion.div
+                style={reducedMotion ? undefined : { x: pointerX, y: pointerY, rotateX: pointerRotateX, rotateY: pointerRotateY, transformPerspective: 900 }}
+                className="about-hero__visual-stage"
+              >
+                <DigitalSeed reducedMotion={reducedMotion === true} />
+              </motion.div>
+            </div>
             <div className="about-hero__visual-label" aria-hidden="true">
               <span>01</span>
               <span>DIGITAL SEED</span>
