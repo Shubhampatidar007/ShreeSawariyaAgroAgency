@@ -7,15 +7,8 @@ export const Route = createFileRoute("/about")({
   head: () => ({
     meta: [
       { title: "About — Shree Sawariya Agro Agency" },
-      {
-        name: "description",
-        content: "Discover the people, story and technology behind Shree Sawariya Agro Agency.",
-      },
+      { name: "description", content: "Discover the story, profile and technology behind Shree Sawariya Agro Agency." },
       { property: "og:title", content: "About — Shree Sawariya Agro Agency" },
-      {
-        property: "og:description",
-        content: "Discover the people, story and technology behind Shree Sawariya Agro Agency.",
-      },
     ],
   }),
   component: AboutPage,
