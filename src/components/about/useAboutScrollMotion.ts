@@ -3,6 +3,8 @@ import { useEffect } from "react";
 
 const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
 
+type Cleanup = () => void;
+
 export function useAboutScrollMotion() {
   const locationPathname = useRouterState({ select: (state) => state.location.pathname });
 
@@ -10,9 +12,10 @@ export function useAboutScrollMotion() {
     let disposed = false;
     let retryFrame = 0;
     let frame = 0;
+    let cleanup: Cleanup | undefined;
 
-    const setup = () => {
-      if (disposed) return;
+    const setup = (): boolean => {
+      if (disposed) return true;
 
       const root = document.querySelector<HTMLElement>(".about-experience");
       const hero = document.querySelector<HTMLElement>(".about-hero");
@@ -33,9 +36,15 @@ export function useAboutScrollMotion() {
           console.warn(`[about-motion] waiting for About DOM: ${missing}`);
         }
 
-        retryFrame = window.requestAnimationFrame(setup);
-        return;
+        retryFrame = window.requestAnimationFrame(() => {
+          if (!setup()) {
+            return;
+          }
+        });
+        return false;
       }
+
+      if (cleanup) return true;
 
       const scroller = document.scrollingElement ?? document.documentElement;
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -47,6 +56,8 @@ export function useAboutScrollMotion() {
 
       const render = () => {
         frame = 0;
+        if (disposed) return;
+
         const scrollTop = scroller.scrollTop;
         const viewportHeight = Math.max(window.innerHeight, 1);
         const heroTop = hero.getBoundingClientRect().top + scrollTop;
@@ -101,17 +112,20 @@ export function useAboutScrollMotion() {
       const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(requestRender);
       resizeObserver?.observe(root);
 
-      return () => {
+      cleanup = () => {
         scroller.removeEventListener("scroll", requestRender);
         window.removeEventListener("scroll", requestRender);
         window.removeEventListener("resize", requestRender);
         window.removeEventListener("pageshow", requestRender);
         resizeObserver?.disconnect();
         if (frame) window.cancelAnimationFrame(frame);
+        cleanup = undefined;
       };
+
+      return true;
     };
 
-    const cleanup = setup();
+    setup();
 
     return () => {
       disposed = true;
