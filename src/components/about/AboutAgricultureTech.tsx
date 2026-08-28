@@ -15,7 +15,7 @@ export function AboutAgricultureTech() {
   return (
     <section ref={ref} id="agriculture-tech" className="relative overflow-hidden border-t border-white/10 bg-[#080d08] py-28 sm:py-40" aria-labelledby="field-tech-title">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(112,255,92,0.08),transparent_34%)]" aria-hidden="true" />
-      <div className="mx-auto w-[min(100%-1.25rem,1200px)]">
+      <div className="about-scroll-content relative z-[1] mx-auto w-[min(100%-1.25rem,1200px)]">
         <div className="grid items-end gap-10 lg:grid-cols-[0.34fr_0.66fr] lg:gap-20">
           <motion.div style={reducedMotion ? undefined : { y: copyY }}>
             <p className="about-kicker" data-text-reveal="done">04 / FIELD × TECH</p>
