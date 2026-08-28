@@ -12,6 +12,9 @@ export function useAboutScrollMotion() {
     if (!root || !hero || !scrollStage || !scrollCopy) return;
 
     const scroller = document.scrollingElement ?? document.documentElement;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motionStrength = reducedMotion ? 0.68 : 1;
+
     let frame = 0;
     let lastScrollTop = scroller.scrollTop;
     let lastTime = performance.now();
@@ -28,17 +31,18 @@ export function useAboutScrollMotion() {
       const now = performance.now();
       const deltaTime = Math.max(now - lastTime, 16);
       const velocity = (scrollTop - lastScrollTop) / deltaTime;
+      const motionProgress = progress * motionStrength;
 
-      root.style.setProperty("--about-scroll", progress.toFixed(4));
+      root.style.setProperty("--about-scroll", motionProgress.toFixed(4));
       root.style.setProperty("--about-scroll-velocity", velocity.toFixed(4));
 
-      scrollStage.style.transform = `translate3d(0, ${(-progress * 110).toFixed(2)}px, 0) scale(${(1 + progress * 0.14).toFixed(4)}) rotate(${(-progress * 6).toFixed(2)}deg)`;
-      scrollStage.style.opacity = `${(1 - progress * 0.52).toFixed(4)}`;
+      scrollStage.style.transform = `translate3d(0, ${(-motionProgress * 110).toFixed(2)}px, 0) scale(${(1 + motionProgress * 0.14).toFixed(4)}) rotate(${(-motionProgress * 6).toFixed(2)}deg)`;
+      scrollStage.style.opacity = `${(1 - motionProgress * 0.52).toFixed(4)}`;
 
-      scrollCopy.style.transform = `translate3d(0, ${(-progress * 110).toFixed(2)}px, 0)`;
-      scrollCopy.style.opacity = `${(1 - progress * 0.55).toFixed(4)}`;
+      scrollCopy.style.transform = `translate3d(0, ${(-motionProgress * 110).toFixed(2)}px, 0)`;
+      scrollCopy.style.opacity = `${(1 - motionProgress * 0.55).toFixed(4)}`;
 
-      root.style.setProperty("--about-grid-y", `${(progress * 120).toFixed(2)}px`);
+      root.style.setProperty("--about-grid-y", `${(motionProgress * 120).toFixed(2)}px`);
 
       lastScrollTop = scrollTop;
       lastTime = now;
