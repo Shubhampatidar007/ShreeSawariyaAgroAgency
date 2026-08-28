@@ -1,15 +1,15 @@
-import { useRef, type PointerEvent } from "react";
+import { useState, type PointerEvent } from "react";
 import { motion, useReducedMotion, useSpring } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
 
 export function AboutHero() {
-  const heroRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const pointerX = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
   const pointerY = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
   const pointerRotateX = useSpring(0, { stiffness: 100, damping: 20 });
   const pointerRotateY = useSpring(0, { stiffness: 100, damping: 20 });
+  const [scrollHint, setScrollHint] = useState(true);
 
   const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
     if (reducedMotion || event.pointerType !== "mouse") return;
@@ -29,8 +29,13 @@ export function AboutHero() {
     pointerRotateY.set(0);
   };
 
+  const enterStory = () => {
+    setScrollHint(false);
+    document.getElementById("identity")?.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth" });
+  };
+
   return (
-    <section ref={heroRef} id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
+    <section className="about-hero min-h-screen" aria-labelledby="about-hero-title">
       <div className="about-hero__grid" aria-hidden="true" />
       <div className="about-hero__noise" aria-hidden="true" />
 
@@ -41,26 +46,28 @@ export function AboutHero() {
         </div>
 
         <div className="about-hero__main">
-          <motion.div
-            initial={reducedMotion ? false : { opacity: 0, y: 26 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
-            className="about-hero__copy"
-          >
-            <p className="about-kicker" data-text-reveal="done">DIGITAL BUILDER / DEVELOPER / PRODUCT THINKER</p>
-            <h1 id="about-hero-title" className="about-hero__title" data-text-reveal="done">
-              SHUBHAM
-              <span>PATIDAR.</span>
-            </h1>
-            <p className="about-hero__lede" data-text-reveal="done">
-              Turning real-world problems into clear, useful digital experiences — with the discipline of a builder and the curiosity of a grower.
-            </p>
+          <div className="about-hero__scroll-copy">
+            <motion.div
+              initial={reducedMotion ? false : { opacity: 0, y: 26 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: reducedMotion ? 0 : 0.9, delay: reducedMotion ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
+              className="about-hero__copy"
+            >
+              <p className="about-kicker" data-text-reveal="done">DIGITAL BUILDER / DEVELOPER / PRODUCT THINKER</p>
+              <h1 id="about-hero-title" className="about-hero__title" data-text-reveal="done">
+                SHUBHAM
+                <span>PATIDAR.</span>
+              </h1>
+              <p className="about-hero__lede" data-text-reveal="done">
+                Turning real-world problems into clear, useful digital experiences — with the discipline of a builder and the curiosity of a grower.
+              </p>
 
-            <button type="button" className="about-hero__scroll" onClick={() => document.getElementById("identity")?.scrollIntoView({ behavior: "smooth" })}>
-              <span>ENTER THE STORY</span>
-              <ArrowDown className="size-4" />
-            </button>
-          </motion.div>
+              <button type="button" className="about-hero__scroll" onClick={enterStory}>
+                <span>{scrollHint ? "ENTER THE STORY" : "CONTINUE THE STORY"}</span>
+                <ArrowDown className="size-4" />
+              </button>
+            </motion.div>
+          </div>
 
           <motion.div
             initial={reducedMotion ? false : { opacity: 0, scale: 0.88, rotate: -4 }}
