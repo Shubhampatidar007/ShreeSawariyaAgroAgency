@@ -13,7 +13,7 @@ export function useAboutScrollMotion() {
 
     const scroller = document.scrollingElement ?? document.documentElement;
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const motionStrength = reducedMotion ? 0.68 : 1;
+    const motionStrength = reducedMotion ? 0.8 : 1;
 
     let frame = 0;
     let lastScrollTop = scroller.scrollTop;
@@ -26,7 +26,7 @@ export function useAboutScrollMotion() {
       const viewportHeight = Math.max(window.innerHeight, 1);
       const heroTop = hero.getBoundingClientRect().top + scrollTop;
       const heroHeight = Math.max(hero.offsetHeight, viewportHeight);
-      const progress = clamp((scrollTop - heroTop) / Math.max(heroHeight * 0.9, 1));
+      const progress = clamp((scrollTop - heroTop) / Math.max(heroHeight * 0.78, 1));
 
       const now = performance.now();
       const deltaTime = Math.max(now - lastTime, 16);
@@ -36,13 +36,11 @@ export function useAboutScrollMotion() {
       root.style.setProperty("--about-scroll", motionProgress.toFixed(4));
       root.style.setProperty("--about-scroll-velocity", velocity.toFixed(4));
 
-      scrollStage.style.transform = `translate3d(0, ${(-motionProgress * 110).toFixed(2)}px, 0) scale(${(1 + motionProgress * 0.14).toFixed(4)}) rotate(${(-motionProgress * 6).toFixed(2)}deg)`;
-      scrollStage.style.opacity = `${(1 - motionProgress * 0.52).toFixed(4)}`;
-
-      scrollCopy.style.transform = `translate3d(0, ${(-motionProgress * 110).toFixed(2)}px, 0)`;
-      scrollCopy.style.opacity = `${(1 - motionProgress * 0.55).toFixed(4)}`;
-
-      root.style.setProperty("--about-grid-y", `${(motionProgress * 120).toFixed(2)}px`);
+      scrollStage.style.transform = `translate3d(0, ${(-motionProgress * 145).toFixed(2)}px, 0) scale(${(1 + motionProgress * 0.17).toFixed(4)}) rotate(${(-motionProgress * 7).toFixed(2)}deg)`;
+      scrollStage.style.opacity = `${(1 - motionProgress * 0.58).toFixed(4)}`;
+      scrollCopy.style.transform = `translate3d(0, ${(-motionProgress * 125).toFixed(2)}px, 0)`;
+      scrollCopy.style.opacity = `${(1 - motionProgress * 0.62).toFixed(4)}`;
+      root.style.setProperty("--about-grid-y", `${(motionProgress * 135).toFixed(2)}px`);
 
       lastScrollTop = scrollTop;
       lastTime = now;
@@ -53,12 +51,22 @@ export function useAboutScrollMotion() {
     };
 
     render();
+    requestAnimationFrame(requestRender);
+
     scroller.addEventListener("scroll", requestRender, { passive: true });
+    if (scroller !== window) window.addEventListener("scroll", requestRender, { passive: true });
     window.addEventListener("resize", requestRender);
+    window.addEventListener("pageshow", requestRender);
+
+    const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(requestRender);
+    resizeObserver?.observe(hero);
 
     return () => {
       scroller.removeEventListener("scroll", requestRender);
+      if (scroller !== window) window.removeEventListener("scroll", requestRender);
       window.removeEventListener("resize", requestRender);
+      window.removeEventListener("pageshow", requestRender);
+      resizeObserver?.disconnect();
       if (frame) window.cancelAnimationFrame(frame);
     };
   }, []);
