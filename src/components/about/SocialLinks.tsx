@@ -1,14 +1,7 @@
-import type { LucideIcon } from "lucide-react";
 import { ArrowUpRight } from "lucide-react";
+import type { SocialLink } from "@/types/about";
 
-export interface AboutSocialLink {
-  id: string;
-  label: string;
-  url: string;
-  Icon: LucideIcon;
-}
-
-export function SocialLinks({ links }: { links: AboutSocialLink[] }) {
+export function SocialLinks({ links }: { links: SocialLink[] }) {
   return (
     <div className="about-social-grid">
       {links.map(({ id, label, url, Icon }) => (
