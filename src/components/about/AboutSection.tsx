@@ -1,5 +1,6 @@
 import { useLayoutEffect, useRef } from "react";
 import {
+  ArrowDown,
   ExternalLink,
   Github,
   Instagram,
@@ -7,7 +8,6 @@ import {
   Mail,
   MapPin,
   Pencil,
-  Phone,
   Sparkles,
 } from "lucide-react";
 import { gsap } from "gsap";
@@ -43,9 +43,10 @@ export function AboutSection() {
   const rootRef = useRef<HTMLElement | null>(null);
   const heroRef = useRef<HTMLElement | null>(null);
   const heroMediaRef = useRef<HTMLDivElement | null>(null);
-  const heroTitleRef = useRef<HTMLHeadingElement | null>(null);
+  const heroLineRefs = useRef<HTMLSpanElement[]>([]);
   const heroCopyRef = useRef<HTMLParagraphElement | null>(null);
   const heroPillRef = useRef<HTMLAnchorElement | null>(null);
+  const heroCueRef = useRef<HTMLDivElement | null>(null);
   const photoRef = useRef<HTMLDivElement | null>(null);
   const profileCopyRef = useRef<HTMLDivElement | null>(null);
   const techBandRef = useRef<HTMLElement | null>(null);
@@ -57,12 +58,10 @@ export function AboutSection() {
   const socialTitleRef = useRef<HTMLHeadingElement | null>(null);
   const socialGridRef = useRef<HTMLDivElement | null>(null);
   const adminRef = useRef<HTMLElement | null>(null);
+  const footerRef = useRef<HTMLElement | null>(null);
 
-  const {
-    profile: githubProfile,
-    loading: githubLoading,
-    error: githubError,
-  } = useGithubProfile("Shubhampatidar007");
+  const { profile: githubProfile, loading: githubLoading, error: githubError } =
+    useGithubProfile("Shubhampatidar007");
   const localProfile = useAboutProfile();
 
   const fallback: AboutProfile = {
@@ -81,13 +80,19 @@ export function AboutSection() {
     contact: localProfile.contact || fallback.contact,
   };
 
+  const setHeroLineRef = (element: HTMLSpanElement | null) => {
+    if (!element || heroLineRefs.current.includes(element)) return;
+    heroLineRefs.current.push(element);
+  };
+
   useLayoutEffect(() => {
     const root = rootRef.current;
     const hero = heroRef.current;
     const heroMedia = heroMediaRef.current;
-    const heroTitle = heroTitleRef.current;
+    const heroLines = heroLineRefs.current;
     const heroCopy = heroCopyRef.current;
     const heroPill = heroPillRef.current;
+    const heroCue = heroCueRef.current;
     const photo = photoRef.current;
     const profileCopy = profileCopyRef.current;
     const techBand = techBandRef.current;
@@ -99,14 +104,16 @@ export function AboutSection() {
     const socialTitle = socialTitleRef.current;
     const socialGrid = socialGridRef.current;
     const admin = adminRef.current;
+    const footer = footerRef.current;
 
     if (
       !root ||
       !hero ||
       !heroMedia ||
-      !heroTitle ||
+      !heroLines.length ||
       !heroCopy ||
       !heroPill ||
+      !heroCue ||
       !photo ||
       !profileCopy ||
       !techBand ||
@@ -117,266 +124,249 @@ export function AboutSection() {
       !social ||
       !socialTitle ||
       !socialGrid ||
-      !admin
+      !admin ||
+      !footer
     ) {
       return undefined;
     }
 
     const context = gsap.context(() => {
-      const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+      const mm = gsap.matchMedia();
 
-      if (mediaQuery.matches) {
+      mm.add("(prefers-reduced-motion: reduce)", () => {
         gsap.set(
           [
-            heroTitle,
+            ...heroLines,
             heroCopy,
             heroPill,
+            heroCue,
+            heroMedia,
             photo,
             profileCopy,
             storyLead,
             storyCopy,
             socialTitle,
-            socialGrid,
+            socialGrid.children,
             admin,
+            footer,
           ],
           { clearProps: "all" },
         );
-        return;
-      }
-
-      const mm = gsap.matchMedia();
-
-      mm.add("(min-width: 769px)", () => {
-        gsap.fromTo(
-          heroTitle.querySelectorAll(".about-hero-line"),
-          { yPercent: 110, opacity: 0 },
-          {
-            yPercent: 0,
-            opacity: 1,
-            duration: 1.1,
-            stagger: 0.08,
-            ease: "power4.out",
-            delay: 0.1,
-          },
-        );
-
-        gsap.fromTo(
-          [heroCopy, heroPill],
-          { y: 28, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.8,
-            stagger: 0.12,
-            ease: "power3.out",
-            delay: 0.35,
-          },
-        );
-
-        gsap.to(heroMedia, {
-          yPercent: 18,
-          scale: 1.12,
-          ease: "none",
-          scrollTrigger: {
-            trigger: hero,
-            start: "top top",
-            end: "bottom top",
-            scrub: 1.1,
-          },
-        });
-
-        gsap.to(heroTitle, {
-          yPercent: -18,
-          opacity: 0.84,
-          ease: "none",
-          scrollTrigger: {
-            trigger: hero,
-            start: "top top",
-            end: "70% top",
-            scrub: 1,
-          },
-        });
-
-        gsap.to(photo, {
-          y: -20,
-          rotation: 0,
-          ease: "none",
-          scrollTrigger: {
-            trigger: photo,
-            start: "top bottom",
-            end: "bottom top",
-            scrub: 1,
-          },
-        });
-
-        ScrollTrigger.create({
-          trigger: photo,
-          start: "top 15%",
-          end: "bottom 72%",
-          pin: true,
-          pinSpacing: false,
-          anticipatePin: 1,
-        });
       });
 
-      mm.add("(max-width: 768px)", () => {
+      mm.add("(prefers-reduced-motion: no-preference)", () => {
+        const desktop = gsap.matchMedia();
+
+        desktop.add("(min-width: 901px)", () => {
+          const heroIntro = gsap.timeline({ defaults: { ease: "power4.out" } });
+          heroIntro
+            .fromTo(heroLines, { yPercent: 125, opacity: 0, rotateX: 14 }, { yPercent: 0, opacity: 1, rotateX: 0, duration: 1.15, stagger: 0.1 })
+            .fromTo(heroCopy, { y: 38, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75 }, "-=0.55")
+            .fromTo(heroPill, { y: 30, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.65 }, "-=0.42")
+            .fromTo(heroCue, { opacity: 0, y: 14 }, { opacity: 0.6, y: 0, duration: 0.45 }, "-=0.28");
+
+          const heroTimeline = gsap.timeline({
+            scrollTrigger: {
+              trigger: hero,
+              start: "top top",
+              end: "bottom+=105% top",
+              scrub: 1,
+              pin: true,
+              anticipatePin: 1,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          heroTimeline
+            .to(heroMedia, { scale: 1.26, yPercent: 10, rotate: -1.5, ease: "none", duration: 1 }, 0)
+            .to(heroLines[0], { yPercent: -32, xPercent: -4, scale: 0.82, opacity: 0.2, ease: "none", duration: 1 }, 0)
+            .to(heroLines[1], { yPercent: -18, xPercent: 3, scale: 0.9, opacity: 0.48, ease: "none", duration: 1 }, 0)
+            .to(heroCopy, { y: -70, opacity: 0, ease: "none", duration: 0.75 }, 0.12)
+            .to(heroPill, { y: -55, opacity: 0, scale: 0.88, ease: "none", duration: 0.68 }, 0.16)
+            .to(heroCue, { y: 80, opacity: 0, ease: "none", duration: 0.32 }, 0)
+            .to(heroMedia.querySelectorAll(".about-hero-grid"), { yPercent: -14, opacity: 0.15, ease: "none", duration: 1 }, 0)
+            .to(heroMedia.querySelectorAll(".about-hero-shine"), { scale: 1.55, opacity: 0.04, ease: "none", duration: 1 }, 0.05);
+
+          gsap.fromTo(
+            photo,
+            { opacity: 0, y: 100, rotate: -4, scale: 0.92 },
+            {
+              opacity: 1,
+              y: 0,
+              rotate: -1,
+              scale: 1,
+              duration: 1.1,
+              ease: "power3.out",
+              scrollTrigger: { trigger: photo, start: "top 88%", once: true },
+            },
+          );
+
+          gsap.to(photo, {
+            y: -34,
+            scale: 1.035,
+            rotate: 0,
+            ease: "none",
+            scrollTrigger: {
+              trigger: photo,
+              start: "top 70%",
+              end: "bottom 35%",
+              scrub: 1,
+            },
+          });
+
+          ScrollTrigger.create({
+            trigger: photo,
+            start: "top 14%",
+            endTrigger: profileCopy,
+            end: "bottom 62%",
+            pin: true,
+            pinSpacing: false,
+            anticipatePin: 1,
+          });
+        });
+
+        desktop.add("(max-width: 900px)", () => {
+          gsap.fromTo(
+            heroLines,
+            { y: 34, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" },
+          );
+          gsap.fromTo(
+            [heroCopy, heroPill],
+            { y: 24, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.7, stagger: 0.12, ease: "power3.out", delay: 0.18 },
+          );
+
+          gsap.to(heroMedia, {
+            scale: 1.16,
+            yPercent: 4,
+            ease: "none",
+            scrollTrigger: {
+              trigger: hero,
+              start: "top top",
+              end: "bottom top",
+              scrub: 1.25,
+            },
+          });
+
+          gsap.to(heroLines[0], {
+            yPercent: -14,
+            opacity: 0.6,
+            ease: "none",
+            scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1 },
+          });
+
+          gsap.to(heroLines[1], {
+            yPercent: -8,
+            opacity: 0.78,
+            ease: "none",
+            scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1 },
+          });
+        });
+
         gsap.fromTo(
-          [heroTitle, heroCopy, heroPill],
-          { y: 26, opacity: 0 },
+          profileCopy,
+          { y: 90, opacity: 0 },
           {
             y: 0,
             opacity: 1,
-            duration: 0.8,
+            duration: 1,
+            ease: "power3.out",
+            scrollTrigger: { trigger: profileCopy, start: "top 82%", once: true },
+          },
+        );
+
+        gsap.fromTo(
+          storyLead,
+          { y: 100, opacity: 0, clipPath: "inset(20% 0 0 0)" },
+          {
+            y: 0,
+            opacity: 1,
+            clipPath: "inset(0 0 0 0)",
+            duration: 1.05,
+            ease: "power4.out",
+            scrollTrigger: { trigger: story, start: "top 76%", once: true },
+          },
+        );
+
+        gsap.fromTo(
+          storyCopy,
+          { y: 65, opacity: 0, clipPath: "inset(0 0 12% 0)" },
+          {
+            y: 0,
+            opacity: 1,
+            clipPath: "inset(0 0 0 0)",
+            duration: 0.9,
+            ease: "power3.out",
+            scrollTrigger: { trigger: storyCopy, start: "top 84%", once: true },
+          },
+        );
+
+        const moveDistance = () => Math.max(0, techTrack.scrollWidth - window.innerWidth);
+        gsap.to(techTrack, {
+          x: () => -moveDistance() * 0.48,
+          ease: "none",
+          scrollTrigger: {
+            trigger: techBand,
+            start: "top 90%",
+            end: "bottom 10%",
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+          },
+        });
+
+        gsap.fromTo(
+          socialTitle,
+          { y: 80, opacity: 0, scale: 0.96 },
+          {
+            y: 0,
+            opacity: 1,
+            scale: 1,
+            duration: 0.9,
+            ease: "power3.out",
+            scrollTrigger: { trigger: social, start: "top 78%", once: true },
+          },
+        );
+
+        gsap.fromTo(
+          socialGrid.children,
+          { y: 55, opacity: 0, rotateX: 8 },
+          {
+            y: 0,
+            opacity: 1,
+            rotateX: 0,
+            duration: 0.75,
             stagger: 0.1,
             ease: "power3.out",
+            scrollTrigger: { trigger: socialGrid, start: "top 82%", once: true },
           },
         );
 
-        gsap.to(heroMedia, {
-          scale: 1.08,
-          ease: "none",
-          scrollTrigger: {
-            trigger: hero,
-            start: "top top",
-            end: "bottom top",
-            scrub: 1.2,
+        gsap.fromTo(
+          admin,
+          { y: 70, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.9,
+            ease: "power3.out",
+            scrollTrigger: { trigger: admin, start: "top 86%", once: true },
           },
-        });
-      });
+        );
 
-      gsap.fromTo(
-        profileCopy,
-        { y: 70, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: profileCopy,
-            start: "top 82%",
-            once: true,
+        gsap.fromTo(
+          footer,
+          { y: 30, opacity: 0 },
+          {
+            y: 0,
+            opacity: 1,
+            duration: 0.7,
+            ease: "power3.out",
+            scrollTrigger: { trigger: footer, start: "top 92%", once: true },
           },
-        },
-      );
+        );
 
-      gsap.fromTo(
-        photo,
-        { y: 70, opacity: 0, rotation: -2 },
-        {
-          y: 0,
-          opacity: 1,
-          rotation: -1,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: photo,
-            start: "top 82%",
-            once: true,
-          },
-        },
-      );
-
-      const moveDistance = () => Math.max(0, techTrack.scrollWidth - window.innerWidth);
-      gsap.to(techTrack, {
-        x: () => -moveDistance() * 0.35,
-        ease: "none",
-        scrollTrigger: {
-          trigger: techBand,
-          start: "top bottom",
-          end: "bottom top",
-          scrub: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      gsap.fromTo(
-        storyLead,
-        { y: 80, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: story,
-            start: "top 78%",
-            once: true,
-          },
-        },
-      );
-
-      gsap.fromTo(
-        storyCopy,
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 1,
-          delay: 0.12,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: story,
-            start: "top 72%",
-            once: true,
-          },
-        },
-      );
-
-      gsap.fromTo(
-        socialTitle,
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: social,
-            start: "top 78%",
-            once: true,
-          },
-        },
-      );
-
-      gsap.fromTo(
-        socialGrid.children,
-        { y: 50, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.7,
-          stagger: 0.08,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: socialGrid,
-            start: "top 82%",
-            once: true,
-          },
-        },
-      );
-
-      gsap.fromTo(
-        admin,
-        { y: 60, opacity: 0 },
-        {
-          y: 0,
-          opacity: 1,
-          duration: 0.9,
-          ease: "power3.out",
-          scrollTrigger: {
-            trigger: admin,
-            start: "top 84%",
-            once: true,
-          },
-        },
-      );
-
-      ScrollTrigger.create({
-        trigger: root,
-        start: "top top",
-        end: "bottom bottom",
-        onRefresh: () => ScrollTrigger.sort(),
+        return () => desktop.revert();
       });
 
       return () => mm.revert();
@@ -385,6 +375,7 @@ export function AboutSection() {
     const refresh = () => ScrollTrigger.refresh();
     window.addEventListener("resize", refresh, { passive: true });
     window.addEventListener("load", refresh, { once: true });
+    document.fonts?.ready.then(refresh).catch(() => undefined);
 
     return () => {
       window.removeEventListener("resize", refresh);
@@ -401,25 +392,22 @@ export function AboutSection() {
           <div className="about-hero-grid" />
           <div className="about-hero-shine" />
         </div>
+
         <div className="about-container about-hero-inner">
           <p className="about-kicker">SHREE SAWARIYA / ABOUT</p>
-          <h1
-            ref={heroTitleRef}
-            className="about-display-title"
-            aria-label="Local trust. Modern storefront."
-          >
-            <span className="about-hero-line">Local trust.</span>
-            <span className="about-hero-line about-hero-line-soft">Modern storefront.</span>
+          <h1 ref={undefined} className="about-display-title" aria-label="Local trust. Modern storefront.">
+            <span ref={setHeroLineRef} className="about-hero-line">Local trust.</span>
+            <span ref={setHeroLineRef} className="about-hero-line about-hero-line-soft">Modern storefront.</span>
           </h1>
           <p ref={heroCopyRef} className="about-hero-copy">
-            A dedicated profile page for the people, technology and story behind the store — built
-            as a richer destination than the homepage teaser.
+            A dedicated profile page for the people, technology and story behind the store — built as a richer destination than the homepage teaser.
           </p>
           <a ref={heroPillRef} className="about-pill" href="#about-profile">
-            Explore profile <span aria-hidden="true">↓</span>
+            Explore profile <ArrowDown className="about-pill-icon" aria-hidden="true" />
           </a>
         </div>
-        <div className="about-scroll-cue" aria-hidden="true">
+
+        <div ref={heroCueRef} className="about-scroll-cue" aria-hidden="true">
           <span /> Scroll to explore
         </div>
       </section>
@@ -430,9 +418,7 @@ export function AboutSection() {
           {display.photoUrl ? (
             <img src={display.photoUrl} alt={`${display.name} profile`} />
           ) : (
-            <div className="about-photo-placeholder" aria-label="Profile photo placeholder">
-              SA
-            </div>
+            <div className="about-photo-placeholder" aria-label="Profile photo placeholder">SA</div>
           )}
           <div className="about-photo-caption">
             <span>01</span>
@@ -474,11 +460,7 @@ export function AboutSection() {
         </div>
       </section>
 
-      <section
-        ref={techBandRef}
-        className="about-tech-band"
-        aria-label="Technology and platform stack"
-      >
+      <section ref={techBandRef} className="about-tech-band" aria-label="Technology and platform stack">
         <div ref={techTrackRef} className="about-tech-track">
           {[...stackItems, ...stackItems].map((item, index) => (
             <span key={`${item}-${index}`} className="about-tech-item">
@@ -493,18 +475,15 @@ export function AboutSection() {
         <div>
           <p className="about-kicker">02 / THE STORY</p>
           <p ref={storyLeadRef} className="about-story-lead">
-            The About page is intentionally more editorial: large type, layered surfaces, subtle
-            movement and content that can grow with the business.
+            The About page is intentionally more editorial: large type, layered surfaces, subtle movement and content that can grow with the business.
           </p>
         </div>
         <div ref={storyCopyRef} className="about-story-copy">
           <p>
-            The homepage remains focused on shopping. This page carries the identity layer: profile
-            information, links, technology, contact context and future media.
+            The homepage remains focused on shopping. This page carries the identity layer: profile information, links, technology, contact context and future media.
           </p>
           <p>
-            The hero artwork is deliberately a replaceable placeholder so the final
-            personal/business image can be swapped later without changing the page structure.
+            The hero artwork is deliberately a replaceable placeholder so the final personal/business image can be swapped later without changing the page structure.
           </p>
         </div>
       </section>
@@ -512,9 +491,7 @@ export function AboutSection() {
       <section ref={socialRef} className="about-container about-social-section">
         <div>
           <p className="about-kicker">03 / CONNECT</p>
-          <h2 ref={socialTitleRef} className="about-section-title">
-            Find the work online.
-          </h2>
+          <h2 ref={socialTitleRef} className="about-section-title">Find the work online.</h2>
         </div>
         <div ref={socialGridRef}>
           <SocialLinks links={socialLinks} />
@@ -535,11 +512,9 @@ export function AboutSection() {
         </div>
       </section>
 
-      <footer className="about-footer about-container">
+      <footer ref={footerRef} className="about-footer about-container">
         <span>SHREE SAWARIYA AGRO AGENCY</span>
-        <a href="/">
-          Back to store <Phone className="size-3.5" aria-hidden="true" />
-        </a>
+        <a href="/">Back to store</a>
       </footer>
     </main>
   );
