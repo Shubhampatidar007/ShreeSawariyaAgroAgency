@@ -23,6 +23,7 @@ import { Route as AdminRemindersRouteImport } from './routes/admin.reminders'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
 import { Route as AdminSalesRouteImport } from './routes/admin.sales'
 import { Route as AdminSearchRouteImport } from './routes/admin.search'
+import { Route as AdminTestimonialsRouteImport } from './routes/admin.testimonials'
 import { Route as AdminCustomersIndexRouteImport } from './routes/admin.customers.index'
 import { Route as AdminCustomersNewRouteImport } from './routes/admin.customers.new'
 import { Route as AdminInventoryIndexRouteImport } from './routes/admin.inventory.index'
@@ -105,6 +106,11 @@ const AdminSalesRoute = AdminSalesRouteImport.update({
 const AdminSearchRoute = AdminSearchRouteImport.update({
   id: '/search',
   path: '/search',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminTestimonialsRoute = AdminTestimonialsRouteImport.update({
+  id: '/testimonials',
+  path: '/testimonials',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminCustomersIndexRoute = AdminCustomersIndexRouteImport.update({
@@ -192,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/inventory/new': typeof AdminInventoryNewRoute
@@ -220,6 +227,7 @@ export interface FileRoutesByTo {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/inventory/new': typeof AdminInventoryNewRoute
@@ -250,6 +258,7 @@ export interface FileRoutesById {
   '/admin/reports': typeof AdminReportsRoute
   '/admin/sales': typeof AdminSalesRoute
   '/admin/search': typeof AdminSearchRoute
+  '/admin/testimonials': typeof AdminTestimonialsRoute
   '/admin/': typeof AdminIndexRoute
   '/admin/customers/new': typeof AdminCustomersNewRoute
   '/admin/inventory/new': typeof AdminInventoryNewRoute
@@ -281,6 +290,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
+    | '/admin/testimonials'
     | '/admin/'
     | '/admin/customers/new'
     | '/admin/inventory/new'
@@ -309,6 +319,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
+    | '/admin/testimonials'
     | '/admin'
     | '/admin/customers/new'
     | '/admin/inventory/new'
@@ -338,6 +349,7 @@ export interface FileRouteTypes {
     | '/admin/reports'
     | '/admin/sales'
     | '/admin/search'
+    | '/admin/testimonials'
     | '/admin/'
     | '/admin/customers/new'
     | '/admin/inventory/new'
@@ -460,6 +472,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSearchRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/testimonials': {
+      id: '/admin/testimonials'
+      path: '/testimonials'
+      fullPath: '/admin/testimonials'
+      preLoaderRoute: typeof AdminTestimonialsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/customers/': {
       id: '/admin/customers/'
       path: '/customers'
@@ -566,6 +585,7 @@ interface AdminRouteChildren {
   AdminReportsRoute: typeof AdminReportsRoute
   AdminSalesRoute: typeof AdminSalesRoute
   AdminSearchRoute: typeof AdminSearchRoute
+  AdminTestimonialsRoute: typeof AdminTestimonialsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminCustomersNewRoute: typeof AdminCustomersNewRoute
   AdminInventoryNewRoute: typeof AdminInventoryNewRoute
@@ -593,6 +613,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminReportsRoute: AdminReportsRoute,
   AdminSalesRoute: AdminSalesRoute,
   AdminSearchRoute: AdminSearchRoute,
+  AdminTestimonialsRoute: AdminTestimonialsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminCustomersNewRoute: AdminCustomersNewRoute,
   AdminInventoryNewRoute: AdminInventoryNewRoute,
