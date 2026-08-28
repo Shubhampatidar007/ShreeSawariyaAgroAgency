@@ -37,28 +37,23 @@ export function useAboutScrollMotion() {
         }
 
         retryFrame = window.requestAnimationFrame(() => {
-          if (!setup()) {
-            return;
-          }
+          setup();
         });
         return false;
       }
 
       if (cleanup) return true;
 
-      const scroller = document.scrollingElement ?? document.documentElement;
       const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const motionStrength = reducedMotion ? 0.8 : 1;
-      const sections = Array.from(root.querySelectorAll<HTMLElement>("main > section[id]"));
-
-      let lastScrollTop = scroller.scrollTop;
+      const motionStrength = reducedMotion ? 0.55 : 1;
+      let lastScrollTop = window.scrollY;
       let lastTime = performance.now();
 
       const render = () => {
         frame = 0;
         if (disposed) return;
 
-        const scrollTop = scroller.scrollTop;
+        const scrollTop = window.scrollY;
         const viewportHeight = Math.max(window.innerHeight, 1);
         const heroTop = hero.getBoundingClientRect().top + scrollTop;
         const heroHeight = Math.max(hero.offsetHeight, viewportHeight);
@@ -78,21 +73,26 @@ export function useAboutScrollMotion() {
         scrollCopy.style.transform = `translate3d(0, ${(-motionProgress * 125).toFixed(2)}px, 0)`;
         scrollCopy.style.opacity = `${(1 - motionProgress * 0.62).toFixed(4)}`;
 
-        sections.forEach((section) => {
+        root.querySelectorAll<HTMLElement>("main > section[id]").forEach((section) => {
           if (section === hero) return;
 
           const rect = section.getBoundingClientRect();
-          const sectionProgress = clamp(
-            (viewportHeight * 0.82 - rect.top) / Math.max(rect.height * 0.82, 1),
-          );
-          section.style.setProperty("--section-progress", sectionProgress.toFixed(4));
+          const enter = clamp((viewportHeight * 0.88 - rect.top) / Math.max(viewportHeight * 0.62, 1));
+          const center = clamp((viewportHeight * 0.72 - rect.top) / Math.max(viewportHeight * 0.9, 1));
+          const offset = (1 - enter) * 46 * motionStrength;
+          const scale = 0.985 + enter * 0.015;
+          const opacity = 0.72 + enter * 0.28;
+
+          section.style.setProperty("--section-progress", enter.toFixed(4));
 
           const content = section.firstElementChild;
           if (content instanceof HTMLElement) {
-            const offset = (0.5 - sectionProgress) * 28 * motionStrength;
             content.style.setProperty("--about-section-offset", `${offset.toFixed(2)}px`);
-            content.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0)`;
+            content.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
+            content.style.opacity = opacity.toFixed(4);
           }
+
+          section.style.setProperty("--about-section-center", center.toFixed(4));
         });
 
         lastScrollTop = scrollTop;
@@ -104,7 +104,6 @@ export function useAboutScrollMotion() {
       };
 
       render();
-      scroller.addEventListener("scroll", requestRender, { passive: true });
       window.addEventListener("scroll", requestRender, { passive: true });
       window.addEventListener("resize", requestRender);
       window.addEventListener("pageshow", requestRender);
@@ -113,7 +112,6 @@ export function useAboutScrollMotion() {
       resizeObserver?.observe(root);
 
       cleanup = () => {
-        scroller.removeEventListener("scroll", requestRender);
         window.removeEventListener("scroll", requestRender);
         window.removeEventListener("resize", requestRender);
         window.removeEventListener("pageshow", requestRender);
