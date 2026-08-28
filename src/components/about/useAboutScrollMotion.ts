@@ -85,7 +85,8 @@ export function useAboutScrollMotion() {
 
           section.style.setProperty("--section-progress", enter.toFixed(4));
 
-          const content = section.firstElementChild;
+          const content =
+            section.querySelector<HTMLElement>(":scope > .about-scroll-content") ?? section.firstElementChild;
           if (content instanceof HTMLElement) {
             content.style.setProperty("--about-section-offset", `${offset.toFixed(2)}px`);
             content.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
