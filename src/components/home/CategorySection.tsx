@@ -38,7 +38,8 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
       categoryMeta.map(({ name, icon }) => ({
         name,
         icon,
-        count: published.filter((product) => product.category.toLowerCase() === name.toLowerCase()).length,
+        count: published.filter((product) => product.category.toLowerCase() === name.toLowerCase())
+          .length,
       })),
     [published],
   );
@@ -49,11 +50,16 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
         <SectionHeading
           eyebrow={t("home.category.eyebrow", "Shop by category")}
           title={content?.headline || t("home.category.title", "Find what your farm needs")}
-          description={content?.body || t("home.category.description", "Browse the categories in the live published catalog.")}
+          description={
+            content?.body ||
+            t("home.category.description", "Browse the categories in the live published catalog.")
+          }
         />
         <div className="flex items-center gap-2">
           <p className="text-sm text-muted-foreground">
-            {loading ? "Loading catalog…" : `${published.length} published ${published.length === 1 ? "product" : "products"}`}
+            {loading
+              ? "Loading catalog…"
+              : `${published.length} published ${published.length === 1 ? "product" : "products"}`}
           </p>
           <Button
             type="button"
@@ -75,23 +81,36 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
               type="button"
               onClick={() => {
                 storefrontFilterStore.setCategory(isSelected ? null : category.name);
-                document.getElementById("products")?.scrollIntoView({ behavior: "smooth", block: "start" });
+                document
+                  .getElementById("products")
+                  ?.scrollIntoView({ behavior: "smooth", block: "start" });
               }}
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.04 }}
               className="min-w-[158px] shrink-0 text-left sm:min-w-0"
             >
-              <Card className={`h-full rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-lg ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}`}>
+              <Card
+                className={`h-full rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-lg ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}`}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-start justify-between gap-2">
                     <span className="flex size-11 items-center justify-center rounded-xl bg-primary/10 text-primary">
                       <category.icon className="size-5" />
                     </span>
-                    {isSelected ? <Check className="mt-1 size-4 text-primary" /> : <ArrowUpRight className="mt-1 size-4 text-muted-foreground" />}
+                    {isSelected ? (
+                      <Check className="mt-1 size-4 text-primary" />
+                    ) : (
+                      <ArrowUpRight className="mt-1 size-4 text-muted-foreground" />
+                    )}
                   </div>
-                  <h3 className="mt-4 font-display text-sm font-semibold">{category.name}</h3>
-                  <p className={`mt-1 text-xs ${category.count > 0 ? "text-primary" : "text-muted-foreground"}`}>
+                  <h3 className="mt-4 font-display text-sm font-semibold" data-text-reveal="done">
+                    {category.name}
+                  </h3>
+                  <p
+                    className={`mt-1 text-xs ${category.count > 0 ? "text-primary" : "text-muted-foreground"}`}
+                    data-text-reveal="done"
+                  >
                     {category.count > 0
                       ? `${category.count} ${category.count === 1 ? "product" : "products"}`
                       : "Not stocked yet"}

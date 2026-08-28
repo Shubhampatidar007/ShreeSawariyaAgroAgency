@@ -18,11 +18,7 @@ import agroStore from "@/assets/hero-field.jpg";
 import { shopInfo } from "@/data/storefront";
 import type { CmsSection } from "@/types/operations";
 
-export function HeroSection({
-  content,
-}: {
-  content?: Pick<CmsSection, "headline" | "body">;
-}) {
+export function HeroSection({ content }: { content?: Pick<CmsSection, "headline" | "body"> }) {
   const { language } = useI18n();
   const publishedProducts = usePublicShopStore((s) => s.products);
   const catalogLoading = usePublicShopStore((s) => s.loading);
@@ -65,11 +61,17 @@ export function HeroSection({
               </span>
             </div>
 
-            <h1 className="mt-6 max-w-xl font-display text-4xl font-bold leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-[3.65rem]">
+            <h1
+              className="mt-6 max-w-xl font-display text-4xl font-bold leading-[1.02] tracking-tight text-foreground sm:text-5xl lg:text-[3.65rem]"
+              data-text-reveal="done"
+            >
               {title}
             </h1>
 
-            <p className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg">
+            <p
+              className="mt-5 max-w-xl text-base leading-7 text-muted-foreground sm:text-lg"
+              data-text-reveal="done"
+            >
               {subtitle}
             </p>
 
@@ -112,7 +114,12 @@ export function HeroSection({
                     <span className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-primary/50 text-primary">
                       <Icon className="size-5" />
                     </span>
-                    <p className="pt-1 text-sm font-bold leading-5 text-foreground">{benefit.title}</p>
+                    <p
+                      className="pt-1 text-sm font-bold leading-5 text-foreground"
+                      data-text-reveal="done"
+                    >
+                      {benefit.title}
+                    </p>
                   </motion.div>
                 );
               })}
@@ -155,8 +162,12 @@ export function HeroSection({
                   <Sprout className="size-5" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold">Farmer-first service</p>
-                  <p className="mt-0.5 text-xs text-primary-foreground/80">Local support for your next crop decision</p>
+                  <p className="text-sm font-bold" data-text-reveal="done">
+                    Farmer-first service
+                  </p>
+                  <p className="mt-0.5 text-xs text-primary-foreground/80" data-text-reveal="done">
+                    Local support for your next crop decision
+                  </p>
                 </div>
               </div>
             </motion.div>
