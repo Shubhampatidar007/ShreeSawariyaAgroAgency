@@ -1,5 +1,6 @@
 import { ArrowUpRight, Mail, MessageCircle, MapPin } from "lucide-react";
 import { shopInfo } from "@/data/storefront";
+import { MagneticLink } from "@/components/about/MagneticLink";
 
 const links = [
   {
@@ -42,7 +43,7 @@ export function AboutConnect() {
 
         <div className="mt-14 grid gap-3 sm:mt-20 lg:grid-cols-3">
           {links.map(({ label, detail, href, icon: Icon }, index) => (
-            <a
+            <MagneticLink
               key={label}
               href={href}
               target={href.startsWith("http") ? "_blank" : undefined}
@@ -58,7 +59,7 @@ export function AboutConnect() {
                 <p className="mt-2 break-words text-sm leading-6 text-white/70">{detail}</p>
                 <ArrowUpRight className="mt-6 size-4 text-white/25 transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#8ef06a]" />
               </div>
-            </a>
+            </MagneticLink>
           ))}
         </div>
 

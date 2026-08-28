@@ -1,0 +1,44 @@
+.about-hero__visual-stage {
+  position: relative;
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  transform-style: preserve-3d;
+  will-change: transform;
+}
+
+.about-hero__visual-stage .digital-seed {
+  will-change: transform;
+}
+
+.about-hero__visual-label {
+  transition: opacity 220ms ease, transform 220ms ease;
+}
+
+.about-hero__visual:hover .about-hero__visual-label {
+  opacity: 0.92;
+  transform: translateY(-2px);
+}
+
+@media (max-width: 640px), (pointer: coarse) {
+  .about-hero__visual-stage {
+    transform: none !important;
+  }
+
+  .digital-seed__orbit--two,
+  .digital-seed__nodes--two {
+    display: none;
+  }
+
+  .digital-seed__terrain {
+    opacity: 0.38;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .about-hero__visual-stage {
+    transform: none !important;
+    transition: none !important;
+  }
+}

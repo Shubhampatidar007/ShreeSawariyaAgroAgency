@@ -6,6 +6,7 @@ import { AboutAgricultureTech } from "@/components/about/AboutAgricultureTech";
 import { AboutStory } from "@/components/about/AboutStory";
 import { AboutConnect } from "@/components/about/AboutConnect";
 import "@/components/about/about.css";
+import "@/components/about/about-polish.css";
 
 export function AboutExperience() {
   return (

@@ -1,10 +1,38 @@
-import { motion, useReducedMotion } from "motion/react";
+import { type PointerEvent } from "react";
+import { motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
 
 export function AboutHero() {
   const reducedMotion = useReducedMotion();
+  const { scrollY } = useScroll();
+  const scrollVelocity = useVelocity(scrollY);
+  const velocityTilt = useTransform(scrollVelocity, [-2500, 0, 2500], [7, 0, -7]);
+
+  const pointerX = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
+  const pointerY = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
+  const pointerRotateX = useSpring(0, { stiffness: 100, damping: 20 });
+  const pointerRotateY = useSpring(0, { stiffness: 100, damping: 20 });
+
   const instant = reducedMotion === true;
+
+  const handlePointerMove = (event: PointerEvent<HTMLDivElement>) => {
+    if (instant || event.pointerType !== "mouse") return;
+    const rect = event.currentTarget.getBoundingClientRect();
+    const x = (event.clientX - rect.left) / rect.width - 0.5;
+    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    pointerX.set(x * 24);
+    pointerY.set(y * 20);
+    pointerRotateY.set(x * 7);
+    pointerRotateX.set(-y * 7);
+  };
+
+  const resetPointer = () => {
+    pointerX.set(0);
+    pointerY.set(0);
+    pointerRotateX.set(0);
+    pointerRotateY.set(0);
+  };
 
   return (
     <section id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
@@ -44,8 +72,15 @@ export function AboutHero() {
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
             transition={{ duration: instant ? 0 : 1.1, delay: instant ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="about-hero__visual"
+            onPointerMove={handlePointerMove}
+            onPointerLeave={resetPointer}
           >
-            <DigitalSeed reducedMotion={instant} />
+            <motion.div
+              style={instant ? undefined : { x: pointerX, y: pointerY, rotateX: pointerRotateX, rotateY: pointerRotateY, rotateZ: velocityTilt, transformPerspective: 900 }}
+              className="about-hero__visual-stage"
+            >
+              <DigitalSeed reducedMotion={instant} />
+            </motion.div>
             <div className="about-hero__visual-label" aria-hidden="true">
               <span>01</span>
               <span>DIGITAL SEED</span>
