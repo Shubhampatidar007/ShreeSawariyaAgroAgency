@@ -79,24 +79,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .about-experience,
-  .about-experience * {
-    --about-scroll: 0 !important;
-    --about-scroll-velocity: 0 !important;
-  }
-
   .about-hero__scroll-stage,
   .about-hero__grid,
-  .about-hero__scroll-copy,
-  .about-hero__visual,
-  .about-scroll-section > div {
-    transform: none !important;
-    opacity: 1 !important;
-    will-change: auto;
+  .about-hero__scroll-copy {
+    transition-duration: 0.01ms !important;
   }
 
   .about-hero__visual-stage {
-    transform: none !important;
     transition: none !important;
   }
 }
