@@ -1,12 +1,24 @@
-import { type PointerEvent } from "react";
+import { useRef, type PointerEvent } from "react";
 import { motion, useReducedMotion, useScroll, useSpring, useTransform, useVelocity } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
 
 export function AboutHero() {
+  const heroRef = useRef<HTMLElement>(null);
   const reducedMotion = useReducedMotion();
   const { scrollY } = useScroll();
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
   const scrollVelocity = useVelocity(scrollY);
+
+  const heroCopyY = useTransform(scrollYProgress, [0, 0.7, 1], [0, -40, -150]);
+  const heroCopyOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 0.72, 0]);
+  const heroVisualY = useTransform(scrollYProgress, [0, 0.7, 1], [0, 35, 115]);
+  const heroVisualScale = useTransform(scrollYProgress, [0, 0.7, 1], [1, 0.94, 0.82]);
+  const heroVisualOpacity = useTransform(scrollYProgress, [0, 0.72, 1], [1, 0.82, 0.18]);
+  const gridY = useTransform(scrollYProgress, [0, 1], [0, 120]);
   const velocityTilt = useTransform(scrollVelocity, [-2500, 0, 2500], [7, 0, -7]);
 
   const pointerX = useSpring(0, { stiffness: 120, damping: 18, mass: 0.55 });
@@ -35,8 +47,8 @@ export function AboutHero() {
   };
 
   return (
-    <section id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
-      <div className="about-hero__grid" aria-hidden="true" />
+    <section ref={heroRef} id="about-experience" className="about-hero min-h-screen" aria-labelledby="about-hero-title">
+      <motion.div className="about-hero__grid" style={instant ? undefined : { y: gridY }} aria-hidden="true" />
       <div className="about-hero__noise" aria-hidden="true" />
 
       <div className="about-container about-hero__content">
@@ -49,6 +61,7 @@ export function AboutHero() {
           <motion.div
             initial={instant ? false : { opacity: 0, y: 26 }}
             animate={{ opacity: 1, y: 0 }}
+            style={instant ? undefined : { y: heroCopyY, opacity: heroCopyOpacity }}
             transition={{ duration: instant ? 0 : 0.9, delay: instant ? 0 : 0.1, ease: [0.22, 1, 0.36, 1] }}
             className="about-hero__copy"
           >
@@ -70,6 +83,7 @@ export function AboutHero() {
           <motion.div
             initial={instant ? false : { opacity: 0, scale: 0.88, rotate: -4 }}
             animate={{ opacity: 1, scale: 1, rotate: 0 }}
+            style={instant ? undefined : { y: heroVisualY, scale: heroVisualScale, opacity: heroVisualOpacity }}
             transition={{ duration: instant ? 0 : 1.1, delay: instant ? 0 : 0.18, ease: [0.16, 1, 0.3, 1] }}
             className="about-hero__visual"
             onPointerMove={handlePointerMove}
