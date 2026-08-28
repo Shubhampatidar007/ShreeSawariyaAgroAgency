@@ -110,7 +110,7 @@ export function AboutSection() {
       !root ||
       !hero ||
       !heroMedia ||
-      !heroLines.length ||
+      heroLines.length === 0 ||
       !heroCopy ||
       !heroPill ||
       !heroCue ||
@@ -131,9 +131,9 @@ export function AboutSection() {
     }
 
     const context = gsap.context(() => {
-      const mm = gsap.matchMedia();
+      const reducedMotion = gsap.matchMedia();
 
-      mm.add("(prefers-reduced-motion: reduce)", () => {
+      reducedMotion.add("(prefers-reduced-motion: reduce)", () => {
         gsap.set(
           [
             ...heroLines,
@@ -143,10 +143,11 @@ export function AboutSection() {
             heroMedia,
             photo,
             profileCopy,
+            techTrack,
             storyLead,
             storyCopy,
             socialTitle,
-            socialGrid.children,
+            socialGrid.querySelectorAll(".about-social-card"),
             admin,
             footer,
           ],
@@ -154,22 +155,171 @@ export function AboutSection() {
         );
       });
 
-      mm.add("(prefers-reduced-motion: no-preference)", () => {
-        const desktop = gsap.matchMedia();
+      reducedMotion.add("(prefers-reduced-motion: no-preference)", () => {
+        const responsive = gsap.matchMedia();
 
-        desktop.add("(min-width: 901px)", () => {
+        const addCommonReveals = () => {
+          gsap.fromTo(
+            profileCopy,
+            { y: 100, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: profileCopy,
+                start: "top 82%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            photo,
+            { y: 90, opacity: 0, rotation: -4, scale: 0.9 },
+            {
+              y: 0,
+              opacity: 1,
+              rotation: -1,
+              scale: 1,
+              duration: 1,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: photo,
+                start: "top 88%",
+                once: true,
+              },
+            },
+          );
+
+          const moveDistance = () => Math.max(0, techTrack.scrollWidth - window.innerWidth);
+          gsap.to(techTrack, {
+            x: () => -moveDistance() * 0.5,
+            ease: "none",
+            scrollTrigger: {
+              trigger: techBand,
+              start: "top 95%",
+              end: "bottom 5%",
+              scrub: 0.7,
+              invalidateOnRefresh: true,
+            },
+          });
+
+          gsap.fromTo(
+            storyLead,
+            { y: 110, opacity: 0, clipPath: "inset(22% 0 0 0)" },
+            {
+              y: 0,
+              opacity: 1,
+              clipPath: "inset(0 0 0 0)",
+              duration: 1.1,
+              ease: "power4.out",
+              scrollTrigger: {
+                trigger: story,
+                start: "top 78%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            storyCopy,
+            { y: 75, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.95,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: storyCopy,
+                start: "top 84%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            socialTitle,
+            { y: 85, opacity: 0, scale: 0.94 },
+            {
+              y: 0,
+              opacity: 1,
+              scale: 1,
+              duration: 0.9,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: social,
+                start: "top 80%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            socialGrid.querySelectorAll(".about-social-card"),
+            { y: 65, opacity: 0, rotateX: 12, transformPerspective: 900 },
+            {
+              y: 0,
+              opacity: 1,
+              rotateX: 0,
+              duration: 0.75,
+              stagger: 0.12,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: socialGrid,
+                start: "top 84%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            admin,
+            { y: 80, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.9,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: admin,
+                start: "top 86%",
+                once: true,
+              },
+            },
+          );
+
+          gsap.fromTo(
+            footer,
+            { y: 35, opacity: 0 },
+            {
+              y: 0,
+              opacity: 1,
+              duration: 0.7,
+              ease: "power3.out",
+              scrollTrigger: {
+                trigger: footer,
+                start: "top 94%",
+                once: true,
+              },
+            },
+          );
+        };
+
+        responsive.add("(min-width: 901px)", () => {
           const heroIntro = gsap.timeline({ defaults: { ease: "power4.out" } });
           heroIntro
-            .fromTo(heroLines, { yPercent: 125, opacity: 0, rotateX: 14 }, { yPercent: 0, opacity: 1, rotateX: 0, duration: 1.15, stagger: 0.1 })
-            .fromTo(heroCopy, { y: 38, opacity: 0 }, { y: 0, opacity: 1, duration: 0.75 }, "-=0.55")
-            .fromTo(heroPill, { y: 30, opacity: 0, scale: 0.96 }, { y: 0, opacity: 1, scale: 1, duration: 0.65 }, "-=0.42")
-            .fromTo(heroCue, { opacity: 0, y: 14 }, { opacity: 0.6, y: 0, duration: 0.45 }, "-=0.28");
+            .fromTo(heroLines, { yPercent: 125, opacity: 0, rotateX: 18 }, { yPercent: 0, opacity: 1, rotateX: 0, duration: 1.2, stagger: 0.1 })
+            .fromTo(heroCopy, { y: 42, opacity: 0 }, { y: 0, opacity: 1, duration: 0.78 }, "-=0.62")
+            .fromTo(heroPill, { y: 32, opacity: 0, scale: 0.94 }, { y: 0, opacity: 1, scale: 1, duration: 0.65 }, "-=0.44")
+            .fromTo(heroCue, { y: 18, opacity: 0 }, { y: 0, opacity: 0.62, duration: 0.45 }, "-=0.28");
 
           const heroTimeline = gsap.timeline({
             scrollTrigger: {
               trigger: hero,
               start: "top top",
-              end: "bottom+=105% top",
+              end: "bottom+=115% top",
               scrub: 1,
               pin: true,
               anticipatePin: 1,
@@ -178,37 +328,23 @@ export function AboutSection() {
           });
 
           heroTimeline
-            .to(heroMedia, { scale: 1.26, yPercent: 10, rotate: -1.5, ease: "none", duration: 1 }, 0)
-            .to(heroLines[0], { yPercent: -32, xPercent: -4, scale: 0.82, opacity: 0.2, ease: "none", duration: 1 }, 0)
-            .to(heroLines[1], { yPercent: -18, xPercent: 3, scale: 0.9, opacity: 0.48, ease: "none", duration: 1 }, 0)
-            .to(heroCopy, { y: -70, opacity: 0, ease: "none", duration: 0.75 }, 0.12)
-            .to(heroPill, { y: -55, opacity: 0, scale: 0.88, ease: "none", duration: 0.68 }, 0.16)
-            .to(heroCue, { y: 80, opacity: 0, ease: "none", duration: 0.32 }, 0)
-            .to(heroMedia.querySelectorAll(".about-hero-grid"), { yPercent: -14, opacity: 0.15, ease: "none", duration: 1 }, 0)
-            .to(heroMedia.querySelectorAll(".about-hero-shine"), { scale: 1.55, opacity: 0.04, ease: "none", duration: 1 }, 0.05);
-
-          gsap.fromTo(
-            photo,
-            { opacity: 0, y: 100, rotate: -4, scale: 0.92 },
-            {
-              opacity: 1,
-              y: 0,
-              rotate: -1,
-              scale: 1,
-              duration: 1.1,
-              ease: "power3.out",
-              scrollTrigger: { trigger: photo, start: "top 88%", once: true },
-            },
-          );
+            .to(heroMedia, { scale: 1.32, yPercent: 11, rotate: -1.7, ease: "none" }, 0)
+            .to(heroLines[0], { yPercent: -40, xPercent: -7, scale: 0.76, opacity: 0.12, ease: "none" }, 0)
+            .to(heroLines[1], { yPercent: -24, xPercent: 5, scale: 0.86, opacity: 0.34, ease: "none" }, 0)
+            .to(heroCopy, { y: -100, opacity: 0, ease: "none" }, 0.14)
+            .to(heroPill, { y: -82, opacity: 0, scale: 0.82, ease: "none" }, 0.18)
+            .to(heroCue, { y: 90, opacity: 0, ease: "none" }, 0)
+            .to(heroMedia.querySelector(".about-hero-grid"), { yPercent: -20, scale: 1.1, opacity: 0.08, ease: "none" }, 0)
+            .to(heroMedia.querySelector(".about-hero-shine"), { scale: 1.7, opacity: 0.02, ease: "none" }, 0);
 
           gsap.to(photo, {
-            y: -34,
-            scale: 1.035,
-            rotate: 0,
+            y: -38,
+            scale: 1.045,
+            rotation: 0,
             ease: "none",
             scrollTrigger: {
               trigger: photo,
-              start: "top 70%",
+              start: "top 74%",
               end: "bottom 35%",
               scrub: 1,
             },
@@ -216,160 +352,65 @@ export function AboutSection() {
 
           ScrollTrigger.create({
             trigger: photo,
-            start: "top 14%",
+            start: "top 13%",
             endTrigger: profileCopy,
-            end: "bottom 62%",
+            end: "bottom 60%",
             pin: true,
             pinSpacing: false,
             anticipatePin: 1,
           });
+
+          addCommonReveals();
         });
 
-        desktop.add("(max-width: 900px)", () => {
+        responsive.add("(max-width: 900px)", () => {
           gsap.fromTo(
             heroLines,
-            { y: 34, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.8, stagger: 0.1, ease: "power3.out" },
+            { y: 45, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.85, stagger: 0.11, ease: "power3.out" },
           );
+
           gsap.fromTo(
             [heroCopy, heroPill],
-            { y: 24, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.7, stagger: 0.12, ease: "power3.out", delay: 0.18 },
+            { y: 28, opacity: 0 },
+            { y: 0, opacity: 1, duration: 0.72, stagger: 0.12, ease: "power3.out", delay: 0.2 },
           );
 
           gsap.to(heroMedia, {
-            scale: 1.16,
+            scale: 1.17,
             yPercent: 4,
             ease: "none",
             scrollTrigger: {
               trigger: hero,
               start: "top top",
               end: "bottom top",
-              scrub: 1.25,
+              scrub: 1.1,
             },
           });
 
           gsap.to(heroLines[0], {
-            yPercent: -14,
-            opacity: 0.6,
+            yPercent: -18,
+            xPercent: -2,
+            opacity: 0.55,
             ease: "none",
             scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1 },
           });
 
           gsap.to(heroLines[1], {
-            yPercent: -8,
-            opacity: 0.78,
+            yPercent: -10,
+            xPercent: 2,
+            opacity: 0.72,
             ease: "none",
             scrollTrigger: { trigger: hero, start: "top top", end: "bottom top", scrub: 1 },
           });
+
+          addCommonReveals();
         });
 
-        gsap.fromTo(
-          profileCopy,
-          { y: 90, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: profileCopy, start: "top 82%", once: true },
-          },
-        );
-
-        gsap.fromTo(
-          storyLead,
-          { y: 100, opacity: 0, clipPath: "inset(20% 0 0 0)" },
-          {
-            y: 0,
-            opacity: 1,
-            clipPath: "inset(0 0 0 0)",
-            duration: 1.05,
-            ease: "power4.out",
-            scrollTrigger: { trigger: story, start: "top 76%", once: true },
-          },
-        );
-
-        gsap.fromTo(
-          storyCopy,
-          { y: 65, opacity: 0, clipPath: "inset(0 0 12% 0)" },
-          {
-            y: 0,
-            opacity: 1,
-            clipPath: "inset(0 0 0 0)",
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: { trigger: storyCopy, start: "top 84%", once: true },
-          },
-        );
-
-        const moveDistance = () => Math.max(0, techTrack.scrollWidth - window.innerWidth);
-        gsap.to(techTrack, {
-          x: () => -moveDistance() * 0.48,
-          ease: "none",
-          scrollTrigger: {
-            trigger: techBand,
-            start: "top 90%",
-            end: "bottom 10%",
-            scrub: 0.8,
-            invalidateOnRefresh: true,
-          },
-        });
-
-        gsap.fromTo(
-          socialTitle,
-          { y: 80, opacity: 0, scale: 0.96 },
-          {
-            y: 0,
-            opacity: 1,
-            scale: 1,
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: { trigger: social, start: "top 78%", once: true },
-          },
-        );
-
-        gsap.fromTo(
-          socialGrid.children,
-          { y: 55, opacity: 0, rotateX: 8 },
-          {
-            y: 0,
-            opacity: 1,
-            rotateX: 0,
-            duration: 0.75,
-            stagger: 0.1,
-            ease: "power3.out",
-            scrollTrigger: { trigger: socialGrid, start: "top 82%", once: true },
-          },
-        );
-
-        gsap.fromTo(
-          admin,
-          { y: 70, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.9,
-            ease: "power3.out",
-            scrollTrigger: { trigger: admin, start: "top 86%", once: true },
-          },
-        );
-
-        gsap.fromTo(
-          footer,
-          { y: 30, opacity: 0 },
-          {
-            y: 0,
-            opacity: 1,
-            duration: 0.7,
-            ease: "power3.out",
-            scrollTrigger: { trigger: footer, start: "top 92%", once: true },
-          },
-        );
-
-        return () => desktop.revert();
+        return () => responsive.revert();
       });
 
-      return () => mm.revert();
+      return () => reducedMotion.revert();
     }, root);
 
     const refresh = () => ScrollTrigger.refresh();
@@ -395,7 +436,7 @@ export function AboutSection() {
 
         <div className="about-container about-hero-inner">
           <p className="about-kicker">SHREE SAWARIYA / ABOUT</p>
-          <h1 ref={undefined} className="about-display-title" aria-label="Local trust. Modern storefront.">
+          <h1 className="about-display-title" aria-label="Local trust. Modern storefront.">
             <span ref={setHeroLineRef} className="about-hero-line">Local trust.</span>
             <span ref={setHeroLineRef} className="about-hero-line about-hero-line-soft">Modern storefront.</span>
           </h1>
