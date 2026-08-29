@@ -1,25 +1,24 @@
-import { ArrowUpRight, Mail, MessageCircle, MapPin } from "lucide-react";
-import { shopInfo } from "@/data/storefront";
+import { ArrowUpRight, Instagram, Mail, MessageCircle } from "lucide-react";
 import { MagneticLink } from "@/components/about/MagneticLink";
 
 const links = [
   {
     label: "EMAIL",
-    detail: shopInfo.email,
-    href: `mailto:${shopInfo.email}`,
+    detail: "shubhampatidar7851@gmail.com",
+    href: "mailto:shubhampatidar7851@gmail.com",
     icon: Mail,
   },
   {
     label: "WHATSAPP",
-    detail: shopInfo.whatsapp,
-    href: `https://wa.me/${shopInfo.whatsapp}`,
+    detail: "9752469028",
+    href: "https://wa.me/9752469028",
     icon: MessageCircle,
   },
   {
-    label: "FIND THE SHOP",
-    detail: shopInfo.address,
-    href: "/#contact",
-    icon: MapPin,
+    label: "INSTAGRAM",
+    detail: "vibeswithshubh",
+    href: "https://instagram.com/vibeswithshubh",
+    icon: Instagram,
   },
 ] as const;
 
@@ -36,9 +35,6 @@ export function AboutConnect() {
               <span className="block">MOVING.</span>
             </h2>
           </div>
-          <p className="max-w-sm text-sm leading-6 text-white/42 sm:text-right" data-text-reveal="done">
-            The current application already knows the store's contact details. This page uses those existing values instead of inventing social accounts.
-          </p>
         </div>
 
         <div className="mt-14 grid gap-3 sm:mt-20 lg:grid-cols-3">
@@ -64,8 +60,8 @@ export function AboutConnect() {
         </div>
 
         <footer className="mt-16 flex flex-col gap-3 border-t border-white/10 pt-5 text-[0.58rem] font-semibold uppercase tracking-[0.15em] text-white/25 sm:mt-24 sm:flex-row sm:items-center sm:justify-between">
-          <span>{shopInfo.name}</span>
-          <span>{shopInfo.hours}</span>
+          <span>SHREE SAWARIYA AGRO AGENCY</span>
+          <span>8:30 AM - 8:00 PM</span>
           <span>06 / 06 — END OF STORY</span>
         </footer>
       </div>
