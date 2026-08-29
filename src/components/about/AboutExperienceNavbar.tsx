@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ArrowDown, Menu } from "lucide-react";
+import { ArrowDown, LogOut, Menu } from "lucide-react";
 
 const items = [
   { id: "about-experience", label: "Intro" },
@@ -77,16 +77,26 @@ export function AboutExperienceNavbar() {
           ))}
         </nav>
 
-        <button
-          type="button"
-          className="about-nav__menu"
-          onClick={() => setMenuOpen((value) => !value)}
-          aria-expanded={menuOpen}
-          aria-controls="about-mobile-menu"
-          aria-label="Toggle About navigation"
-        >
-          <Menu className="size-5" />
-        </button>
+        <div className="about-nav__actions">
+          <a
+            href="/"
+            className="about-nav__exit"
+            aria-label="Return to homepage"
+            title="Return to homepage"
+          >
+            <LogOut className="size-4" />
+          </a>
+          <button
+            type="button"
+            className="about-nav__menu"
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-expanded={menuOpen}
+            aria-controls="about-mobile-menu"
+            aria-label="Toggle About navigation"
+          >
+            <Menu className="size-5" />
+          </button>
+        </div>
       </div>
 
       {menuOpen ? (
