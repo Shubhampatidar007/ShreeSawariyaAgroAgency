@@ -2,6 +2,8 @@ import { useState, type PointerEvent } from "react";
 import { motion, useReducedMotion, useSpring } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
+import { AnimatedText } from "@/components/about/AnimatedText";
+import { HeroNameReveal } from "@/components/about/Heronamereveal";
 
 export function AboutHero() {
   const reducedMotion = useReducedMotion();
@@ -54,13 +56,27 @@ export function AboutHero() {
               className="about-hero__copy"
             >
               <p className="about-kicker" data-text-reveal="done">DIGITAL BUILDER / DEVELOPER / PRODUCT THINKER</p>
+
+              {/*
+                Headline uses HeroNameReveal: per-letter 3D flip-in with a
+                decode/scramble pass, a shimmering gradient, and cursor
+                magnetism. data-text-reveal="done" keeps the site-wide
+                generic text-reveal effect from also touching this element
+                and double-animating it.
+              */}
               <h1 id="about-hero-title" className="about-hero__title" data-text-reveal="done">
-                SHUBHAM
-                <span>PATIDAR.</span>
+                <HeroNameReveal lines={["SHUBHAM", "PATIDAR."]} start="top 95%" />
               </h1>
-              <p className="about-hero__lede" data-text-reveal="done">
-                Turning real-world problems into clear, useful digital experiences — with the discipline of a builder and the curiosity of a grower.
-              </p>
+
+              <AnimatedText
+                as="p"
+                text="Turning real-world problems into clear, useful digital experiences — with the discipline of a builder and the curiosity of a grower."
+                className="about-hero__lede"
+                splitBy="lines"
+                stagger={0.05}
+                start="top 95%"
+                delay={0.3}
+              />
 
               <button type="button" className="about-hero__scroll" onClick={enterStory}>
                 <span>{scrollHint ? "ENTER THE STORY" : "CONTINUE THE STORY"}</span>

@@ -185,7 +185,7 @@ const AdminKhataCustomersCustomerIdRoute =
   } as any)
 const AdminLedgerSuppliersSupplierIdRoute =
   AdminLedgerSuppliersSupplierIdRouteImport.update({
-    id: '/admin/ledger/suppliers/$supplierId',
+    id: '/ledger/suppliers/$supplierId',
     path: '/ledger/suppliers/$supplierId',
     getParentRoute: () => AdminRoute,
   } as any)

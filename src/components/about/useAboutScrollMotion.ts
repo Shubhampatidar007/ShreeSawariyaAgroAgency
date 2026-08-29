@@ -1,136 +1,154 @@
-import { useRouterState } from "@tanstack/react-router";
 import { useEffect } from "react";
+import { useRouterState } from "@tanstack/react-router";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
 
-const clamp = (value: number, min = 0, max = 1) => Math.min(max, Math.max(min, value));
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
-type Cleanup = () => void;
-
+/**
+ * Drives every scroll-linked visual on the About page:
+ *  - hero visual/copy scrub (shrink + fade as you leave the hero)
+ *  - hero background grid parallax
+ *  - per-section scrub reveal (translate + scale + opacity) for every
+ *    `main > section[id]`, targeting `.about-scroll-content` when present
+ *
+ * Built on GSAP + ScrollTrigger instead of a manual scroll listener:
+ *  - ScrollTrigger recalculates all trigger positions on resize/orientation
+ *    change on its own, so this stays correct across breakpoints with no
+ *    extra code (this is what makes it "fully responsive").
+ *  - `gsap.matchMedia()` gives a clean, binary reduced-motion branch: full
+ *    scrub animation, or the final resting state with no motion at all —
+ *    no more "55% strength" half-measure.
+ */
 export function useAboutScrollMotion() {
   const locationPathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let ctx: gsap.Context | undefined;
+    let raf = 0;
     let disposed = false;
-    let retryFrame = 0;
-    let frame = 0;
-    let cleanup: Cleanup | undefined;
 
-    const setup = (): boolean => {
-      if (disposed) return true;
+    const setup = () => {
+      if (disposed) return;
 
-      const root = document.querySelector<HTMLElement>(".about-experience");
-      const hero = document.querySelector<HTMLElement>(".about-hero");
-      const scrollStage = document.querySelector<HTMLElement>(".about-hero__scroll-stage");
-      const scrollCopy = document.querySelector<HTMLElement>(".about-hero__scroll-copy");
+      const rootEl = document.querySelector<HTMLElement>(".about-experience");
+      const heroEl = document.querySelector<HTMLElement>(".about-hero");
+      const stageEl = document.querySelector<HTMLElement>(".about-hero__scroll-stage");
+      const copyEl = document.querySelector<HTMLElement>(".about-hero__scroll-copy");
+      const gridEl = document.querySelector<HTMLElement>(".about-hero__grid");
 
-      if (!root || !hero || !scrollStage || !scrollCopy) {
+      if (!rootEl || !heroEl) {
         if (import.meta.env.DEV) {
-          const missing = [
-            [".about-experience", root],
-            [".about-hero", hero],
-            [".about-hero__scroll-stage", scrollStage],
-            [".about-hero__scroll-copy", scrollCopy],
-          ]
-            .filter(([, element]) => !element)
-            .map(([selector]) => selector)
-            .join(", ");
-          console.warn(`[about-motion] waiting for About DOM: ${missing}`);
+          console.warn("[about-motion] waiting for About DOM: .about-experience, .about-hero");
         }
-
-        retryFrame = window.requestAnimationFrame(() => {
-          setup();
-        });
-        return false;
+        raf = window.requestAnimationFrame(setup);
+        return;
       }
 
-      if (cleanup) return true;
+      ctx = gsap.context(() => {
+        const mm = gsap.matchMedia();
 
-      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-      const motionStrength = reducedMotion ? 0.55 : 1;
-      let lastScrollTop = window.scrollY;
-      let lastTime = performance.now();
-
-      const render = () => {
-        frame = 0;
-        if (disposed) return;
-
-        const scrollTop = window.scrollY;
-        const viewportHeight = Math.max(window.innerHeight, 1);
-        const heroTop = hero.getBoundingClientRect().top + scrollTop;
-        const heroHeight = Math.max(hero.offsetHeight, viewportHeight);
-        const heroProgress = clamp((scrollTop - heroTop) / Math.max(heroHeight * 0.78, 1));
-        const motionProgress = heroProgress * motionStrength;
-
-        const now = performance.now();
-        const deltaTime = Math.max(now - lastTime, 16);
-        const velocity = (scrollTop - lastScrollTop) / deltaTime;
-
-        root.style.setProperty("--about-scroll", motionProgress.toFixed(4));
-        root.style.setProperty("--about-scroll-velocity", velocity.toFixed(4));
-        root.style.setProperty("--about-grid-y", `${(motionProgress * 135).toFixed(2)}px`);
-
-        scrollStage.style.transform = `translate3d(0, ${(-motionProgress * 145).toFixed(2)}px, 0) scale(${(1 + motionProgress * 0.17).toFixed(4)}) rotate(${(-motionProgress * 7).toFixed(2)}deg)`;
-        scrollStage.style.opacity = `${(1 - motionProgress * 0.58).toFixed(4)}`;
-        scrollCopy.style.transform = `translate3d(0, ${(-motionProgress * 125).toFixed(2)}px, 0)`;
-        scrollCopy.style.opacity = `${(1 - motionProgress * 0.62).toFixed(4)}`;
-
-        root.querySelectorAll<HTMLElement>("main > section[id]").forEach((section) => {
-          if (section === hero) return;
-
-          const rect = section.getBoundingClientRect();
-          const enter = clamp((viewportHeight * 0.88 - rect.top) / Math.max(viewportHeight * 0.62, 1));
-          const center = clamp((viewportHeight * 0.72 - rect.top) / Math.max(viewportHeight * 0.9, 1));
-          const offset = (1 - enter) * 46 * motionStrength;
-          const scale = 0.985 + enter * 0.015;
-          const opacity = 0.72 + enter * 0.28;
-
-          section.style.setProperty("--section-progress", enter.toFixed(4));
-
-          const content =
-            section.querySelector<HTMLElement>(":scope > .about-scroll-content") ?? section.firstElementChild;
-          if (content instanceof HTMLElement) {
-            content.style.setProperty("--about-section-offset", `${offset.toFixed(2)}px`);
-            content.style.transform = `translate3d(0, ${offset.toFixed(2)}px, 0) scale(${scale.toFixed(4)})`;
-            content.style.opacity = opacity.toFixed(4);
+        mm.add("(prefers-reduced-motion: no-preference)", () => {
+          if (stageEl) {
+            gsap.to(stageEl, {
+              scale: 0.86,
+              opacity: 0.35,
+              ease: "none",
+              scrollTrigger: {
+                trigger: heroEl,
+                start: "top top",
+                end: "bottom top",
+                scrub: 0.4,
+              },
+            });
           }
 
-          section.style.setProperty("--about-section-center", center.toFixed(4));
+          if (copyEl) {
+            gsap.to(copyEl, {
+              yPercent: -18,
+              opacity: 0,
+              ease: "none",
+              scrollTrigger: {
+                trigger: heroEl,
+                start: "top top",
+                end: "65% top",
+                scrub: 0.4,
+              },
+            });
+          }
+
+          if (gridEl) {
+            gsap.to(gridEl, {
+              yPercent: 22,
+              ease: "none",
+              scrollTrigger: {
+                trigger: heroEl,
+                start: "top top",
+                end: "bottom top",
+                scrub: 0.6,
+              },
+            });
+          }
+
+          gsap.utils.toArray<HTMLElement>("main > section[id]").forEach((section) => {
+            const content =
+              section.querySelector<HTMLElement>(":scope > .about-scroll-content") ??
+              section.firstElementChild;
+
+            if (!(content instanceof HTMLElement)) return;
+
+            gsap.fromTo(
+              content,
+              { y: 64, scale: 0.97, opacity: 0.35 },
+              {
+                y: 0,
+                scale: 1,
+                opacity: 1,
+                ease: "power3.out",
+                scrollTrigger: {
+                  trigger: section,
+                  start: "top 82%",
+                  end: "top 38%",
+                  scrub: 0.5,
+                },
+              },
+            );
+          });
+
+          return () => {
+            // gsap.context handles teardown of everything created above.
+          };
         });
 
-        lastScrollTop = scrollTop;
-        lastTime = now;
-      };
+        mm.add("(prefers-reduced-motion: reduce)", () => {
+          if (stageEl) gsap.set(stageEl, { scale: 1, opacity: 1 });
+          if (copyEl) gsap.set(copyEl, { yPercent: 0, opacity: 1 });
+          if (gridEl) gsap.set(gridEl, { yPercent: 0 });
 
-      const requestRender = () => {
-        if (!frame) frame = window.requestAnimationFrame(render);
-      };
+          gsap.utils.toArray<HTMLElement>("main > section[id]").forEach((section) => {
+            const content =
+              section.querySelector<HTMLElement>(":scope > .about-scroll-content") ??
+              section.firstElementChild;
+            if (content instanceof HTMLElement) {
+              gsap.set(content, { y: 0, scale: 1, opacity: 1 });
+            }
+          });
+        });
+      }, rootEl);
 
-      render();
-      window.addEventListener("scroll", requestRender, { passive: true });
-      window.addEventListener("resize", requestRender);
-      window.addEventListener("pageshow", requestRender);
-
-      const resizeObserver = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(requestRender);
-      resizeObserver?.observe(root);
-
-      cleanup = () => {
-        window.removeEventListener("scroll", requestRender);
-        window.removeEventListener("resize", requestRender);
-        window.removeEventListener("pageshow", requestRender);
-        resizeObserver?.disconnect();
-        if (frame) window.cancelAnimationFrame(frame);
-        cleanup = undefined;
-      };
-
-      return true;
+      ScrollTrigger.refresh();
     };
 
     setup();
 
     return () => {
       disposed = true;
-      if (retryFrame) window.cancelAnimationFrame(retryFrame);
-      if (frame) window.cancelAnimationFrame(frame);
-      cleanup?.();
+      if (raf) window.cancelAnimationFrame(raf);
+      ctx?.revert();
     };
   }, [locationPathname]);
 }

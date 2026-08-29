@@ -7,6 +7,7 @@ const items = [
   { id: "building", label: "Building" },
   { id: "agriculture-tech", label: "Field × Tech" },
   { id: "story", label: "Story" },
+  { id: "github", label: "GitHub" },
   { id: "connect", label: "Connect" },
 ] as const;
 
@@ -49,7 +50,12 @@ export function AboutExperienceNavbar() {
   return (
     <header className={`about-nav ${compact ? "about-nav--compact" : ""}`}>
       <div className="about-nav__shell">
-        <button type="button" className="about-nav__brand" onClick={() => goTo("about-experience")} aria-label="Back to About intro">
+        <button
+          type="button"
+          className="about-nav__brand"
+          onClick={() => goTo("about-experience")}
+          aria-label="Back to About intro"
+        >
           <span className="about-nav__brand-mark">SP</span>
           <span>
             <strong>SHUBHAM</strong>
@@ -86,7 +92,12 @@ export function AboutExperienceNavbar() {
       {menuOpen ? (
         <nav id="about-mobile-menu" className="about-nav__mobile" aria-label="About mobile sections">
           {items.slice(1).map((item) => (
-            <button key={item.id} type="button" className={activeId === item.id ? "is-active" : ""} onClick={() => goTo(item.id)}>
+            <button
+              key={item.id}
+              type="button"
+              className={activeId === item.id ? "is-active" : ""}
+              onClick={() => goTo(item.id)}
+            >
               <span>{item.label}</span>
               <ArrowDown className="size-4 -rotate-45" />
             </button>
