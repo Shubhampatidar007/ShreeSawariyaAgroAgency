@@ -54,6 +54,38 @@
   transform: translateY(-2px);
 }
 
+.about-nav__actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+
+.about-nav__exit {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--about-line);
+  border-radius: 50%;
+  color: var(--about-muted);
+  background: transparent;
+  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
+}
+
+.about-nav__exit:hover {
+  color: white;
+  border-color: oklch(0.82 0.17 125 / 0.35);
+  background: oklch(0.82 0.17 125 / 0.08);
+  transform: translateY(-1px);
+}
+
+.about-nav__exit:focus-visible {
+  outline: none;
+  border-color: oklch(0.82 0.17 125 / 0.7);
+  box-shadow: 0 0 0 2px oklch(0.82 0.17 125 / 0.18);
+}
+
 @media (max-width: 900px), (pointer: coarse) {
   .about-hero__scroll-stage {
     transform-origin: center center;
