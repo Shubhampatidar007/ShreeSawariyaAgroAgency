@@ -63,8 +63,9 @@
   opacity: calc(0.45 + var(--about-scroll-energy, 0) * 0.55);
 }
 
-/* The hero remains a full scene for ScrollTrigger, but its internal content is
-   intrinsic. No 1fr/100% middle row is allowed to manufacture a blank area. */
+/* Hero remains a cinematic ScrollTrigger scene, but the rendered content must
+   determine its normal-flow height. The mobile override intentionally removes
+   viewport-height reservation so the footer cannot sit above a dead green area. */
 .about-hero {
   min-height: 100svh;
   overflow: hidden;
@@ -99,7 +100,37 @@
   max-width: 700px;
 }
 
-/* Switch to the existing hamburger before navigation labels can collide. */
+/* Desktop navbar: links have room. Medium widths switch to the existing menu
+   before the brand/actions can compress into or overflow one another. */
+.about-nav__shell {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  min-width: 0;
+}
+
+.about-nav__brand,
+.about-nav__links,
+.about-nav__actions {
+  min-width: 0;
+}
+
+.about-nav__actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.4rem;
+  flex-shrink: 0;
+}
+
+.about-nav__exit {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  color: white;
+  text-decoration: none;
+}
+
 @media (max-width: 1180px) {
   .about-nav__links {
     display: none !important;
@@ -107,10 +138,7 @@
 
   .about-nav__menu {
     display: grid !important;
-  }
-
-  .about-nav__mobile {
-    display: block;
+    flex: 0 0 auto;
   }
 }
 
@@ -178,19 +206,26 @@
     overflow-y: auto;
   }
 
+  /* Critical fix: remove the viewport-height reservation from the internal hero
+     content on mobile. ScrollTrigger provides the cinematic pin duration; normal
+     layout now ends directly after the hero footer. */
+  .about-hero,
   .about-hero__content {
-    min-height: auto;
+    min-height: auto !important;
+  }
+
+  .about-hero__content {
     grid-template-rows: auto auto auto;
     row-gap: 0;
     padding-top: 5.6rem;
-    padding-bottom: 0.8rem;
+    padding-bottom: 0.5rem;
   }
 
   .about-hero__main {
     height: auto;
     grid-template-columns: 1fr;
     gap: 0;
-    padding: 1.25rem 0 0.35rem;
+    padding: 1.1rem 0 0.2rem;
   }
 
   .about-hero__scroll-copy {
@@ -199,18 +234,23 @@
 
   .about-hero__visual {
     order: 2;
-    height: clamp(210px, 52vw, 330px);
-    margin-top: 0.15rem;
+    height: clamp(150px, 43vw, 250px);
+    margin-top: 0;
   }
 
   .digital-seed {
-    width: min(78vw, 380px);
+    width: min(76vw, 350px);
   }
 
   .about-hero__visual-label {
     right: 0;
-    bottom: 2%;
-    width: min(94%, 300px);
+    bottom: 0;
+    width: min(92%, 300px);
+  }
+
+  .about-hero__footer {
+    margin-top: 0;
+    padding-top: 0.55rem;
   }
 }
 
@@ -226,19 +266,20 @@
   }
 
   .about-hero__main {
-    padding-top: 0.9rem;
+    padding-top: 0.8rem;
+    padding-bottom: 0;
   }
 
   .about-hero__visual {
-    height: clamp(180px, 49vw, 270px);
+    height: clamp(135px, 41vw, 220px);
   }
 
   .digital-seed {
-    width: min(70vw, 300px);
+    width: min(67vw, 290px);
   }
 
   .about-hero__footer {
-    padding-top: 0.55rem;
+    padding-top: 0.45rem;
   }
 }
 
@@ -254,11 +295,11 @@
   }
 
   .about-hero__visual {
-    height: 165px;
+    height: 125px;
   }
 
   .digital-seed {
-    width: min(68vw, 280px);
+    width: min(64vw, 265px);
   }
 }
 
