@@ -63,58 +63,57 @@
   opacity: calc(0.45 + var(--about-scroll-energy, 0) * 0.55);
 }
 
-/* Collapse the hero's artificial flex spacer. The hero itself stays viewport-height,
-   while its footer follows the content instead of leaving a blank block above it. */
+/* Hero layout fixes. Keep the scene viewport-height without allowing the
+   content flex spacer or an oversized visual row to create a fake blank scene. */
 .about-hero {
   min-height: 100svh;
+  overflow: hidden;
 }
 
 .about-hero__content {
-  min-height: auto;
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
 .about-hero__main {
-  flex: 0 0 auto;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 0.93fr) minmax(0, 1.07fr);
+  align-items: center;
+  padding: 2rem 0;
 }
 
-/* Keep the seed visually consistent as the layout changes between desktop and mobile. */
 .about-hero__visual {
-  min-height: clamp(520px, 45vw, 680px);
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  place-items: center;
 }
 
 .digital-seed {
-  width: min(88%, 600px);
+  width: min(92%, 640px);
+  max-width: 640px;
 }
 
-/* Responsive navbar: keep the full nav on wide desktop, then move cleanly to the
-   existing mobile menu before labels can collide with the brand/actions. */
-.about-nav__shell {
-  grid-template-columns: auto minmax(0, 1fr) auto;
-}
-
-@media (max-width: 1100px) and (min-width: 901px) {
-  .about-nav__shell {
-    gap: 0.55rem;
-    padding-inline: 0.55rem;
-  }
-
-  .about-nav__brand {
-    gap: 0.45rem;
-  }
-
-  .about-nav__brand small {
+/* Make the navigation switch to the existing menu before the desktop labels
+   become cramped. This keeps the brand, exit action, and menu fully visible. */
+@media (max-width: 1180px) {
+  .about-nav__links {
     display: none;
   }
 
-  .about-nav__links {
-    gap: 0;
-    min-width: 0;
+  .about-nav__menu {
+    display: grid;
   }
 
-  .about-nav__links button {
-    min-height: 36px;
-    padding-inline: 0.48rem;
-    font-size: 0.61rem;
+  .about-nav__mobile {
+    display: none;
+  }
+
+  .about-nav--compact .about-nav__shell {
+    transform: translateY(-1px) scale(0.99);
   }
 }
 
@@ -124,7 +123,9 @@
   }
 
   .about-nav__shell {
+    width: 100%;
     min-height: 54px;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.5rem;
     padding: 0.45rem 0.5rem;
   }
@@ -135,12 +136,14 @@
     padding-inline: 0.25rem;
   }
 
-  .about-nav__brand-mark {
-    width: 30px;
-    height: 30px;
+  .about-nav__brand span:last-child {
+    min-width: 0;
   }
 
   .about-nav__brand strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 0.65rem;
   }
 
@@ -158,51 +161,56 @@
     height: 38px;
   }
 
-  /* The menu panel only renders while open; keep it constrained to the viewport. */
   .about-nav__mobile {
+    width: 100%;
     max-height: calc(100svh - 5.5rem);
     overflow-y: auto;
   }
 
-  .about-hero__visual {
-    min-height: min(84vw, 440px);
-    margin-top: 0;
+  .about-nav__menu[aria-expanded="true"] + .about-nav__mobile {
+    display: block;
   }
 
-  .digital-seed {
-    width: min(76vw, 380px);
-  }
-}
-
-@media (max-width: 640px) {
+  /* Mobile uses the same hero composition, but the visual gets a predictable
+     bounded height so it cannot create a large empty gap below ENTER THE STORY. */
   .about-hero__content {
+    min-height: auto;
+    grid-template-rows: auto auto auto;
+    padding-top: 5.6rem;
     padding-bottom: 1rem;
   }
 
   .about-hero__main {
-    padding-top: 2rem;
-    padding-bottom: 1rem;
+    height: auto;
+    grid-template-columns: 1fr;
+    gap: 0;
+    padding: 1.75rem 0 0.75rem;
   }
 
   .about-hero__visual {
-    min-height: min(78vw, 350px);
-    margin-top: -0.4rem;
+    order: 2;
+    height: clamp(220px, 56vw, 340px);
+    margin-top: 0.25rem;
+  }
+
+  .about-hero__scroll-copy {
+    order: 1;
   }
 
   .digital-seed {
-    width: min(72vw, 320px);
+    width: min(78vw, 360px);
   }
 
   .about-hero__visual-label {
-    bottom: 4%;
-    width: 94%;
+    right: 0;
+    bottom: 2%;
+    width: min(94%, 300px);
   }
 }
 
-@media (max-width: 420px) {
-  .about-nav__brand strong {
-    font-size: 0.6rem;
-    letter-spacing: 0.1em;
+@media (max-width: 640px) {
+  .about-nav__shell {
+    border-radius: 1rem;
   }
 
   .about-nav__exit,
@@ -211,8 +219,41 @@
     height: 36px;
   }
 
+  .about-hero__main {
+    padding-top: 1.2rem;
+  }
+
+  .about-hero__visual {
+    height: clamp(190px, 52vw, 285px);
+  }
+
   .digital-seed {
     width: min(70vw, 300px);
+  }
+
+  .about-hero__footer {
+    padding-top: 0.75rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .about-nav__brand-mark {
+    width: 28px;
+    height: 28px;
+  }
+
+  .about-nav__brand strong {
+    font-size: 0.57rem;
+    letter-spacing: 0.08em;
+  }
+
+  .about-hero__visual {
+    height: 180px;
+  }
+
+  .digital-seed {
+    width: 270px;
+    max-width: 72vw;
   }
 }
 
