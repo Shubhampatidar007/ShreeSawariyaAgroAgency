@@ -3,7 +3,7 @@ import { motion, useReducedMotion, useSpring } from "motion/react";
 import { ArrowDown, CircleArrowOutUpRight, Leaf } from "lucide-react";
 import { DigitalSeed } from "@/components/about/DigitalSeed";
 import { AnimatedText } from "@/components/about/AnimatedText";
-import { HeroNameReveal } from "@/components/about/Heronamereveal";
+import { HeroNameReveal } from "@/components/about/HeroNameReveal";
 
 export function AboutHero() {
   const reducedMotion = useReducedMotion();

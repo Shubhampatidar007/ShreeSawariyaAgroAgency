@@ -270,13 +270,18 @@
   text-wrap: balance;
 }
 
-.about-hero__title span {
-  display: block;
+.about-hero__title > .hero-name-reveal {
+  display: inline-block;
   margin-left: 0.14em;
   color: transparent;
   background: linear-gradient(145deg, white 7%, oklch(0.75 0.04 145) 72%, oklch(0.82 0.17 125) 100%);
   background-clip: text;
   -webkit-background-clip: text;
+}
+
+.hero-name-reveal__line {
+  display: block;
+  white-space: nowrap;
 }
 
 .about-hero__lede {
