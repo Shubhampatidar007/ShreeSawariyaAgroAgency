@@ -200,6 +200,11 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
         .hero-name-reveal {
           display: inline-block;
           color: inherit;
+          background: none !important;
+          background-image: none !important;
+          background-clip: initial !important;
+          -webkit-background-clip: initial !important;
+          -webkit-text-fill-color: initial !important;
         }
         .hero-name-reveal__visible,
         .hero-name-reveal__line {
