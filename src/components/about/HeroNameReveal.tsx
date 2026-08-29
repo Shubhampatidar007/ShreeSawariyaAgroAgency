@@ -9,28 +9,11 @@ if (typeof window !== "undefined") {
 const SCRAMBLE_CHARS = "!<>-_\\/[]{}—=+*^?#";
 
 interface HeroNameRevealProps {
-  /** Each entry renders on its own line, matching the original two-line title. */
   lines: string[];
   className?: string;
-  /** ScrollTrigger start position for the reveal. */
   start?: string;
 }
 
-/**
- * The hero name treatment:
- *  - per-character 3D flip-up entrance (GSAP + ScrollTrigger)
- *  - a short "decode" scramble on each character just before it settles
- *  - a continuous shimmering gradient across the text
- *  - cursor-magnetic letters (each character nudges toward the pointer)
- *
- * Entrance + scramble live on an *outer* span per character; the magnetic
- * pointer offset lives on a nested *inner* span. Keeping them on separate
- * elements means the two animations never fight over the same transform.
- *
- * Fully reduced-motion safe: scramble, flip, and the magnetic listener are
- * all skipped when the OS/browser has motion reduced — text just renders
- * in place, gradient included, with no animation of any kind.
- */
 export function HeroNameReveal({ lines, className = "", start = "top 95%" }: HeroNameRevealProps) {
   const containerRef = useRef<HTMLSpanElement | null>(null);
   const outerRefs = useRef<Array<HTMLSpanElement | null>>([]);
@@ -48,12 +31,12 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
     if (!container) return;
 
     const cleanups: Array<() => void> = [];
-
     const ctx = gsap.context(() => {
       const mm = gsap.matchMedia();
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const outers = outerRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
+        const inners = innerRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
         if (!outers.length) return;
 
         gsap.set(outers, {
@@ -65,25 +48,25 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
         });
 
         const stagger = 0.045;
-
-        outerRefs.current.forEach((el, i) => {
+        outerRefs.current.forEach((outer, i) => {
+          const inner = innerRefs.current[i];
           const finalChar = flatChars[i];
-          if (!el || !finalChar || finalChar.trim() === "") return;
+          if (!outer || !inner || !finalChar || finalChar.trim() === "") return;
 
           const delayedCall = gsap.delayedCall(i * stagger, () => {
             let step = 0;
             const steps = 5;
             const intervalId = window.setInterval(() => {
-              if (!el.isConnected) {
+              if (!inner.isConnected) {
                 window.clearInterval(intervalId);
                 return;
               }
               if (step >= steps) {
-                el.textContent = finalChar;
+                inner.textContent = finalChar;
                 window.clearInterval(intervalId);
                 return;
               }
-              el.textContent = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
+              inner.textContent = SCRAMBLE_CHARS[Math.floor(Math.random() * SCRAMBLE_CHARS.length)];
               step += 1;
             }, 35);
             cleanups.push(() => window.clearInterval(intervalId));
@@ -168,8 +151,6 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
 
   return (
     <span ref={containerRef} className={`hero-name-reveal ${className}`} style={{ perspective: 600 }}>
-      {/* Real text for screen readers / SEO — the split characters below are aria-hidden.
-          Inline style is a belt-and-braces fallback in case sr-only isn't in the build. */}
       <span
         className="sr-only"
         style={{
@@ -187,9 +168,9 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
         {lines.join(" ")}
       </span>
 
-      <span aria-hidden="true">
+      <span aria-hidden="true" className="hero-name-reveal__visible">
         {lineGroups.map((line, lineIndex) => (
-          <span key={lineIndex} className="block" style={{ whiteSpace: "nowrap" }}>
+          <span key={lineIndex} className="hero-name-reveal__line">
             {line.map((char, charIndex) => {
               globalIndex += 1;
               const index = globalIndex;
@@ -200,13 +181,12 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
                     outerRefs.current[index] = el;
                   }}
                   className="hero-name-reveal__char"
-                  style={{ display: "inline-block", willChange: "transform, filter, opacity" }}
                 >
                   <span
                     ref={(el) => {
                       innerRefs.current[index] = el;
                     }}
-                    style={{ display: "inline-block" }}
+                    className="hero-name-reveal__glyph"
                   >
                     {char === " " ? "\u00A0" : char}
                   </span>
@@ -220,11 +200,26 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
       <style>{`
         .hero-name-reveal {
           display: inline-block;
-          background-image: linear-gradient(100deg, #f4fff4 0%, #7effb2 35%, #34d17a 55%, #f4fff4 75%);
-          background-size: 250% 100%;
-          -webkit-background-clip: text;
-          background-clip: text;
+          color: inherit;
+        }
+        .hero-name-reveal__visible,
+        .hero-name-reveal__line {
+          display: block;
+          white-space: nowrap;
+        }
+        .hero-name-reveal__char,
+        .hero-name-reveal__glyph {
+          display: inline-block;
+        }
+        .hero-name-reveal__char {
           color: transparent;
+          -webkit-text-fill-color: transparent;
+        }
+        .hero-name-reveal__glyph {
+          background-image: linear-gradient(145deg, #f4fff4 7%, #c8d9cf 68%, #7effb2 100%);
+          background-size: 250% 100%;
+          background-clip: text;
+          -webkit-background-clip: text;
           animation: hero-name-shimmer 6s linear infinite;
         }
         @keyframes hero-name-shimmer {
@@ -232,7 +227,7 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
           100% { background-position: 250% 50%; }
         }
         @media (prefers-reduced-motion: reduce) {
-          .hero-name-reveal {
+          .hero-name-reveal__glyph {
             animation: none;
             background-position: 0% 50%;
           }
