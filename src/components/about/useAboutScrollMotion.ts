@@ -63,7 +63,10 @@ export function useAboutScrollMotion() {
               scrollTrigger: {
                 trigger: heroEl,
                 start: "top top",
-                end: isDesktop ? "+=130%" : "+=108%",
+                // End when the hero itself would naturally leave the viewport.
+                // The previous extended pin kept a dark, empty hero state on screen
+                // after the footer and before the next About section appeared.
+                end: "bottom top",
                 scrub: isDesktop ? 0.8 : 0.55,
                 pin: true,
                 pinSpacing: true,
