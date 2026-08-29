@@ -36,7 +36,6 @@ export function HeroNameReveal({ lines, className = "", start = "top 95%" }: Her
 
       mm.add("(prefers-reduced-motion: no-preference)", () => {
         const outers = outerRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
-        const inners = innerRefs.current.filter((el): el is HTMLSpanElement => Boolean(el));
         if (!outers.length) return;
 
         gsap.set(outers, {
