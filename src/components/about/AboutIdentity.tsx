@@ -1,5 +1,4 @@
 import { ArrowUpRight, Braces, Compass, Layers3 } from "lucide-react";
-import { motion, useReducedMotion } from "motion/react";
 
 const traits = [
   { icon: Braces, index: "01", title: "DEVELOPER", body: "Systems, interfaces, and interactions that stay understandable under real use." },
@@ -8,11 +7,9 @@ const traits = [
 ] as const;
 
 export function AboutIdentity() {
-  const reducedMotion = useReducedMotion();
-
   return (
     <section id="identity" className="border-t border-white/10 bg-[#071007] py-28 sm:py-40">
-      <div className="mx-auto w-[min(100%-1.25rem,1200px)]">
+      <div className="about-scroll-content mx-auto w-[min(100%-1.25rem,1200px)]">
         <div className="grid gap-12 lg:grid-cols-[0.33fr_0.67fr] lg:gap-20">
           <div>
             <p className="about-kicker" data-text-reveal="done">02 / IDENTITY</p>
@@ -37,13 +34,10 @@ export function AboutIdentity() {
         </div>
 
         <div className="mt-20 grid gap-px overflow-hidden rounded-[2rem] border border-white/10 bg-white/10 md:grid-cols-3">
-          {traits.map(({ icon: Icon, index, title, body }, traitIndex) => (
-            <motion.article
+          {traits.map(({ icon: Icon, index, title, body }) => (
+            <article
               key={title}
-              initial={reducedMotion ? false : { opacity: 0, y: 28 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, amount: 0.35 }}
-              transition={{ duration: reducedMotion ? 0 : 0.65, delay: reducedMotion ? 0 : traitIndex * 0.08 }}
+              data-cinematic-element="card"
               className="group bg-[#0b140b] p-6 sm:p-8"
             >
               <div className="flex items-center justify-between text-[#8ef06a]">
@@ -53,7 +47,7 @@ export function AboutIdentity() {
               <h3 className="mt-16 text-lg font-semibold tracking-[0.12em]">{title}</h3>
               <p className="mt-3 max-w-sm text-sm leading-6 text-white/48">{body}</p>
               <ArrowUpRight className="mt-7 size-4 text-white/25 transition-transform duration-300 group-hover:-translate-y-1 group-hover:translate-x-1 group-hover:text-[#8ef06a]" />
-            </motion.article>
+            </article>
           ))}
         </div>
       </div>
