@@ -2,15 +2,27 @@
   --about-scroll: 0;
   --about-scroll-velocity: 0;
   --about-grid-y: 0px;
+  transform-style: preserve-3d;
 }
 
 .about-hero__scroll-stage,
-.about-hero__scroll-copy {
-  position: relative;
+.about-hero__scroll-copy,
+.about-hero__visual,
+.about-hero__visual-stage,
+[data-cinematic-element] {
+  backface-visibility: hidden;
+  transform-style: preserve-3d;
+}
+
+.about-hero__scroll-stage,
+.about-hero__scroll-copy,
+.about-hero__visual,
+.about-hero__visual-stage {
   will-change: transform, opacity;
 }
 
 .about-hero__scroll-stage {
+  position: relative;
   width: 100%;
   height: 100%;
   display: grid;
@@ -19,6 +31,7 @@
 }
 
 .about-hero__scroll-copy {
+  position: relative;
   transform-origin: center center;
 }
 
@@ -28,7 +41,8 @@
 }
 
 .about-hero__visual {
-  will-change: opacity;
+  will-change: transform, opacity;
+  transform-origin: center center;
 }
 
 .about-hero__visual-stage {
@@ -37,21 +51,23 @@
   width: 100%;
   height: 100%;
   place-items: center;
-  transform-style: preserve-3d;
-  will-change: transform;
-}
-
-.about-hero__visual-stage .digital-seed {
-  will-change: transform;
 }
 
 .about-hero__visual-label {
-  transition: opacity 220ms ease, transform 220ms ease;
+  transition: opacity 180ms linear;
 }
 
-.about-hero__visual:hover .about-hero__visual-label {
-  opacity: 0.92;
-  transform: translateY(-2px);
+[data-cinematic-element="card"],
+[data-cinematic-element="statement"],
+[data-cinematic-element="row"],
+[data-cinematic-element="heading"],
+[data-cinematic-element="copy"],
+[data-cinematic-element="field"],
+[data-cinematic-element="scan"],
+[data-cinematic-element="rows"],
+[data-cinematic-element="bar"],
+[data-cinematic-element="story-rule"] {
+  backface-visibility: hidden;
 }
 
 .about-nav__actions {
@@ -99,16 +115,24 @@
   .digital-seed__terrain {
     opacity: 0.38;
   }
+
+  [data-cinematic-element] {
+    will-change: transform, opacity;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .about-hero__scroll-stage,
   .about-hero__grid,
-  .about-hero__scroll-copy {
-    transition-duration: 0.01ms !important;
+  .about-hero__scroll-copy,
+  .about-hero__visual,
+  .about-hero__visual-stage,
+  [data-cinematic-element] {
+    will-change: auto !important;
+    transition: none !important;
   }
 
   .about-hero__visual-stage {
-    transition: none !important;
+    transform: none !important;
   }
 }
