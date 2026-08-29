@@ -63,8 +63,8 @@
   opacity: calc(0.45 + var(--about-scroll-energy, 0) * 0.55);
 }
 
-/* Hero layout fixes. Keep the scene viewport-height without allowing the
-   content flex spacer or an oversized visual row to create a fake blank scene. */
+/* The hero remains a full scene for ScrollTrigger, but its internal content is
+   intrinsic. No 1fr/100% middle row is allowed to manufacture a blank area. */
 .about-hero {
   min-height: 100svh;
   overflow: hidden;
@@ -73,47 +73,58 @@
 .about-hero__content {
   min-height: 100svh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto;
+  align-content: start;
+  row-gap: 0;
 }
 
 .about-hero__main {
   min-height: 0;
-  height: 100%;
+  height: auto;
   display: grid;
   grid-template-columns: minmax(0, 0.93fr) minmax(0, 1.07fr);
   align-items: center;
-  padding: 2rem 0;
+  padding: 2rem 0 1.15rem;
 }
 
 .about-hero__visual {
   min-height: 0;
-  height: 100%;
+  height: clamp(420px, 42vw, 620px);
   display: grid;
   place-items: center;
 }
 
 .digital-seed {
-  width: min(92%, 640px);
-  max-width: 640px;
+  width: min(94%, 700px);
+  max-width: 700px;
 }
 
-/* Make the navigation switch to the existing menu before the desktop labels
-   become cramped. This keeps the brand, exit action, and menu fully visible. */
+/* Switch to the existing hamburger before navigation labels can collide. */
 @media (max-width: 1180px) {
   .about-nav__links {
-    display: none;
+    display: none !important;
   }
 
   .about-nav__menu {
-    display: grid;
+    display: grid !important;
+  }
+
+  .about-nav__mobile {
+    display: block;
+  }
+}
+
+@media (min-width: 1181px) {
+  .about-nav__links {
+    display: flex;
+  }
+
+  .about-nav__menu {
+    display: none;
   }
 
   .about-nav__mobile {
     display: none;
-  }
-
-  .about-nav--compact .about-nav__shell {
-    transform: translateY(-1px) scale(0.99);
   }
 }
 
@@ -167,38 +178,33 @@
     overflow-y: auto;
   }
 
-  .about-nav__menu[aria-expanded="true"] + .about-nav__mobile {
-    display: block;
-  }
-
-  /* Mobile uses the same hero composition, but the visual gets a predictable
-     bounded height so it cannot create a large empty gap below ENTER THE STORY. */
   .about-hero__content {
     min-height: auto;
     grid-template-rows: auto auto auto;
+    row-gap: 0;
     padding-top: 5.6rem;
-    padding-bottom: 1rem;
+    padding-bottom: 0.8rem;
   }
 
   .about-hero__main {
     height: auto;
     grid-template-columns: 1fr;
     gap: 0;
-    padding: 1.75rem 0 0.75rem;
-  }
-
-  .about-hero__visual {
-    order: 2;
-    height: clamp(220px, 56vw, 340px);
-    margin-top: 0.25rem;
+    padding: 1.25rem 0 0.35rem;
   }
 
   .about-hero__scroll-copy {
     order: 1;
   }
 
+  .about-hero__visual {
+    order: 2;
+    height: clamp(210px, 52vw, 330px);
+    margin-top: 0.15rem;
+  }
+
   .digital-seed {
-    width: min(78vw, 360px);
+    width: min(78vw, 380px);
   }
 
   .about-hero__visual-label {
@@ -220,11 +226,11 @@
   }
 
   .about-hero__main {
-    padding-top: 1.2rem;
+    padding-top: 0.9rem;
   }
 
   .about-hero__visual {
-    height: clamp(190px, 52vw, 285px);
+    height: clamp(180px, 49vw, 270px);
   }
 
   .digital-seed {
@@ -232,7 +238,7 @@
   }
 
   .about-hero__footer {
-    padding-top: 0.75rem;
+    padding-top: 0.55rem;
   }
 }
 
@@ -248,12 +254,11 @@
   }
 
   .about-hero__visual {
-    height: 180px;
+    height: 165px;
   }
 
   .digital-seed {
-    width: 270px;
-    max-width: 72vw;
+    width: min(68vw, 280px);
   }
 }
 
