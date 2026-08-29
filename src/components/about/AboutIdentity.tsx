@@ -8,7 +8,7 @@ const traits = [
 
 export function AboutIdentity() {
   return (
-    <section id="identity" className="border-t border-white/10 bg-[#071007] py-28 sm:py-40">
+    <section id="identity" className="border-t border-white/10 bg-[#071007] pt-0 pb-28 sm:pb-40">
       <div className="about-scroll-content mx-auto w-[min(100%-1.25rem,1200px)]">
         <div className="grid gap-12 lg:grid-cols-[0.33fr_0.67fr] lg:gap-20">
           <div>
