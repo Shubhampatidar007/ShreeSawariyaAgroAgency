@@ -1,4 +1,3 @@
-import { motion, useReducedMotion } from "motion/react";
 import { Terminal, Database, Sparkles, Github } from "lucide-react";
 
 const stack = [
@@ -13,11 +12,9 @@ const stack = [
 const icons = [Terminal, Terminal, Database, Sparkles, Terminal, Github];
 
 export function AboutTechnology() {
-  const reducedMotion = useReducedMotion();
-
   return (
     <section id="building" className="border-t border-white/10 bg-[#050805] py-28 sm:py-40">
-      <div className="mx-auto w-[min(100%-1.25rem,1200px)]">
+      <div className="about-scroll-content mx-auto w-[min(100%-1.25rem,1200px)]">
         <div className="grid gap-12 lg:grid-cols-[0.3fr_0.7fr] lg:gap-20">
           <div>
             <p className="about-kicker" data-text-reveal="done">03 / BUILDING</p>
@@ -41,13 +38,10 @@ export function AboutTechnology() {
         <div className="mt-18 overflow-hidden border-y border-white/10 py-7 sm:mt-24 sm:py-9">
           {stack.map(({ label, type }, index) => {
             const Icon = icons[index];
-            const direction = index % 2 === 0 ? -1 : 1;
             return (
-              <motion.div
+              <div
                 key={label}
-                initial={false}
-                animate={reducedMotion ? undefined : { x: direction * [-14, 9, -7, 14][index] * 2 }}
-                transition={reducedMotion ? undefined : { duration: 5 + index * 0.55, repeat: Infinity, repeatType: "reverse", ease: "easeInOut" }}
+                data-cinematic-element="row"
                 className="flex items-center justify-between border-b border-white/[0.07] py-5 last:border-b-0"
               >
                 <div className="flex min-w-0 items-center gap-4 sm:gap-7">
@@ -56,7 +50,7 @@ export function AboutTechnology() {
                   <span className="truncate text-[clamp(1.35rem,3vw,2.8rem)] font-medium tracking-[-0.04em]">{label}</span>
                 </div>
                 <span className="ml-5 shrink-0 text-[0.58rem] font-semibold tracking-[0.16em] text-white/28">{type}</span>
-              </motion.div>
+              </div>
             );
           })}
         </div>
