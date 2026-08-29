@@ -8,16 +8,11 @@ if (typeof window !== "undefined") {
 }
 
 /**
- * Cinematic, scroll-driven motion for the About experience.
+ * About-only cinematic camera system.
  *
- * The page is treated as a continuous storyboard rather than a collection
- * of isolated reveal animations. Scroll position controls the timeline, so
- * the user effectively "scrubs" through the experience like a film edit.
- *
- * The implementation intentionally stays on the existing GSAP +
- * ScrollTrigger dependency. It uses pinning, scrubbed timelines, 3D depth,
- * parallax, clip-path transitions, velocity-reactive polish and a strict
- * reduced-motion branch.
+ * Scroll position is the source of truth: every scene is scrubbed from the
+ * document position instead of relying on one-shot viewport reveals. The
+ * controller owns only visual transforms and never mutates text/glyph DOM.
  */
 export function useAboutScrollMotion() {
   const locationPathname = useRouterState({ select: (state) => state.location.pathname });
@@ -34,18 +29,8 @@ export function useAboutScrollMotion() {
 
       const rootEl = document.querySelector<HTMLElement>(".about-experience");
       const heroEl = document.querySelector<HTMLElement>(".about-hero");
-      const stageEl = document.querySelector<HTMLElement>(".about-hero__scroll-stage");
-      const copyEl = document.querySelector<HTMLElement>(".about-hero__scroll-copy");
-      const gridEl = document.querySelector<HTMLElement>(".about-hero__grid");
-      const noiseEl = document.querySelector<HTMLElement>(".about-hero__noise");
-      const visualEl = document.querySelector<HTMLElement>(".about-hero__visual");
-      const visualStageEl = document.querySelector<HTMLElement>(".about-hero__visual-stage");
-      const visualLabelEl = document.querySelector<HTMLElement>(".about-hero__visual-label");
 
       if (!rootEl || !heroEl) {
-        if (import.meta.env.DEV) {
-          console.warn("[about-motion] waiting for About DOM: .about-experience, .about-hero");
-        }
         raf = window.requestAnimationFrame(setup);
         return;
       }
@@ -53,292 +38,328 @@ export function useAboutScrollMotion() {
       ctx = gsap.context(() => {
         const mm = gsap.matchMedia();
 
-        mm.add("(prefers-reduced-motion: no-preference)", () => {
-          const sections = gsap.utils.toArray<HTMLElement>("main > section[id]");
+        mm.add(
+          {
+            desktop: "(min-width: 901px) and (pointer: fine) and (prefers-reduced-motion: no-preference)",
+            mobile: "(max-width: 900px), (pointer: coarse), (prefers-reduced-motion: no-preference)",
+          },
+          ({ conditions }) => {
+            if (!conditions || window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
 
-          // Give the storyboard enough perspective for depth moves to read
-          // as intentional camera motion instead of flat CSS transforms.
-          gsap.set(rootEl, {
-            transformStyle: "preserve-3d",
-            perspective: 1400,
-          });
+            const isDesktop = Boolean(conditions.desktop);
+            const strength = isDesktop ? 1 : 0.55;
+            const sections = gsap.utils.toArray<HTMLElement>("main > section[id]");
+            const contentSections = sections.filter((section) => section !== heroEl);
 
-          // HERO STORYBOARD -------------------------------------------------
-          // Pin the hero long enough to make the scroll feel like controlling
-          // a scene. The visual and copy then move on different axes and at
-          // different rates, creating a layered camera move.
-          const heroTimeline = gsap.timeline({
-            defaults: { ease: "none" },
-            scrollTrigger: {
-              trigger: heroEl,
-              start: "top top",
-              end: "+=115%",
-              scrub: 0.85,
-              pin: true,
-              pinSpacing: true,
-              anticipatePin: 1,
-              invalidateOnRefresh: true,
-            },
-          });
-
-          if (copyEl) {
-            heroTimeline
-              .to(copyEl, {
-                yPercent: -12,
-                xPercent: -2,
-                scale: 0.93,
-                opacity: 0.78,
-                filter: "blur(1.5px)",
-              }, 0)
-              .to(copyEl, {
-                yPercent: -34,
-                xPercent: -4,
-                scale: 0.78,
-                opacity: 0,
-                filter: "blur(10px)",
-              }, 0.43);
-          }
-
-          if (stageEl) {
-            heroTimeline
-              .to(stageEl, {
-                xPercent: 2,
-                yPercent: -3,
-                scale: 1.04,
-                rotateX: -2,
-                rotateZ: -2,
-              }, 0)
-              .to(stageEl, {
-                xPercent: 12,
-                yPercent: -7,
-                scale: 0.76,
-                rotateX: 7,
-                rotateZ: 8,
-                opacity: 0.12,
-              }, 0.52);
-          }
-
-          if (visualEl) {
-            heroTimeline
-              .to(visualEl, {
-                xPercent: 3,
-                yPercent: -4,
-                scale: 1.06,
-              }, 0)
-              .to(visualEl, {
-                xPercent: 10,
-                yPercent: -13,
-                scale: 1.18,
-                opacity: 0.38,
-                filter: "blur(2px)",
-              }, 0.4)
-              .to(visualEl, {
-                xPercent: 22,
-                yPercent: -28,
-                scale: 0.72,
-                opacity: 0,
-                filter: "blur(10px)",
-              }, 0.72);
-          }
-
-          if (visualStageEl) {
-            heroTimeline
-              .to(visualStageEl, {
-                rotateY: -7,
-                rotateZ: 5,
-                scale: 1.08,
-              }, 0.08)
-              .to(visualStageEl, {
-                rotateY: 17,
-                rotateZ: 20,
-                scale: 1.28,
-              }, 0.48)
-              .to(visualStageEl, {
-                rotateY: 28,
-                rotateZ: 32,
-                scale: 0.82,
-              }, 0.78);
-          }
-
-          if (visualLabelEl) {
-            heroTimeline
-              .to(visualLabelEl, {
-                yPercent: -40,
-                opacity: 0.5,
-              }, 0.14)
-              .to(visualLabelEl, {
-                yPercent: -150,
-                opacity: 0,
-              }, 0.55);
-          }
-
-          if (gridEl) {
-            heroTimeline
-              .to(gridEl, {
-                yPercent: 18,
-                scale: 1.04,
-                opacity: 0.48,
-              }, 0)
-              .to(gridEl, {
-                yPercent: 42,
-                scale: 1.13,
-                opacity: 0.12,
-              }, 0.56);
-          }
-
-          if (noiseEl) {
-            heroTimeline
-              .to(noiseEl, {
-                xPercent: -2,
-                yPercent: 8,
-                scale: 1.03,
-              }, 0)
-              .to(noiseEl, {
-                xPercent: 5,
-                yPercent: 18,
-                scale: 1.1,
-                opacity: 0.02,
-              }, 0.58);
-          }
-
-          // SECTION SHOTS ---------------------------------------------------
-          // Each following section gets a stronger entrance/exit treatment:
-          // lift + scale + 3D tilt + blur + clip reveal. The alternating tilt
-          // prevents every section from feeling mechanically identical.
-          sections.forEach((section, index) => {
-            const content =
-              section.querySelector<HTMLElement>(":scope > .about-scroll-content") ??
-              section.firstElementChild;
-
-            if (!(content instanceof HTMLElement)) return;
-
-            const sectionElements = gsap.utils.toArray<HTMLElement>(
-              ":scope .about-kicker, :scope h2, :scope h3, :scope p, :scope article, :scope a",
-              section,
-            );
-
-            const tilt = index % 2 === 0 ? 4 : -4;
-
-            gsap.set(content, {
-              transformPerspective: 1200,
-              transformOrigin: "50% 50%",
+            gsap.set(rootEl, {
+              transformStyle: "preserve-3d",
+              perspective: isDesktop ? 1400 : 900,
             });
 
-            const shot = gsap.timeline({
+            // HERO: one pinned camera shot with separate copy, visual, grid,
+            // noise and label layers. HeroNameReveal itself is deliberately
+            // untouched so its nested glyph animation remains stable.
+            const copyEl = heroEl.querySelector<HTMLElement>(".about-hero__scroll-copy");
+            const stageEl = heroEl.querySelector<HTMLElement>(".about-hero__scroll-stage");
+            const visualEl = heroEl.querySelector<HTMLElement>(".about-hero__visual");
+            const visualStageEl = heroEl.querySelector<HTMLElement>(".about-hero__visual-stage");
+            const visualLabelEl = heroEl.querySelector<HTMLElement>(".about-hero__visual-label");
+            const gridEl = heroEl.querySelector<HTMLElement>(".about-hero__grid");
+            const noiseEl = heroEl.querySelector<HTMLElement>(".about-hero__noise");
+            const titleEl = heroEl.querySelector<HTMLElement>(".about-hero__title");
+            const ledeEl = heroEl.querySelector<HTMLElement>(".about-hero__lede");
+
+            const heroTimeline = gsap.timeline({
               defaults: { ease: "none" },
               scrollTrigger: {
-                trigger: section,
-                start: "top 102%",
-                end: "top 5%",
-                scrub: 0.72,
+                trigger: heroEl,
+                start: "top top",
+                end: isDesktop ? "+=130%" : "+=108%",
+                scrub: isDesktop ? 0.8 : 0.55,
+                pin: true,
+                pinSpacing: true,
+                anticipatePin: 1,
                 invalidateOnRefresh: true,
               },
             });
 
-            shot.fromTo(
-              content,
-              {
-                y: 150,
-                scale: 0.9,
-                opacity: 0.04,
-                rotateX: tilt,
-                rotateY: tilt * 0.35,
-                filter: "blur(12px)",
-                clipPath: "inset(10% 3% 4% 3% round 1.5rem)",
-              },
-              {
-                y: 0,
-                scale: 1,
-                opacity: 1,
-                rotateX: 0,
-                rotateY: 0,
-                filter: "blur(0px)",
-                clipPath: "inset(0% 0% 0% 0% round 0rem)",
-              },
-              0,
-            );
+            if (copyEl) {
+              heroTimeline
+                .to(copyEl, {
+                  yPercent: -8 * strength,
+                  xPercent: -1.5 * strength,
+                  scale: 1.06 + 0.025 * strength,
+                  opacity: 0.96,
+                }, 0)
+                .to(copyEl, {
+                  yPercent: -28 * strength,
+                  xPercent: -4 * strength,
+                  scale: 0.8 + 0.035 * (1 - strength),
+                  opacity: 0,
+                  filter: `blur(${isDesktop ? 8 : 4}px)`,
+                }, 0.56);
+            }
 
-            if (sectionElements.length) {
+            if (titleEl) {
+              heroTimeline
+                .to(titleEl, {
+                  scale: 1.045 + 0.045 * strength,
+                  yPercent: -4 * strength,
+                  transformOrigin: "50% 55%",
+                }, 0.02)
+                .to(titleEl, {
+                  scale: 0.82,
+                  yPercent: -24 * strength,
+                  filter: `blur(${isDesktop ? 8 : 3}px)`,
+                }, 0.58);
+            }
+
+            if (ledeEl) {
+              heroTimeline
+                .to(ledeEl, { yPercent: -5 * strength, opacity: 0.78 }, 0.05)
+                .to(ledeEl, { yPercent: -34 * strength, opacity: 0 }, 0.58);
+            }
+
+            if (stageEl) {
+              heroTimeline
+                .to(stageEl, {
+                  xPercent: 1.5 * strength,
+                  yPercent: -2.5 * strength,
+                  scale: 1.025 + 0.02 * strength,
+                  rotateX: -2 * strength,
+                  rotateZ: -1.5 * strength,
+                }, 0)
+                .to(stageEl, {
+                  xPercent: 10 * strength,
+                  yPercent: -8 * strength,
+                  scale: 0.82,
+                  rotateX: 5 * strength,
+                  rotateZ: 7 * strength,
+                  opacity: 0.2,
+                }, 0.68)
+                .to(stageEl, {
+                  xPercent: 18 * strength,
+                  yPercent: -18 * strength,
+                  scale: 0.72,
+                  rotateY: 16 * strength,
+                  rotateZ: 12 * strength,
+                  opacity: 0,
+                }, 0.88);
+            }
+
+            if (visualEl) {
+              heroTimeline
+                .to(visualEl, {
+                  xPercent: 3 * strength,
+                  yPercent: -3 * strength,
+                  scale: 1.035 + 0.025 * strength,
+                }, 0)
+                .to(visualEl, {
+                  xPercent: 8 * strength,
+                  yPercent: -10 * strength,
+                  scale: 1.12,
+                  opacity: 0.45,
+                  filter: `blur(${isDesktop ? 2 : 1}px)`,
+                }, 0.42)
+                .to(visualEl, {
+                  xPercent: 20 * strength,
+                  yPercent: -24 * strength,
+                  scale: 0.78,
+                  opacity: 0,
+                  filter: `blur(${isDesktop ? 9 : 4}px)`,
+                }, 0.78);
+            }
+
+            if (visualStageEl) {
+              heroTimeline
+                .to(visualStageEl, {
+                  rotateY: -5 * strength,
+                  rotateZ: 3 * strength,
+                  scale: 1.035 + 0.015 * strength,
+                }, 0.08)
+                .to(visualStageEl, {
+                  rotateY: 12 * strength,
+                  rotateZ: 14 * strength,
+                  scale: 1.18,
+                }, 0.46)
+                .to(visualStageEl, {
+                  rotateY: 24 * strength,
+                  rotateZ: 24 * strength,
+                  scale: 0.84,
+                }, 0.78);
+            }
+
+            if (visualLabelEl) {
+              heroTimeline
+                .to(visualLabelEl, { yPercent: -30 * strength, opacity: 0.62 }, 0.14)
+                .to(visualLabelEl, { yPercent: -120 * strength, opacity: 0 }, 0.62);
+            }
+
+            if (gridEl) {
+              heroTimeline
+                .to(gridEl, {
+                  yPercent: 12 * strength,
+                  scale: 1.035,
+                  opacity: 0.48,
+                }, 0)
+                .to(gridEl, {
+                  yPercent: 34 * strength,
+                  scale: 1.1,
+                  opacity: 0.1,
+                }, 0.58);
+            }
+
+            if (noiseEl) {
+              heroTimeline
+                .to(noiseEl, { xPercent: -1.5 * strength, yPercent: 6 * strength, scale: 1.02 }, 0)
+                .to(noiseEl, { xPercent: 4 * strength, yPercent: 16 * strength, opacity: 0.02 }, 0.6);
+            }
+
+            // SECTION CAMERA SHOTS: alternate tilt/direction and let content
+            // recede as the next scene takes over. No independent enter/exit
+            // timers are used here.
+            contentSections.forEach((section, index) => {
+              const content = section.querySelector<HTMLElement>(":scope > .about-scroll-content") ?? section.firstElementChild;
+              if (!(content instanceof HTMLElement)) return;
+
+              const elements = gsap.utils.toArray<HTMLElement>(
+                ":scope .about-kicker, :scope h2, :scope h3, :scope p, :scope article, :scope a, :scope [data-cinematic-element]",
+                section,
+              );
+              const tilt = index % 2 === 0 ? 3.2 : -3.2;
+              const yEnter = (isDesktop ? 110 : 65) * strength;
+              const yExit = (isDesktop ? -42 : -24) * strength;
+
+              gsap.set(content, {
+                transformPerspective: isDesktop ? 1200 : 800,
+                transformOrigin: "50% 50%",
+              });
+
+              const shot = gsap.timeline({
+                defaults: { ease: "none" },
+                scrollTrigger: {
+                  trigger: section,
+                  start: isDesktop ? "top 98%" : "top 94%",
+                  end: isDesktop ? "top 6%" : "top 8%",
+                  scrub: isDesktop ? 0.75 : 0.55,
+                  invalidateOnRefresh: true,
+                },
+              });
+
               shot.fromTo(
-                sectionElements,
+                content,
                 {
-                  y: 58,
-                  opacity: 0.02,
-                  filter: "blur(7px)",
+                  y: yEnter,
+                  scale: 0.93,
+                  opacity: 0.05,
+                  rotateX: tilt,
+                  rotateY: tilt * 0.25,
+                  filter: `blur(${isDesktop ? 9 : 4}px)`,
+                  clipPath: isDesktop ? "inset(7% 2% 3% 2% round 1.25rem)" : "inset(4% 1% 1% 1% round 0.9rem)",
                 },
                 {
                   y: 0,
+                  scale: 1,
                   opacity: 1,
+                  rotateX: 0,
+                  rotateY: 0,
                   filter: "blur(0px)",
-                  stagger: 0.045,
+                  clipPath: "inset(0% 0% 0% 0% round 0rem)",
                 },
-                0.06,
+                0,
               );
-            }
 
-            shot.to(content, {
-              y: -38,
-              scale: 0.975,
-              opacity: 0.88,
-              rotateX: index % 2 === 0 ? -1.2 : 1.2,
-            }, 0.78);
-          });
+              if (elements.length) {
+                shot.fromTo(
+                  elements,
+                  {
+                    y: isDesktop ? 48 * strength : 24,
+                    xPercent: index % 2 === 0 ? -1.2 * strength : 1.2 * strength,
+                    opacity: 0.04,
+                    filter: `blur(${isDesktop ? 5 : 2}px)`,
+                  },
+                  {
+                    y: 0,
+                    xPercent: 0,
+                    opacity: 1,
+                    filter: "blur(0px)",
+                    stagger: isDesktop ? 0.045 : 0.02,
+                  },
+                  0.05,
+                );
+              }
 
-          // CONTINUOUS CAMERA SIGNAL --------------------------------------
-          // Expose progress and velocity to CSS hooks so the visual layer can
-          // respond to how aggressively the user scrolls without another
-          // window-level scroll listener.
-          ScrollTrigger.create({
-            trigger: rootEl,
-            start: "top top",
-            end: "bottom bottom",
-            scrub: true,
-            invalidateOnRefresh: true,
-            onUpdate: (self) => {
-              const velocity = self.getVelocity();
-              const normalizedVelocity = gsap.utils.clamp(-1, 1, velocity / 1800);
+              shot.to(content, {
+                y: yExit,
+                scale: 0.975,
+                opacity: 0.82,
+                rotateX: index % 2 === 0 ? -1 : 1,
+              }, 0.8);
+            });
 
-              rootEl.style.setProperty("--about-scroll-progress", self.progress.toFixed(4));
-              rootEl.style.setProperty("--about-scroll-velocity", normalizedVelocity.toFixed(4));
-              rootEl.style.setProperty("--about-scroll-energy", Math.abs(normalizedVelocity).toFixed(4));
-            },
-          });
+            ScrollTrigger.create({
+              trigger: rootEl,
+              start: "top top",
+              end: "bottom bottom",
+              onUpdate: (self) => {
+                const velocity = self.getVelocity();
+                const normalizedVelocity = gsap.utils.clamp(-1, 1, velocity / 2200);
+                rootEl.style.setProperty("--about-scroll-progress", self.progress.toFixed(4));
+                rootEl.style.setProperty("--about-scroll-velocity", normalizedVelocity.toFixed(4));
+                rootEl.style.setProperty("--about-scroll-energy", Math.abs(normalizedVelocity).toFixed(4));
+              },
+              onRefresh: () => {
+                rootEl.style.setProperty("--about-scroll-progress", "0");
+                rootEl.style.setProperty("--about-scroll-velocity", "0");
+                rootEl.style.setProperty("--about-scroll-energy", "0");
+              },
+            });
 
-          return () => {
-            rootEl.style.removeProperty("--about-scroll-progress");
-            rootEl.style.removeProperty("--about-scroll-velocity");
-            rootEl.style.removeProperty("--about-scroll-energy");
-          };
-        });
+            const refresh = () => ScrollTrigger.refresh();
+            window.addEventListener("orientationchange", refresh, { passive: true });
+            window.addEventListener("resize", refresh, { passive: true });
+
+            return () => {
+              window.removeEventListener("orientationchange", refresh);
+              window.removeEventListener("resize", refresh);
+              rootEl.style.removeProperty("--about-scroll-progress");
+              rootEl.style.removeProperty("--about-scroll-velocity");
+              rootEl.style.removeProperty("--about-scroll-energy");
+            };
+          }, rootEl);
 
         mm.add("(prefers-reduced-motion: reduce)", () => {
-          const reset = (element: HTMLElement | null) => {
-            if (!element) return;
-            gsap.set(element, {
-              clearProps:
-                "transform,opacity,filter,clipPath,perspective,rotateX,rotateY,rotateZ,scale,xPercent,yPercent",
-            });
-          };
+          const selectors = [
+            ".about-hero__scroll-stage",
+            ".about-hero__scroll-copy",
+            ".about-hero__grid",
+            ".about-hero__noise",
+            ".about-hero__visual",
+            ".about-hero__visual-stage",
+            ".about-hero__visual-label",
+            ".about-hero__title",
+            ".about-hero__lede",
+          ];
 
-          reset(rootEl);
-          reset(stageEl);
-          reset(copyEl);
-          reset(gridEl);
-          reset(noiseEl);
-          reset(visualEl);
-          reset(visualStageEl);
-          reset(visualLabelEl);
+          selectors.forEach((selector) => {
+            document.querySelectorAll<HTMLElement>(selector).forEach((element) => {
+              gsap.set(element, {
+                clearProps: "transform,opacity,filter,clipPath,perspective,rotateX,rotateY,rotateZ,scale,xPercent,yPercent",
+              });
+            });
+          });
 
           gsap.utils.toArray<HTMLElement>("main > section[id]").forEach((section) => {
-            const content =
-              section.querySelector<HTMLElement>(":scope > .about-scroll-content") ??
-              section.firstElementChild;
-            reset(content instanceof HTMLElement ? content : null);
-
+            const content = section.querySelector<HTMLElement>(":scope > .about-scroll-content") ?? section.firstElementChild;
+            if (content instanceof HTMLElement) {
+              gsap.set(content, { clearProps: "transform,opacity,filter,clipPath,perspective,rotateX,rotateY,rotateZ,scale,xPercent,yPercent" });
+            }
             gsap.utils.toArray<HTMLElement>(
               ":scope .about-kicker, :scope h2, :scope h3, :scope p, :scope article, :scope a",
               section,
-            ).forEach(reset);
+            ).forEach((element) => {
+              gsap.set(element, { clearProps: "transform,opacity,filter,clipPath" });
+            });
           });
         });
       }, rootEl);
@@ -352,6 +373,7 @@ export function useAboutScrollMotion() {
       disposed = true;
       if (raf) window.cancelAnimationFrame(raf);
       ctx?.revert();
+      ScrollTrigger.refresh();
     };
   }, [locationPathname]);
 }
