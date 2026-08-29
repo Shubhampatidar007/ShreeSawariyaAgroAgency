@@ -1,138 +1,91 @@
-.about-experience {
+:root {
   --about-scroll: 0;
   --about-scroll-velocity: 0;
   --about-grid-y: 0px;
+}
+
+.about-building__stack {
+  position: relative;
+  perspective: 1100px;
   transform-style: preserve-3d;
 }
 
-.about-hero__scroll-stage,
-.about-hero__scroll-copy,
-.about-hero__visual,
-.about-hero__visual-stage,
-[data-cinematic-element] {
+.about-building__stack::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(142, 240, 106, 0.045), transparent);
+  opacity: calc(0.2 + var(--about-scroll-energy, 0) * 0.5);
+}
+
+.about-building__row {
+  position: relative;
+  transform-style: preserve-3d;
+  backface-visibility: hidden;
+  will-change: transform, opacity;
+}
+
+.about-building__row::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -1px;
+  width: 18%;
+  height: 1px;
+  background: rgba(142, 240, 106, 0.28);
+  transform-origin: left center;
+  transform: scaleX(calc(0.65 + var(--about-scroll-energy, 0) * 0.8));
+  opacity: 0.65;
+}
+
+.about-building__row-main,
+.about-building__row-label,
+.about-building__row-icon,
+.about-building__row-index,
+.about-building__row-type {
   backface-visibility: hidden;
   transform-style: preserve-3d;
-}
-
-.about-hero__scroll-stage,
-.about-hero__scroll-copy,
-.about-hero__visual,
-.about-hero__visual-stage {
   will-change: transform, opacity;
 }
 
-.about-hero__scroll-stage {
-  position: relative;
-  width: 100%;
-  height: 100%;
-  display: grid;
-  place-items: center;
-  transform-origin: center center;
+.about-building__row-icon {
+  filter: drop-shadow(0 0 8px rgba(142, 240, 106, 0.12));
 }
 
-.about-hero__scroll-copy {
-  position: relative;
-  transform-origin: center center;
+.about-building__status-dot {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--about-lime, #8ef06a);
+  box-shadow: 0 0 12px rgba(142, 240, 106, 0.55);
+  opacity: calc(0.45 + var(--about-scroll-energy, 0) * 0.55);
 }
 
-.about-hero__grid {
-  transform: translate3d(0, var(--about-grid-y), 0);
-  will-change: transform;
-}
-
-.about-hero__visual {
-  will-change: transform, opacity;
-  transform-origin: center center;
-}
-
-.about-hero__visual-stage {
-  position: relative;
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-}
-
-.about-hero__visual-label {
-  transition: opacity 180ms linear;
-}
-
-[data-cinematic-element="card"],
-[data-cinematic-element="statement"],
-[data-cinematic-element="row"],
-[data-cinematic-element="heading"],
-[data-cinematic-element="copy"],
-[data-cinematic-element="field"],
-[data-cinematic-element="scan"],
-[data-cinematic-element="rows"],
-[data-cinematic-element="bar"],
-[data-cinematic-element="story-rule"] {
-  backface-visibility: hidden;
-}
-
-.about-nav__actions {
-  display: inline-flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 0.45rem;
-}
-
-.about-nav__exit {
-  display: grid;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border: 1px solid var(--about-line);
-  border-radius: 50%;
-  color: var(--about-muted);
-  background: transparent;
-  transition: color 180ms ease, border-color 180ms ease, background-color 180ms ease, transform 180ms ease;
-}
-
-.about-nav__exit:hover {
-  color: white;
-  border-color: oklch(0.82 0.17 125 / 0.35);
-  background: oklch(0.82 0.17 125 / 0.08);
-  transform: translateY(-1px);
-}
-
-.about-nav__exit:focus-visible {
-  outline: none;
-  border-color: oklch(0.82 0.17 125 / 0.7);
-  box-shadow: 0 0 0 2px oklch(0.82 0.17 125 / 0.18);
-}
-
-@media (max-width: 900px), (pointer: coarse) {
-  .about-hero__scroll-stage {
-    transform-origin: center center;
+@media (max-width: 900px) {
+  .about-building__stack {
+    perspective: 800px;
   }
 
-  .digital-seed__orbit--two,
-  .digital-seed__nodes--two {
-    display: none;
-  }
-
-  .digital-seed__terrain {
-    opacity: 0.38;
-  }
-
-  [data-cinematic-element] {
+  .about-building__row,
+  .about-building__row-main,
+  .about-building__row-label,
+  .about-building__row-icon,
+  .about-building__row-index,
+  .about-building__row-type {
     will-change: transform, opacity;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .about-hero__scroll-stage,
-  .about-hero__grid,
-  .about-hero__scroll-copy,
-  .about-hero__visual,
-  .about-hero__visual-stage,
-  [data-cinematic-element] {
+  .about-building__row,
+  .about-building__row-main,
+  .about-building__row-label,
+  .about-building__row-icon,
+  .about-building__row-index,
+  .about-building__row-type {
     will-change: auto !important;
-    transition: none !important;
-  }
-
-  .about-hero__visual-stage {
     transform: none !important;
   }
 }
