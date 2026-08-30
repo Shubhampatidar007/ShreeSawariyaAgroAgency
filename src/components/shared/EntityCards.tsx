@@ -154,7 +154,9 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             <p className="font-display text-sm font-semibold">{item.productName}</p>
             <p className="text-xs text-muted-foreground">{item.supplierName}</p>
           </div>
-          <StatusBadge status={item.status} />
+          <div className="rounded-full border bg-background px-2.5 py-1 text-xs font-semibold">
+            Stock {item.quantity} {item.unit}
+          </div>
         </div>
         <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
           <Row label="Quantity" value={`${item.quantity} ${item.unit}`} />
