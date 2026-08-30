@@ -98,6 +98,8 @@ export const buildDailyMetrics = (
   );
   if (cached) return cached;
 
+  // Inventory purchase price is the COGS basis. Sales prices come from the
+  // admin-entered order line amounts, not from inventory/purchase prices.
   const costByProduct = new Map(
     inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice]),
   );
@@ -123,7 +125,11 @@ export const buildDailyMetrics = (
   orders.forEach((order) => {
     if (!inRange(order.placedOn)) return;
     const row = ensure(isoDay(order.placedOn));
-    row.sales += order.total;
+
+    // Profit history uses the actual admin selling amount for each line.
+    // This keeps profit = selling price - inventory purchase cost, without
+    // adding order-level tax/discount adjustments into COGS calculations.
+    row.sales += order.items.reduce((sum, item) => sum + item.amount, 0);
     row.cost += order.items.reduce(
       (sum, item) =>
         sum + item.quantity * (costByProduct.get(item.product.trim().toLowerCase()) ?? 0),
