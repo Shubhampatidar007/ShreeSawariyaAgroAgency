@@ -204,20 +204,29 @@ function CustomerKhataPage() {
                           <TableCell className="text-muted-foreground">
                             {formatDate(entry.date)}
                           </TableCell>
-                          <TableCell className="font-medium">
-                            {entry.entryType === "purchase" ? (
-                              <Button asChild variant="outline" size="sm" className="rounded-full">
-                                <Link
-                                  to="/admin/customers/$customerId"
-                                  params={{ customerId }}
-                                >
-                                  <BookOpen className="size-3.5" /> View full record
-                                </Link>
-                              </Button>
-                            ) : (
-                              <span className="text-muted-foreground">Payment received</span>
-                            )}
-                          </TableCell>
+                        <TableCell className="font-medium">
+  {entry.entryType === "purchase" ? (
+    <Button asChild variant="outline" size="sm" className="rounded-full">
+      <Link
+        to="/admin/customers/$customerId"
+        params={{ customerId }}
+      >
+        <BookOpen className="size-3.5" />
+        View full record
+      </Link>
+    </Button>
+  ) : (
+    <Button asChild variant="outline" size="sm" className="rounded-full">
+      <Link
+        to="/admin/customers/$customerId"
+        params={{ customerId }}
+      >
+        <BookOpen className="size-3.5" />
+        View customer
+      </Link>
+    </Button>
+  )}
+</TableCell>
                           <TableCell className="text-right">{entry.quantity}</TableCell>
                           <TableCell className="text-right">
                             {formatCurrency(entry.amount)}

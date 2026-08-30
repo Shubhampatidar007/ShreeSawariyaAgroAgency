@@ -7,7 +7,7 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   id: r.id,
   customerId: r.customer_id,
   date: r.entry_date,
-  entryType: r.entry_type,
+  entryType: r.entry_type === "sale" ? "purchase" : r.entry_type,
   product: r.product ?? "",
   quantity: Number(r.quantity ?? 0),
   amount: Number(r.amount ?? 0),

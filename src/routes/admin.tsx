@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button";
 import { AdminDataLoader } from "@/components/admin/AdminDataLoader";
 import { AdminHeader } from "@/components/admin/AdminHeader";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
-import { DashboardEnhancements } from "@/components/admin/DashboardEnhancements";
 import { LowStockReminderPopup } from "@/components/admin/LowStockReminderPopup";
 import { MobileAdminNav } from "@/components/admin/MobileAdminNav";
 import { useAuth, useAuthReady } from "@/lib/auth-store";
@@ -121,10 +120,9 @@ function AdminLayout() {
       >
         <AdminHeader onToggleSidebar={() => setSidebarOpen((prev) => !prev)} />
         <main className="mx-auto max-w-7xl px-3 pb-24 pt-4 sm:px-4 md:px-6 md:pb-8 md:pt-8">
-          <div key={location.pathname} className="admin-page-transition space-y-8">
-            {sectionLoading ? <SectionDataLoader /> : <Outlet />}
-            {!sectionLoading && location.pathname === "/admin" ? <DashboardEnhancements /> : null}
-          </div>
+       <div key={location.pathname} className="admin-page-transition space-y-8">
+  {sectionLoading ? <SectionDataLoader /> : <Outlet />}
+</div>
         </main>
       </div>
       <MobileAdminNav />

@@ -286,14 +286,17 @@ function CustomerDetailPage() {
                           <div className="mt-3 space-y-3 border-t border-border pt-3">
                             {entries.map((entry) => {
                               const items = itemsByTx[entry.id];
-                              const canShowItems = entry.entryType === "purchase";
 
                               return (
                                 <div key={entry.id} className="rounded-lg bg-muted/40 p-3">
                                   <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0">
                                       <p className="text-sm font-medium">
-                                        {entry.product || (entry.entryType === "payment" ? "Payment received" : "Transaction")}
+                                        {entry.entryType === "purchase"
+                                          ? "Purchase"
+                                          : entry.entryType === "payment"
+                                            ? "Payment received"
+                                            : "Transaction"}
                                       </p>
                                       <p className="mt-1 text-xs text-muted-foreground">
                                         {entry.quantity} unit{entry.quantity === 1 ? "" : "s"} · {entry.method.toUpperCase()}
@@ -310,10 +313,12 @@ function CustomerDetailPage() {
                                     </p>
                                   </div>
 
-                                  {canShowItems ? (
+                                  {entry.entryType === "purchase" ? (
                                     <div className="mt-3 border-t border-border/70 pt-3">
                                       {items === "loading" || items === undefined ? (
-                                        <p className="text-xs text-muted-foreground">Loading product details…</p>
+                                        <p className="text-xs text-muted-foreground">
+                                          Loading product details…
+                                        </p>
                                       ) : items.length === 0 ? (
                                         <p className="text-xs text-muted-foreground">
                                           No product line items recorded for this transaction.
@@ -323,17 +328,23 @@ function CustomerDetailPage() {
                                           {items.map((item) => (
                                             <div
                                               key={item.id}
-                                              className="flex items-center justify-between gap-4 text-xs"
+                                              className="flex items-center justify-between gap-4 rounded-md border border-border/60 px-3 py-2 text-xs"
                                             >
                                               <div className="min-w-0">
-                                                <p className="truncate font-medium">{item.product}</p>
+                                                <p className="font-medium">{item.product}</p>
                                                 <p className="text-muted-foreground">
-                                                  {item.quantity} {item.unit} × {formatCurrency(item.rate)}
+                                                  Quantity: {item.quantity} {item.unit}
+                                                </p>
+                                                <p className="text-muted-foreground">
+                                                  Rate: {formatCurrency(item.rate)} / {item.unit}
                                                 </p>
                                               </div>
-                                              <span className="shrink-0 font-medium">
-                                                {formatCurrency(item.amount)}
-                                              </span>
+
+                                              <div className="shrink-0 text-right">
+                                                <p className="font-semibold">
+                                                  {formatCurrency(item.amount)}
+                                                </p>
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -355,57 +366,7 @@ function CustomerDetailPage() {
         </Card>
       </div>
 
-      <Card className="overflow-hidden shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-base">Purchase &amp; payment history</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {ledgerLoading ? (
-            <p className="px-6 py-8 text-sm text-muted-foreground">Loading history…</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Qty</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Payment</TableHead>
-                    <TableHead className="text-right">Due</TableHead>
-                    <TableHead>Method</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {sorted.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
-                        No transaction history found.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    sorted.map((entry) => (
-                      <TableRow key={entry.id}>
-                        <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
-                        <TableCell className="font-medium">{entry.product || "Payment received"}</TableCell>
-                        <TableCell className="text-right">{entry.quantity}</TableCell>
-                        <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
-                        <TableCell className="text-right text-success">
-                          {formatCurrency(entry.payment)}
-                        </TableCell>
-                        <TableCell className="text-right font-semibold">
-                          {formatCurrency(entry.remainingDue)}
-                        </TableCell>
-                        <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
-                      </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+    
     </div>
   );
 }

@@ -9,8 +9,15 @@ import {
   Tooltip,
   XAxis,
   YAxis,
-} from "recharts";
-import { AlertTriangle, ClipboardCheck, IndianRupee, Package, Users } from "lucide-react";
+} from "recharts";import {
+  AlertTriangle,
+  ClipboardCheck,
+  IndianRupee,
+  Package,
+  TrendingUp,
+  Users,
+  WalletCards,
+} from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -52,23 +59,23 @@ function AdminOverview() {
   const [salesRange, setSalesRange] = useState<"7D" | "1M" | "3M" | "1Y" | "ALL">("1M");
   const [chartReady, setChartReady] = useState(false);
 
-useEffect(() => {
-  let active = true;
-  let frame1 = 0;
-  let frame2 = 0;
+  useEffect(() => {
+    let active = true;
+    let frame1 = 0;
+    let frame2 = 0;
 
-  frame1 = requestAnimationFrame(() => {
-    frame2 = requestAnimationFrame(() => {
-      if (active) setChartReady(true);
+    frame1 = requestAnimationFrame(() => {
+      frame2 = requestAnimationFrame(() => {
+        if (active) setChartReady(true);
+      });
     });
-  });
 
-  return () => {
-    active = false;
-    cancelAnimationFrame(frame1);
-    cancelAnimationFrame(frame2);
-  };
-}, []);
+    return () => {
+      active = false;
+      cancelAnimationFrame(frame1);
+      cancelAnimationFrame(frame2);
+    };
+  }, []);
   const { orders, customers, inventory, supplierLedger, customerLedger, payments, loading } =
     useShopStore((s) => s);
   const today = new Date().toISOString().slice(0, 10);
@@ -85,9 +92,12 @@ useEffect(() => {
     let stockUnits = 0;
     let lowStockCount = 0;
     let activeCustomersCount = 0;
-    let customerDue = 0;
+    let todaysDue = 0;
     let todaysPaymentsCount = 0;
-
+    let todaysSupplierPaid = 0;
+let topSaleProduct = "No sales yet";
+let topSaleProductQuantity = 0;
+let topSaleProductProfit = 0;
     for (const order of orders) {
       if (order.placedOn.slice(0, 10) !== today) continue;
       todaysSales += order.total;
@@ -101,22 +111,109 @@ useEffect(() => {
       todaysCollected += entry.payment;
       todaysBillCount += 1;
     }
+   for (const entry of supplierLedger) {
+  if (entry.date.slice(0, 10) !== today) continue;
 
+  const type = entry.entryType as string;
+
+  if (type === "payment" || type === "advance") {
+    todaysSupplierPaid += entry.amount;
+  }
+}
     for (const item of inventory) {
       stockValue += item.quantity * item.purchasePrice;
       stockUnits += item.quantity;
       if (item.quantity <= item.minStockLevel) lowStockCount += 1;
     }
+    for (const entry of customerLedger) {
+      if (entry.date.slice(0, 10) !== today) continue;
 
-    for (const customer of customers) {
-      if (customer.status === "active") activeCustomersCount += 1;
-      customerDue += customer.currentDue;
+      const type = entry.entryType as string;
+
+      if (type === "sale" || type === "purchase") {
+        todaysDue += entry.amount - entry.payment;
+      }
+    }
+  
+    for (const order of orders) {
+      if (order.placedOn.slice(0, 10) !== today) continue;
+
+      for (const item of order.items) {
+        const key = item.product.trim().toLowerCase();
+
+      }
     }
 
+    for (const entry of customerLedger) {
+      if (entry.date.slice(0, 10) !== today) continue;
+
+      const type = entry.entryType as string;
+
+      if (type !== "sale" && type !== "purchase") continue;
+
+      const key = entry.product.trim().toLowerCase();
+
+    }
+
+  
+
+    
     for (const payment of payments) {
       if (payment.date.slice(0, 10) === today) todaysPaymentsCount += 1;
     }
+const productStats = new Map<
+  string,
+  {
+    name: string;
+    quantity: number;
+    revenue: number;
+    cost: number;
+  }
+>();
 
+const getProductStat = (name: string) => {
+  const key = name.trim().toLowerCase();
+
+  const current = productStats.get(key) ?? {
+    name: name.trim() || "Unknown product",
+    quantity: 0,
+    revenue: 0,
+    cost: 0,
+  };
+
+  productStats.set(key, current);
+  return current;
+};
+for (const order of orders) {
+  for (const item of order.items) {
+    const stat = getProductStat(item.product);
+
+    stat.quantity += item.quantity;
+    stat.revenue += item.amount;
+
+    const purchasePrice =
+      inventory.find(
+        (itemData) =>
+          itemData.productName.trim().toLowerCase() ===
+          item.product.trim().toLowerCase(),
+      )?.purchasePrice ?? 0;
+
+    stat.cost += item.quantity * purchasePrice;
+  }
+}
+const topProduct = [...productStats.values()]
+  .map((product) => ({
+    ...product,
+    profit: product.revenue - product.cost,
+  }))
+  .filter((product) => product.quantity > 0)
+  .sort((a, b) => b.quantity - a.quantity)[0];
+
+if (topProduct) {
+  topSaleProduct = topProduct.name;
+  topSaleProductQuantity = topProduct.quantity;
+  topSaleProductProfit = topProduct.profit;
+}
     return {
       todaysSales,
       todaysCollected,
@@ -125,10 +222,16 @@ useEffect(() => {
       stockUnits,
       lowStockCount,
       activeCustomersCount,
-      customerDue,
+      todaysDue,
       todaysPaymentsCount,
+      todaysSupplierPaid,
+      topSaleProduct,
+      topSaleProduct,
+topSaleProductQuantity,
+topSaleProductProfit,
     };
-  }, [customers, customerLedger, inventory, orders, payments, today]);
+  },[customers, customerLedger, inventory, orders, payments, supplierLedger, today]);
+
 
   const todaysProfit = useMemo(
     () => dailyRows.find((row) => row.date === today)?.profit ?? 0,
@@ -159,15 +262,13 @@ useEffect(() => {
       icon: Package,
     },
     {
-      id: "customers",
-      label: t("admin.overview.stats.customers"),
-      value: String(dashboardDerived.activeCustomersCount),
-      helper: t("admin.overview.stats.customersHelper", { count: customers.length }),
-      change: t("admin.overview.stats.due", {
-        amount: formatCurrency(dashboardDerived.customerDue),
-      }),
+      id: "customer-due",
+      label: "Today's Due",
+      value: formatCurrency(dashboardDerived.todaysDue),
+      helper: "Due created today",
+      change: "Across all customers",
       trend: "flat",
-      icon: Users,
+      icon: IndianRupee,
     },
     {
       id: "alerts",
@@ -180,6 +281,30 @@ useEffect(() => {
       trend: dashboardDerived.lowStockCount ? "down" : "up",
       icon: AlertTriangle,
     },
+    {
+  id: "supplier-paid",
+  label: "Supplier Paid Today",
+  value: formatCurrency(dashboardDerived.todaysSupplierPaid),
+  helper: "Amount paid to suppliers today",
+  change: "Today's supplier payments",
+  trend: "flat",
+  icon: WalletCards,
+},
+{
+  id: "top-sale-product",
+  label: "Top Sale Product",
+  value: dashboardDerived.topSaleProduct,
+  helper:
+    dashboardDerived.topSaleProduct === "No sales yet"
+      ? "No products sold yet"
+      : `${dashboardDerived.topSaleProductQuantity} units sold`,
+  change:
+    dashboardDerived.topSaleProduct === "No sales yet"
+      ? "No profit recorded"
+      : `${formatCurrency(dashboardDerived.topSaleProductProfit)} profit`,
+  trend: "up",
+  icon: TrendingUp,
+},
   ];
   const salesChartRows = useMemo(() => {
     if (!dailyRows.length) return [];
@@ -220,7 +345,7 @@ useEffect(() => {
           }
         />
       </ScrollReveal>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
         {stats.map((stat, index) => (
           <ScrollReveal
             key={stat.id}
@@ -281,58 +406,51 @@ useEffect(() => {
             </div>
           </CardHeader>
           <CardContent className="h-[370px] pt-0">
-         {loading || !chartReady ? (
-  <div className="flex h-full flex-col justify-end gap-4 py-6">
-    <Skeleton className="h-1/2 w-full" />
-  </div>
-) : !salesChartRows.length ? (
-  <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
-    No sales yet
-  </div>
-) : (
-  <ResponsiveContainer width="100%" height="100%">
-    <AreaChart data={salesChartRows}>
-      <CartesianGrid
-        strokeDasharray="3 3"
-        stroke="var(--color-border)"
-        vertical={false}
-      />
-      <XAxis
-        dataKey="label"
-        stroke="var(--color-muted-foreground)"
-        fontSize={11}
-      />
-      <YAxis
-        stroke="var(--color-muted-foreground)"
-        fontSize={11}
-      />
-      <Tooltip
-        labelFormatter={(_, payload) =>
-          payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
-        }
-        formatter={(value: number, name: string) => [
-          formatCurrency(value),
-          name === "sales" ? "Sales" : "Purchases",
-        ]}
-      />
-      <Area
-        type="monotone"
-        dataKey="purchases"
-        name="purchases"
-        stroke="var(--color-chart-3)"
-        fillOpacity={0}
-      />
-      <Area
-        type="monotone"
-        dataKey="sales"
-        name="sales"
-        stroke="var(--color-chart-1)"
-        fillOpacity={0.18}
-        fill="var(--color-chart-1)"
-      />
-    </AreaChart>
-  </ResponsiveContainer>
-)}
+            {loading || !chartReady ? (
+              <div className="flex h-full flex-col justify-end gap-4 py-6">
+                <Skeleton className="h-1/2 w-full" />
+              </div>
+            ) : !salesChartRows.length ? (
+              <div className="flex h-full items-center justify-center text-sm text-muted-foreground">
+                No sales yet
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={salesChartRows}>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="var(--color-border)"
+                    vertical={false}
+                  />
+                  <XAxis dataKey="label" stroke="var(--color-muted-foreground)" fontSize={11} />
+                  <YAxis stroke="var(--color-muted-foreground)" fontSize={11} />
+                  <Tooltip
+                    labelFormatter={(_, payload) =>
+                      payload?.[0]?.payload?.date ? formatDay(payload[0].payload.date) : ""
+                    }
+                    formatter={(value: number, name: string) => [
+                      formatCurrency(value),
+                      name === "sales" ? "Sales" : "Purchases",
+                    ]}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="purchases"
+                    name="purchases"
+                    stroke="var(--color-chart-3)"
+                    fillOpacity={0}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="sales"
+                    name="sales"
+                    stroke="var(--color-chart-1)"
+                    fillOpacity={0.18}
+                    fill="var(--color-chart-1)"
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
           <div className="flex gap-5 border-t border-border px-6 py-4 text-xs text-muted-foreground">
             <span>Sales: {formatCurrency(chartTotals.sales)}</span>
