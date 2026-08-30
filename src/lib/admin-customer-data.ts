@@ -17,6 +17,21 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   remarks: r.remarks ?? undefined,
 });
 
+const CUSTOMER_LEDGER_SELECT =
+  "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks,created_at";
+
+export async function loadCustomerLedger(customerId: string) {
+  const { data, error } = await supabase
+    .from("customer_transactions")
+    .select(CUSTOMER_LEDGER_SELECT)
+    .eq("customer_id", customerId)
+    .order("entry_date", { ascending: false })
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return (data ?? []).map(toCustomerLedger);
+}
+
 export async function loadCustomerKhataPage(
   customerId: string,
   page: number,
@@ -29,10 +44,7 @@ export async function loadCustomerKhataPage(
 
   const { data, error, count } = await supabase
     .from("customer_transactions")
-    .select(
-      "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks,created_at",
-      { count: "exact" },
-    )
+    .select(CUSTOMER_LEDGER_SELECT, { count: "exact" })
     .eq("customer_id", customerId)
     .order("entry_date", { ascending: false })
     .order("created_at", { ascending: false })
