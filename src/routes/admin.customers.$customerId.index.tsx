@@ -29,6 +29,7 @@ import { DetailHeader } from "@/components/shared/DetailHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import { loadCustomerLedger } from "@/lib/admin-customer-data";
 import type { CustomerLedgerEntry, CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/customers/$customerId/")({
@@ -48,9 +49,34 @@ export const Route = createFileRoute("/admin/customers/$customerId/")({
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
-  const ledger = useShopStore((s) => s.customerLedger.filter((e) => e.customerId === customerId));
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [ledger, setLedger] = useState<CustomerLedgerEntry[]>([]);
+  const [ledgerLoading, setLedgerLoading] = useState(true);
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [itemsByTx, setItemsByTx] = useState<Record<string, CustomerSaleItem[] | "loading">>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    setLedgerLoading(true);
+    setExpandedDates(new Set());
+    setItemsByTx({});
+
+    void loadCustomerLedger(customerId)
+      .then((rows) => {
+        if (!cancelled) setLedger(rows);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Customer ledger load failed:", error);
+        setLedger([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLedgerLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId]);
 
   const sorted = useMemo(() => {
     return ledger
@@ -62,35 +88,54 @@ function CustomerDetailPage() {
       .map(({ entry }) => entry);
   }, [ledger]);
 
-  const timelineEntries = sorted.slice(0, 6);
+  const dateGroups = useMemo(() => {
+    const groups = new Map<string, CustomerLedgerEntry[]>();
+    for (const entry of sorted) {
+      const group = groups.get(entry.date) ?? [];
+      group.push(entry);
+      groups.set(entry.date, group);
+    }
+    return Array.from(groups, ([date, entries]) => ({ date, entries }));
+  }, [sorted]);
 
-  const toggleTransaction = async (entry: CustomerLedgerEntry) => {
-    if (entry.entryType !== "purchase") return;
-
-    const willOpen = !expanded.has(entry.id);
-    setExpanded((prev) => {
+  const toggleDate = async (date: string, entries: CustomerLedgerEntry[]) => {
+    const willOpen = !expandedDates.has(date);
+    setExpandedDates((prev) => {
       const next = new Set(prev);
-      if (willOpen) next.add(entry.id);
-      else next.delete(entry.id);
+      if (willOpen) next.add(date);
+      else next.delete(date);
       return next;
     });
 
-    if (!willOpen || itemsByTx[entry.id]) return;
+    if (!willOpen) return;
 
-    setItemsByTx((prev) => ({ ...prev, [entry.id]: "loading" }));
-    try {
-      const items = await shopStore.fetchTransactionItems(entry.id);
-      setItemsByTx((prev) => ({ ...prev, [entry.id]: items }));
-    } catch (error) {
-      console.error("Customer transaction items load failed:", error);
-      setItemsByTx((prev) => ({ ...prev, [entry.id]: [] }));
-    }
+    const purchases = entries.filter((entry) => entry.entryType === "purchase");
+    const pending = purchases.filter((entry) => !itemsByTx[entry.id]);
+    if (!pending.length) return;
+
+    setItemsByTx((prev) => {
+      const next = { ...prev };
+      for (const entry of pending) next[entry.id] = "loading";
+      return next;
+    });
+
+    const results = await Promise.all(
+      pending.map(async (entry) => {
+        try {
+          return [entry.id, await shopStore.fetchTransactionItems(entry.id)] as const;
+        } catch (error) {
+          console.error("Customer transaction items load failed:", error);
+          return [entry.id, []] as const;
+        }
+      }),
+    );
+
+    setItemsByTx((prev) => {
+      const next = { ...prev };
+      for (const [entryId, items] of results) next[entryId] = items;
+      return next;
+    });
   };
-
-  useEffect(() => {
-    setExpanded(new Set());
-    setItemsByTx({});
-  }, [customerId]);
 
   if (!customer) {
     return (
@@ -199,42 +244,34 @@ function CustomerDetailPage() {
             <CardTitle className="text-base">Transaction timeline</CardTitle>
           </CardHeader>
           <CardContent>
-            {timelineEntries.length === 0 ? (
+            {ledgerLoading ? (
+              <p className="text-sm text-muted-foreground">Loading transaction history…</p>
+            ) : dateGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">No khata entries recorded yet.</p>
             ) : (
               <ol className="relative space-y-4 border-l border-border pl-6">
-                {timelineEntries.map((entry) => {
-                  const canExpand = entry.entryType === "purchase";
-                  const isOpen = expanded.has(entry.id);
-                  const items = itemsByTx[entry.id];
+                {dateGroups.map(({ date, entries }) => {
+                  const isOpen = expandedDates.has(date);
+                  const dayAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
+                  const purchaseCount = entries.filter((entry) => entry.entryType === "purchase").length;
 
                   return (
-                    <li key={entry.id} className="relative">
-                      <span
-                        className={`absolute -left-[27px] top-1.5 size-3 rounded-full ring-4 ring-background ${
-                          entry.remainingDue > 0 ? "bg-warning" : "bg-success"
-                        }`}
-                      />
+                    <li key={date} className="relative">
+                      <span className="absolute -left-[27px] top-2 size-3 rounded-full bg-primary ring-4 ring-background" />
                       <div className="rounded-xl border border-border bg-background/40 p-3">
-                        <div className="flex flex-wrap items-baseline justify-between gap-2">
-                          <p className="text-sm font-semibold">{entry.product}</p>
-                          <p className="font-display text-sm font-semibold">
-                            {formatCurrency(entry.amount)}
-                          </p>
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {formatDate(entry.date)} · {entry.quantity} unit(s) · {entry.method.toUpperCase()}
-                        </p>
-                        <p className="mt-1 text-xs text-muted-foreground">
-                          {entry.remarks ??
-                            `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`}
-                        </p>
-
-                        {canExpand ? (
-                          <button
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          <div>
+                            <p className="text-sm font-semibold">{formatDate(date)}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {entries.length} transaction{entries.length === 1 ? "" : "s"} · {formatCurrency(dayAmount)}
+                            </p>
+                          </div>
+                          <Button
                             type="button"
-                            onClick={() => void toggleTransaction(entry)}
-                            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            variant="outline"
+                            size="sm"
+                            className="rounded-full"
+                            onClick={() => void toggleDate(date, entries)}
                             aria-expanded={isOpen}
                           >
                             {isOpen ? (
@@ -242,42 +279,71 @@ function CustomerDetailPage() {
                             ) : (
                               <ChevronRight className="size-3.5" />
                             )}
-                            {items === "loading"
-                              ? "Loading products…"
-                              : Array.isArray(items)
-                                ? `${items.length} product${items.length === 1 ? "" : "s"}`
-                                : "View products"}
-                          </button>
-                        ) : null}
+                            View details
+                          </Button>
+                        </div>
 
-                        {canExpand && isOpen ? (
-                          <div className="mt-3 rounded-lg bg-muted/40 p-3">
-                            {items === "loading" || items === undefined ? (
-                              <p className="text-xs text-muted-foreground">Loading product details…</p>
-                            ) : items.length === 0 ? (
-                              <p className="text-xs text-muted-foreground">
-                                No product line items recorded for this transaction.
-                              </p>
-                            ) : (
-                              <div className="space-y-2">
-                                {items.map((item) => (
-                                  <div
-                                    key={item.id}
-                                    className="flex items-center justify-between gap-4 text-xs"
-                                  >
+                        {isOpen ? (
+                          <div className="mt-3 space-y-3 border-t border-border pt-3">
+                            {entries.map((entry) => {
+                              const items = itemsByTx[entry.id];
+                              const canShowItems = entry.entryType === "purchase";
+
+                              return (
+                                <div key={entry.id} className="rounded-lg bg-muted/40 p-3">
+                                  <div className="flex flex-wrap items-start justify-between gap-3">
                                     <div className="min-w-0">
-                                      <p className="truncate font-medium">{item.product}</p>
-                                      <p className="text-muted-foreground">
-                                        {item.quantity} {item.unit} × {formatCurrency(item.rate)}
+                                      <p className="text-sm font-medium">
+                                        {entry.product || (entry.entryType === "payment" ? "Payment received" : "Transaction")}
                                       </p>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        {entry.quantity} unit{entry.quantity === 1 ? "" : "s"} · {entry.method.toUpperCase()}
+                                      </p>
+                                      <p className="mt-1 text-xs text-muted-foreground">
+                                        Paid {formatCurrency(entry.payment)} · Due {formatCurrency(entry.remainingDue)}
+                                      </p>
+                                      {entry.remarks ? (
+                                        <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p>
+                                      ) : null}
                                     </div>
-                                    <span className="shrink-0 font-medium">
-                                      {formatCurrency(item.amount)}
-                                    </span>
+                                    <p className="shrink-0 font-display text-sm font-semibold">
+                                      {formatCurrency(entry.amount)}
+                                    </p>
                                   </div>
-                                ))}
-                              </div>
-                            )}
+
+                                  {canShowItems ? (
+                                    <div className="mt-3 border-t border-border/70 pt-3">
+                                      {items === "loading" || items === undefined ? (
+                                        <p className="text-xs text-muted-foreground">Loading product details…</p>
+                                      ) : items.length === 0 ? (
+                                        <p className="text-xs text-muted-foreground">
+                                          No product line items recorded for this transaction.
+                                        </p>
+                                      ) : (
+                                        <div className="space-y-2">
+                                          {items.map((item) => (
+                                            <div
+                                              key={item.id}
+                                              className="flex items-center justify-between gap-4 text-xs"
+                                            >
+                                              <div className="min-w-0">
+                                                <p className="truncate font-medium">{item.product}</p>
+                                                <p className="text-muted-foreground">
+                                                  {item.quantity} {item.unit} × {formatCurrency(item.rate)}
+                                                </p>
+                                              </div>
+                                              <span className="shrink-0 font-medium">
+                                                {formatCurrency(item.amount)}
+                                              </span>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : null}
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : null}
                       </div>
@@ -286,11 +352,7 @@ function CustomerDetailPage() {
                 })}
               </ol>
             )}
-            {sorted.length > timelineEntries.length ? (
-              <p className="mt-4 text-xs text-muted-foreground">
-                Showing the latest {timelineEntries.length} transactions here to keep the profile compact. Open khata for the complete ledger.
-              </p>
-            ) : null}
+            {!ledgerLoading && purchaseCountForHistory(dateGroups) > 0 ? null : null}
           </CardContent>
         </Card>
       </div>
@@ -300,42 +362,50 @@ function CustomerDetailPage() {
           <CardTitle className="text-base">Purchase &amp; payment history</CardTitle>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Payment</TableHead>
-                  <TableHead className="text-right">Due</TableHead>
-                  <TableHead>Method</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {sorted.map((entry) => (
-                  <TableRow key={entry.id}>
-                    <TableCell className="text-muted-foreground">
-                      {formatDate(entry.date)}
-                    </TableCell>
-                    <TableCell className="font-medium">{entry.product}</TableCell>
-                    <TableCell className="text-right">{entry.quantity}</TableCell>
-                    <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
-                    <TableCell className="text-right text-success">
-                      {formatCurrency(entry.payment)}
-                    </TableCell>
-                    <TableCell className="text-right font-semibold">
-                      {formatCurrency(entry.remainingDue)}
-                    </TableCell>
-                    <TableCell className="uppercase text-muted-foreground">
-                      {entry.method}
-                    </TableCell>
+          {ledgerLoading ? (
+            <p className="px-6 py-8 text-sm text-muted-foreground">Loading history…</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Product</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead className="text-right">Amount</TableHead>
+                    <TableHead className="text-right">Payment</TableHead>
+                    <TableHead className="text-right">Due</TableHead>
+                    <TableHead>Method</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
+                </TableHeader>
+                <TableBody>
+                  {sorted.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={7} className="py-10 text-center text-sm text-muted-foreground">
+                        No transaction history found.
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    sorted.map((entry) => (
+                      <TableRow key={entry.id}>
+                        <TableCell className="text-muted-foreground">{formatDate(entry.date)}</TableCell>
+                        <TableCell className="font-medium">{entry.product || "Payment received"}</TableCell>
+                        <TableCell className="text-right">{entry.quantity}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(entry.amount)}</TableCell>
+                        <TableCell className="text-right text-success">
+                          {formatCurrency(entry.payment)}
+                        </TableCell>
+                        <TableCell className="text-right font-semibold">
+                          {formatCurrency(entry.remainingDue)}
+                        </TableCell>
+                        <TableCell className="uppercase text-muted-foreground">{entry.method}</TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
