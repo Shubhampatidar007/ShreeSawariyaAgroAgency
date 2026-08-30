@@ -12,9 +12,11 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
+import { Timeline } from "@/components/shared/Timeline";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
@@ -158,93 +160,122 @@ function CustomerKhataPage() {
         ]}
       />
 
-      <Card className="overflow-hidden shadow-soft">
-        <CardHeader>
-          <CardTitle className="text-base">Ledger entries</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Product</TableHead>
-                  <TableHead className="text-right">Qty</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead className="text-right">Payment</TableHead>
-                  <TableHead className="text-right">Remaining due</TableHead>
-                  <TableHead>Method</TableHead>
-                  <TableHead>Remarks</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {ledgerLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                      Loading ledger…
-                    </TableCell>
-                  </TableRow>
-                ) : ledger.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                      No ledger entries found.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  ledger.map((entry) => (
-                    <TableRow key={entry.id}>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(entry.date)}
-                      </TableCell>
-                      <TableCell className="font-medium">
-                        <div className="flex min-w-[240px] items-center justify-between gap-3">
-                          <span className="min-w-0 truncate">
-                            {entry.product.replace(/\s*\+\s*\d+\s+more$/i, "")}
-                          </span>
-                          {entry.entryType === "purchase" ? (
-                            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
-                              <Link
-                                to="/admin/customers/$customerId"
-                                params={{ customerId }}
-                              >
-                                <BookOpen className="size-3.5" /> View full record
-                              </Link>
-                            </Button>
-                          ) : null}
-                        </div>
-                      </TableCell>
-                      <TableCell className="text-right">{entry.quantity}</TableCell>
-                      <TableCell className="text-right">
-                        {formatCurrency(entry.amount)}
-                      </TableCell>
-                      <TableCell className="text-right text-success">
-                        {formatCurrency(entry.payment)}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(entry.remainingDue)}
-                      </TableCell>
-                      <TableCell className="uppercase text-muted-foreground">
-                        {entry.method}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {entry.remarks ?? "—"}
-                      </TableCell>
+      <Tabs defaultValue="table">
+        <TabsList>
+          <TabsTrigger value="table">Table view</TabsTrigger>
+          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        </TabsList>
+        <TabsContent value="table" className="mt-4">
+          <Card className="overflow-hidden shadow-soft">
+            <CardHeader>
+              <CardTitle className="text-base">Ledger entries</CardTitle>
+            </CardHeader>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead className="text-right">Qty</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Payment</TableHead>
+                      <TableHead className="text-right">Remaining due</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Remarks</TableHead>
                     </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </div>
-          {!ledgerLoading && (
-            <TablePagination
-              page={page}
-              pageCount={pageCount}
-              total={totalTransactions}
-              onPageChange={setPage}
-            />
-          )}
-        </CardContent>
-      </Card>
+                  </TableHeader>
+                  <TableBody>
+                    {ledgerLoading ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                          Loading ledger…
+                        </TableCell>
+                      </TableRow>
+                    ) : ledger.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                          No ledger entries found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      ledger.map((entry) => (
+                        <TableRow key={entry.id}>
+                          <TableCell className="text-muted-foreground">
+                            {formatDate(entry.date)}
+                          </TableCell>
+                          <TableCell className="font-medium">
+                            <div className="flex min-w-[240px] items-center justify-between gap-3">
+                              <span className="min-w-0 truncate">
+                                {entry.product.replace(/\s*\+\s*\d+\s+more$/i, "")}
+                              </span>
+                              {entry.entryType === "purchase" ? (
+                                <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
+                                  <Link
+                                    to="/admin/customers/$customerId"
+                                    params={{ customerId }}
+                                  >
+                                    <BookOpen className="size-3.5" /> View full record
+                                  </Link>
+                                </Button>
+                              ) : null}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">{entry.quantity}</TableCell>
+                          <TableCell className="text-right">
+                            {formatCurrency(entry.amount)}
+                          </TableCell>
+                          <TableCell className="text-right text-success">
+                            {formatCurrency(entry.payment)}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(entry.remainingDue)}
+                          </TableCell>
+                          <TableCell className="uppercase text-muted-foreground">
+                            {entry.method}
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {entry.remarks ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              {!ledgerLoading && (
+                <TablePagination
+                  page={page}
+                  pageCount={pageCount}
+                  total={totalTransactions}
+                  onPageChange={setPage}
+                />
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="timeline" className="mt-4">
+          <Card className="shadow-soft">
+            <CardContent className="pt-6">
+              <Timeline
+                items={ledger.map((entry) => ({
+                  id: entry.id,
+                  title: entry.product,
+                  meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
+                  description: `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`,
+                  amount: formatCurrency(entry.amount),
+                  tone: entry.remainingDue > 0 ? "warning" : "success",
+                }))}
+              />
+              {!ledgerLoading && pageCount > 1 ? (
+                <p className="mt-4 text-xs text-muted-foreground">
+                  Timeline shows the current ledger page. Use Table view for pagination.
+                </p>
+              ) : null}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
