@@ -12,7 +12,7 @@ export function LocationSection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-stretch">
           <Card className="overflow-hidden border-border shadow-soft">
-            <div className="relative h-[360px] bg-muted sm:h-[440px]">
+            <div className="relative h-[300px] bg-muted sm:h-[440px]">
               <iframe
                 title="Google Maps preview for Shree Sawariya Agro Agency"
                 src={MAP_PREVIEW_URL}

@@ -9,6 +9,7 @@ import { AboutGithubProfile } from "@/components/about/AboutGithubProfile";
 import { AboutConnect } from "@/components/about/AboutConnect";
 import "@/components/about/about.css";
 import "@/components/about/about-polish.css";
+import "@/components/about/about-responsive.css";
 
 export function AboutExperience() {
   useAboutScrollMotion();

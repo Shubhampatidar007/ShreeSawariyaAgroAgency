@@ -7,6 +7,7 @@ type LogoProps = {
   className?: string;
   subtitle?: string;
   inverted?: boolean;
+  compactOnMobile?: boolean;
 };
 
 export function Logo({
@@ -14,16 +15,22 @@ export function Logo({
   className,
   subtitle = "Agriculture Shop Management",
   inverted,
+  compactOnMobile = false,
 }: LogoProps) {
   return (
-    <Link to={to} className={cn("flex items-center gap-2.5", className)}>
-      <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
+    <Link to={to} className={cn("flex min-w-0 items-center gap-2.5", className)}>
+      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
         <Sprout className="size-5" />
       </span>
-      <span className="leading-tight">
+      <span
+        className={cn(
+          "min-w-0 max-w-[12rem] sm:max-w-[16rem]",
+          compactOnMobile && "max-[420px]:hidden",
+        )}
+      >
         <span
           className={cn(
-            "block font-display text-base font-semibold tracking-tight",
+            "block truncate font-display text-base font-semibold tracking-tight",
             inverted ? "text-sidebar-foreground" : "text-foreground",
           )}
         >

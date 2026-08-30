@@ -199,7 +199,7 @@ export function ProductCard({ product }: { product: Product }) {
       </Card>
 
       <Dialog open={detailsOpen} onOpenChange={setDetailsOpen}>
-        <DialogContent className="max-w-2xl overflow-hidden rounded-2xl p-0">
+        <DialogContent className="max-h-[calc(100dvh-1rem)] max-w-2xl overflow-y-auto rounded-2xl p-0 sm:max-h-[90vh]">
           <div className="grid gap-0 md:grid-cols-[0.9fr_1.1fr]">
             <div className="flex min-h-64 items-center justify-center bg-muted/50 p-6">
               {product.image ? (

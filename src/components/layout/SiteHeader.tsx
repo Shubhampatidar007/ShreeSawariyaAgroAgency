@@ -28,7 +28,6 @@ export function SiteHeader() {
   const [authMode, setAuthMode] = useState<AuthMode>("login");
   const user = useAuth();
   const { t } = useI18n();
-  const searchQuery = useStorefrontFilters((s) => s.searchQuery);
 
   const openAuth = (mode: AuthMode) => {
     setAuthMode(mode);
@@ -36,7 +35,7 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="sticky top-0 z-40 w-full">
+    <header className="site-header sticky top-0 z-40 w-full">
       <div className="hidden border-b border-border bg-muted text-muted-foreground md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2 text-xs">
           <div className="flex items-center gap-5">
@@ -48,11 +47,11 @@ export function SiteHeader() {
       </div>
 
       <div className="border-b border-border bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 md:px-6">
-          <Logo />
+        <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2.5 sm:gap-3 sm:px-4 sm:py-3 md:gap-4 md:px-6">
+          <Logo compactOnMobile className="min-w-0 shrink-0" />
           <SearchBox />
 
-          <div className="ml-auto flex items-center gap-1.5">
+          <div className="ml-auto flex shrink-0 items-center gap-1 sm:gap-1.5">
             <LanguageToggle className="rounded-full" />
             <ThemeToggle className="rounded-full" />
             {user ? (
@@ -85,12 +84,9 @@ export function SiteHeader() {
               <SheetTrigger asChild>
                 <Button variant="ghost" size="icon" className="lg:hidden" aria-label="Open menu"><Menu className="size-5" /></Button>
               </SheetTrigger>
-              <SheetContent side="right" className="w-80">
+              <SheetContent side="right" className="w-[min(20rem,100vw)]">
                 <SheetTitle>Store menu</SheetTitle>
-                <div className="mt-5 lg:hidden">
-                  <SearchBox mobile />
-                </div>
-                <nav className="mt-6 flex flex-col gap-1">
+                <nav className="mt-5 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
                     <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
                       {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
@@ -105,6 +101,12 @@ export function SiteHeader() {
               </SheetContent>
             </Sheet>
           </div>
+        </div>
+      </div>
+
+      <div className="border-b border-border bg-card/95 backdrop-blur lg:hidden">
+        <div className="mx-auto max-w-7xl px-3 pb-3 sm:px-4">
+          <SearchBox mobile />
         </div>
       </div>
 
@@ -127,7 +129,7 @@ function SearchBox({ mobile = false }: { mobile?: boolean }) {
   const searchQuery = useStorefrontFilters((s) => s.searchQuery);
 
   return (
-    <div className={mobile ? "w-full" : "ml-4 hidden flex-1 lg:block"}>
+    <div className={mobile ? "w-full" : "ml-4 hidden min-w-0 flex-1 lg:block"}>
       <div className="relative">
         <Search className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
         <Input
