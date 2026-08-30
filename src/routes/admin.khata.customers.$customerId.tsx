@@ -1,10 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import { Fragment } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
 import {
   BookOpen,
-  ChevronDown,
-  ChevronRight,
   Download,
   IndianRupee,
   Printer,
@@ -15,7 +12,15 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { EmptyState } from "@/components/admin/EmptyState";
+import { DetailHeader } from "@/components/shared/DetailHeader";
+import { SummaryCards } from "@/components/shared/SummaryCards";
+import { TablePagination } from "@/components/shared/TablePagination";
+import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
+import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
+import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { CUSTOMER_KHATA_PAGE_SIZE, loadCustomerKhataPage } from "@/lib/admin-customer-data";
+import type { CustomerLedgerEntry } from "@/types/business";
 import {
   Table,
   TableBody,
@@ -24,16 +29,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { EmptyState } from "@/components/admin/EmptyState";
-import { DetailHeader } from "@/components/shared/DetailHeader";
-import { SummaryCards } from "@/components/shared/SummaryCards";
-import { Timeline } from "@/components/shared/Timeline";
-import { TablePagination } from "@/components/shared/TablePagination";
-import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
-import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
-import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
-import { CUSTOMER_KHATA_PAGE_SIZE, loadCustomerKhataPage } from "@/lib/admin-customer-data";
-import type { CustomerLedgerEntry, CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/khata/customers/$customerId")({
   head: () => ({
@@ -54,8 +49,6 @@ function CustomerKhataPage() {
   const [pageCount, setPageCount] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [ledgerLoading, setLedgerLoading] = useState(true);
-  const [expanded, setExpanded] = useState<Set<string>>(new Set());
-  const [itemsByTx, setItemsByTx] = useState<Record<string, CustomerSaleItem[] | "loading">>({});
 
   useEffect(() => {
     let cancelled = false;
@@ -91,24 +84,6 @@ function CustomerKhataPage() {
     }),
     [customer],
   );
-
-  const toggleExpand = async (entryId: string) => {
-    setExpanded((prev) => {
-      const next = new Set(prev);
-      if (next.has(entryId)) next.delete(entryId);
-      else next.add(entryId);
-      return next;
-    });
-    if (!itemsByTx[entryId]) {
-      setItemsByTx((prev) => ({ ...prev, [entryId]: "loading" }));
-      try {
-        const items = await shopStore.fetchTransactionItems(entryId);
-        setItemsByTx((prev) => ({ ...prev, [entryId]: items }));
-      } catch {
-        setItemsByTx((prev) => ({ ...prev, [entryId]: [] }));
-      }
-    }
-  };
 
   if (!customer) {
     return (
@@ -183,187 +158,93 @@ function CustomerKhataPage() {
         ]}
       />
 
-      <Tabs defaultValue="table">
-        <TabsList>
-          <TabsTrigger value="table">Table view</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
-        </TabsList>
-        <TabsContent value="table" className="mt-4">
-          <Card className="overflow-hidden shadow-soft">
-            <CardHeader>
-              <CardTitle className="text-base">Ledger entries</CardTitle>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead className="w-8" />
-                      <TableHead>Date</TableHead>
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Payment</TableHead>
-                      <TableHead className="text-right">Remaining due</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Remarks</TableHead>
+      <Card className="overflow-hidden shadow-soft">
+        <CardHeader>
+          <CardTitle className="text-base">Ledger entries</CardTitle>
+        </CardHeader>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead className="text-right">Qty</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                  <TableHead className="text-right">Payment</TableHead>
+                  <TableHead className="text-right">Remaining due</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Remarks</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {ledgerLoading ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                      Loading ledger…
+                    </TableCell>
+                  </TableRow>
+                ) : ledger.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
+                      No ledger entries found.
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  ledger.map((entry) => (
+                    <TableRow key={entry.id}>
+                      <TableCell className="text-muted-foreground">
+                        {formatDate(entry.date)}
+                      </TableCell>
+                      <TableCell className="font-medium">
+                        <div className="flex min-w-[240px] items-center justify-between gap-3">
+                          <span className="min-w-0 truncate">
+                            {entry.product.replace(/\s*\+\s*\d+\s+more$/i, "")}
+                          </span>
+                          {entry.entryType === "purchase" ? (
+                            <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
+                              <Link
+                                to="/admin/customers/$customerId"
+                                params={{ customerId }}
+                              >
+                                <BookOpen className="size-3.5" /> View full record
+                              </Link>
+                            </Button>
+                          ) : null}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-right">{entry.quantity}</TableCell>
+                      <TableCell className="text-right">
+                        {formatCurrency(entry.amount)}
+                      </TableCell>
+                      <TableCell className="text-right text-success">
+                        {formatCurrency(entry.payment)}
+                      </TableCell>
+                      <TableCell className="text-right font-semibold">
+                        {formatCurrency(entry.remainingDue)}
+                      </TableCell>
+                      <TableCell className="uppercase text-muted-foreground">
+                        {entry.method}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {entry.remarks ?? "—"}
+                      </TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ledgerLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
-                          Loading ledger…
-                        </TableCell>
-                      </TableRow>
-                    ) : ledger.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={9} className="py-10 text-center text-sm text-muted-foreground">
-                          No ledger entries found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      ledger.map((entry) => {
-                        const canExpand = entry.entryType === "purchase";
-                        const isOpen = expanded.has(entry.id);
-                        const items = itemsByTx[entry.id];
-                        const productCount = Array.isArray(items) ? items.length : null;
-                        return (
-                          <Fragment key={entry.id}>
-                            <TableRow>
-                              <TableCell>
-                                {canExpand && (
-                                  <button
-                                    type="button"
-                                    onClick={() => toggleExpand(entry.id)}
-                                    className="text-muted-foreground hover:text-foreground"
-                                    aria-label={isOpen ? "Collapse items" : "Expand items"}
-                                    aria-expanded={isOpen}
-                                  >
-                                    {isOpen ? (
-                                      <ChevronDown className="size-4" />
-                                    ) : (
-                                      <ChevronRight className="size-4" />
-                                    )}
-                                  </button>
-                                )}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {formatDate(entry.date)}
-                              </TableCell>
-                              <TableCell className="font-medium">
-                                {canExpand ? (
-                                  <button
-                                    type="button"
-                                    onClick={() => void toggleExpand(entry.id)}
-                                    className="group flex max-w-full items-center gap-2 text-left"
-                                    aria-label={isOpen ? "Collapse products" : "Show all products"}
-                                  >
-                                    <span className="min-w-0 truncate">{entry.product}</span>
-                                    <span className="shrink-0 text-xs font-normal text-muted-foreground group-hover:text-foreground">
-                                      {productCount !== null
-                                        ? `${productCount} product${productCount === 1 ? "" : "s"}`
-                                        : "View products"}
-                                    </span>
-                                  </button>
-                                ) : (
-                                  entry.product
-                                )}
-                              </TableCell>
-                              <TableCell className="text-right">{entry.quantity}</TableCell>
-                              <TableCell className="text-right">
-                                {formatCurrency(entry.amount)}
-                              </TableCell>
-                              <TableCell className="text-right text-success">
-                                {formatCurrency(entry.payment)}
-                              </TableCell>
-                              <TableCell className="text-right font-semibold">
-                                {formatCurrency(entry.remainingDue)}
-                              </TableCell>
-                              <TableCell className="uppercase text-muted-foreground">
-                                {entry.method}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {entry.remarks ?? "—"}
-                              </TableCell>
-                            </TableRow>
-                            {canExpand && isOpen && (
-                              <TableRow>
-                                <TableCell />
-                                <TableCell colSpan={8} className="bg-muted/40 py-3">
-                                  {items === "loading" || items === undefined ? (
-                                    <p className="text-sm text-muted-foreground">Loading items…</p>
-                                  ) : items.length === 0 ? (
-                                    <p className="text-sm text-muted-foreground">
-                                      No line items recorded for this entry.
-                                    </p>
-                                  ) : (
-                                    <div className="space-y-1">
-                                      {items.map((item) => (
-                                        <div
-                                          key={item.id}
-                                          className="flex items-center justify-between gap-4 text-sm"
-                                        >
-                                          <span className="min-w-0">
-                                            <span className="font-medium">{item.product}</span>{" "}
-                                            <span className="text-muted-foreground">
-                                              ({item.quantity} {item.unit} × {formatCurrency(item.rate)})
-                                            </span>
-                                          </span>
-                                          <span className="shrink-0 font-medium">
-                                            {formatCurrency(item.amount)}
-                                          </span>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </TableCell>
-                              </TableRow>
-                            )}
-                          </Fragment>
-                        );
-                      })
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
-              {!ledgerLoading && (
-                <TablePagination
-                  page={page}
-                  pageCount={pageCount}
-                  total={totalTransactions}
-                  onPageChange={(nextPage) => {
-                    setExpanded(new Set());
-                    setItemsByTx({});
-                    setPage(nextPage);
-                  }}
-                />
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-        <TabsContent value="timeline" className="mt-4">
-          <Card className="shadow-soft">
-            <CardContent className="pt-6">
-              <Timeline
-                items={ledger.map((entry) => ({
-                  id: entry.id,
-                  title: entry.product,
-                  meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
-                  description: `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`,
-                  amount: formatCurrency(entry.amount),
-                  tone: entry.remainingDue > 0 ? "warning" : "success",
-                }))}
-              />
-              {!ledgerLoading && pageCount > 1 ? (
-                <p className="mt-4 text-xs text-muted-foreground">
-                  Timeline shows the current ledger page. Use Table view for pagination.
-                </p>
-              ) : null}
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+          </div>
+          {!ledgerLoading && (
+            <TablePagination
+              page={page}
+              pageCount={pageCount}
+              total={totalTransactions}
+              onPageChange={setPage}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

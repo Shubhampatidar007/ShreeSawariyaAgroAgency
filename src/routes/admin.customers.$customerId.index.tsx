@@ -1,6 +1,17 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BookOpen, IndianRupee, MapPin, Pencil, Phone, Receipt, UserX, Wallet } from "lucide-react";
+import {
+  BookOpen,
+  ChevronDown,
+  ChevronRight,
+  IndianRupee,
+  MapPin,
+  Pencil,
+  Phone,
+  Receipt,
+  UserX,
+  Wallet,
+} from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,8 +28,8 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
-import { Timeline } from "@/components/shared/Timeline";
-import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import type { CustomerLedgerEntry, CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/customers/$customerId/")({
   head: () => ({
@@ -38,6 +49,8 @@ function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
   const ledger = useShopStore((s) => s.customerLedger.filter((e) => e.customerId === customerId));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [itemsByTx, setItemsByTx] = useState<Record<string, CustomerSaleItem[] | "loading">>({});
 
   const sorted = useMemo(() => {
     return ledger
@@ -48,6 +61,36 @@ function CustomerDetailPage() {
       })
       .map(({ entry }) => entry);
   }, [ledger]);
+
+  const timelineEntries = sorted.slice(0, 6);
+
+  const toggleTransaction = async (entry: CustomerLedgerEntry) => {
+    if (entry.entryType !== "purchase") return;
+
+    const willOpen = !expanded.has(entry.id);
+    setExpanded((prev) => {
+      const next = new Set(prev);
+      if (willOpen) next.add(entry.id);
+      else next.delete(entry.id);
+      return next;
+    });
+
+    if (!willOpen || itemsByTx[entry.id]) return;
+
+    setItemsByTx((prev) => ({ ...prev, [entry.id]: "loading" }));
+    try {
+      const items = await shopStore.fetchTransactionItems(entry.id);
+      setItemsByTx((prev) => ({ ...prev, [entry.id]: items }));
+    } catch (error) {
+      console.error("Customer transaction items load failed:", error);
+      setItemsByTx((prev) => ({ ...prev, [entry.id]: [] }));
+    }
+  };
+
+  useEffect(() => {
+    setExpanded(new Set());
+    setItemsByTx({});
+  }, [customerId]);
 
   if (!customer) {
     return (
@@ -156,22 +199,98 @@ function CustomerDetailPage() {
             <CardTitle className="text-base">Transaction timeline</CardTitle>
           </CardHeader>
           <CardContent>
-            {sorted.length === 0 ? (
+            {timelineEntries.length === 0 ? (
               <p className="text-sm text-muted-foreground">No khata entries recorded yet.</p>
             ) : (
-              <Timeline
-                items={sorted.slice(0, 6).map((entry) => ({
-                  id: entry.id,
-                  title: entry.product,
-                  meta: `${formatDate(entry.date)} · ${entry.quantity} unit(s) · ${entry.method.toUpperCase()}`,
-                  description:
-                    entry.remarks ??
-                    `Paid ${formatCurrency(entry.payment)}, due ${formatCurrency(entry.remainingDue)}`,
-                  amount: formatCurrency(entry.amount),
-                  tone: entry.remainingDue > 0 ? "warning" : "success",
-                }))}
-              />
+              <ol className="relative space-y-4 border-l border-border pl-6">
+                {timelineEntries.map((entry) => {
+                  const canExpand = entry.entryType === "purchase";
+                  const isOpen = expanded.has(entry.id);
+                  const items = itemsByTx[entry.id];
+
+                  return (
+                    <li key={entry.id} className="relative">
+                      <span
+                        className={`absolute -left-[27px] top-1.5 size-3 rounded-full ring-4 ring-background ${
+                          entry.remainingDue > 0 ? "bg-warning" : "bg-success"
+                        }`}
+                      />
+                      <div className="rounded-xl border border-border bg-background/40 p-3">
+                        <div className="flex flex-wrap items-baseline justify-between gap-2">
+                          <p className="text-sm font-semibold">{entry.product}</p>
+                          <p className="font-display text-sm font-semibold">
+                            {formatCurrency(entry.amount)}
+                          </p>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {formatDate(entry.date)} · {entry.quantity} unit(s) · {entry.method.toUpperCase()}
+                        </p>
+                        <p className="mt-1 text-xs text-muted-foreground">
+                          {entry.remarks ??
+                            `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`}
+                        </p>
+
+                        {canExpand ? (
+                          <button
+                            type="button"
+                            onClick={() => void toggleTransaction(entry)}
+                            className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-border px-3 py-1.5 text-xs font-medium hover:bg-muted"
+                            aria-expanded={isOpen}
+                          >
+                            {isOpen ? (
+                              <ChevronDown className="size-3.5" />
+                            ) : (
+                              <ChevronRight className="size-3.5" />
+                            )}
+                            {items === "loading"
+                              ? "Loading products…"
+                              : Array.isArray(items)
+                                ? `${items.length} product${items.length === 1 ? "" : "s"}`
+                                : "View products"}
+                          </button>
+                        ) : null}
+
+                        {canExpand && isOpen ? (
+                          <div className="mt-3 rounded-lg bg-muted/40 p-3">
+                            {items === "loading" || items === undefined ? (
+                              <p className="text-xs text-muted-foreground">Loading product details…</p>
+                            ) : items.length === 0 ? (
+                              <p className="text-xs text-muted-foreground">
+                                No product line items recorded for this transaction.
+                              </p>
+                            ) : (
+                              <div className="space-y-2">
+                                {items.map((item) => (
+                                  <div
+                                    key={item.id}
+                                    className="flex items-center justify-between gap-4 text-xs"
+                                  >
+                                    <div className="min-w-0">
+                                      <p className="truncate font-medium">{item.product}</p>
+                                      <p className="text-muted-foreground">
+                                        {item.quantity} {item.unit} × {formatCurrency(item.rate)}
+                                      </p>
+                                    </div>
+                                    <span className="shrink-0 font-medium">
+                                      {formatCurrency(item.amount)}
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        ) : null}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ol>
             )}
+            {sorted.length > timelineEntries.length ? (
+              <p className="mt-4 text-xs text-muted-foreground">
+                Showing the latest {timelineEntries.length} transactions here to keep the profile compact. Open khata for the complete ledger.
+              </p>
+            ) : null}
           </CardContent>
         </Card>
       </div>
