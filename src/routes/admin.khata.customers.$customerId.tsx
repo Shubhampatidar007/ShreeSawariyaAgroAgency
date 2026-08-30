@@ -205,21 +205,18 @@ function CustomerKhataPage() {
                             {formatDate(entry.date)}
                           </TableCell>
                           <TableCell className="font-medium">
-                            <div className="flex min-w-[240px] items-center justify-between gap-3">
-                              <span className="min-w-0 truncate">
-                                {entry.product.replace(/\s*\+\s*\d+\s+more$/i, "")}
-                              </span>
-                              {entry.entryType === "purchase" ? (
-                                <Button asChild variant="outline" size="sm" className="shrink-0 rounded-full">
-                                  <Link
-                                    to="/admin/customers/$customerId"
-                                    params={{ customerId }}
-                                  >
-                                    <BookOpen className="size-3.5" /> View full record
-                                  </Link>
-                                </Button>
-                              ) : null}
-                            </div>
+                            {entry.entryType === "purchase" ? (
+                              <Button asChild variant="outline" size="sm" className="rounded-full">
+                                <Link
+                                  to="/admin/customers/$customerId"
+                                  params={{ customerId }}
+                                >
+                                  <BookOpen className="size-3.5" /> View full record
+                                </Link>
+                              </Button>
+                            ) : (
+                              <span className="text-muted-foreground">Payment received</span>
+                            )}
                           </TableCell>
                           <TableCell className="text-right">{entry.quantity}</TableCell>
                           <TableCell className="text-right">
@@ -260,7 +257,7 @@ function CustomerKhataPage() {
               <Timeline
                 items={ledger.map((entry) => ({
                   id: entry.id,
-                  title: entry.product,
+                  title: entry.product || "Payment received",
                   meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
                   description: `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`,
                   amount: formatCurrency(entry.amount),
