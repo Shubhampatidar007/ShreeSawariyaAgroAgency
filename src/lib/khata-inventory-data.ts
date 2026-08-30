@@ -47,7 +47,8 @@ export type KhataInventoryOption = {
 
 const num = (value: unknown) => Number(value ?? 0);
 
-const sanitizeSearch = (value: string) => value.replace(/[%,_]/g, " ").replace(/,/g, " ").trim();
+const sanitizeSearch = (value: string) =>
+  value.replace(/[^\p{L}\p{N}\s-]/gu, " ").trim();
 
 export async function loadKhataInventoryPage(
   query = "",
