@@ -253,7 +253,6 @@ function CustomerDetailPage() {
                 {dateGroups.map(({ date, entries }) => {
                   const isOpen = expandedDates.has(date);
                   const dayAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
-                  const purchaseCount = entries.filter((entry) => entry.entryType === "purchase").length;
 
                   return (
                     <li key={date} className="relative">
@@ -352,7 +351,6 @@ function CustomerDetailPage() {
                 })}
               </ol>
             )}
-            {!ledgerLoading && purchaseCountForHistory(dateGroups) > 0 ? null : null}
           </CardContent>
         </Card>
       </div>
