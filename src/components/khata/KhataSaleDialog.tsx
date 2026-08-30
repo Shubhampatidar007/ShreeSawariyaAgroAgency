@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
 import { toast } from "sonner";
@@ -32,6 +32,11 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import {
+  KHATA_INVENTORY_PAGE_SIZE,
+  loadKhataInventoryPage,
+  type KhataInventoryOption,
+} from "@/lib/khata-inventory-data";
 import type { PaymentMethod } from "@/types/business";
 
 type CartItem = {
@@ -235,11 +240,14 @@ async function sendKhataReceiptToEdgeFunction({
 
 export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const customers = useShopStore((s) => s.customers);
-  const products = useShopStore((s) => s.products);
-  const inventory = useShopStore((s) => s.inventory);
 
   const [open, setOpen] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryOptions, setInventoryOptions] = useState<KhataInventoryOption[]>([]);
+  const [inventoryHasMore, setInventoryHasMore] = useState(false);
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const inventoryRequestRef = useRef(0);
 
   // customer selection
   const [customerMode, setCustomerMode] = useState<"select" | "new">("select");
@@ -274,6 +282,73 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
   const paidNum = Number(paid) || 0;
   const due = Math.max(total - paidNum, 0);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const requestId = ++inventoryRequestRef.current;
+    setInventoryLoading(true);
+    setInventoryOptions([]);
+    setInventoryPage(1);
+    setInventoryHasMore(false);
+
+    const delay = productQuery.trim() ? 250 : 0;
+    const timer = window.setTimeout(() => {
+      void loadKhataInventoryPage(productQuery, 1, KHATA_INVENTORY_PAGE_SIZE)
+        .then((result) => {
+          if (requestId !== inventoryRequestRef.current) return;
+          setInventoryOptions(result.rows);
+          setInventoryPage(result.page);
+          setInventoryHasMore(result.hasMore);
+        })
+        .catch((error) => {
+          if (requestId !== inventoryRequestRef.current) return;
+          console.error("Failed to load Khata inventory:", error);
+          setInventoryOptions([]);
+          setInventoryPage(1);
+          setInventoryHasMore(false);
+        })
+        .finally(() => {
+          if (requestId === inventoryRequestRef.current) {
+            setInventoryLoading(false);
+          }
+        });
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [open, productQuery]);
+
+  const loadMoreInventory = async () => {
+    if (!open || inventoryLoading || !inventoryHasMore) return;
+
+    const requestId = inventoryRequestRef.current;
+    const nextPage = inventoryPage + 1;
+    setInventoryLoading(true);
+
+    try {
+      const result = await loadKhataInventoryPage(
+        productQuery,
+        nextPage,
+        KHATA_INVENTORY_PAGE_SIZE,
+      );
+      if (requestId !== inventoryRequestRef.current) return;
+
+      setInventoryOptions((current) => {
+        const seen = new Set(current.map((item) => item.key));
+        return [...current, ...result.rows.filter((item) => !seen.has(item.key))];
+      });
+      setInventoryPage(result.page);
+      setInventoryHasMore(result.hasMore);
+    } catch (error) {
+      if (requestId === inventoryRequestRef.current) {
+        toast.error(error instanceof Error ? error.message : "Could not load more inventory");
+      }
+    } finally {
+      if (requestId === inventoryRequestRef.current) {
+        setInventoryLoading(false);
+      }
+    }
+  };
 
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
@@ -314,31 +389,14 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const catalogOptions = useMemo(() => {
     const q = productQuery.trim().toLowerCase();
 
-    return products
-      .flatMap((product) =>
-        (product.variants ?? []).map((variant) => ({
-          key: variant.id,
-          inventoryId: variant.inventoryId,
-          productId: product.id,
-          productVariantId: variant.id,
-          title: product.title,
-          subtitle: product.category ?? "Inventory",
-          emoji: product.emoji ?? "🌾",
-          unit: variant.label ?? "unit",
-          rate: Number(variant.discountPrice ?? variant.sellingPrice),
-          stock: Number(variant.stock),
-        })),
-      )
-      .filter((option) => option.stock > 0)
-      .filter((option) => {
-        if (!q) return true;
+    if (!q) return inventoryOptions;
 
-        return `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
-          .toLowerCase()
-          .includes(q);
-      })
-      .slice(0, 8);
-  }, [products, productQuery]);
+    return inventoryOptions.filter((option) =>
+      `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [inventoryOptions, productQuery]);
 
   const reset = () => {
     setCustomerMode("select");
@@ -355,6 +413,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setProductQuery("");
     setCustomName("");
     setCustomRate("");
+    setInventoryOptions([]);
+    setInventoryPage(1);
+    setInventoryHasMore(false);
+    setInventoryLoading(false);
+    inventoryRequestRef.current += 1;
 
     setPaid("0");
     setMethod("cash");
@@ -363,7 +426,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setReceiptOption("current");
   };
 
-  const addProductToCart = (option: (typeof catalogOptions)[number]) => {
+  const addProductToCart = (option: KhataInventoryOption) => {
     if (option.stock <= 0) {
       toast.error(`${option.title} (${option.unit}) is out of stock`);
       return;
@@ -382,7 +445,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     };
 
     setItems((prev) => {
-      const existing = prev.find((item) => item.productVariantId === option.productVariantId);
+      const existingKey = option.productVariantId ?? option.inventoryId;
+      const existing = prev.find(
+        (item) => (item.productVariantId ?? item.inventoryId) === existingKey,
+      );
 
       if (existing) {
         if (existing.maxStock !== undefined && existing.quantity >= existing.maxStock) {
@@ -821,24 +887,53 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
               onChange={(e) => setProductQuery(e.target.value)}
             />
 
-            <div className="flex flex-wrap gap-2">
-              {catalogOptions.map((option) => (
-                <Button
-                  key={option.key}
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="rounded-full"
-                  onClick={() => addProductToCart(option)}
-                >
-                  {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock}{" "}
-                  {option.unit}
-                </Button>
-              ))}
-
-              {catalogOptions.length === 0 && (
-                <p className="text-sm text-muted-foreground">No matching inventory items</p>
+            <div className="space-y-2 rounded-lg border p-3">
+              {inventoryLoading && inventoryOptions.length === 0 ? (
+                <div className="flex min-h-24 items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Loading inventory…
+                </div>
+              ) : catalogOptions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
+                </p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {catalogOptions.map((option) => (
+                    <Button
+                      key={option.key}
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      className="h-auto rounded-full px-3 py-2 text-left"
+                      onClick={() => addProductToCart(option)}
+                    >
+                      <span>
+                        {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock} {option.unit}
+                      </span>
+                    </Button>
+                  ))}
+                </div>
               )}
+
+              {inventoryLoading && inventoryOptions.length > 0 ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" />
+                  Updating inventory…
+                </div>
+              ) : null}
+
+              {inventoryHasMore && !inventoryLoading ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full rounded-full"
+                  onClick={() => void loadMoreInventory()}
+                >
+                  Load more inventory
+                </Button>
+              ) : null}
             </div>
           </div>
 
@@ -860,12 +955,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   {items.map((item) => (
                     <TableRow key={item.key}>
                       <TableCell className="font-medium">
-                        {item.product}
-
-                      <div>{item.product}</div>
-<div className="text-xs text-muted-foreground">
-  {item.unit} · Stock {item.maxStock ?? "—"}
-</div>
+                        <div>{item.product}</div>
+                        <div className="text-xs text-muted-foreground">
+                          {item.unit} · Stock {item.maxStock ?? "—"}
+                        </div>
                       </TableCell>
 
                       <TableCell>
@@ -1085,7 +1178,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             type="button"
             className="rounded-full"
             onClick={handleSubmit}
-            disabled={submitting}
+            disabled={submitting || inventoryLoading && items.length === 0}
           >
             {submitting && <Loader2 className="size-4 animate-spin" />}
             Save sale
