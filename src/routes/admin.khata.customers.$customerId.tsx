@@ -227,6 +227,7 @@ function CustomerKhataPage() {
                         const canExpand = entry.entryType === "purchase";
                         const isOpen = expanded.has(entry.id);
                         const items = itemsByTx[entry.id];
+                        const productCount = Array.isArray(items) ? items.length : null;
                         return (
                           <Fragment key={entry.id}>
                             <TableRow>
@@ -236,7 +237,8 @@ function CustomerKhataPage() {
                                     type="button"
                                     onClick={() => toggleExpand(entry.id)}
                                     className="text-muted-foreground hover:text-foreground"
-                                    aria-label="Toggle items"
+                                    aria-label={isOpen ? "Collapse items" : "Expand items"}
+                                    aria-expanded={isOpen}
                                   >
                                     {isOpen ? (
                                       <ChevronDown className="size-4" />
@@ -249,7 +251,25 @@ function CustomerKhataPage() {
                               <TableCell className="text-muted-foreground">
                                 {formatDate(entry.date)}
                               </TableCell>
-                              <TableCell className="font-medium">{entry.product}</TableCell>
+                              <TableCell className="font-medium">
+                                {canExpand ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => void toggleExpand(entry.id)}
+                                    className="group flex max-w-full items-center gap-2 text-left"
+                                    aria-label={isOpen ? "Collapse products" : "Show all products"}
+                                  >
+                                    <span className="min-w-0 truncate">{entry.product}</span>
+                                    <span className="shrink-0 text-xs font-normal text-muted-foreground group-hover:text-foreground">
+                                      {productCount !== null
+                                        ? `${productCount} product${productCount === 1 ? "" : "s"}`
+                                        : "View products"}
+                                    </span>
+                                  </button>
+                                ) : (
+                                  entry.product
+                                )}
+                              </TableCell>
                               <TableCell className="text-right">{entry.quantity}</TableCell>
                               <TableCell className="text-right">
                                 {formatCurrency(entry.amount)}
@@ -282,16 +302,15 @@ function CustomerKhataPage() {
                                       {items.map((item) => (
                                         <div
                                           key={item.id}
-                                          className="flex items-center justify-between text-sm"
+                                          className="flex items-center justify-between gap-4 text-sm"
                                         >
-                                          <span>
-                                            {item.product}{" "}
+                                          <span className="min-w-0">
+                                            <span className="font-medium">{item.product}</span>{" "}
                                             <span className="text-muted-foreground">
-                                              ({item.quantity} {item.unit} ×{" "}
-                                              {formatCurrency(item.rate)})
+                                              ({item.quantity} {item.unit} × {formatCurrency(item.rate)})
                                             </span>
                                           </span>
-                                          <span className="font-medium">
+                                          <span className="shrink-0 font-medium">
                                             {formatCurrency(item.amount)}
                                           </span>
                                         </div>
@@ -315,6 +334,7 @@ function CustomerKhataPage() {
                   total={totalTransactions}
                   onPageChange={(nextPage) => {
                     setExpanded(new Set());
+                    setItemsByTx({});
                     setPage(nextPage);
                   }}
                 />
