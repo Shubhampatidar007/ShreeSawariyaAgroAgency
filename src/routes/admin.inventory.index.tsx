@@ -24,7 +24,6 @@ import {
 import { EmptyState } from "@/components/admin/EmptyState";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { SearchToolbar } from "@/components/shared/SearchToolbar";
-import { StatusBadge } from "@/components/shared/StatusBadge";
 import { InventoryCard } from "@/components/shared/EntityCards";
 import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
@@ -206,7 +205,7 @@ function InventoryListPage() {
                   <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead>Current stock</TableHead>
                   <TableHead>Last updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -229,8 +228,8 @@ function InventoryListPage() {
                       <TableCell className="text-right">
                         {formatCurrency(item.purchasePrice)}
                       </TableCell>
-                      <TableCell>
-                        <StatusBadge status={item.status} />
+                      <TableCell className="font-semibold">
+                        {item.quantity} {item.unit}
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatDate(item.lastUpdated)}
