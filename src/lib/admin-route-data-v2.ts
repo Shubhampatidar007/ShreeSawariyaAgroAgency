@@ -57,9 +57,9 @@ const CUSTOMER_TX =
 const SUPPLIER_TX =
   "id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks,product_name,quantity,unit,rate";
 const ORDER_FULL =
-  "id,code,channel,customer_id,customer_name,customer_type,village,mobile,delivery_address,pincode,placed_on,subtotal,discount,tax,total,paid,package_sent_on,payment_due_on,payment_method,payment_status,delivery_status,order_status,invoice_status,remarks,timeline,order_items(id,product,quantity,unit,rate,amount)";
+  "id,code,channel,customer_id,customer_name,customer_type,village,mobile,delivery_address,pincode,placed_on,subtotal,discount,tax,total,paid,package_sent_on,payment_due_on,payment_method,payment_status,delivery_status,order_status,invoice_status,remarks,timeline,order_items(id,product_id,product_variant_id,product,quantity,unit,rate,amount)";
 const ORDER_OVERVIEW =
-  "id,placed_on,total,paid,order_items(id,product,quantity,unit,rate,amount)";
+  "id,placed_on,total,paid,order_items(id,product_id,product_variant_id,product,quantity,unit,rate,amount)";
 const PAYMENT_FULL =
   "id,reference,direction,party_id,party_name,entry_date,amount,method,status,order_code,remarks";
 const REMINDER_FULL =
@@ -189,6 +189,8 @@ const toOrder = (r: any): Order => ({
   placedOn: r.placed_on,
   items: (r.order_items ?? []).map((i: any) => ({
     id: i.id,
+    productId: i.product_id ?? undefined,
+    productVariantId: i.product_variant_id ?? undefined,
     product: i.product,
     quantity: num(i.quantity),
     unit: i.unit,
