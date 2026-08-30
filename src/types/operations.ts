@@ -25,6 +25,8 @@ export type InvoiceStatus = "generated" | "draft" | "not-generated";
 export type OrderLine = {
   id: string;
   product: string;
+  productId?: string | undefined;
+  productVariantId?: string | undefined;
   quantity: number;
   unit: string;
   rate: number;
