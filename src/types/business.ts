@@ -89,6 +89,7 @@ export type Testimonial = {
   location: string;
   crop: string;
   quote: string;
+  imageUrl?: string | undefined;
   enabled: boolean;
 };
 

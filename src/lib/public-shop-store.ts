@@ -78,6 +78,7 @@ type TestimonialRow = {
   location: string;
   crop: string;
   quote: string;
+  image_url: string | null;
   enabled: boolean;
 };
 
@@ -144,6 +145,7 @@ const toTestimonial = (row: TestimonialRow): Testimonial => ({
   location: row.location,
   crop: row.crop,
   quote: row.quote,
+  imageUrl: row.image_url ?? undefined,
   enabled: row.enabled,
 });
 
@@ -191,10 +193,11 @@ export async function loadPublicShopData() {
           .eq("status", "published")
           .order("published_on", { ascending: false }),
         supabase
-          .from("testimonials")
-          .select("id, name, location, crop, quote, enabled")
+          .from("testimonials" as any)
+          .select("id, name, location, crop, quote, image_url, enabled")
           .eq("enabled", true)
-          .order("created_at", { ascending: false }),
+          .order("created_at", { ascending: false })
+          .limit(3),
         supabase
           .from("cms_sections")
           .select("id, name, type, enabled, visibility, sort_order, headline, body, scheduled_from, scheduled_to, image_label")
