@@ -117,6 +117,13 @@ export type CustomerSaleItem = {
   unit: string;
   rate: number;
   amount: number;
+
+  // Historical New Khata snapshot values
+  purchaseCost?: number | undefined;
+  adminPriceInc?: number | undefined;
+
+  // Parent customer_transactions.entry_date
+  date?: string | undefined;
 };
 
 export type KhataSaleItemInput = {

@@ -47,6 +47,7 @@ type CartItem = {
   product: string;
   unit: string;
   rate: number;
+  purchaseCost: number;
   quantity: number;
   maxStock?: number;
 };
@@ -176,15 +177,17 @@ async function sendKhataReceiptToEdgeFunction({
       sale: {
         date: saleDate,
 
-        items: items.map((item) => ({
-          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-          ...(item.productId ? { productId: item.productId } : {}),
-          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
-          product: item.product,
-          quantity: item.quantity,
-          unit: item.unit,
-          rate: item.rate,
-        })),
+       items: items.map((item) => ({
+  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+  ...(item.productId ? { productId: item.productId } : {}),
+  ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+  product: item.product,
+  quantity: item.quantity,
+  unit: item.unit,
+  rate: item.rate,
+  purchaseCost: item.purchaseCost,
+  adminPriceInc: item.rate,
+})),
         total,
 
         paid,
@@ -440,6 +443,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       product: option.title,
       unit: option.unit,
       rate: option.rate,
+      purchaseCost: option.purchasePrice,
       quantity: 1,
       maxStock: option.stock,
     };
@@ -591,6 +595,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
+
+          // Snapshot values at sale time
+          purchaseCost: item.purchaseCost,
+          adminPriceInc: item.rate,
         })),
 
         paid: paidNum,
