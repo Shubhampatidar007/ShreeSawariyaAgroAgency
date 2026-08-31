@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, ImagePlus, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -148,24 +147,6 @@ function TestimonialsPage() {
 
     setSavingId(item.id);
     try {
-      let imageUrl = item.imageUrl;
-      const imageFile = imageFiles[item.id];
-
-      if (imageFile) {
-        const blob = await prepareImage(imageFile);
-        const path = `testimonials/${item.id}/${crypto.randomUUID()}.webp`;
-        const { error: uploadError } = await supabase.storage
-          .from("testimonial-images")
-          .upload(path, blob, {
-            contentType: "image/webp",
-            cacheControl: "31536000",
-            upsert: false,
-          });
-        if (uploadError) throw uploadError;
-
-        imageUrl = supabase.storage.from("testimonial-images").getPublicUrl(path).data.publicUrl;
-      }
-
       const payload = {
         name: item.farmerName.trim(),
         farmer_name: item.farmerName.trim(),
@@ -174,16 +155,66 @@ function TestimonialsPage() {
         crop: item.crop.trim(),
         quote: item.content.trim(),
         content: item.content.trim(),
-        image_url: imageUrl.trim(),
+        image_url: item.imageUrl.trim(),
         verified: item.verified,
         enabled: item.enabled,
       };
 
-      const result = item.isNew
-        ? await supabase.from("testimonials" as any).insert(payload).select("id").single()
-        : await supabase.from("testimonials" as any).update(payload).eq("id", item.id).select("id").single();
+      let testimonialId = item.id;
+      let uploadedPath: string | null = null;
 
-      if (result.error) throw result.error;
+      if (item.isNew) {
+        testimonialId = crypto.randomUUID();
+        const { error: insertError } = await supabase
+          .from("testimonials" as any)
+          .insert({ ...payload, id: testimonialId })
+          .select("id")
+          .single();
+        if (insertError) throw insertError;
+      }
+
+      const imageFile = imageFiles[item.id];
+      let imageUrl = item.imageUrl;
+
+      if (imageFile) {
+        const blob = await prepareImage(imageFile);
+        uploadedPath = `testimonials/${testimonialId}/${crypto.randomUUID()}.webp`;
+        const { error: uploadError } = await supabase.storage
+          .from("testimonial-images")
+          .upload(uploadedPath, blob, {
+            contentType: "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+
+        imageUrl = supabase.storage
+          .from("testimonial-images")
+          .getPublicUrl(uploadedPath).data.publicUrl;
+      }
+
+      if (item.isNew || imageUrl !== item.imageUrl) {
+        const result = await supabase
+          .from("testimonials" as any)
+          .update({ image_url: imageUrl.trim() })
+          .eq("id", testimonialId)
+          .select("id")
+          .single();
+        if (result.error) {
+          if (uploadedPath) {
+            await supabase.storage.from("testimonial-images").remove([uploadedPath]);
+          }
+          throw result.error;
+        }
+      } else if (!item.isNew) {
+        const result = await supabase
+          .from("testimonials" as any)
+          .update(payload)
+          .eq("id", testimonialId)
+          .select("id")
+          .single();
+        if (result.error) throw result.error;
+      }
 
       toast.success("Testimonial saved");
       setImageFiles((current) => ({ ...current, [item.id]: null }));
@@ -221,7 +252,7 @@ function TestimonialsPage() {
   };
 
   const addNew = () => {
-    const id = `new-${Date.now()}`;
+    const id = crypto.randomUUID();
     setItems((current) => [
       {
         id,
