@@ -62,7 +62,7 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
           {statItems.length ? <dl className="mt-5 grid gap-3 sm:grid-cols-3">{statItems.map((item) => <div key={item.label} className="rounded-2xl border border-border bg-background p-4"><dd className="font-display text-2xl font-bold text-foreground">{item.value}</dd><dt className="mt-1 text-xs text-muted-foreground">{item.label}</dt></div>)}</dl> : <div className="mt-5 rounded-2xl border border-dashed border-border bg-background p-5 text-sm text-muted-foreground">Business statistics are unavailable right now.</div>}
         </div>
 
-        <section className="relative mt-10 overflow-hidden rounded-[2rem] border border-border bg-background px-5 py-8 sm:px-8 sm:py-10">
+        <section className="relative mt-10 overflow-hidden rounded-[2rem] border border-border bg-background px-5 py-9 sm:px-8 sm:py-11">
           <div className="absolute right-6 top-6 text-primary/70" aria-hidden="true"><Sparkles className="size-8" /></div>
           <div className="relative">
             <div className="flex items-center gap-3">
@@ -71,42 +71,42 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
             </div>
 
             {testimonialLoading && testimonials.length === 0 ? (
-              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {[0, 1, 2].map((item) => <div key={item} className="h-56 animate-pulse rounded-[1.25rem] border border-border/80 bg-muted/30" />)}
+              <div className="mt-9 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2].map((item) => <div key={item} className="h-[22rem] animate-pulse rounded-[1.25rem] border border-border/80 bg-muted/30" />)}
               </div>
             ) : testimonials.length ? (
-              <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+              <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
                 {testimonials.slice(0, 3).map((testimonial) => {
                   const fallbackInitial = testimonial.name.trim().slice(0, 1).toUpperCase();
                   return (
-                    <Card key={testimonial.id} className="overflow-hidden rounded-[1.25rem] border-border bg-card/80 shadow-soft transition-transform duration-300 hover:-translate-y-1">
-                      <CardContent className="flex min-h-56 flex-col items-center px-5 py-6 text-center">
+                    <Card key={testimonial.id} className="group h-full overflow-hidden rounded-[1.4rem] border-border bg-card/80 shadow-soft transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+                      <CardContent className="flex min-h-[22rem] flex-col items-center px-6 py-8 text-center sm:px-7 sm:py-9">
                         {testimonial.imageUrl ? (
                           <img
                             src={testimonial.imageUrl}
                             alt={testimonial.name}
                             loading="lazy"
-                            className="size-24 rounded-full border-4 border-background object-cover shadow-lg"
+                            className="size-28 rounded-full border-4 border-background object-cover shadow-lg transition-transform duration-300 group-hover:scale-[1.03]"
                           />
                         ) : (
-                          <div className="flex size-24 items-center justify-center rounded-full border-4 border-background bg-muted text-2xl font-semibold text-foreground shadow-lg">
+                          <div className="flex size-28 items-center justify-center rounded-full border-4 border-background bg-muted text-3xl font-semibold text-foreground shadow-lg">
                             {fallbackInitial || "F"}
                           </div>
                         )}
-                        <h3 className="mt-4 font-display text-lg font-semibold text-foreground">{testimonial.name}</h3>
+                        <h3 className="mt-5 font-display text-xl font-semibold leading-tight text-foreground">{testimonial.name}</h3>
                         {(testimonial.location || testimonial.crop) && (
-                          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                          <p className="mt-2 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                             {[testimonial.location, testimonial.crop].filter(Boolean).join(" · ")}
                           </p>
                         )}
-                        <blockquote className="mt-4 text-sm leading-6 text-muted-foreground">“{testimonial.quote}”</blockquote>
+                        <blockquote className="mt-5 max-w-sm text-sm leading-7 text-muted-foreground">“{testimonial.quote}”</blockquote>
                       </CardContent>
                     </Card>
                   );
                 })}
               </div>
             ) : (
-              <div className="mt-7 rounded-[1.25rem] border border-dashed border-border bg-muted/20 px-5 py-10 text-center text-sm text-muted-foreground">
+              <div className="mt-8 rounded-[1.25rem] border border-dashed border-border bg-muted/20 px-5 py-10 text-center text-sm text-muted-foreground">
                 No verified testimonials are currently published.
               </div>
             )}
