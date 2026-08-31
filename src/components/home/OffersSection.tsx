@@ -28,9 +28,7 @@ function getDiscountedVariant(product: PublishedProduct): ProductVariant | null 
 
 export function OffersSection({ content }: { content?: Pick<CmsSection, "headline" | "body"> }) {
   const published = usePublicShopStore((s) => s.products);
-  const campaigns = usePublicShopStore((s) => s.advertisements);
   const loading = usePublicShopStore((s) => s.loading);
-  const campaign = campaigns[0] ?? null;
 
   const deals = published
     .map((product) => {
@@ -66,7 +64,7 @@ export function OffersSection({ content }: { content?: Pick<CmsSection, "headlin
     <section id="offers" className="mx-auto max-w-7xl px-6 py-16">
       <SectionHeading
         eyebrow="Deals for farmers"
-        title={campaign?.title || content?.headline || "Real savings on selected products"}
+        title={content?.headline || "Real savings on selected products"}
         description={
           content?.body ||
           "Browse published products with genuine variant-level discounts from the current catalog."
@@ -75,20 +73,20 @@ export function OffersSection({ content }: { content?: Pick<CmsSection, "headlin
 
       {loading ? (
         <div className="mt-8 rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-soft">
-          Checking current deals…
+          Checking current catalog discounts…
         </div>
       ) : null}
 
-      {!loading && !campaign ? (
+      {!loading && deals.length === 0 ? (
         <Card className="mt-8 shadow-soft">
           <CardContent className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <div className="flex items-center gap-2 text-primary">
                 <Tag className="size-4" />
-                <p className="font-semibold">No active deals campaign</p>
+                <p className="font-semibold">No active catalog discounts</p>
               </div>
               <p className="mt-1 text-sm text-muted-foreground">
-                Deals will appear here when an admin publishes an active Deals campaign with real catalog discounts.
+                Deals will appear here automatically when published variants have a real discounted price.
               </p>
             </div>
             <Button className="rounded-full" asChild>
@@ -98,26 +96,7 @@ export function OffersSection({ content }: { content?: Pick<CmsSection, "headlin
         </Card>
       ) : null}
 
-      {!loading && campaign && deals.length === 0 ? (
-        <Card className="mt-8 shadow-soft">
-          <CardContent className="flex flex-col items-start gap-3 p-6 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2 text-primary">
-                <Tag className="size-4" />
-                <p className="font-semibold">{campaign.title}</p>
-              </div>
-              <p className="mt-1 text-sm text-muted-foreground">
-                This campaign is active, but there are no currently discounted in-stock variants in the catalog.
-              </p>
-            </div>
-            <Button className="rounded-full" asChild>
-              <a href="#products">Browse products</a>
-            </Button>
-          </CardContent>
-        </Card>
-      ) : null}
-
-      {!loading && campaign && deals.length > 0 ? (
+      {!loading && deals.length > 0 ? (
         <div className="mt-8 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {deals.map(({ product, variant, currentPrice, discountPercent }) => {
             const originalPrice = variant.sellingPrice;
