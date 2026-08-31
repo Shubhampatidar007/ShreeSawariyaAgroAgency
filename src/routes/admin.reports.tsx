@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { IndianRupee, Layers, TrendingDown, Users } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
@@ -18,7 +18,7 @@ import { ExportMenu } from "@/components/shared/ExportMenu";
 import { RangeFilter, type CustomRange, type DateRangeKey } from "@/components/shared/RangeFilter";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { buildDailyMetrics, dateInRange } from "@/lib/business-metrics";
-import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
 import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin/reports")({
@@ -44,6 +44,13 @@ function ReportsPage() {
   const [range, setRange] = useState<DateRangeKey>("monthly");
   const [custom, setCustom] = useState<CustomRange>({ from: "", to: "" });
   const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    if (store.customerSaleItems.length > 0) return;
+    void shopStore.reload().catch((error) => {
+      console.error("Failed to load historical sale snapshots for reports:", error);
+    });
+  }, []);
 
   const metricRange = range;
   const metrics = useMemo(
