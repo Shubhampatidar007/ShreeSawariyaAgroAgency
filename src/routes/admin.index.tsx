@@ -76,12 +76,27 @@ function AdminOverview() {
       cancelAnimationFrame(frame2);
     };
   }, []);
-  const { orders, customers, inventory, supplierLedger, customerLedger, payments, loading } =
-    useShopStore((s) => s);
+ const {
+  orders,
+  customers,
+  inventory,
+  supplierLedger,
+  customerLedger,
+  customerSaleItems,
+  payments,
+  loading,
+} = useShopStore((s) => s);
   const today = new Date().toISOString().slice(0, 10);
-  const dailyRows = useMemo(
-    () => buildDailyMetrics(orders, customerLedger, supplierLedger, inventory, "yearly"),
-    [orders, customerLedger, supplierLedger, inventory],
+  const dailyRows = useMemo(() =>
+  buildDailyMetrics(
+    orders,
+    customerLedger,
+    customerSaleItems,
+    supplierLedger,
+    inventory,
+    "yearly",
+  ),
+ [orders, customerLedger, customerSaleItems, supplierLedger, inventory],
   );
   const visibleProfitRows = useMemo(() => dailyRows.slice(-7), [dailyRows]);
   const dashboardDerived = useMemo(() => {

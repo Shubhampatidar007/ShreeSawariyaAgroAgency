@@ -1,4 +1,9 @@
-import type { CustomerLedgerEntry, InventoryItem, SupplierLedgerEntry } from "@/types/business";
+import type {
+  CustomerLedgerEntry,
+  CustomerSaleItem,
+  InventoryItem,
+  SupplierLedgerEntry,
+} from "@/types/business";
 import type { Order } from "@/types/operations";
 
 export type MetricsRange = "daily" | "weekly" | "monthly" | "yearly" | "custom";
@@ -19,6 +24,7 @@ type MetricsCacheEntry = {
   orders: Order[];
   customerLedger: CustomerLedgerEntry[];
   supplierLedger: SupplierLedgerEntry[];
+  customerSaleItems: CustomerSaleItem[];
   inventory: InventoryItem[];
   range: MetricsRange;
   customFrom: string;
@@ -27,8 +33,6 @@ type MetricsCacheEntry = {
   result: DailyMetric[];
 };
 
-// Derived metrics are pure for a given set of store-array references. Keep a small
-// bounded cache so repeated dashboard/analytics renders can reuse the same result.
 const metricsCache: MetricsCacheEntry[] = [];
 
 export const isoDay = (value: string) => {
@@ -61,6 +65,7 @@ const findCachedMetrics = (
   orders: Order[],
   customerLedger: CustomerLedgerEntry[],
   supplierLedger: SupplierLedgerEntry[],
+  customerSaleItems: CustomerSaleItem[],
   inventory: InventoryItem[],
   range: MetricsRange,
   custom: MetricsCustomRange,
@@ -71,6 +76,7 @@ const findCachedMetrics = (
       entry.orders === orders &&
       entry.customerLedger === customerLedger &&
       entry.supplierLedger === supplierLedger &&
+      entry.customerSaleItems === customerSaleItems &&
       entry.inventory === inventory &&
       entry.range === range &&
       entry.customFrom === custom.from &&
@@ -82,24 +88,23 @@ export const buildDailyMetrics = (
   orders: Order[],
   customerLedger: CustomerLedgerEntry[],
   supplierLedger: SupplierLedgerEntry[],
+  customerSaleItems: CustomerSaleItem[],
   inventory: InventoryItem[],
   range: MetricsRange = "yearly",
   custom: MetricsCustomRange = { from: "", to: "" },
 ): DailyMetric[] => {
   const today = isoDay(new Date().toISOString());
-  const cached = findCachedMetrics(
-    orders,
-    customerLedger,
-    supplierLedger,
-    inventory,
-    range,
-    custom,
-    today,
-  );
+ const cached = findCachedMetrics(
+  orders,
+  customerLedger,
+  customerSaleItems,
+  supplierLedger,
+  inventory,
+  range,
+  custom,
+  today,
+);
   if (cached) return cached;
-
-  // Inventory purchase price is the COGS basis. Sales prices come from the
-  // admin-entered order line amounts, not from inventory/purchase prices.
   const costByProduct = new Map(
     inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice]),
   );
@@ -136,13 +141,48 @@ export const buildDailyMetrics = (
       0,
     );
   });
+  const snapshotTransactionIds = new Set(
+  customerSaleItems
+    .filter(
+      (item) =>
+        item.purchaseCost != null &&
+        item.adminPriceInc != null,
+    )
+    .map((item) => item.transactionId),
+);
 
-  customerLedger.forEach((entry) => {
-    if ((entry.entryType as string) !== "sale" || !inRange(entry.date)) return;
-    const row = ensure(isoDay(entry.date));
-    row.sales += entry.amount;
-    row.cost += entry.quantity * (costByProduct.get(entry.product.trim().toLowerCase()) ?? 0);
-  });
+customerSaleItems.forEach((item) => {
+  if (
+    item.purchaseCost == null ||
+    item.adminPriceInc == null ||
+    !item.date
+  ) {
+    return;
+  }
+
+  if (!inRange(item.date)) return;
+
+  const row = ensure(isoDay(item.date));
+
+  row.sales += item.quantity * item.adminPriceInc;
+  row.cost += item.quantity * item.purchaseCost;
+});
+
+ customerLedger.forEach((entry) => {
+  if ((entry.entryType as string) !== "sale" || !inRange(entry.date)) {
+    return;
+  }
+  if (snapshotTransactionIds.has(entry.id)) {
+    return;
+  }
+
+  const row = ensure(isoDay(entry.date));
+
+  row.sales += entry.amount;
+  row.cost +=
+    entry.quantity *
+    (costByProduct.get(entry.product.trim().toLowerCase()) ?? 0);
+});
 
   supplierLedger.forEach((entry) => {
     if (entry.type !== "purchase" || !inRange(entry.date)) return;
@@ -173,6 +213,7 @@ export const buildDailyMetrics = (
     customerLedger,
     supplierLedger,
     inventory,
+    customerSaleItems,
     range,
     customFrom: custom.from,
     customTo: custom.to,

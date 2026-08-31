@@ -29,6 +29,7 @@ type ShopState = {
   inventory: InventoryItem[];
   products: PublishedProduct[];
   customerLedger: CustomerLedgerEntry[];
+  customerSaleItems: CustomerSaleItem[];
   supplierLedger: SupplierLedgerEntry[];
   draftProduct: PublishedProduct | null;
   orders: Order[];
@@ -47,8 +48,9 @@ let state: ShopState = {
   suppliers: [],
   inventory: [],
   products: [],
-  customerLedger: [],
-  supplierLedger: [],
+customerLedger: [],
+customerSaleItems: [],
+supplierLedger: [],
   draftProduct: null,
   orders: [],
   payments: [],
@@ -348,6 +350,7 @@ export async function loadShopData() {
         variants,
         customerLedger,
         supplierLedger,
+customerSaleItems,
         orders,
         payments,
         reminders,
@@ -367,6 +370,17 @@ export async function loadShopData() {
         supabase.from("products").select("*").order("published_on", { ascending: false }),
         supabase.from("product_variants" as any).select("*").eq("status", "active"),
         supabase.from("customer_transactions").select("*").order("entry_date"),
+        supabase
+  .from("customer_transaction_items")
+  .select(`
+    *,
+    customer_transactions!inner(
+      entry_date,
+      entry_type
+    )
+  `)
+  .eq("customer_transactions.entry_type", "sale")
+  .order("created_at"),
         supabase.from("supplier_transactions").select("*").order("entry_date"),
         supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
         supabase.from("payments").select("*").order("entry_date", { ascending: false }),
@@ -395,6 +409,8 @@ export async function loadShopData() {
         variants,
         customerLedger,
         supplierLedger,
+
+customerSaleItems,
         orders,
         payments,
         reminders,
@@ -414,6 +430,7 @@ export async function loadShopData() {
           toProduct(row, variantsByProduct.get(row.id) ?? []),
         ),
         customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+        customerSaleItems: (customerSaleItems.data ?? []).map(toSaleItem),
         supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
         orders: (orders.data ?? []).map(toOrder),
         payments: (payments.data ?? []).map(toPayment),
