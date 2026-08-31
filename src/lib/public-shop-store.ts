@@ -80,6 +80,7 @@ type TestimonialRow = {
   quote: string;
   image_url: string | null;
   enabled: boolean;
+  verified: boolean;
 };
 
 type CmsRow = {
@@ -194,8 +195,9 @@ export async function loadPublicShopData() {
           .order("published_on", { ascending: false }),
         supabase
           .from("testimonials" as any)
-          .select("id, name, location, crop, quote, image_url, enabled")
+          .select("id, name, location, crop, quote, image_url, enabled, verified")
           .eq("enabled", true)
+          .eq("verified", true)
           .order("created_at", { ascending: false })
           .limit(3),
         supabase
