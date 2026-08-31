@@ -60,12 +60,11 @@ export const dateInRange = (value: string, range: MetricsRange, custom: MetricsC
   const days = { daily: 1, weekly: 7, monthly: 30, yearly: 365 }[range];
   return isoDay(value) >= addDays(today, -(days - 1)) && isoDay(value) <= today;
 };
-
 const findCachedMetrics = (
   orders: Order[],
   customerLedger: CustomerLedgerEntry[],
-  supplierLedger: SupplierLedgerEntry[],
   customerSaleItems: CustomerSaleItem[],
+  supplierLedger: SupplierLedgerEntry[],
   inventory: InventoryItem[],
   range: MetricsRange,
   custom: MetricsCustomRange,
@@ -87,23 +86,24 @@ const findCachedMetrics = (
 export const buildDailyMetrics = (
   orders: Order[],
   customerLedger: CustomerLedgerEntry[],
-  supplierLedger: SupplierLedgerEntry[],
   customerSaleItems: CustomerSaleItem[],
+  supplierLedger: SupplierLedgerEntry[],
   inventory: InventoryItem[],
   range: MetricsRange = "yearly",
   custom: MetricsCustomRange = { from: "", to: "" },
 ): DailyMetric[] => {
   const today = isoDay(new Date().toISOString());
- const cached = findCachedMetrics(
-  orders,
-  customerLedger,
-  customerSaleItems,
-  supplierLedger,
-  inventory,
-  range,
-  custom,
-  today,
-);
+
+  const cached = findCachedMetrics(
+    orders,
+    customerLedger,
+    customerSaleItems,
+    supplierLedger,
+    inventory,
+    range,
+    custom,
+    today,
+  );
   if (cached) return cached;
   const costByProduct = new Map(
     inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice]),

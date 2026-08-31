@@ -190,6 +190,8 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
   quantity: num(r.quantity),
   unit: r.unit,
   rate: num(r.rate),
+  purchaseCost: num(r.purchase_cost),
+adminPriceInc: num(r.admin_price_inc),
   amount: num(r.amount),
 });
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
