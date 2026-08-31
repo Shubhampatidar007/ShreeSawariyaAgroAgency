@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { BadgeCheck, CircleCheck, Headphones, MapPinned, PackageCheck, ShoppingCart, Tag, Quote } from "lucide-react";
+import { BadgeCheck, CircleCheck, Headphones, MapPinned, PackageCheck, ShoppingCart, Sparkles, Tag } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionHeading } from "@/components/home/SectionHeading";
 import { getBusinessStats, type BusinessStats } from "@/lib/business-stats";
@@ -62,14 +62,56 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
           {statItems.length ? <dl className="mt-5 grid gap-3 sm:grid-cols-3">{statItems.map((item) => <div key={item.label} className="rounded-2xl border border-border bg-background p-4"><dd className="font-display text-2xl font-bold text-foreground">{item.value}</dd><dt className="mt-1 text-xs text-muted-foreground">{item.label}</dt></div>)}</dl> : <div className="mt-5 rounded-2xl border border-dashed border-border bg-background p-5 text-sm text-muted-foreground">Business statistics are unavailable right now.</div>}
         </div>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-          <Card className="border-border bg-background shadow-soft"><CardContent className="p-6 sm:p-7"><div className="flex items-center gap-2 text-primary"><Quote className="size-5" /><p className="text-xs font-semibold uppercase tracking-[0.15em]">Real business story</p></div><h3 className="mt-3 font-display text-2xl font-semibold">Local service, real catalog, clear availability</h3><p className="mt-3 text-sm leading-7 text-muted-foreground">The storefront is connected to the published catalog, current variant pricing, stock availability, and the store&apos;s business statistics. That keeps what customers see online aligned with the information maintained for the shop.</p><p className="mt-4 text-sm font-medium text-foreground">{shopInfo.name}</p><p className="mt-1 text-xs text-muted-foreground">{shopInfo.address} · {shopInfo.hours}</p></CardContent></Card>
+        <section className="relative mt-10 overflow-hidden rounded-[2rem] border border-border bg-background px-5 py-8 sm:px-8 sm:py-10">
+          <div className="absolute right-6 top-6 text-primary/70" aria-hidden="true"><Sparkles className="size-8" /></div>
+          <div className="relative">
+            <div className="flex items-center gap-3">
+              <span className="h-px w-8 bg-primary/70" aria-hidden="true" />
+              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-primary">What Our Farmers Say</p>
+            </div>
 
-          <Card className="border-border bg-background shadow-soft"><CardContent className="p-6 sm:p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.15em] text-primary">What Our Farmers Say</p>
-            {testimonialLoading && testimonials.length === 0 ? <p className="mt-3 text-sm text-muted-foreground">Checking verified testimonials…</p> : testimonials.length ? <div className="mt-4 space-y-4">{testimonials.map((testimonial) => <blockquote key={testimonial.id} className="rounded-2xl border border-border bg-muted/30 p-4"><p className="text-sm leading-6 text-foreground">“{testimonial.quote}”</p><footer className="mt-3 text-xs text-muted-foreground"><span className="font-semibold text-foreground">{testimonial.name}</span>{testimonial.location ? ` · ${testimonial.location}` : ""}{testimonial.crop ? ` · ${testimonial.crop}` : ""}</footer></blockquote>)}</div> : <><h3 className="mt-2 font-display text-xl font-semibold">Verified testimonials will appear here</h3><p className="mt-3 text-sm leading-6 text-muted-foreground">No verified farmer testimonials are currently published. Once real feedback is added, this area will show only the information recorded in the verified testimonial source.</p><div className="mt-5 rounded-2xl border border-dashed border-border bg-muted/30 p-4 text-xs text-muted-foreground">No testimonial content to display yet.</div></>}
-          </CardContent></Card>
-        </div>
+            {testimonialLoading && testimonials.length === 0 ? (
+              <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {[0, 1, 2].map((item) => <div key={item} className="h-56 animate-pulse rounded-[1.25rem] border border-border/80 bg-muted/30" />)}
+              </div>
+            ) : testimonials.length ? (
+              <div className="mt-7 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {testimonials.slice(0, 3).map((testimonial) => {
+                  const fallbackInitial = testimonial.name.trim().slice(0, 1).toUpperCase();
+                  return (
+                    <Card key={testimonial.id} className="overflow-hidden rounded-[1.25rem] border-border bg-card/80 shadow-soft transition-transform duration-300 hover:-translate-y-1">
+                      <CardContent className="flex min-h-56 flex-col items-center px-5 py-6 text-center">
+                        {testimonial.imageUrl ? (
+                          <img
+                            src={testimonial.imageUrl}
+                            alt={testimonial.name}
+                            loading="lazy"
+                            className="size-24 rounded-full border-4 border-background object-cover shadow-lg"
+                          />
+                        ) : (
+                          <div className="flex size-24 items-center justify-center rounded-full border-4 border-background bg-muted text-2xl font-semibold text-foreground shadow-lg">
+                            {fallbackInitial || "F"}
+                          </div>
+                        )}
+                        <h3 className="mt-4 font-display text-lg font-semibold text-foreground">{testimonial.name}</h3>
+                        {(testimonial.location || testimonial.crop) && (
+                          <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-muted-foreground">
+                            {[testimonial.location, testimonial.crop].filter(Boolean).join(" · ")}
+                          </p>
+                        )}
+                        <blockquote className="mt-4 text-sm leading-6 text-muted-foreground">“{testimonial.quote}”</blockquote>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-7 rounded-[1.25rem] border border-dashed border-border bg-muted/20 px-5 py-10 text-center text-sm text-muted-foreground">
+                No verified testimonials are currently published.
+              </div>
+            )}
+          </div>
+        </section>
       </div>
     </section>
   );

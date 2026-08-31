@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
+import { BadgeCheck, ImagePlus, Plus, Save, Trash2, Upload } from "lucide-react";
 import { toast } from "sonner";
-import { Plus, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -10,58 +10,355 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { supabase } from "@/integrations/supabase/client";
-import type { Testimonial } from "@/types/business";
+
+type AdminTestimonial = {
+  id: string;
+  farmerName: string;
+  farmName: string;
+  location: string;
+  crop: string;
+  content: string;
+  imageUrl: string;
+  verified: boolean;
+  enabled: boolean;
+  isNew?: boolean;
+};
+
+const MAX_IMAGE_BYTES = 200 * 1024;
+
+async function prepareImage(file: File): Promise<Blob> {
+  if (!file.type.startsWith("image/")) throw new Error("Please choose a JPG, PNG or WebP image");
+  if (file.size <= MAX_IMAGE_BYTES) return file;
+
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement("canvas");
+  let width = Math.max(1, bitmap.width);
+  let height = Math.max(1, bitmap.height);
+  const maxDimension = 1200;
+  const scale = Math.min(1, maxDimension / Math.max(width, height));
+  width = Math.max(1, Math.round(width * scale));
+  height = Math.max(1, Math.round(height * scale));
+  canvas.width = width;
+  canvas.height = height;
+
+  const context = canvas.getContext("2d");
+  if (!context) {
+    bitmap.close();
+    throw new Error("Could not prepare the image");
+  }
+  context.drawImage(bitmap, 0, 0, width, height);
+
+  try {
+    let quality = 0.84;
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const blob = await new Promise<Blob | null>((resolve) =>
+        canvas.toBlob(resolve, "image/webp", quality),
+      );
+      if (blob && blob.size <= MAX_IMAGE_BYTES) return blob;
+      quality -= 0.06;
+      if (quality < 0.5) {
+        quality = 0.78;
+        width = Math.max(480, Math.round(width * 0.82));
+        height = Math.max(480, Math.round(height * 0.82));
+        canvas.width = width;
+        canvas.height = height;
+        context.drawImage(bitmap, 0, 0, width, height);
+      }
+    }
+  } finally {
+    bitmap.close();
+  }
+
+  throw new Error("Image could not be compressed below 200 KB");
+}
+
+function getStoragePath(imageUrl: string) {
+  const marker = "/storage/v1/object/public/testimonial-images/";
+  const index = imageUrl.indexOf(marker);
+  return index >= 0 ? decodeURIComponent(imageUrl.slice(index + marker.length)) : null;
+}
+
+function mapRow(row: any): AdminTestimonial {
+  return {
+    id: row.id,
+    farmerName: row.farmer_name ?? row.name ?? "",
+    farmName: row.farm_name ?? "",
+    location: row.location ?? "",
+    crop: row.crop ?? "",
+    content: row.content ?? row.quote ?? "",
+    imageUrl: row.image_url ?? "",
+    verified: Boolean(row.verified),
+    enabled: Boolean(row.enabled),
+  };
+}
 
 export const Route = createFileRoute("/admin/testimonials")({
-  head: () => ({ meta: [{ title: "Testimonials — Admin" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [
+      { title: "Testimonials — Admin" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: TestimonialsPage,
 });
 
-type Draft = Testimonial & { isNew?: boolean };
-
 function TestimonialsPage() {
-  const [items, setItems] = useState<Draft[]>([]);
+  const [items, setItems] = useState<AdminTestimonial[]>([]);
   const [loading, setLoading] = useState(true);
+  const [savingId, setSavingId] = useState<string | null>(null);
+  const [imageFiles, setImageFiles] = useState<Record<string, File | null>>({});
+  const [imagePreviews, setImagePreviews] = useState<Record<string, string>>({});
 
   const load = async () => {
     setLoading(true);
-    const { data, error } = await supabase.from("testimonials").select("id, name, location, crop, quote, enabled").order("created_at", { ascending: false });
+    const { data, error } = await supabase
+      .from("testimonials" as any)
+      .select("id, name, location, crop, quote, enabled, farmer_name, farm_name, content, image_url, verified, created_at")
+      .order("created_at", { ascending: false });
+
     if (error) toast.error(error.message);
-    else setItems((data ?? []) as Draft[]);
+    else setItems((data ?? []).map(mapRow));
     setLoading(false);
   };
 
-  useEffect(() => { void load(); }, []);
+  useEffect(() => {
+    void load();
+  }, []);
 
-  const update = (id: string, patch: Partial<Draft>) => setItems((current) => current.map((item) => item.id === id ? { ...item, ...patch } : item));
+  const update = (id: string, patch: Partial<AdminTestimonial>) => {
+    setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
+  };
 
-  const save = async (item: Draft) => {
-    if (!item.name.trim() || !item.quote.trim()) {
-      toast.error("Name and real quote are required");
+  const handleImage = (id: string, file: File | null) => {
+    const previousPreview = imagePreviews[id];
+    if (previousPreview) URL.revokeObjectURL(previousPreview);
+
+    setImageFiles((current) => ({ ...current, [id]: file }));
+    setImagePreviews((current) => ({
+      ...current,
+      [id]: file ? URL.createObjectURL(file) : "",
+    }));
+  };
+
+  const save = async (item: AdminTestimonial) => {
+    if (!item.farmerName.trim() || !item.content.trim()) {
+      toast.error("Farmer name and testimonial content are required");
       return;
     }
-    const payload = { name: item.name.trim(), location: item.location.trim(), crop: item.crop.trim(), quote: item.quote.trim(), enabled: item.enabled };
-    const result = item.isNew
-      ? await supabase.from("testimonials").insert(payload).select("id, name, location, crop, quote, enabled").single()
-      : await supabase.from("testimonials").update(payload).eq("id", item.id).select("id, name, location, crop, quote, enabled").single();
-    if (result.error) toast.error(result.error.message);
-    else { toast.success("Testimonial saved"); await load(); }
+
+    setSavingId(item.id);
+    try {
+      let imageUrl = item.imageUrl;
+      const imageFile = imageFiles[item.id];
+
+      if (imageFile) {
+        const blob = await prepareImage(imageFile);
+        const path = `testimonials/${item.id}/${crypto.randomUUID()}.webp`;
+        const { error: uploadError } = await supabase.storage
+          .from("testimonial-images")
+          .upload(path, blob, {
+            contentType: "image/webp",
+            cacheControl: "31536000",
+            upsert: false,
+          });
+        if (uploadError) throw uploadError;
+
+        imageUrl = supabase.storage.from("testimonial-images").getPublicUrl(path).data.publicUrl;
+      }
+
+      const payload = {
+        name: item.farmerName.trim(),
+        farmer_name: item.farmerName.trim(),
+        farm_name: item.farmName.trim(),
+        location: item.location.trim(),
+        crop: item.crop.trim(),
+        quote: item.content.trim(),
+        content: item.content.trim(),
+        image_url: imageUrl.trim(),
+        verified: item.verified,
+        enabled: item.enabled,
+      };
+
+      const result = item.isNew
+        ? await supabase.from("testimonials" as any).insert(payload).select("id").single()
+        : await supabase.from("testimonials" as any).update(payload).eq("id", item.id).select("id").single();
+
+      if (result.error) throw result.error;
+
+      toast.success("Testimonial saved");
+      setImageFiles((current) => ({ ...current, [item.id]: null }));
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not save testimonial");
+    } finally {
+      setSavingId(null);
+    }
   };
 
-  const remove = async (item: Draft) => {
-    if (item.isNew) { setItems((current) => current.filter((entry) => entry.id !== item.id)); return; }
-    const { error } = await supabase.from("testimonials").delete().eq("id", item.id);
-    if (error) toast.error(error.message); else { toast.success("Testimonial removed"); await load(); }
+  const remove = async (item: AdminTestimonial) => {
+    if (item.isNew) {
+      setItems((current) => current.filter((entry) => entry.id !== item.id));
+      return;
+    }
+
+    setSavingId(item.id);
+    try {
+      const { error } = await supabase.from("testimonials" as any).delete().eq("id", item.id);
+      if (error) throw error;
+
+      const previousPath = getStoragePath(item.imageUrl);
+      if (previousPath) {
+        await supabase.storage.from("testimonial-images").remove([previousPath]);
+      }
+
+      toast.success("Testimonial removed");
+      await load();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Could not remove testimonial");
+    } finally {
+      setSavingId(null);
+    }
   };
 
-  return <div className="space-y-6">
-    <ModulePageHeader crumbs={[{ label: "Admin", to: "/admin" }, { label: "Testimonials" }]} eyebrow="Storefront" title="Verified farmer testimonials" description="Only testimonials entered from real, verified feedback should be enabled for the public homepage." actions={<Button className="rounded-full" onClick={() => setItems((current) => [{ id: `new-${Date.now()}`, name: "", location: "", crop: "", quote: "", enabled: false, isNew: true }, ...current])}><Plus className="size-4" /> Add testimonial</Button>} />
-    {loading ? <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">Loading testimonials…</CardContent></Card> : items.length === 0 ? <Card><CardContent className="p-8 text-center text-sm text-muted-foreground">No testimonials stored yet. Add real feedback only.</CardContent></Card> : <div className="space-y-4">{items.map((item) => <Card key={item.id}><CardHeader><div className="flex items-center justify-between gap-3"><CardTitle className="text-base">Testimonial</CardTitle><div className="flex items-center gap-2 text-sm"><Switch checked={item.enabled} onCheckedChange={(enabled) => update(item.id, { enabled })} /><span>{item.enabled ? "Published" : "Hidden"}</span></div></div></CardHeader><CardContent className="grid gap-4 sm:grid-cols-2">
-      <div className="space-y-2"><Label>Name</Label><Input value={item.name} onChange={(e) => update(item.id, { name: e.target.value })} placeholder="Real farmer name" /></div>
-      <div className="space-y-2"><Label>Location</Label><Input value={item.location} onChange={(e) => update(item.id, { location: e.target.value })} placeholder="Real location" /></div>
-      <div className="space-y-2"><Label>Crop</Label><Input value={item.crop} onChange={(e) => update(item.id, { crop: e.target.value })} placeholder="Real crop" /></div>
-      <div className="space-y-2 sm:col-span-2"><Label>Real quote</Label><Textarea rows={4} value={item.quote} onChange={(e) => update(item.id, { quote: e.target.value })} placeholder="Paste the farmer's verified feedback" /></div>
-      <div className="flex flex-wrap gap-2 sm:col-span-2"><Button className="rounded-full" onClick={() => void save(item)}><Save className="size-4" /> Save</Button><Button variant="outline" className="rounded-full" onClick={() => void remove(item)}><Trash2 className="size-4" /> Delete</Button></div>
-    </CardContent></Card>)}</div>}
-  </div>;
+  const addNew = () => {
+    const id = `new-${Date.now()}`;
+    setItems((current) => [
+      {
+        id,
+        farmerName: "",
+        farmName: "",
+        location: "",
+        crop: "",
+        content: "",
+        imageUrl: "",
+        verified: false,
+        enabled: false,
+        isNew: true,
+      },
+      ...current,
+    ]);
+  };
+
+  return (
+    <div className="space-y-6">
+      <ModulePageHeader
+        crumbs={[{ label: "Admin", to: "/admin" }, { label: "Testimonials" }]}
+        eyebrow="Storefront"
+        title="Farmer testimonials"
+        description="Enter the verified farmer, farm, story and image data that the public storefront reads from Supabase."
+        actions={(
+          <Button className="rounded-full" onClick={addNew}>
+            <Plus className="size-4" />
+            Add testimonial
+          </Button>
+        )}
+      />
+
+      {loading ? (
+        <Card>
+          <CardContent className="p-10 text-center text-sm text-muted-foreground">Loading testimonials…</CardContent>
+        </Card>
+      ) : items.length === 0 ? (
+        <Card>
+          <CardContent className="p-10 text-center">
+            <ImagePlus className="mx-auto size-8 text-muted-foreground" />
+            <p className="mt-3 text-sm font-medium">No testimonials yet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Add real farmer feedback and its photo to publish it on the homepage.</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-5">
+          {items.map((item) => {
+            const preview = imagePreviews[item.id] || item.imageUrl;
+            const saving = savingId === item.id;
+
+            return (
+              <Card key={item.id} className="overflow-hidden shadow-soft">
+                <CardHeader className="border-b border-border/70">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div>
+                      <CardTitle className="text-base">{item.farmerName || "New testimonial"}</CardTitle>
+                      <p className="mt-1 text-xs text-muted-foreground">Supabase fields are mapped directly on save.</p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
+                        <BadgeCheck className="size-4 text-primary" />
+                        <span>Verified</span>
+                        <Switch checked={item.verified} onCheckedChange={(verified) => update(item.id, { verified })} />
+                      </div>
+                      <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
+                        <span>{item.enabled ? "Published" : "Hidden"}</span>
+                        <Switch checked={item.enabled} onCheckedChange={(enabled) => update(item.id, { enabled })} />
+                      </div>
+                    </div>
+                  </div>
+                </CardHeader>
+
+                <CardContent className="grid gap-6 p-6 lg:grid-cols-[220px_1fr]">
+                  <div className="space-y-3">
+                    <Label>Farmer photo</Label>
+                    <div className="overflow-hidden rounded-3xl border border-border bg-muted/30">
+                      {preview ? (
+                        <img src={preview} alt={item.farmerName || "Farmer testimonial"} className="aspect-square w-full object-cover" />
+                      ) : (
+                        <div className="flex aspect-square flex-col items-center justify-center gap-2 text-center text-muted-foreground">
+                          <ImagePlus className="size-8" />
+                          <span className="px-4 text-xs">Add a real farmer photo</span>
+                        </div>
+                      )}
+                    </div>
+                    <Input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp"
+                      onChange={(event) => handleImage(item.id, event.target.files?.[0] ?? null)}
+                    />
+                    <p className="text-xs text-muted-foreground">JPG, PNG or WebP · stored in testimonial-images · max 200 KB after compression.</p>
+                  </div>
+
+                  <div className="grid gap-5 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label>Farmer name</Label>
+                      <Input value={item.farmerName} onChange={(event) => update(item.id, { farmerName: event.target.value })} placeholder="Real farmer name" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Farm / village</Label>
+                      <Input value={item.farmName} onChange={(event) => update(item.id, { farmName: event.target.value })} placeholder="Farm or village" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Location</Label>
+                      <Input value={item.location} onChange={(event) => update(item.id, { location: event.target.value })} placeholder="Location shown publicly" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Crop</Label>
+                      <Input value={item.crop} onChange={(event) => update(item.id, { crop: event.target.value })} placeholder="Crop, optional" />
+                    </div>
+                    <div className="space-y-2 sm:col-span-2">
+                      <Label>Testimonial content</Label>
+                      <Textarea rows={5} value={item.content} onChange={(event) => update(item.id, { content: event.target.value })} placeholder="Enter the farmer's real feedback" />
+                    </div>
+                    <div className="flex flex-wrap gap-2 sm:col-span-2">
+                      <Button className="rounded-full" onClick={() => void save(item)} disabled={saving}>
+                        <Save className="size-4" />
+                        {saving ? "Saving…" : "Save testimonial"}
+                      </Button>
+                      <Button variant="outline" className="rounded-full" onClick={() => void remove(item)} disabled={saving}>
+                        <Trash2 className="size-4" />
+                        Delete
+                      </Button>
+                      {item.enabled && item.verified ? (
+                        <div className="ml-auto flex items-center gap-2 self-center text-xs text-muted-foreground">
+                          <Upload className="size-4" />
+                          Ready for public homepage
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
 }
