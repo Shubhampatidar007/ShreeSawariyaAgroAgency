@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type {
   Customer,
   CustomerLedgerEntry,
+  CustomerSaleItem,
   InventoryItem,
   ProductVariant,
   PublishedProduct,
@@ -162,7 +163,33 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   method: r.method,
   remarks: r.remarks ?? undefined,
 });
+const toCustomerSaleItem = (r: any): CustomerSaleItem => ({
+  id: r.id,
+  transactionId: r.transaction_id,
+  productId: r.product_id ?? undefined,
+  productVariantId: r.product_variant_id ?? undefined,
+  product: r.product,
+  quantity: num(r.quantity),
+  unit: r.unit,
+  rate: num(r.rate),
+  amount: num(r.amount),
 
+  purchaseCost:
+    r.purchase_cost == null
+      ? undefined
+      : num(r.purchase_cost),
+
+  adminPriceInc:
+    r.admin_price_inc == null
+      ? undefined
+      : num(r.admin_price_inc),
+
+  date:
+    r.customer_transactions?.entry_date ??
+    r.entry_date ??
+    r.date ??
+    undefined,
+});
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
   supplierId: r.supplier_id,
@@ -365,21 +392,59 @@ async function loadSharedAdminData() {
 
 async function runSectionLoad(section: AdminSection) {
   switch (section) {
-    case "overview": {
-      const [orders, customerLedger, supplierLedger] = await Promise.all([
-        supabase.from("orders").select(ORDER_OVERVIEW).order("placed_on", { ascending: false }),
-        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
-        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),
-      ]);
-      const result = [orders, customerLedger, supplierLedger].find((r) => r.error);
-      if (result?.error) throw result.error;
-      applyState({
-        orders: (orders.data ?? []).map(toOrder),
-        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-        supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-      });
-      return;
-    }
+   case "overview": {
+  const [
+    orders,
+    customerLedger,
+    customerSaleItems,
+    supplierLedger,
+  ] = await Promise.all([
+    supabase
+      .from("orders")
+      .select(ORDER_OVERVIEW)
+      .order("placed_on", { ascending: false }),
+
+    supabase
+      .from("customer_transactions")
+      .select(CUSTOMER_TX)
+      .order("entry_date"),
+
+    supabase
+      .from("customer_transaction_items")
+      .select(`
+        *,
+        customer_transactions!inner(
+          entry_date,
+          entry_type
+        )
+      `)
+      .eq("customer_transactions.entry_type", "sale")
+      .order("created_at"),
+
+    supabase
+      .from("supplier_transactions")
+      .select(SUPPLIER_TX)
+      .order("entry_date"),
+  ]);
+
+  const result = [
+    orders,
+    customerLedger,
+    customerSaleItems,
+    supplierLedger,
+  ].find((r) => r.error);
+
+  if (result?.error) throw result.error;
+
+  applyState({
+    orders: (orders.data ?? []).map(toOrder),
+    customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+    customerSaleItems: (customerSaleItems.data ?? []).map(toCustomerSaleItem),
+    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+  });
+
+  return;
+}
     case "customers": {
       const { data, error } = await supabase
         .from("customers")

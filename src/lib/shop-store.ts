@@ -357,24 +357,24 @@ export async function loadShopData() {
   inFlightLoadPromise = (async () => {
     setState({ loading: true });
     try {
-      const [
-        notifications,
-        customers,
-        suppliers,
-        inventory,
-        products,
-        variants,
-        customerLedger,
-        supplierLedger,
-customerSaleItems,
-        orders,
-        payments,
-        reminders,
-        reminderLogs,
-        cmsSections,
-        ads,
-        backupRows,
-      ] = await Promise.all([
+    const [
+  notifications,
+  customers,
+  suppliers,
+  inventory,
+  products,
+  variants,
+  customerLedger,
+  customerSaleItems,
+  supplierLedger,
+  orders,
+  payments,
+  reminders,
+  reminderLogs,
+  cmsSections,
+  ads,
+  backupRows,
+] = await Promise.all([
         supabase
           .from("notifications")
           .select("*")
