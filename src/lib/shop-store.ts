@@ -12,12 +12,10 @@ import type {
   SupplierLedgerEntry,
 } from "@/types/business";
 import type {
-  Advertisement,
   Backup,
   PaymentRecord,
   Reminder,
   ReminderLog,
-  CmsSection,
   AdminNotification,
 } from "@/types";
 import type { Order } from "@/types/operations";
@@ -36,8 +34,6 @@ type ShopState = {
   payments: PaymentRecord[];
   reminders: Reminder[];
   reminderLogs: ReminderLog[];
-  cmsSections: CmsSection[];
-  advertisements: Advertisement[];
   backups: Backup[];
   loading: boolean;
 };
@@ -56,8 +52,6 @@ supplierLedger: [],
   payments: [],
   reminders: [],
   reminderLogs: [],
-  cmsSections: [],
-  advertisements: [],
   backups: [],
   loading: true,
 };
@@ -314,30 +308,6 @@ const toReminderLog = (r: any): ReminderLog => ({
   delivery: r.delivery,
   retries: r.retries ?? 0,
 });
-const toCms = (r: any): CmsSection => ({
-  id: r.id,
-  name: r.name,
-  type: r.type,
-  enabled: !!r.enabled,
-  visibility: r.visibility,
-  order: r.sort_order,
-  headline: r.headline ?? "",
-  body: r.body ?? "",
-  scheduledFrom: r.scheduled_from ?? undefined,
-  scheduledTo: r.scheduled_to ?? undefined,
-  imageLabel: r.image_label ?? "",
-});
-const toAd = (r: any): Advertisement => ({
-  id: r.id,
-  title: r.title,
-  placement: r.placement,
-  audience: r.audience,
-  status: r.status,
-  impressions: r.impressions ?? 0,
-  clicks: r.clicks ?? 0,
-  startsOn: r.starts_on,
-  runsUntil: r.runs_until,
-});
 const toBackup = (r: any): Backup => ({
   id: r.id,
   name: r.name,
@@ -402,8 +372,6 @@ export async function loadShopData() {
         supabase.from("payments").select("*").order("entry_date", { ascending: false }),
         supabase.from("reminders").select("*").order("created_at", { ascending: false }),
         supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
-        supabase.from("cms_sections").select("*").order("sort_order"),
-        supabase.from("advertisements").select("*").order("created_at", { ascending: false }),
         supabase.from("backups").select("*").order("created_at", { ascending: false }),
       ]);
 
@@ -452,8 +420,6 @@ customerSaleItems,
         payments: (payments.data ?? []).map(toPayment),
         reminders: (reminders.data ?? []).map(toReminder),
         reminderLogs: (reminderLogs.data ?? []).map(toReminderLog),
-        cmsSections: (cmsSections.data ?? []).map(toCms),
-        advertisements: (ads.data ?? []).map(toAd),
         backups: (backupRows.data ?? []).map(toBackup),
         loading: false,
       });
@@ -937,36 +903,6 @@ export const shopStore = {
       supabase.from("cms_sections").update({ sort_order: swap.order }).eq("id", current.id),
       supabase.from("cms_sections").update({ sort_order: current.order }).eq("id", swap.id),
     ]);
-    return after(undefined);
-  },
-  async addAdvertisement(ad: Omit<Advertisement, "id" | "impressions" | "clicks">) {
-    const { error } = await supabase
-      .from("advertisements")
-      .insert({
-        title: ad.title,
-        placement: ad.placement,
-        audience: ad.audience,
-        status: ad.status,
-        starts_on: ad.startsOn,
-        runs_until: ad.runsUntil,
-      });
-    if (error) throw error;
-    return after(undefined);
-  },
-  async updateAdvertisement(id: string, patch: Partial<Advertisement>) {
-    const payload: any = {};
-    if (patch.title !== undefined) payload.title = patch.title;
-    if (patch.placement !== undefined) payload.placement = patch.placement;
-    if (patch.audience !== undefined) payload.audience = patch.audience;
-    if (patch.status !== undefined) payload.status = patch.status;
-    if (patch.startsOn !== undefined) payload.starts_on = patch.startsOn;
-    if (patch.runsUntil !== undefined) payload.runs_until = patch.runsUntil;
-    const { error } = await supabase.from("advertisements").update(payload).eq("id", id);
-    if (error) throw error;
-    return after(undefined);
-  },
-  async deleteAdvertisement(id: string) {
-    await supabase.from("advertisements").delete().eq("id", id);
     return after(undefined);
   },
   async addBackup(name: string, destination = "Cloud vault") {

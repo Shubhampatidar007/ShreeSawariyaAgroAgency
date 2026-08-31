@@ -78,7 +78,6 @@ export const hi: Partial<Record<keyof typeof en, string>> = {
   "nav.payments": "भुगतान",
   "nav.reports": "रिपोर्ट",
   "nav.analytics": "एनालिटिक्स",
-  "nav.advertisements": "विज्ञापन",
   "nav.cms": "होमपेज सीएमएस",
   "nav.reminders": "रिमाइंडर",
   "nav.backups": "बैकअप",

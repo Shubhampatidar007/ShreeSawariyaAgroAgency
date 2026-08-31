@@ -38,20 +38,7 @@ export type Database = {
         };
         Relationships: [];
       };
-      advertisements: {
-        Row: {
-          audience: string;
-          clicks: number;
-          created_at: string;
-          id: string;
-          impressions: number;
-          placement: string;
-          runs_until: string;
-          starts_on: string;
-          status: string;
-          title: string;
-          updated_at: string;
-        };
+    
         Insert: {
           audience?: string;
           clicks?: number;

@@ -49,18 +49,6 @@ export type Product = {
   variants?: ProductVariant[];
 };
 
-export type Advertisement = {
-  id: string;
-  title: string;
-  placement: string;
-  audience: string;
-  status: "live" | "scheduled" | "paused" | "expired";
-  impressions: number;
-  clicks: number;
-  startsOn: string;
-  runsUntil: string;
-};
-
 export type Backup = {
   id: string;
   name: string;

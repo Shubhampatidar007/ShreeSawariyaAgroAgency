@@ -8,7 +8,6 @@ import {
   Wallet,
   FileBarChart,
   LineChart,
-  Megaphone,
   MessageSquareQuote,
   BellRing,
   DatabaseBackup,
@@ -36,7 +35,6 @@ export const adminNavSections: NavSection[] = [
     items: [
       { label: "Reports", labelKey: "nav.reports", to: "/admin/reports", icon: FileBarChart },
       { label: "Analytics", labelKey: "nav.analytics", to: "/admin/analytics", icon: LineChart },
-      { label: "Advertisements", labelKey: "nav.advertisements", to: "/admin/advertisements", icon: Megaphone },
       { label: "Testimonials", to: "/admin/testimonials", icon: MessageSquareQuote },
     ],
   },

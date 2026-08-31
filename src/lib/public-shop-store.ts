@@ -1,6 +1,5 @@
 import { useSyncExternalStore } from "react";
 import type { PublishedProduct, ProductVariant, Testimonial } from "@/types/business";
-import type { Advertisement } from "@/types";
 import type { CmsSection } from "@/types/operations";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -8,7 +7,6 @@ type PublicShopState = {
   products: PublishedProduct[];
   testimonials: Testimonial[];
   cmsSections: CmsSection[];
-  advertisements: Advertisement[];
   loading: boolean;
   error: string | null;
 };
@@ -17,7 +15,6 @@ let state: PublicShopState = {
   products: [],
   testimonials: [],
   cmsSections: [],
-  advertisements: [],
   loading: true,
   error: null,
 };
@@ -97,18 +94,6 @@ type CmsRow = {
   image_label: string | null;
 };
 
-type AdvertisementRow = {
-  id: string;
-  title: string;
-  placement: string;
-  audience: string;
-  status: Advertisement["status"];
-  impressions: number | null;
-  clicks: number | null;
-  starts_on: string;
-  runs_until: string;
-};
-
 const toVariant = (row: VariantRow): ProductVariant => ({
   id: row.id,
   productId: row.product_id ?? undefined,
@@ -164,18 +149,6 @@ const toCmsSection = (row: CmsRow): CmsSection => ({
   imageLabel: row.image_label ?? "",
 });
 
-const toAdvertisement = (row: AdvertisementRow): Advertisement => ({
-  id: row.id,
-  title: row.title,
-  placement: row.placement,
-  audience: row.audience,
-  status: row.status,
-  impressions: row.impressions ?? 0,
-  clicks: row.clicks ?? 0,
-  startsOn: row.starts_on,
-  runsUntil: row.runs_until,
-});
-
 let loadPromise: Promise<void> | null = null;
 
 export async function loadPublicShopData() {
@@ -185,8 +158,7 @@ export async function loadPublicShopData() {
   loadPromise = (async () => {
     setState({ loading: true, error: null });
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const [productsResult, testimonialsResult, cmsResult, advertisementsResult] = await Promise.all([
+      const [productsResult, testimonialsResult, cmsResult] = await Promise.all([
         supabase
           .from("products")
           .select("id, inventory_id, title, brand, category, selling_price, discount_price, stock, description, tags, images, emoji, visibility, featured, status, published_on")
@@ -206,14 +178,6 @@ export async function loadPublicShopData() {
           .eq("enabled", true)
           .eq("visibility", "public")
           .order("sort_order"),
-        supabase
-          .from("advertisements")
-          .select("id, title, placement, audience, status, impressions, clicks, starts_on, runs_until")
-          .eq("placement", "Deals")
-          .eq("status", "live")
-          .lte("starts_on", today)
-          .gte("runs_until", today)
-          .order("created_at", { ascending: false }),
       ]);
 
       if (productsResult.error) throw productsResult.error;
@@ -230,9 +194,6 @@ export async function loadPublicShopData() {
       if (cmsResult.error) {
         console.warn("Unable to load public CMS sections:", cmsResult.error);
       }
-      if (advertisementsResult.error) {
-        console.warn("Unable to load public Deals campaigns:", advertisementsResult.error);
-      }
 
       const variantsByProduct = new Map<string, ProductVariant[]>();
       for (const row of (variantsResult.data ?? []) as VariantRow[]) {
@@ -247,7 +208,6 @@ export async function loadPublicShopData() {
         products: (productsResult.data ?? []).map((row) => toProduct(row as ProductRow, variantsByProduct.get(row.id) ?? [])),
         testimonials: testimonialsResult.error ? [] : (testimonialsResult.data ?? []).map((row) => toTestimonial(row as TestimonialRow)),
         cmsSections: cmsResult.error ? [] : (cmsResult.data ?? []).map((row) => toCmsSection(row as CmsRow)),
-        advertisements: advertisementsResult.error ? [] : (advertisementsResult.data ?? []).map((row) => toAdvertisement(row as AdvertisementRow)),
         loading: false,
         error: null,
       });

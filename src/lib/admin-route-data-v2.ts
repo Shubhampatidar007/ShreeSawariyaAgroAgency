@@ -10,9 +10,7 @@ import type {
   SupplierLedgerEntry,
 } from "@/types/business";
 import type {
-  Advertisement,
   Backup,
-  CmsSection,
   AdminNotification,
   PaymentRecord,
   Reminder,
@@ -30,8 +28,6 @@ type AdminSection =
   | "sales"
   | "payments"
   | "reminders"
-  | "cms"
-  | "advertisements"
   | "backups"
   | "analytics"
   | "search";
@@ -293,17 +289,6 @@ const toCms = (r: any): CmsSection => ({
   imageLabel: r.image_label ?? "",
 });
 
-const toAd = (r: any): Advertisement => ({
-  id: r.id,
-  title: r.title,
-  placement: r.placement,
-  audience: r.audience,
-  status: r.status,
-  impressions: r.impressions ?? 0,
-  clicks: r.clicks ?? 0,
-  startsOn: r.starts_on,
-  runsUntil: r.runs_until,
-});
 
 const toBackup = (r: any): Backup => ({
   id: r.id,
@@ -547,12 +532,6 @@ async function runSectionLoad(section: AdminSection) {
       applyState({ cmsSections: (data ?? []).map(toCms) });
       return;
     }
-    case "advertisements": {
-      const { data, error } = await supabase.from("advertisements").select(AD_FULL).order("created_at", { ascending: false }).limit(500);
-      if (error) throw error;
-      applyState({ advertisements: (data ?? []).map(toAd) });
-      return;
-    }
     case "backups": {
       const { data, error } = await supabase.from("backups").select(BACKUP_FULL).order("created_at", { ascending: false }).limit(100);
       if (error) throw error;
@@ -607,8 +586,6 @@ export function sectionForAdminPath(pathname: string): AdminSection {
   if (pathname.startsWith("/admin/sales") || pathname.startsWith("/admin/orders")) return "sales";
   if (pathname.startsWith("/admin/payments")) return "payments";
   if (pathname.startsWith("/admin/reminders") || pathname.startsWith("/admin/inventory-reminders")) return "reminders";
-  if (pathname.startsWith("/admin/cms")) return "cms";
-  if (pathname.startsWith("/admin/advertisements")) return "advertisements";
   if (pathname.startsWith("/admin/backups")) return "backups";
   if (pathname.startsWith("/admin/analytics") || pathname.startsWith("/admin/reports")) return "analytics";
   if (pathname.startsWith("/admin/search")) return "search";
