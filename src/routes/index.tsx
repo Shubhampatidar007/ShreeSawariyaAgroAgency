@@ -3,9 +3,11 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SmartShoppingSection } from "@/components/home/SmartShoppingSection";
+import { FarmerAdvisorySection } from "@/components/home/FarmerAdvisorySection";
 import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
+import { TrustedBrandsSection } from "@/components/home/TrustedBrandsSection";
 import { AboutSection } from "@/components/home/AboutSection";
 import { LocationSection } from "@/components/home/LocationSection";
 
@@ -24,19 +26,23 @@ export const Route = createFileRoute("/")({
   component: Index,
 });
 
+
+
 function Index() {
   return (
     <div id="top" className="min-h-screen bg-background pb-20 md:pb-0">
       <SiteHeader />
-      <main>
-        <HeroSection />
-        <SmartShoppingSection />
-        <CategorySection />
-        <FeaturedProducts />
-        <OffersSection />
-        <AboutSection />
-        <LocationSection />
-      </main>
+     <main>
+  <HeroSection />
+  <SmartShoppingSection />
+  <CategorySection />
+  <FeaturedProducts />
+  <OffersSection />
+  <FarmerAdvisorySection />
+  <TrustedBrandsSection />
+  <AboutSection />
+  <LocationSection />
+</main>
       <SiteFooter />
     </div>
   );
