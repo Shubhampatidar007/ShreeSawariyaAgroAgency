@@ -51,6 +51,7 @@ function ReportsPage() {
       buildDailyMetrics(
         store.orders,
         store.customerLedger,
+        store.customerSaleItems,
         store.supplierLedger,
         store.inventory,
         metricRange,
@@ -59,6 +60,7 @@ function ReportsPage() {
     [
       store.orders,
       store.customerLedger,
+      store.customerSaleItems,
       store.supplierLedger,
       store.inventory,
       metricRange,
