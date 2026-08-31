@@ -49,18 +49,6 @@ export type Product = {
   variants?: ProductVariant[];
 };
 
-export type Advertisement = {
-  id: string;
-  title: string;
-  placement: string;
-  audience: string;
-  status: "live" | "scheduled" | "paused" | "expired";
-  impressions: number;
-  clicks: number;
-  startsOn: string;
-  runsUntil: string;
-};
-
 export type Backup = {
   id: string;
   name: string;
@@ -79,18 +67,4 @@ export type AdminNotification = {
   isRead: boolean;
   sourceId?: string;
   createdAt: string;
-};
-export type Reminder = {
-  id: string;
-  title: string;
-  audience: string;
-  target: string;
-  filterSummary: string;
-  schedule: string;
-  channel: string;
-  dueAmount: number;
-  status: string;
-  nextRun: string;
-  message: string;
-  sourceId?: string;
 };
