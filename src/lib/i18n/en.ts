@@ -76,7 +76,6 @@ export const en = {
   "nav.payments": "Payments",
   "nav.reports": "Reports",
   "nav.analytics": "Analytics",
-  "nav.advertisements": "Advertisements",
   "nav.cms": "Homepage CMS",
   "nav.reminders": "Reminders",
   "nav.backups": "Backups",

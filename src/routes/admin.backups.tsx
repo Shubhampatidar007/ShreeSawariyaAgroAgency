@@ -38,8 +38,6 @@ const backupTables = [
   "payments",
   "reminders",
   "reminder_logs",
-  "cms_sections",
-  "advertisements",
   "notifications",
 ] as const;
 
