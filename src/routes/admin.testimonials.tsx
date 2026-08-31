@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
 import { BadgeCheck, ImagePlus, Plus, Save, Trash2, Upload } from "lucide-react";
+import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -25,6 +25,7 @@ type AdminTestimonial = {
 };
 
 const MAX_IMAGE_BYTES = 200 * 1024;
+const MAX_TESTIMONIALS = 3;
 
 async function prepareImage(file: File): Promise<Blob> {
   if (!file.type.startsWith("image/")) throw new Error("Please choose a JPG, PNG or WebP image");
@@ -129,6 +130,29 @@ function TestimonialsPage() {
     setItems((current) => current.map((item) => (item.id === id ? { ...item, ...patch } : item)));
   };
 
+  const publicCount = items.filter((item) => item.enabled && item.verified).length;
+  const atRecordLimit = items.length >= MAX_TESTIMONIALS;
+  const canPublish = (item: AdminTestimonial, nextEnabled: boolean, nextVerified: boolean) =>
+    !item.isNew && item.enabled && item.verified
+      ? true
+      : !(nextEnabled && nextVerified && publicCount >= MAX_TESTIMONIALS);
+
+  const handleEnabledChange = (item: AdminTestimonial, enabled: boolean) => {
+    if (!canPublish(item, enabled, item.verified)) {
+      toast.error("Only 3 published and verified testimonials are allowed on the homepage");
+      return;
+    }
+    update(item.id, { enabled });
+  };
+
+  const handleVerifiedChange = (item: AdminTestimonial, verified: boolean) => {
+    if (!canPublish(item, item.enabled, verified)) {
+      toast.error("Only 3 published and verified testimonials are allowed on the homepage");
+      return;
+    }
+    update(item.id, { verified });
+  };
+
   const handleImage = (id: string, file: File | null) => {
     const previousPreview = imagePreviews[id];
     if (previousPreview) URL.revokeObjectURL(previousPreview);
@@ -143,6 +167,11 @@ function TestimonialsPage() {
   const save = async (item: AdminTestimonial) => {
     if (!item.farmerName.trim() || !item.content.trim()) {
       toast.error("Farmer name and testimonial content are required");
+      return;
+    }
+
+    if (item.enabled && item.verified && !canPublish(item, true, true)) {
+      toast.error("Only 3 published and verified testimonials are allowed on the homepage");
       return;
     }
 
@@ -207,7 +236,17 @@ function TestimonialsPage() {
           }
           throw result.error;
         }
-      } else if (!item.isNew) {
+
+        if (!item.isNew) {
+          const result = await supabase
+            .from("testimonials" as any)
+            .update(payload)
+            .eq("id", testimonialId)
+            .select("id")
+            .single();
+          if (result.error) throw result.error;
+        }
+      } else {
         const result = await supabase
           .from("testimonials" as any)
           .update(payload)
@@ -253,6 +292,11 @@ function TestimonialsPage() {
   };
 
   const addNew = () => {
+    if (atRecordLimit) {
+      toast.error("You can keep a maximum of 3 testimonials");
+      return;
+    }
+
     const id = crypto.randomUUID();
     setItems((current) => [
       {
@@ -279,12 +323,20 @@ function TestimonialsPage() {
         title="Farmer testimonials"
         description="Enter the verified farmer, farm, story and image data that the public storefront reads from Supabase."
         actions={(
-          <Button className="rounded-full" onClick={addNew}>
+          <Button className="rounded-full" onClick={addNew} disabled={atRecordLimit}>
             <Plus className="size-4" />
-            Add testimonial
+            {atRecordLimit ? "3 testimonials max" : "Add testimonial"}
           </Button>
         )}
       />
+
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-border bg-muted/30 px-4 py-3 text-sm">
+        <div>
+          <span className="font-medium">Homepage limit</span>
+          <span className="ml-2 text-muted-foreground">Maximum 3 published + verified testimonials</span>
+        </div>
+        <span className="font-semibold text-primary">{publicCount}/{MAX_TESTIMONIALS} published</span>
+      </div>
 
       {loading ? (
         <Card>
@@ -316,11 +368,11 @@ function TestimonialsPage() {
                       <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
                         <BadgeCheck className="size-4 text-primary" />
                         <span>Verified</span>
-                        <Switch checked={item.verified} onCheckedChange={(verified) => update(item.id, { verified })} />
+                        <Switch checked={item.verified} onCheckedChange={(verified) => handleVerifiedChange(item, verified)} />
                       </div>
                       <div className="flex items-center gap-2 rounded-full border border-border px-3 py-1.5 text-xs">
                         <span>{item.enabled ? "Published" : "Hidden"}</span>
-                        <Switch checked={item.enabled} onCheckedChange={(enabled) => update(item.id, { enabled })} />
+                        <Switch checked={item.enabled} onCheckedChange={(enabled) => handleEnabledChange(item, enabled)} />
                       </div>
                     </div>
                   </div>
