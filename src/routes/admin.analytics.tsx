@@ -65,12 +65,21 @@ function AnalyticsPage() {
       buildDailyMetrics(
         store.orders,
         store.customerLedger,
+        store.customerSaleItems,
         store.supplierLedger,
         store.inventory,
         range,
         custom,
       ),
-    [store.orders, store.customerLedger, store.supplierLedger, store.inventory, range, custom],
+    [
+      store.orders,
+      store.customerLedger,
+      store.customerSaleItems,
+      store.supplierLedger,
+      store.inventory,
+      range,
+      custom,
+    ],
   );
   const inRange = (value: string) => dateInRange(value, range, custom);
   const revenue = metrics.reduce((sum, row) => sum + row.sales, 0);
