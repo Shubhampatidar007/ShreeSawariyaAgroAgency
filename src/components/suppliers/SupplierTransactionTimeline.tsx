@@ -6,44 +6,52 @@ import { formatCurrency } from "@/lib/shop-store";
 import type { SupplierLedgerEntry } from "@/types/business";
 
 type SupplierTimelineEntry = SupplierLedgerEntry & {
-  entryType?: SupplierLedgerEntry["type"];
   productName?: string;
   quantity?: number;
   unit?: string;
   unitPrice?: number;
 };
 
-type SupplierTransactionTimelineProps = {
-  entries: SupplierLedgerEntry[];
-};
+type Props = { entries: SupplierLedgerEntry[] };
 
-const formatTimelineDate = (value: string) => {
-  const date = new Date(`${value}T00:00:00`);
-  return date.toLocaleDateString("en-GB", {
+const formatTimelineDate = (value: string) =>
+  new Date(`${value}T00:00:00`).toLocaleDateString("en-GB", {
     day: "2-digit",
     month: "short",
     year: "numeric",
   });
-};
 
-export function SupplierTransactionTimeline({ entries }: SupplierTransactionTimelineProps) {
+export function SupplierTransactionTimeline({ entries }: Props) {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
   const groups = useMemo(() => {
-    const dateGroups = new Map<string, SupplierLedgerEntry[]>();
+    const byDate = new Map<string, SupplierLedgerEntry[]>();
     for (const entry of entries) {
-      const group = dateGroups.get(entry.date) ?? [];
+      const group = byDate.get(entry.date) ?? [];
       group.push(entry);
-      dateGroups.set(entry.date, group);
+      byDate.set(entry.date, group);
     }
 
-    return Array.from(dateGroups, ([date, dayEntries]) => ({
-      date,
-      entries: dayEntries,
-      purchases: dayEntries.filter((entry) => entry.type.toLowerCase() === "purchase"),
-      advances: dayEntries.filter((entry) => entry.type.toLowerCase() === "advance"),
-      payments: dayEntries.filter((entry) => entry.type.toLowerCase() === "payment"),
-    }));
+    return Array.from(byDate, ([date, dayEntries]) => {
+      const purchases = dayEntries.filter((entry) => entry.type.toLowerCase() === "purchase");
+      const advances = dayEntries.filter((entry) => entry.type.toLowerCase() === "advance");
+      const payments = dayEntries.filter((entry) => entry.type.toLowerCase() === "payment");
+      const purchaseTotal = purchases.reduce((sum, entry) => sum + entry.amount, 0);
+      const paidTotal =
+        advances.reduce((sum, entry) => sum + entry.amount, 0) +
+        payments.reduce((sum, entry) => sum + entry.amount, 0);
+
+      return {
+        date,
+        entries: dayEntries,
+        purchases,
+        advances,
+        payments,
+        purchaseTotal,
+        paidTotal,
+        due: dayEntries[dayEntries.length - 1]?.balance ?? 0,
+      };
+    });
   }, [entries]);
 
   const toggleDate = (date: string) => {
@@ -59,14 +67,6 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
     <Card className="supplier-timeline-full shadow-soft">
       <CardHeader>
         <CardTitle className="text-lg">Purchase timeline</CardTitle>
-        <style>{`
-          .grid:has(> .supplier-timeline-full) {
-            display: block;
-          }
-          .grid:has(> .supplier-timeline-full) > :first-child:not(.supplier-timeline-full) {
-            display: none;
-          }
-        `}</style>
       </CardHeader>
       <CardContent>
         {groups.length === 0 ? (
@@ -75,12 +75,6 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
           <div className="space-y-4">
             {groups.map((group) => {
               const isOpen = expandedDates.has(group.date);
-              const purchaseTotal = group.purchases.reduce((sum, entry) => sum + entry.amount, 0);
-              const paidTotal =
-                group.advances.reduce((sum, entry) => sum + entry.amount, 0) +
-                group.payments.reduce((sum, entry) => sum + entry.amount, 0);
-              const lastEntry = group.entries[group.entries.length - 1];
-
               return (
                 <div key={group.date} className="overflow-hidden rounded-xl border bg-background">
                   <button
@@ -92,7 +86,7 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
                     <div>
                       <p className="text-base font-semibold">{formatTimelineDate(group.date)}</p>
                       <p className="mt-1 text-sm text-muted-foreground">
-                        {group.purchases.length} transaction{group.purchases.length === 1 ? "" : "s"} · {formatCurrency(purchaseTotal)}
+                        {group.purchases.length} transaction{group.purchases.length === 1 ? "" : "s"} · {formatCurrency(group.purchaseTotal)}
                       </p>
                     </div>
                     <span className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
@@ -143,15 +137,15 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
                       <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
                         <div>
                           <p className="text-xs text-muted-foreground">Purchase total</p>
-                          <p className="mt-1 font-semibold">{formatCurrency(purchaseTotal)}</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(group.purchaseTotal)}</p>
                         </div>
                         <div>
                           <p className="text-xs text-muted-foreground">Advance / paid</p>
-                          <p className="mt-1 font-semibold">{formatCurrency(paidTotal)}</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(group.paidTotal)}</p>
                         </div>
                         <div className="sm:text-right">
                           <p className="text-xs text-muted-foreground">Due after date</p>
-                          <p className="mt-1 font-semibold">{formatCurrency(lastEntry?.balance ?? 0)}</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(group.due)}</p>
                         </div>
                       </div>
                     </div>
