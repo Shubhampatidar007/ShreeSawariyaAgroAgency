@@ -30,21 +30,12 @@ import {
 } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { SupplierTransactionTimeline } from "@/components/suppliers/SupplierTransactionTimeline";
 import {
   formatCurrency,
-  formatDate,
   shopStore,
   useShopStore,
 } from "@/lib/shop-store";
@@ -124,17 +115,14 @@ function SupplierLedgerPage() {
     otherImportant: "",
     message: "",
   });
-  const supplier = useShopStore((s) => s.suppliers.find((x) => x.id === supplierId));
 
+  const supplier = useShopStore((s) => s.suppliers.find((x) => x.id === supplierId));
   const ledger = useShopStore((s) =>
     s.supplierLedger.filter((entry) => entry.supplierId === supplierId),
   );
 
   const sorted = useMemo(
-    () =>
-      [...ledger].sort((a, b) => {
-        return b.date.localeCompare(a.date);
-      }),
+    () => [...ledger].sort((a, b) => b.date.localeCompare(a.date)),
     [ledger],
   );
 
@@ -157,21 +145,20 @@ function SupplierLedgerPage() {
       return;
     }
 
-    const initialForm: SupplierReminderForm = {
-      advancePay: String(supplier.advance || 0),
+    const advancePay = String(supplier.advance || 0);
+    setReminderForm({
+      advancePay,
       otherImportant: "",
       message: buildSupplierReminderMessage({
         supplierName: supplier.name || supplier.company,
         totalRecords,
         totalPurchases: supplier.totalPurchases,
         totalPaid: supplier.totalPaid,
-        advancePay: String(supplier.advance || 0),
+        advancePay,
         dueBalance: supplier.dueBalance,
         otherImportant: "",
       }),
-    };
-
-    setReminderForm(initialForm);
+    });
     setWhatsappResult(null);
     setWhatsappOpen(true);
   };
@@ -222,18 +209,54 @@ function SupplierLedgerPage() {
 
       const text = response.note || "Supplier WhatsApp reminder sent successfully.";
       setWhatsappResult({ ok: response.ok, text });
-
-      if (response.ok) {
-        toast.success("Supplier reminder sent on WhatsApp.");
-      } else {
-        toast.error(text);
-      }
+      if (response.ok) toast.success("Supplier reminder sent on WhatsApp.");
+      else toast.error(text);
     } catch (error) {
       const text = error instanceof Error ? error.message : "WhatsApp delivery failed.";
       setWhatsappResult({ ok: false, text });
       toast.error(text);
     } finally {
       setWhatsappSending(false);
+    }
+  };
+
+  const openPayment = () => {
+    setPaymentError("");
+    setPaymentAmount("");
+    setPaymentReference("");
+    setPaymentRemarks("");
+    setPaymentDate(new Date().toISOString().slice(0, 10));
+    setPaymentMethod("cash");
+    setPaymentOpen(true);
+  };
+
+  const recordPayment = async () => {
+    const amount = Number(paymentAmount);
+    if (!amount || amount <= 0) {
+      setPaymentError("Enter a valid payment amount.");
+      return;
+    }
+    if (amount > supplier.dueBalance) {
+      setPaymentError(`Payment cannot exceed the current due of ${formatCurrency(supplier.dueBalance)}.`);
+      return;
+    }
+
+    setPaymentSaving(true);
+    setPaymentError("");
+    try {
+      await shopStore.recordSupplierPayment({
+        supplierId: supplier.id,
+        amount,
+        method: paymentMethod,
+        date: paymentDate,
+        reference: paymentReference.trim(),
+        remarks: paymentRemarks.trim(),
+      });
+      setPaymentOpen(false);
+    } catch (error) {
+      setPaymentError(error instanceof Error ? error.message : "Failed to record payment.");
+    } finally {
+      setPaymentSaving(false);
     }
   };
 
@@ -259,24 +282,14 @@ function SupplierLedgerPage() {
               <MessageCircle className="mr-2 h-4 w-4" />
               Send via WhatsApp
             </Button>
-
             <Button
               className="rounded-full"
-              onClick={() => {
-                setPaymentError("");
-                setPaymentAmount("");
-                setPaymentReference("");
-                setPaymentRemarks("");
-                setPaymentDate(new Date().toISOString().slice(0, 10));
-                setPaymentMethod("cash");
-                setPaymentOpen(true);
-              }}
+              onClick={openPayment}
               disabled={supplier.dueBalance <= 0}
             >
               <CreditCard className="mr-2 h-4 w-4" />
               Pay Supplier
             </Button>
-
             <Button variant="outline" className="rounded-full" onClick={() => window.print()}>
               <Printer className="mr-2 h-4 w-4" />
               Print
@@ -287,22 +300,9 @@ function SupplierLedgerPage() {
 
       <SummaryCards
         items={[
-          {
-            label: "Total purchases",
-            value: formatCurrency(supplier.totalPurchases),
-            icon: IndianRupee,
-          },
-          {
-            label: "Total paid",
-            value: formatCurrency(supplier.totalPaid),
-            icon: Wallet,
-            tone: "success",
-          },
-          {
-            label: "Advance",
-            value: formatCurrency(supplier.advance),
-            icon: Wallet,
-          },
+          { label: "Total purchases", value: formatCurrency(supplier.totalPurchases), icon: IndianRupee },
+          { label: "Total paid", value: formatCurrency(supplier.totalPaid), icon: Wallet, tone: "success" },
+          { label: "Advance", value: formatCurrency(supplier.advance), icon: Wallet },
           {
             label: "Due balance",
             value: formatCurrency(supplier.dueBalance),
@@ -312,94 +312,7 @@ function SupplierLedgerPage() {
         ]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[1.25fr_0.75fr]">
-        <Card className="overflow-hidden shadow-soft">
-          <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <CardTitle className="text-base">Purchase history</CardTitle>
-            <span className="rounded-full border bg-muted/30 px-3 py-1 text-xs font-medium text-muted-foreground">
-              {totalRecords} {totalRecords === 1 ? "record" : "records"}
-            </span>
-          </CardHeader>
-
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Type</TableHead>
-                    <TableHead>Product</TableHead>
-                    <TableHead className="text-right">Advance Pay</TableHead>
-                    <TableHead>Other Important</TableHead>
-                    <TableHead className="text-right">Amount</TableHead>
-                    <TableHead className="text-right">Balance</TableHead>
-                    <TableHead>Method</TableHead>
-                  </TableRow>
-                </TableHeader>
-
-                <TableBody>
-                  {sorted.map((entry) => {
-                    const advancePay = entry.type.toLowerCase() === "advance" ? entry.amount : 0;
-                    const otherImportant = entry.remarks?.trim() || "—";
-
-                    return (
-                      <TableRow key={entry.id}>
-                        <TableCell className="whitespace-nowrap text-muted-foreground">
-                          {formatDate(entry.date)}
-                        </TableCell>
-
-                        <TableCell>
-                          <span className="font-medium capitalize">{entry.type}</span>
-                        </TableCell>
-
-                        <TableCell>
-                          <div className="min-w-[140px]">
-                            <p className="font-medium">
-                              {(entry as typeof entry & { productName?: string }).productName ||
-                                entry.reference ||
-                                "—"}
-                            </p>
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="text-right whitespace-nowrap">
-                          {advancePay > 0 ? formatCurrency(advancePay) : "—"}
-                        </TableCell>
-
-                        <TableCell className="min-w-[180px] max-w-[260px] text-sm text-muted-foreground">
-                          {otherImportant}
-                        </TableCell>
-
-                        <TableCell className="text-right whitespace-nowrap font-medium">
-                          {formatCurrency(entry.amount)}
-                        </TableCell>
-
-                        <TableCell className="text-right whitespace-nowrap font-semibold">
-                          {formatCurrency(entry.balance)}
-                        </TableCell>
-
-                        <TableCell className="uppercase text-xs text-muted-foreground">
-                          {entry.method || "—"}
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-
-                  {sorted.length === 0 && (
-                    <TableRow>
-                      <TableCell colSpan={8} className="py-12 text-center text-muted-foreground">
-                        No ledger entries yet.
-                      </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
-
-        <SupplierTransactionTimeline entries={sorted} />
-      </div>
+      <SupplierTransactionTimeline entries={sorted} />
 
       <Dialog open={whatsappOpen} onOpenChange={setWhatsappOpen}>
         <DialogContent className="sm:max-w-lg">
@@ -409,19 +322,15 @@ function SupplierLedgerPage() {
               Compose the account update that will be sent to {supplier.name || supplier.company} on WhatsApp.
             </DialogDescription>
           </DialogHeader>
-
           <div className="space-y-5">
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
               <p className="font-semibold">{supplier.company}</p>
-              <p className="text-sm text-muted-foreground">
-                {supplier.name} · {supplier.mobile}
-              </p>
+              <p className="text-sm text-muted-foreground">{supplier.name} · {supplier.mobile}</p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {totalRecords} {totalRecords === 1 ? "record" : "records"} in this ledger view
               </p>
             </div>
-
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="supplier-reminder-advance-pay">Advance Pay</Label>
@@ -433,60 +342,43 @@ function SupplierLedgerPage() {
                   inputMode="decimal"
                   value={reminderForm.advancePay}
                   onChange={(event) =>
-                    setReminderForm((current) => ({
-                      ...current,
-                      advancePay: event.target.value,
-                    }))
+                    setReminderForm((current) => ({ ...current, advancePay: event.target.value }))
                   }
                   placeholder="0"
                 />
               </div>
-
               <div className="space-y-2">
                 <Label htmlFor="supplier-reminder-other-important">Other Important</Label>
                 <Input
                   id="supplier-reminder-other-important"
                   value={reminderForm.otherImportant}
                   onChange={(event) =>
-                    setReminderForm((current) => ({
-                      ...current,
-                      otherImportant: event.target.value,
-                    }))
+                    setReminderForm((current) => ({ ...current, otherImportant: event.target.value }))
                   }
                   placeholder="Notes for supplier"
                 />
               </div>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="supplier-reminder-message">WhatsApp message</Label>
               <Textarea
                 id="supplier-reminder-message"
                 value={reminderForm.message}
                 onChange={(event) =>
-                  setReminderForm((current) => ({
-                    ...current,
-                    message: event.target.value,
-                  }))
+                  setReminderForm((current) => ({ ...current, message: event.target.value }))
                 }
                 rows={11}
                 className="resize-none"
               />
             </div>
-
             {whatsappResult && (
               <p className={`text-sm ${whatsappResult.ok ? "text-emerald-600" : "text-destructive"}`}>
                 {whatsappResult.text}
               </p>
             )}
           </div>
-
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setWhatsappOpen(false)}
-              disabled={whatsappSending}
-            >
+            <Button variant="outline" onClick={() => setWhatsappOpen(false)} disabled={whatsappSending}>
               Close
             </Button>
             <Button onClick={sendSupplierWhatsApp} disabled={whatsappSending || !supplier.mobile?.trim()}>
@@ -503,14 +395,12 @@ function SupplierLedgerPage() {
             <DialogTitle>Pay Supplier</DialogTitle>
             <DialogDescription>Record a payment made to {supplier.company}.</DialogDescription>
           </DialogHeader>
-
           <div className="space-y-5">
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
               <p className="font-semibold">{supplier.company}</p>
               <p className="text-sm text-muted-foreground">{supplier.name}</p>
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="supplier-payment-amount">Payment amount</Label>
               <Input
@@ -522,31 +412,16 @@ function SupplierLedgerPage() {
                 min="0"
                 step="0.01"
                 placeholder="Enter amount"
-                className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="supplier-payment-date">Payment date</Label>
-              <Input
-                id="supplier-payment-date"
-                type="date"
-                value={paymentDate}
-                onChange={(e) => setPaymentDate(e.target.value)}
-              />
+              <Input id="supplier-payment-date" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
             </div>
-
             <div className="space-y-2">
               <Label>Payment method</Label>
-              <Select
-                value={paymentMethod}
-                onValueChange={(value) =>
-                  setPaymentMethod(value as "cash" | "upi" | "bank" | "cheque")
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="upi">UPI</SelectItem>
@@ -555,103 +430,26 @@ function SupplierLedgerPage() {
                 </SelectContent>
               </Select>
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="supplier-payment-reference">
-                Transaction ID / Reference
-                <span className="ml-1 text-muted-foreground">(optional)</span>
-              </Label>
-              <Input
-                id="supplier-payment-reference"
-                value={paymentReference}
-                onChange={(e) => setPaymentReference(e.target.value)}
-                placeholder="Transaction ID, UTR, cheque no., etc."
-              />
+              <Label htmlFor="supplier-payment-reference">Transaction ID / Reference <span className="ml-1 text-muted-foreground">(optional)</span></Label>
+              <Input id="supplier-payment-reference" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction ID, UTR, cheque no., etc." />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="supplier-payment-remarks">
-                Remarks
-                <span className="ml-1 text-muted-foreground">(optional)</span>
-              </Label>
-              <Input
-                id="supplier-payment-remarks"
-                value={paymentRemarks}
-                onChange={(e) => setPaymentRemarks(e.target.value)}
-                placeholder="Payment notes"
-              />
+              <Label htmlFor="supplier-payment-remarks">Remarks <span className="ml-1 text-muted-foreground">(optional)</span></Label>
+              <Input id="supplier-payment-remarks" value={paymentRemarks} onChange={(e) => setPaymentRemarks(e.target.value)} placeholder="Payment notes" />
             </div>
-
             <div className="rounded-lg border p-4 space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Current due</span>
-                <span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-muted-foreground">Payment</span>
-                <span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span>
-              </div>
-              <div className="border-t pt-2 flex justify-between">
-                <span className="font-medium">Remaining due</span>
-                <span className="font-bold">
-                  {formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}
-                </span>
-              </div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Current due</span><span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span></div>
+              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span></div>
+              <div className="border-t pt-2 flex justify-between"><span className="font-medium">Remaining due</span><span className="font-bold">{formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}</span></div>
             </div>
-
             {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
           </div>
-
           <DialogFooter>
+            <Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={paymentSaving}>Cancel</Button>
             <Button
-              variant="outline"
-              onClick={() => setPaymentOpen(false)}
-              disabled={paymentSaving}
-            >
-              Cancel
-            </Button>
-            <Button
-              disabled={
-                paymentSaving ||
-                !Number(paymentAmount) ||
-                Number(paymentAmount) <= 0 ||
-                Number(paymentAmount) > supplier.dueBalance
-              }
-              onClick={async () => {
-                const amount = Number(paymentAmount);
-                if (!amount || amount <= 0) {
-                  setPaymentError("Enter a valid payment amount.");
-                  return;
-                }
-                if (amount > supplier.dueBalance) {
-                  setPaymentError(
-                    `Payment cannot exceed the current due of ${formatCurrency(
-                      supplier.dueBalance,
-                    )}.`,
-                  );
-                  return;
-                }
-
-                setPaymentSaving(true);
-                setPaymentError("");
-                try {
-                  await shopStore.recordSupplierPayment({
-                    supplierId: supplier.id,
-                    amount,
-                    method: paymentMethod,
-                    date: paymentDate,
-                    reference: paymentReference.trim(),
-                    remarks: paymentRemarks.trim(),
-                  });
-                  setPaymentOpen(false);
-                } catch (error) {
-                  setPaymentError(
-                    error instanceof Error ? error.message : "Failed to record payment.",
-                  );
-                } finally {
-                  setPaymentSaving(false);
-                }
-              }}
+              disabled={paymentSaving || !Number(paymentAmount) || Number(paymentAmount) <= 0 || Number(paymentAmount) > supplier.dueBalance}
+              onClick={recordPayment}
             >
               {paymentSaving ? "Recording..." : "Record Payment"}
             </Button>
