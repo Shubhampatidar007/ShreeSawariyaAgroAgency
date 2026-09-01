@@ -3,6 +3,7 @@ import { useLocation } from "@tanstack/react-router";
 import { ChevronDown, ChevronRight, CreditCard, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
