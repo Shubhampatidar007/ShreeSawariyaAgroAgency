@@ -140,7 +140,7 @@ export type SupplierLedgerEntry = {
   id: string;
   supplierId: string;
   date: string;
-  type: "purchase" | "payment" | "advance";
+  entryType: "purchase" | "payment" | "advance";
   reference: string;
   amount: number;
   balance: number;
