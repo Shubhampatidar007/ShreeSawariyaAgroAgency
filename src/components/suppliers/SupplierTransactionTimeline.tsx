@@ -1,9 +1,17 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatCurrency, formatDate } from "@/lib/shop-store";
 import type { SupplierLedgerEntry } from "@/types/business";
+
+type SupplierTimelineEntry = SupplierLedgerEntry & {
+  entryType?: SupplierLedgerEntry["type"];
+  productName?: string;
+  quantity?: number;
+  unit?: string;
+  unitPrice?: number;
+};
 
 type SupplierTransactionTimelineProps = {
   entries: SupplierLedgerEntry[];
@@ -12,14 +20,15 @@ type SupplierTransactionTimelineProps = {
 export function SupplierTransactionTimeline({ entries }: SupplierTransactionTimelineProps) {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
-  const dateGroups = new Map<string, SupplierLedgerEntry[]>();
-  entries.forEach((entry) => {
-    const group = dateGroups.get(entry.date) ?? [];
-    group.push(entry);
-    dateGroups.set(entry.date, group);
-  });
-
-  const groups = Array.from(dateGroups, ([date, group]) => ({ date, entries: group }));
+  const groups = useMemo(() => {
+    const dateGroups = new Map<string, SupplierLedgerEntry[]>();
+    for (const entry of entries) {
+      const group = dateGroups.get(entry.date) ?? [];
+      group.push(entry);
+      dateGroups.set(entry.date, group);
+    }
+    return Array.from(dateGroups, ([date, dayEntries]) => ({ date, entries: dayEntries }));
+  }, [entries]);
 
   const toggleDate = (date: string) => {
     setExpandedDates((current) => {
@@ -70,8 +79,9 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
 
                     {isOpen ? (
                       <div className="mt-3 space-y-3 border-t border-border pt-3">
-                        {dayEntries.map((entry) => {
-                          const type = entry.type.toLowerCase();
+                        {dayEntries.map((rawEntry) => {
+                          const entry = rawEntry as SupplierTimelineEntry;
+                          const type = (entry.type ?? entry.entryType ?? "purchase").toLowerCase();
                           const title =
                             type === "purchase"
                               ? `Purchase${entry.productName ? ` · ${entry.productName}` : ""}`
