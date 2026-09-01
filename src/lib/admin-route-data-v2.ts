@@ -159,6 +159,7 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
   method: r.method,
   remarks: r.remarks ?? undefined,
 });
+
 const toCustomerSaleItem = (r: any): CustomerSaleItem => ({
   id: r.id,
   transactionId: r.transaction_id,
@@ -169,33 +170,29 @@ const toCustomerSaleItem = (r: any): CustomerSaleItem => ({
   unit: r.unit,
   rate: num(r.rate),
   amount: num(r.amount),
-
-  purchaseCost:
-    r.purchase_cost == null
-      ? undefined
-      : num(r.purchase_cost),
-
-  adminPriceInc:
-    r.admin_price_inc == null
-      ? undefined
-      : num(r.admin_price_inc),
-
+  purchaseCost: r.purchase_cost == null ? undefined : num(r.purchase_cost),
+  adminPriceInc: r.admin_price_inc == null ? undefined : num(r.admin_price_inc),
   date:
     r.customer_transactions?.entry_date ??
     r.entry_date ??
     r.date ??
     undefined,
 });
+
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
   supplierId: r.supplier_id,
   date: r.entry_date,
-  type: r.entry_type,
+  entryType: r.entry_type,
   reference: r.reference ?? "",
   amount: num(r.amount),
   balance: num(r.balance),
   method: r.method,
   remarks: r.remarks ?? undefined,
+  productName: r.product_name ?? undefined,
+  quantity: r.quantity !== undefined ? num(r.quantity) : undefined,
+  unit: r.unit ?? undefined,
+  unitPrice: r.rate !== undefined ? num(r.rate) : undefined,
 });
 
 const toOrder = (r: any): Order => ({
@@ -265,6 +262,17 @@ const toReminder = (r: any): Reminder => ({
   sourceId: r.source_id ?? undefined,
 });
 
+const toNotification = (r: any): AdminNotification => ({
+  id: r.id,
+  title: r.title,
+  body: r.body ?? "",
+  type: r.type,
+  link: r.link ?? undefined,
+  isRead: !!r.is_read,
+  sourceId: r.source_id ?? undefined,
+  createdAt: r.created_at,
+});
+
 const toReminderLog = (r: any): ReminderLog => ({
   id: r.id,
   reminderTitle: r.reminder_title,
@@ -289,7 +297,6 @@ const toCms = (r: any): CmsSection => ({
   imageLabel: r.image_label ?? "",
 });
 
-
 const toBackup = (r: any): Backup => ({
   id: r.id,
   name: r.name,
@@ -300,16 +307,7 @@ const toBackup = (r: any): Backup => ({
   destination: r.destination,
 });
 
-const toNotification = (r: any): AdminNotification => ({
-  id: r.id,
-  title: r.title,
-  body: r.body ?? "",
-  type: r.type,
-  link: r.link ?? undefined,
-  isRead: !!r.is_read,
-  sourceId: r.source_id ?? undefined,
-  createdAt: r.created_at,
-});
+const toNotificationRecord = toNotification;
 
 function notifyShopStore() {
   const snapshot = shopStore.get() as any;
@@ -377,64 +375,29 @@ async function loadSharedAdminData() {
 
 async function runSectionLoad(section: AdminSection) {
   switch (section) {
-   case "overview": {
-  const [
-    orders,
-    customerLedger,
-    customerSaleItems,
-    supplierLedger,
-  ] = await Promise.all([
-    supabase
-      .from("orders")
-      .select(ORDER_OVERVIEW)
-      .order("placed_on", { ascending: false }),
-
-    supabase
-      .from("customer_transactions")
-      .select(CUSTOMER_TX)
-      .order("entry_date"),
-
-    supabase
-      .from("customer_transaction_items")
-      .select(`
-        *,
-        customer_transactions!inner(
-          entry_date,
-          entry_type
-        )
-      `)
-      .eq("customer_transactions.entry_type", "sale")
-      .order("created_at"),
-
-    supabase
-      .from("supplier_transactions")
-      .select(SUPPLIER_TX)
-      .order("entry_date"),
-  ]);
-
-  const result = [
-    orders,
-    customerLedger,
-    customerSaleItems,
-    supplierLedger,
-  ].find((r) => r.error);
-
-  if (result?.error) throw result.error;
-
-  applyState({
-    orders: (orders.data ?? []).map(toOrder),
-    customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
-    customerSaleItems: (customerSaleItems.data ?? []).map(toCustomerSaleItem),
-    supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
-  });
-
-  return;
-}
+    case "overview": {
+      const [orders, customerLedger, customerSaleItems, supplierLedger] = await Promise.all([
+        supabase.from("orders").select(ORDER_OVERVIEW).order("placed_on", { ascending: false }),
+        supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
+        supabase
+          .from("customer_transaction_items")
+          .select(`*, customer_transactions!inner(entry_date, entry_type)`)
+          .eq("customer_transactions.entry_type", "sale")
+          .order("created_at"),
+        supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),
+      ]);
+      const result = [orders, customerLedger, customerSaleItems, supplierLedger].find((r) => r.error);
+      if (result?.error) throw result.error;
+      applyState({
+        orders: (orders.data ?? []).map(toOrder),
+        customerLedger: (customerLedger.data ?? []).map(toCustomerLedger),
+        customerSaleItems: (customerSaleItems.data ?? []).map(toCustomerSaleItem),
+        supplierLedger: (supplierLedger.data ?? []).map(toSupplierLedger),
+      });
+      return;
+    }
     case "customers": {
-      const { data, error } = await supabase
-        .from("customers")
-        .select(CUSTOMER_FULL)
-        .order("name");
+      const { data, error } = await supabase.from("customers").select(CUSTOMER_FULL).order("name");
       if (error) throw error;
       applyState({ customers: (data ?? []).map(toCustomer) });
       return;
@@ -579,6 +542,7 @@ async function runSectionLoad(section: AdminSection) {
 
 export function sectionForAdminPath(pathname: string): AdminSection {
   if (pathname === "/admin" || pathname === "/admin/") return "overview";
+  if (pathname.startsWith("/admin/ledger/suppliers")) return "suppliers";
   if (pathname.startsWith("/admin/customers") || pathname.startsWith("/admin/khata")) return "customers";
   if (pathname.startsWith("/admin/inventory")) return "inventory";
   if (pathname.startsWith("/admin/suppliers")) return "suppliers";
