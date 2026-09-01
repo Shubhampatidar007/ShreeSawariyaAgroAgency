@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatCurrency, formatDate } from "@/lib/shop-store";
+import { formatCurrency } from "@/lib/shop-store";
 import type { SupplierLedgerEntry } from "@/types/business";
 
 type SupplierTimelineEntry = SupplierLedgerEntry & {
@@ -17,6 +17,15 @@ type SupplierTransactionTimelineProps = {
   entries: SupplierLedgerEntry[];
 };
 
+const formatTimelineDate = (value: string) => {
+  const date = new Date(`${value}T00:00:00`);
+  return date.toLocaleDateString("en-GB", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  });
+};
+
 export function SupplierTransactionTimeline({ entries }: SupplierTransactionTimelineProps) {
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
 
@@ -27,7 +36,14 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
       group.push(entry);
       dateGroups.set(entry.date, group);
     }
-    return Array.from(dateGroups, ([date, dayEntries]) => ({ date, entries: dayEntries }));
+
+    return Array.from(dateGroups, ([date, dayEntries]) => ({
+      date,
+      entries: dayEntries,
+      purchases: dayEntries.filter((entry) => entry.type.toLowerCase() === "purchase"),
+      advances: dayEntries.filter((entry) => entry.type.toLowerCase() === "advance"),
+      payments: dayEntries.filter((entry) => entry.type.toLowerCase() === "payment"),
+    }));
   }, [entries]);
 
   const toggleDate = (date: string) => {
@@ -40,94 +56,110 @@ export function SupplierTransactionTimeline({ entries }: SupplierTransactionTime
   };
 
   return (
-    <Card className="shadow-soft">
+    <Card className="supplier-timeline-full shadow-soft">
       <CardHeader>
-        <CardTitle className="text-base">Transaction timeline</CardTitle>
+        <CardTitle className="text-lg">Purchase timeline</CardTitle>
+        <style>{`
+          .grid:has(> .supplier-timeline-full) {
+            display: block;
+          }
+          .grid:has(> .supplier-timeline-full) > :first-child:not(.supplier-timeline-full) {
+            display: none;
+          }
+        `}</style>
       </CardHeader>
       <CardContent>
         {groups.length === 0 ? (
           <p className="text-sm text-muted-foreground">No supplier transactions recorded yet.</p>
         ) : (
-          <ol className="relative space-y-4 border-l border-border pl-6">
-            {groups.map(({ date, entries: dayEntries }) => {
-              const isOpen = expandedDates.has(date);
-              const dayAmount = dayEntries.reduce((sum, entry) => sum + entry.amount, 0);
+          <div className="space-y-4">
+            {groups.map((group) => {
+              const isOpen = expandedDates.has(group.date);
+              const purchaseTotal = group.purchases.reduce((sum, entry) => sum + entry.amount, 0);
+              const paidTotal =
+                group.advances.reduce((sum, entry) => sum + entry.amount, 0) +
+                group.payments.reduce((sum, entry) => sum + entry.amount, 0);
+              const lastEntry = group.entries[group.entries.length - 1];
 
               return (
-                <li key={date} className="relative">
-                  <span className="absolute -left-[27px] top-2 size-3 rounded-full bg-primary ring-4 ring-background" />
-                  <div className="rounded-xl border border-border bg-background/40 p-3">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-semibold">{formatDate(date)}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {dayEntries.length} transaction{dayEntries.length === 1 ? "" : "s"} · {formatCurrency(dayAmount)}
-                        </p>
-                      </div>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full"
-                        onClick={() => toggleDate(date)}
-                        aria-expanded={isOpen}
-                      >
-                        {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                        View details
-                      </Button>
+                <div key={group.date} className="overflow-hidden rounded-xl border bg-background">
+                  <button
+                    type="button"
+                    className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-muted/40"
+                    onClick={() => toggleDate(group.date)}
+                    aria-expanded={isOpen}
+                  >
+                    <div>
+                      <p className="text-base font-semibold">{formatTimelineDate(group.date)}</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {group.purchases.length} transaction{group.purchases.length === 1 ? "" : "s"} · {formatCurrency(purchaseTotal)}
+                      </p>
                     </div>
+                    <span className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                      {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
+                      {isOpen ? "Hide details" : "View details"}
+                    </span>
+                  </button>
 
-                    {isOpen ? (
-                      <div className="mt-3 space-y-3 border-t border-border pt-3">
-                        {dayEntries.map((rawEntry) => {
+                  {isOpen && (
+                    <div className="border-t p-4">
+                      <div className="space-y-2">
+                        {group.purchases.map((rawEntry) => {
                           const entry = rawEntry as SupplierTimelineEntry;
-                          const type = (entry.type ?? entry.entryType ?? "purchase").toLowerCase();
-                          const title =
-                            type === "purchase"
-                              ? `Purchase${entry.productName ? ` · ${entry.productName}` : ""}`
-                              : type === "payment"
-                                ? "Payment"
-                                : "Advance";
-                          const detail = [
-                            entry.quantity != null && entry.quantity > 0
-                              ? `Quantity: ${entry.quantity} ${entry.unit ?? "unit"}`
-                              : null,
-                            entry.unitPrice != null && entry.unitPrice > 0
-                              ? `Rate: ${formatCurrency(entry.unitPrice)} / ${entry.unit ?? "unit"}`
-                              : null,
-                            entry.method ? entry.method.toUpperCase() : null,
-                            entry.reference?.trim() ? `Reference: ${entry.reference.trim()}` : null,
-                          ]
-                            .filter(Boolean)
-                            .join(" · ");
-
                           return (
-                            <div key={entry.id} className="rounded-lg bg-muted/40 p-3">
-                              <div className="flex flex-wrap items-start justify-between gap-3">
-                                <div className="min-w-0">
-                                  <p className="text-sm font-medium">{title}</p>
-                                  {detail ? <p className="mt-1 text-xs text-muted-foreground">{detail}</p> : null}
-                                  <p className="mt-1 text-xs text-muted-foreground">
-                                    Running balance {formatCurrency(entry.balance)}
-                                  </p>
-                                  {entry.remarks ? (
-                                    <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p>
-                                  ) : null}
-                                </div>
-                                <p className="shrink-0 font-display text-sm font-semibold">
-                                  {formatCurrency(entry.amount)}
+                            <div
+                              key={entry.id}
+                              className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_140px_140px] sm:items-center"
+                            >
+                              <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold">
+                                  {entry.productName || entry.reference || "Purchase"}
                                 </p>
+                                {entry.remarks ? (
+                                  <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p>
+                                ) : null}
+                              </div>
+                              <div>
+                                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Quantity</p>
+                                <p className="text-sm font-medium">
+                                  {entry.quantity != null ? `${entry.quantity} ${entry.unit ?? ""}` : "—"}
+                                </p>
+                              </div>
+                              <div>
+                                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Rate</p>
+                                <p className="text-sm font-medium">
+                                  {entry.unitPrice != null ? formatCurrency(entry.unitPrice) : "—"}
+                                </p>
+                              </div>
+                              <div className="sm:text-right">
+                                <p className="text-[11px] uppercase tracking-wide text-muted-foreground">Amount</p>
+                                <p className="text-sm font-semibold">{formatCurrency(entry.amount)}</p>
                               </div>
                             </div>
                           );
                         })}
                       </div>
-                    ) : null}
-                  </div>
-                </li>
+
+                      <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
+                        <div>
+                          <p className="text-xs text-muted-foreground">Purchase total</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(purchaseTotal)}</p>
+                        </div>
+                        <div>
+                          <p className="text-xs text-muted-foreground">Advance / paid</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(paidTotal)}</p>
+                        </div>
+                        <div className="sm:text-right">
+                          <p className="text-xs text-muted-foreground">Due after date</p>
+                          <p className="mt-1 font-semibold">{formatCurrency(lastEntry?.balance ?? 0)}</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
               );
             })}
-          </ol>
+          </div>
         )}
       </CardContent>
     </Card>
