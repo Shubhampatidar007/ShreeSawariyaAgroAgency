@@ -341,8 +341,6 @@ export async function loadShopData() {
   payments,
   reminders,
   reminderLogs,
-  cmsSections,
-  ads,
   backupRows,
 ] = await Promise.all([
         supabase
@@ -399,8 +397,6 @@ customerSaleItems,
         payments,
         reminders,
         reminderLogs,
-        cmsSections,
-        ads,
         backupRows,
       ].find((result) => result.error);
       if (firstError?.error) throw firstError.error;
