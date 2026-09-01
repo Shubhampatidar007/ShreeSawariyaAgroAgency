@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Upload } from "lucide-react";
+import { Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -87,6 +87,12 @@ export const Route = createFileRoute("/admin/products/publish")({
 function PublishProductPage() {
   const navigate = useNavigate();
   const inventory = useShopStore((s) => s.inventory);
+  const [editId] = useState<string | null>(() =>
+    typeof window === "undefined" ? null : new URLSearchParams(window.location.search).get("edit"),
+  );
+  const editing = Boolean(editId);
+  const [editingProduct, setEditingProduct] = useState<any>(null);
+  const [editLoading, setEditLoading] = useState(editing);
   const [inventoryId, setInventoryId] = useState("");
   const [title, setTitle] = useState("");
   const [brand, setBrand] = useState("");
@@ -99,7 +105,50 @@ function PublishProductPage() {
   const [featured, setFeatured] = useState(false);
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState("");
+  const [existingImageUrl, setExistingImageUrl] = useState("");
   const [publishing, setPublishing] = useState(false);
+
+  useEffect(() => {
+    if (!editId) return;
+
+    let cancelled = false;
+    const loadProduct = async () => {
+      setEditLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("products")
+          .select("*")
+          .eq("id", editId)
+          .maybeSingle();
+        if (error) throw error;
+        if (!data) throw new Error("Product not found");
+
+        if (cancelled) return;
+        setEditingProduct(data);
+        setInventoryId(data.inventory_id ?? "");
+        setTitle(data.title ?? "");
+        setBrand(data.brand ?? "");
+        setCategory(data.category ?? "Fertilizers");
+        setSellingPrice(data.selling_price == null ? "" : String(data.selling_price));
+        setDiscountPrice(data.discount_price == null ? "" : String(data.discount_price));
+        setDescription(data.description ?? "");
+        setTags(Array.isArray(data.tags) ? data.tags.join(", ") : "");
+        setVisibility(data.visibility === "hidden" ? "hidden" : "public");
+        setFeatured(Boolean(data.featured));
+        setExistingImageUrl(Array.isArray(data.images) ? data.images[0] ?? "" : "");
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Could not load product");
+        navigate({ to: "/admin/products" });
+      } finally {
+        if (!cancelled) setEditLoading(false);
+      }
+    };
+
+    void loadProduct();
+    return () => {
+      cancelled = true;
+    };
+  }, [editId, navigate]);
 
   useEffect(() => {
     if (!imageFile) {
@@ -112,27 +161,29 @@ function PublishProductPage() {
   }, [imageFile]);
 
   const item = inventory.find((i) => i.id === inventoryId);
+  const stock = item?.quantity ?? editingProduct?.stock ?? 0;
+  const previewImage = imagePreview || existingImageUrl;
 
   const draft: PublishedProduct = {
-    id: `p${Date.now()}`,
+    id: editId ?? `p${Date.now()}`,
     inventoryId,
-    title: title || item?.productName || "Untitled product",
+    title: title || item?.productName || editingProduct?.title || "Untitled product",
     brand: brand.trim() || undefined,
     category,
     sellingPrice: Number(sellingPrice) || 0,
     discountPrice: discountPrice ? Number(discountPrice) : undefined,
-    stock: item?.quantity ?? 0,
+    stock,
     description,
     tags: tags
       .split(",")
       .map((t) => t.trim())
       .filter(Boolean),
-    images: imagePreview ? [imagePreview] : [],
-    emoji: "🌾",
+    images: previewImage ? [previewImage] : [],
+    emoji: editingProduct?.emoji ?? "🌾",
     visibility,
     featured,
-    status: "published",
-    publishedOn: new Date().toISOString().slice(0, 10),
+    status: editingProduct?.status === "archived" ? "published" : editingProduct?.status ?? "published",
+    publishedOn: editingProduct?.published_on ?? new Date().toISOString().slice(0, 10),
   };
 
   const publish = async () => {
@@ -141,14 +192,14 @@ function PublishProductPage() {
       return;
     }
 
-    if (!item || item.quantity <= 0) {
+    if (!editing && (!item || item.quantity <= 0)) {
       toast.error("Selected inventory item is out of stock");
       return;
     }
 
     setPublishing(true);
     try {
-      let imageUrl: string | undefined;
+      let imageUrl = existingImageUrl || undefined;
 
       if (imageFile) {
         const blob = await compressImage(imageFile);
@@ -167,32 +218,56 @@ function PublishProductPage() {
         imageUrl = supabase.storage.from("product-images").getPublicUrl(path).data.publicUrl;
       }
 
-      await shopStore.publishProduct({
-        ...draft,
-        images: imageUrl ? [imageUrl] : [],
-      });
-
-      if (brand.trim()) {
-        const { data: createdProduct, error: lookupError } = await supabase
+      if (editing) {
+        const { error } = await supabase
           .from("products")
-          .select("id")
-          .eq("inventory_id", inventoryId)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .single();
-        if (lookupError) throw lookupError;
+          .update({
+            title: draft.title,
+            brand: draft.brand ?? null,
+            category: draft.category,
+            selling_price: draft.sellingPrice,
+            discount_price: draft.discountPrice ?? null,
+            description: draft.description,
+            tags: draft.tags,
+            images: imageUrl ? [imageUrl] : [],
+            visibility: draft.visibility,
+            featured: draft.featured,
+            status: "published",
+          } as never)
+          .eq("id", editId);
+        if (error) throw error;
 
-        const { error: brandError } = await supabase
-          .from("products")
-          .update({ brand: brand.trim() } as never)
-          .eq("id", createdProduct.id);
-        if (brandError) throw brandError;
+        await shopStore.reload();
+        toast.success("Product details updated");
+      } else {
+        await shopStore.publishProduct({
+          ...draft,
+          images: imageUrl ? [imageUrl] : [],
+        });
+
+        if (brand.trim()) {
+          const { data: createdProduct, error: lookupError } = await supabase
+            .from("products")
+            .select("id")
+            .eq("inventory_id", inventoryId)
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .single();
+          if (lookupError) throw lookupError;
+
+          const { error: brandError } = await supabase
+            .from("products")
+            .update({ brand: brand.trim() } as never)
+            .eq("id", createdProduct.id);
+          if (brandError) throw brandError;
+        }
+
+        toast.success("Product published to the storefront");
       }
 
-      toast.success("Product published to the storefront");
       navigate({ to: "/admin/products" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not publish the product");
+      toast.error(error instanceof Error ? error.message : "Could not save the product");
     } finally {
       setPublishing(false);
     }
@@ -204,11 +279,15 @@ function PublishProductPage() {
         crumbs={[
           { label: "Admin", to: "/admin" },
           { label: "Products", to: "/admin/products" },
-          { label: "Publish" },
+          { label: editing ? "Edit" : "Publish" },
         ]}
         eyebrow="Products"
-        title="Publish product"
-        description="Inventory → Publish → Preview → Live on the storefront."
+        title={editing ? "Edit product" : "Publish product"}
+        description={
+          editing
+            ? "Update the existing storefront product, image and publishing details."
+            : "Inventory → Publish → Preview → Live on the storefront."
+        }
       />
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_0.7fr]">
@@ -219,18 +298,25 @@ function PublishProductPage() {
           <CardContent className="grid gap-5 sm:grid-cols-2">
             <div className="space-y-2 sm:col-span-2">
               <Label>Inventory item</Label>
-              <Select value={inventoryId} onValueChange={setInventoryId}>
+              <Select value={inventoryId} onValueChange={setInventoryId} disabled={editing || editLoading}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select stock to publish" />
                 </SelectTrigger>
                 <SelectContent>
-                  {inventory.filter((i) => i.quantity > 0).map((i) => (
-                    <SelectItem key={i.id} value={i.id}>
-                      {i.productName} · {i.quantity} {i.unit}
-                    </SelectItem>
-                  ))}
+                  {inventory
+                    .filter((i) => i.quantity > 0 || i.id === inventoryId)
+                    .map((i) => (
+                      <SelectItem key={i.id} value={i.id}>
+                        {i.productName} · {i.quantity} {i.unit}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+              {editing ? (
+                <p className="text-xs text-muted-foreground">
+                  The inventory link is fixed for an existing product; stock stays synced from inventory.
+                </p>
+              ) : null}
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label>Product image</Label>
@@ -239,14 +325,15 @@ function PublishProductPage() {
                   type="file"
                   accept="image/jpeg,image/png,image/webp"
                   onChange={(event) => setImageFile(event.target.files?.[0] ?? null)}
+                  disabled={editLoading}
                 />
                 <p className="mt-2 text-xs text-muted-foreground">
-                  Maximum 1 MB after compression. JPEG, PNG and WebP are supported.
+                  Maximum 1 MB after compression. JPEG, PNG and WebP are supported. Existing image is kept when no new image is selected.
                 </p>
-                {imagePreview ? (
+                {previewImage ? (
                   <div className="mt-3 flex h-56 w-full items-center justify-center overflow-hidden rounded-lg bg-muted p-2">
                     <img
-                      src={imagePreview}
+                      src={previewImage}
                       alt="Product preview"
                       className="max-h-full max-w-full object-contain"
                     />
@@ -260,6 +347,7 @@ function PublishProductPage() {
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder={item?.productName ?? "Product title"}
+                disabled={editLoading}
               />
             </div>
             <div className="space-y-2">
@@ -268,6 +356,7 @@ function PublishProductPage() {
                 value={brand}
                 onChange={(e) => setBrand(e.target.value)}
                 placeholder="Verified brand name"
+                disabled={editLoading}
               />
               <p className="text-xs text-muted-foreground">Leave blank when the brand is unknown.</p>
             </div>
@@ -277,6 +366,7 @@ function PublishProductPage() {
                 value={sellingPrice}
                 onChange={(e) => setSellingPrice(e.target.value)}
                 inputMode="numeric"
+                disabled={editLoading}
               />
             </div>
             <div className="space-y-2">
@@ -285,11 +375,12 @@ function PublishProductPage() {
                 value={discountPrice}
                 onChange={(e) => setDiscountPrice(e.target.value)}
                 inputMode="numeric"
+                disabled={editLoading}
               />
             </div>
             <div className="space-y-2">
               <Label>Category</Label>
-              <Select value={category} onValueChange={setCategory}>
+              <Select value={category} onValueChange={setCategory} disabled={editLoading}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -308,6 +399,7 @@ function PublishProductPage() {
                 value={tags}
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="tags, categories"
+                disabled={editLoading}
               />
             </div>
             <div className="space-y-2 sm:col-span-2">
@@ -316,6 +408,7 @@ function PublishProductPage() {
                 rows={4}
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
+                disabled={editLoading}
               />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -326,6 +419,7 @@ function PublishProductPage() {
               <Switch
                 checked={visibility === "public"}
                 onCheckedChange={(checked) => setVisibility(checked ? "public" : "hidden")}
+                disabled={editLoading}
               />
             </div>
             <div className="flex items-center justify-between rounded-lg border border-border p-3">
@@ -333,17 +427,18 @@ function PublishProductPage() {
                 <p className="text-sm font-medium">Featured</p>
                 <p className="text-xs text-muted-foreground">Highlight in featured section</p>
               </div>
-              <Switch checked={featured} onCheckedChange={setFeatured} />
+              <Switch checked={featured} onCheckedChange={setFeatured} disabled={editLoading} />
             </div>
             <div className="flex flex-wrap gap-2 sm:col-span-2">
-              <Button className="rounded-full" onClick={publish} disabled={publishing}>
-                <Upload className="size-4" />
-                {publishing ? "Publishing…" : "Publish product"}
+              <Button className="rounded-full" onClick={publish} disabled={publishing || editLoading}>
+                {editing ? <Pencil className="size-4" /> : <Upload className="size-4" />}
+                {publishing ? "Saving…" : editing ? "Save changes" : "Publish product"}
               </Button>
               <Button
                 variant="outline"
                 className="rounded-full"
                 onClick={() => navigate({ to: "/admin/products" })}
+                disabled={publishing}
               >
                 Cancel
               </Button>
