@@ -142,50 +142,42 @@ export const buildDailyMetrics = (
     );
   });
   const snapshotTransactionIds = new Set(
-  customerSaleItems
-    .filter(
-      (item) =>
-        item.purchaseCost != null &&
-        item.adminPriceInc != null,
-    )
-    .map((item) => item.transactionId),
-);
+    customerSaleItems
+      .filter((item) => item.purchaseCost != null && item.adminPriceInc != null)
+      .map((item) => item.transactionId),
+  );
 
-customerSaleItems.forEach((item) => {
-  if (
-    item.purchaseCost == null ||
-    item.adminPriceInc == null ||
-    !item.date
-  ) {
-    return;
-  }
+  customerSaleItems.forEach((item) => {
+    if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
+      return;
+    }
 
-  if (!inRange(item.date)) return;
+    if (!inRange(item.date)) return;
 
-  const row = ensure(isoDay(item.date));
+    const row = ensure(isoDay(item.date));
 
-  row.sales += item.quantity * item.adminPriceInc;
-  row.cost += item.quantity * item.purchaseCost;
-});
+    row.sales += item.quantity * item.adminPriceInc;
+    row.cost += item.quantity * item.purchaseCost;
+  });
 
- customerLedger.forEach((entry) => {
-  if ((entry.entryType as string) !== "sale" || !inRange(entry.date)) {
-    return;
-  }
-  if (snapshotTransactionIds.has(entry.id)) {
-    return;
-  }
+  customerLedger.forEach((entry) => {
+    if ((entry.entryType as string) !== "sale" || !inRange(entry.date)) {
+      return;
+    }
+    if (snapshotTransactionIds.has(entry.id)) {
+      return;
+    }
 
-  const row = ensure(isoDay(entry.date));
+    const row = ensure(isoDay(entry.date));
 
-  row.sales += entry.amount;
-  row.cost +=
-    entry.quantity *
-    (costByProduct.get(entry.product.trim().toLowerCase()) ?? 0);
-});
+    row.sales += entry.amount;
+    row.cost +=
+      entry.quantity *
+      (costByProduct.get(entry.product.trim().toLowerCase()) ?? 0);
+  });
 
   supplierLedger.forEach((entry) => {
-    if (entry.type !== "purchase" || !inRange(entry.date)) return;
+    if (entry.entryType !== "purchase" || !inRange(entry.date)) return;
     const row = ensure(isoDay(entry.date));
     row.purchases += entry.amount;
   });
