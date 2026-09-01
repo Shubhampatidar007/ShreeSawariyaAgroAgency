@@ -3,11 +3,9 @@ import { SiteHeader } from "@/components/layout/SiteHeader";
 import { SiteFooter } from "@/components/layout/SiteFooter";
 import { HeroSection } from "@/components/home/HeroSection";
 import { SmartShoppingSection } from "@/components/home/SmartShoppingSection";
-import { FarmerAdvisorySection } from "@/components/home/FarmerAdvisorySection";
 import { CategorySection } from "@/components/home/CategorySection";
 import { FeaturedProducts } from "@/components/home/FeaturedProducts";
 import { OffersSection } from "@/components/home/OffersSection";
-import { TrustedBrandsSection } from "@/components/home/TrustedBrandsSection";
 import { AboutSection } from "@/components/home/AboutSection";
 import { LocationSection } from "@/components/home/LocationSection";
 
@@ -38,8 +36,6 @@ function Index() {
   <CategorySection />
   <FeaturedProducts />
   <OffersSection />
-  <FarmerAdvisorySection />
-  <TrustedBrandsSection />
   <AboutSection />
   <LocationSection />
 </main>

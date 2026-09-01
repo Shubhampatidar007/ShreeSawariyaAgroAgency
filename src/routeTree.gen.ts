@@ -13,7 +13,6 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AboutRouteImport } from './routes/about'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
-import { Route as AdminAdvertisementsRouteImport } from './routes/admin.advertisements'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminInventoryRemindersRouteImport } from './routes/admin.inventory-reminders'
@@ -56,11 +55,6 @@ const AdminRoute = AdminRouteImport.update({
 const AdminIndexRoute = AdminIndexRouteImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminAdvertisementsRoute = AdminAdvertisementsRouteImport.update({
-  id: '/advertisements',
-  path: '/advertisements',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
@@ -188,7 +182,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
@@ -217,7 +210,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
-  '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
@@ -248,7 +240,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/about': typeof AboutRoute
   '/admin': typeof AdminRouteWithChildren
-  '/admin/advertisements': typeof AdminAdvertisementsRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
@@ -280,7 +271,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/inventory-reminders'
@@ -309,7 +299,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/about'
-    | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/inventory-reminders'
@@ -339,7 +328,6 @@ export interface FileRouteTypes {
     | '/'
     | '/about'
     | '/admin'
-    | '/admin/advertisements'
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/inventory-reminders'
@@ -401,13 +389,6 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/admin/'
       preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/advertisements': {
-      id: '/admin/advertisements'
-      path: '/advertisements'
-      fullPath: '/admin/advertisements'
-      preLoaderRoute: typeof AdminAdvertisementsRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/analytics': {
@@ -575,7 +556,6 @@ declare module '@tanstack/react-router' {
 }
 
 interface AdminRouteChildren {
-  AdminAdvertisementsRoute: typeof AdminAdvertisementsRoute
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminInventoryRemindersRoute: typeof AdminInventoryRemindersRoute
@@ -602,7 +582,6 @@ interface AdminRouteChildren {
 }
 
 const AdminRouteChildren: AdminRouteChildren = {
-  AdminAdvertisementsRoute: AdminAdvertisementsRoute,
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
   AdminInventoryRemindersRoute: AdminInventoryRemindersRoute,
