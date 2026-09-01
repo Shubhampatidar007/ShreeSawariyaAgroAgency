@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Package, Upload } from "lucide-react";
+import { Package, Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
@@ -75,21 +75,15 @@ function ProductsPage() {
                     variant="outline"
                     size="sm"
                     className="rounded-full"
-                    onClick={() =>
-                      shopStore.updateProduct(product.id, {
-                        visibility: product.visibility === "public" ? "hidden" : "public",
-                      })
-                    }
+                    asChild
                   >
-                    {product.visibility === "public" ? "Hide" : "Show"}
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="rounded-full"
-                    onClick={() => shopStore.updateProduct(product.id, { status: "archived" })}
-                  >
-                    Archive
+                    <Link
+                      to="/admin/products/publish"
+                      search={{ edit: product.id }}
+                    >
+                      <Pencil className="size-3.5" />
+                      Edit
+                    </Link>
                   </Button>
                   <ConfirmDialog
                     trigger={
