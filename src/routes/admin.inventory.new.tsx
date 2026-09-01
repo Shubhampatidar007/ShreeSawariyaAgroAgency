@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -35,6 +35,21 @@ export const Route = createFileRoute("/admin/inventory/new")({
   component: InventoryEntryPage,
 });
 
+type VariantDraft = {
+  id: string;
+  quantity: string;
+  unit: string;
+  price: string;
+};
+
+const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
+  id: crypto.randomUUID(),
+  quantity: "",
+  unit: "bags",
+  price: "",
+  ...overrides,
+});
+
 function InventoryEntryPage() {
   const inventoryItems = useShopStore((s) => s.inventory);
   const suppliers = useShopStore((s) => s.suppliers);
@@ -45,9 +60,7 @@ function InventoryEntryPage() {
   const [selectedInventoryId, setSelectedInventoryId] = useState("");
   const [supplierId, setSupplierId] = useState("");
   const [productName, setProductName] = useState("");
-  const [quantity, setQuantity] = useState("");
-  const [unit, setUnit] = useState("bags");
-  const [price, setPrice] = useState("");
+  const [variants, setVariants] = useState<VariantDraft[]>([createVariantDraft()]);
   const [advancePaid, setAdvancePaid] = useState("");
   const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [minStock, setMinStock] = useState("10");
@@ -58,44 +71,61 @@ function InventoryEntryPage() {
 
   useEffect(() => {
     let active = true;
-
     void shopStore.reload()
-      .catch(() => {
+      .catch((error) => {
+        console.error("Inventory entry data load failed:", error);
         toast.error("Failed to load suppliers and inventory. Please try again.");
       })
       .finally(() => {
         if (active) setEntryDataLoading(false);
       });
-
     return () => {
       active = false;
     };
   }, []);
 
-  const selectedItem = inventoryItems.find((item) => item.id === selectedInventoryId) ?? null;
-  const totalPrice = (Number(quantity) || 0) * (Number(price) || 0);
+  const totalPrice = useMemo(
+    () => variants.reduce((sum, variant) => sum + (Number(variant.quantity) || 0) * (Number(variant.price) || 0), 0),
+    [variants],
+  );
 
-  const clearSelectedInventory = () => {
-    setSelectedInventoryId("");
-    setProductSearch("");
-    setProductName("");
-    setSupplierId("");
-    setQuantity("");
-    setUnit("bags");
-    setPrice("");
-    setMinStock("10");
-    setAdvancePaid("");
+  const selectedItem = inventoryItems.find((item) => item.id === selectedInventoryId) ?? null;
+
+  const updateVariant = (id: string, patch: Partial<VariantDraft>) => {
+    setVariants((current) => current.map((variant) => (variant.id === id ? { ...variant, ...patch } : variant)));
   };
+
+  const addVariant = () => setVariants((current) => [...current, createVariantDraft()]);
+
+  const removeVariant = (id: string) => {
+    setVariants((current) => (current.length === 1 ? current : current.filter((variant) => variant.id !== id)));
+  };
+
+  const resetVariants = () => setVariants([createVariantDraft()]);
 
   const selectExistingInventory = (item: (typeof inventoryItems)[number]) => {
     setSelectedInventoryId(item.id);
     setProductName(item.productName);
     setProductSearch(item.productName);
     setSupplierId(item.supplierId);
-    setQuantity("");
-    setUnit(item.unit);
-    setPrice(String(item.purchasePrice));
+    setVariants([
+      createVariantDraft({
+        quantity: "",
+        unit: item.unit,
+        price: String(item.purchasePrice),
+      }),
+    ]);
     setMinStock(String(item.minStockLevel));
+    setAdvancePaid("");
+  };
+
+  const clearSelectedInventory = () => {
+    setSelectedInventoryId("");
+    setProductSearch("");
+    setProductName("");
+    setSupplierId("");
+    resetVariants();
+    setMinStock("10");
     setAdvancePaid("");
   };
 
@@ -103,22 +133,25 @@ function InventoryEntryPage() {
     if (submitting) return;
 
     const supplier = suppliers.find((item) => item.id === supplierId);
-    const numericQuantity = Number(quantity);
-    const numericPrice = Number(price);
+    const cleanedVariants = variants.map((variant) => ({
+      ...variant,
+      quantity: Number(variant.quantity),
+      price: Number(variant.price),
+      unit: variant.unit.trim(),
+    }));
+
+    if (!supplier || !productName.trim()) {
+      toast.error("Fill supplier and product name");
+      return;
+    }
+
+    if (cleanedVariants.some((variant) => variant.quantity <= 0 || !variant.unit || variant.price < 0)) {
+      toast.error("Fill a valid quantity, unit and purchase price for every variant");
+      return;
+    }
+
     const advance = Math.max(Number(advancePaid) || 0, 0);
-    const purchaseTotal = numericQuantity * numericPrice;
-
-    if (!supplier || !productName.trim() || !quantity || numericQuantity <= 0 || !unit.trim() || !price) {
-      toast.error("Fill supplier, product, quantity and purchase price");
-      return;
-    }
-
-    if (numericPrice < 0) {
-      toast.error("Purchase price cannot be negative");
-      return;
-    }
-
-    if (advance > purchaseTotal) {
+    if (advance > totalPrice) {
       toast.error("Advance paid cannot exceed the total purchase value");
       return;
     }
@@ -126,24 +159,37 @@ function InventoryEntryPage() {
     setSubmitting(true);
 
     try {
-      await shopStore.addInventoryItem({
-        productName: productName.trim(),
-        supplierId: supplier.id,
-        supplierName: supplier.company,
-        quantity: numericQuantity,
-        unit: unit.trim(),
-        purchasePrice: numericPrice,
-        advancePaid: advance,
-        advanceMethod,
-        minStockLevel: Number(minStock) || 10,
-        lastUpdated: new Date().toISOString().slice(0, 10),
-      });
+      let remainingAdvance = advance;
+      for (const variant of cleanedVariants) {
+        const variantTotal = variant.quantity * variant.price;
+        const variantAdvance = Math.min(remainingAdvance, variantTotal);
+
+        await shopStore.addInventoryItem({
+          productName: productName.trim(),
+          supplierId: supplier.id,
+          supplierName: supplier.company,
+          quantity: variant.quantity,
+          unit: variant.unit,
+          purchasePrice: variant.price,
+          advancePaid: variantAdvance,
+          advanceMethod,
+          minStockLevel: Number(minStock) || 10,
+          lastUpdated: new Date().toISOString().slice(0, 10),
+        });
+
+        remainingAdvance -= variantAdvance;
+      }
 
       toast.success(
-        selectedInventoryId ? "Stock added to existing product" : "Stock entry recorded",
+        cleanedVariants.length === 1
+          ? selectedInventoryId
+            ? "Stock added to existing product"
+            : "Stock entry recorded"
+          : `${cleanedVariants.length} product variants recorded`,
       );
       navigate({ to: "/admin/inventory" });
-    } catch (err) {
+    } catch (error) {
+      console.error("Inventory entry save failed:", error);
       toast.error("Failed to save entry. Please try again.");
       setSubmitting(false);
     }
@@ -159,18 +205,18 @@ function InventoryEntryPage() {
         ]}
         eyebrow="Inventory"
         title="Add stock entry"
-        description="Record supplier stock or add quantity to an existing inventory product."
+        description="Add one product with one or more quantity variants and their purchase prices."
       />
 
       {entryDataLoading ? (
-        <Card className="max-w-2xl shadow-soft">
+        <Card className="max-w-3xl shadow-soft">
           <CardContent className="flex min-h-56 flex-col items-center justify-center gap-3 text-muted-foreground">
             <Loader2 className="size-7 animate-spin" aria-hidden="true" />
             <p className="text-sm">Loading suppliers and inventory…</p>
           </CardContent>
         </Card>
       ) : (
-        <Card className="max-w-2xl shadow-soft">
+        <Card className="max-w-3xl shadow-soft">
           <CardHeader>
             <CardTitle className="text-base">Stock details</CardTitle>
           </CardHeader>
@@ -253,7 +299,8 @@ function InventoryEntryPage() {
                             setSupplierId(created.id);
                             setDialogOpen(false);
                             toast.success("Supplier added — continue the stock entry");
-                          } catch (err) {
+                          } catch (error) {
+                            console.error("Supplier creation failed:", error);
                             toast.error("Failed to add supplier. Please try again.");
                           } finally {
                             setSavingSupplier(false);
@@ -276,6 +323,7 @@ function InventoryEntryPage() {
                   setProductSearch(e.target.value);
                   setSelectedInventoryId("");
                   setProductName(e.target.value);
+                  if (!selectedInventoryId) resetVariants();
                 }}
                 placeholder="Search existing product or enter new product name"
               />
@@ -283,8 +331,10 @@ function InventoryEntryPage() {
               {productSearch.trim() && (
                 <div className="rounded-md border bg-background shadow-sm">
                   {inventoryItems
-                    .filter((item) =>
-                      item.productName.toLowerCase().includes(productSearch.trim().toLowerCase()),
+                    .filter(
+                      (item) =>
+                        item.quantity > 0 &&
+                        item.productName.toLowerCase().includes(productSearch.trim().toLowerCase()),
                     )
                     .slice(0, 8)
                     .map((item) => (
@@ -296,9 +346,7 @@ function InventoryEntryPage() {
                       >
                         <div className="min-w-0">
                           <p className="truncate font-medium">{item.productName}</p>
-                          <p className="text-xs text-muted-foreground">
-                            Supplier: {item.supplierName}
-                          </p>
+                          <p className="text-xs text-muted-foreground">Supplier: {item.supplierName}</p>
                           <p className="text-xs text-muted-foreground">
                             Stock: {item.quantity} {item.unit}
                           </p>
@@ -310,8 +358,10 @@ function InventoryEntryPage() {
                       </button>
                     ))}
 
-                  {inventoryItems.filter((item) =>
-                    item.productName.toLowerCase().includes(productSearch.trim().toLowerCase()),
+                  {inventoryItems.filter(
+                    (item) =>
+                      item.quantity > 0 &&
+                      item.productName.toLowerCase().includes(productSearch.trim().toLowerCase()),
                   ).length === 0 && (
                     <div className="px-3 py-3 text-sm text-muted-foreground">
                       No existing product found. You can add it as a new product.
@@ -332,7 +382,7 @@ function InventoryEntryPage() {
                         Supplier: {selectedItem.supplierName} · Purchase price: {formatCurrency(selectedItem.purchasePrice)}
                       </p>
                       <p className="mt-2 text-xs text-muted-foreground">
-                        Enter only the additional quantity. It will be added to this existing stock.
+                        Enter only the additional quantity. The saved entry will add that quantity to current stock.
                       </p>
                     </div>
                     <button
@@ -347,35 +397,68 @@ function InventoryEntryPage() {
               ) : null}
             </div>
 
-            <div className="space-y-2">
-              <Label>Quantity to add</Label>
-              <Input
-                value={quantity}
-                onChange={(e) => setQuantity(e.target.value)}
-                inputMode="decimal"
-                placeholder="100"
-              />
-            </div>
+            <div className="space-y-3 sm:col-span-2">
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  <Label>Product variants</Label>
+                  <p className="text-xs text-muted-foreground">Add separate stock/price variants under the same product.</p>
+                </div>
+                <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                  + Add variant
+                </Button>
+              </div>
 
-            <div className="space-y-2">
-              <Label>Unit</Label>
-              <Input
-                value={unit}
-                onChange={(e) => setUnit(e.target.value)}
-                placeholder="bags"
-                disabled={Boolean(selectedInventoryId)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Purchase price (per unit)</Label>
-              <Input
-                value={price}
-                onChange={(e) => setPrice(e.target.value)}
-                inputMode="decimal"
-                placeholder="266"
-                disabled={Boolean(selectedInventoryId)}
-              />
+              <div className="space-y-3">
+                {variants.map((variant, index) => (
+                  <div key={variant.id} className="rounded-lg border p-3">
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-sm font-medium">Variant {index + 1}</p>
+                      {variants.length > 1 && (
+                        <button
+                          type="button"
+                          className="text-xs text-muted-foreground hover:text-foreground"
+                          onClick={() => removeVariant(variant.id)}
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                    <div className="grid gap-3 sm:grid-cols-3">
+                      <div className="space-y-2">
+                        <Label>Quantity / stock</Label>
+                        <Input
+                          value={variant.quantity}
+                          onChange={(e) => updateVariant(variant.id, { quantity: e.target.value })}
+                          inputMode="decimal"
+                          placeholder="500"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Unit / size</Label>
+                        <Input
+                          value={variant.unit}
+                          onChange={(e) => updateVariant(variant.id, { unit: e.target.value })}
+                          placeholder="ml / L / bags"
+                          disabled={Boolean(selectedInventoryId)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Purchase price (per unit)</Label>
+                        <Input
+                          value={variant.price}
+                          onChange={(e) => updateVariant(variant.id, { price: e.target.value })}
+                          inputMode="decimal"
+                          placeholder="250"
+                          disabled={Boolean(selectedInventoryId)}
+                        />
+                      </div>
+                    </div>
+                    <p className="mt-2 text-right text-xs text-muted-foreground">
+                      Variant total: {formatCurrency((Number(variant.quantity) || 0) * (Number(variant.price) || 0))}
+                    </p>
+                  </div>
+                ))}
+              </div>
             </div>
 
             <div className="space-y-2">
@@ -393,9 +476,7 @@ function InventoryEntryPage() {
               <Label>Advance payment method</Label>
               <Select
                 value={advanceMethod}
-                onValueChange={(value) =>
-                  setAdvanceMethod(value as "cash" | "upi" | "bank" | "cheque")
-                }
+                onValueChange={(value) => setAdvanceMethod(value as "cash" | "upi" | "bank" | "cheque")}
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Payment method" />
