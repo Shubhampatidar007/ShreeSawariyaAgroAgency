@@ -44,9 +44,9 @@ let state: ShopState = {
   suppliers: [],
   inventory: [],
   products: [],
-customerLedger: [],
-customerSaleItems: [],
-supplierLedger: [],
+  customerLedger: [],
+  customerSaleItems: [],
+  supplierLedger: [],
   draftProduct: null,
   orders: [],
   payments: [],
@@ -129,7 +129,6 @@ const toInventory = (r: any): InventoryItem => ({
   lastUpdated: r.last_updated,
 });
 
-
 const toProductVariant = (r: any): ProductVariant => ({
   id: r.id,
   productId: r.product_id ?? undefined,
@@ -185,17 +184,8 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
   unit: r.unit,
   rate: num(r.rate),
   amount: num(r.amount),
-
-  purchaseCost:
-    r.purchase_cost == null
-      ? undefined
-      : num(r.purchase_cost),
-
-  adminPriceInc:
-    r.admin_price_inc == null
-      ? undefined
-      : num(r.admin_price_inc),
-
+  purchaseCost: r.purchase_cost == null ? undefined : num(r.purchase_cost),
+  adminPriceInc: r.admin_price_inc == null ? undefined : num(r.admin_price_inc),
   date:
     r.customer_transactions?.entry_date ??
     r.entry_date ??
@@ -206,7 +196,7 @@ const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
   supplierId: r.supplier_id,
   date: r.entry_date,
-  entryType: r.entry_type,
+  type: r.entry_type,
   reference: r.reference ?? "",
   amount: num(r.amount),
   balance: num(r.balance),
@@ -221,19 +211,14 @@ const toOrder = (r: any): Order => ({
   id: r.id,
   code: r.code,
   channel: r.channel,
-
   customerId: r.customer_id ?? undefined,
   customerName: r.customer_name ?? "",
   customerType: r.customer_type,
-
   village: r.village ?? "",
   mobile: r.mobile ?? "",
-
   deliveryAddress: r.delivery_address ?? "",
   pincode: r.pincode ?? "",
-
   placedOn: r.placed_on,
-
   items: (r.order_items ?? []).map((i: any) => ({
     id: i.id,
     product: i.product,
@@ -242,23 +227,16 @@ const toOrder = (r: any): Order => ({
     rate: num(i.rate),
     amount: num(i.amount),
   })),
-
   subtotal: num(r.subtotal),
   discount: num(r.discount),
   tax: num(r.tax),
   total: num(r.total),
   paid: num(r.paid),
-
-  packageSentOn: r.package_sent_on ?? undefined,
-  paymentDueOn: r.payment_due_on ?? undefined,
-
   paymentMethod: r.payment_method,
   paymentStatus: r.payment_status,
-
   deliveryStatus: r.delivery_status,
   orderStatus: r.order_status,
   invoiceStatus: r.invoice_status,
-
   remarks: r.remarks ?? undefined,
   timeline: r.timeline ?? [],
 });
@@ -327,22 +305,22 @@ export async function loadShopData() {
   inFlightLoadPromise = (async () => {
     setState({ loading: true });
     try {
-    const [
-  notifications,
-  customers,
-  suppliers,
-  inventory,
-  products,
-  variants,
-  customerLedger,
-  customerSaleItems,
-  supplierLedger,
-  orders,
-  payments,
-  reminders,
-  reminderLogs,
-  backupRows,
-] = await Promise.all([
+      const [
+        notifications,
+        customers,
+        suppliers,
+        inventory,
+        products,
+        variants,
+        customerLedger,
+        customerSaleItems,
+        supplierLedger,
+        orders,
+        payments,
+        reminders,
+        reminderLogs,
+        backupRows,
+      ] = await Promise.all([
         supabase
           .from("notifications")
           .select("*")
@@ -355,16 +333,16 @@ export async function loadShopData() {
         supabase.from("product_variants" as any).select("*").eq("status", "active"),
         supabase.from("customer_transactions").select("*").order("entry_date"),
         supabase
-  .from("customer_transaction_items")
-  .select(`
-    *,
-    customer_transactions!inner(
-      entry_date,
-      entry_type
-    )
-  `)
-  .eq("customer_transactions.entry_type", "sale")
-  .order("created_at"),
+          .from("customer_transaction_items")
+          .select(`
+            *,
+            customer_transactions!inner(
+              entry_date,
+              entry_type
+            )
+          `)
+          .eq("customer_transactions.entry_type", "sale")
+          .order("created_at"),
         supabase.from("supplier_transactions").select("*").order("entry_date"),
         supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
         supabase.from("payments").select("*").order("entry_date", { ascending: false }),
@@ -391,8 +369,7 @@ export async function loadShopData() {
         variants,
         customerLedger,
         supplierLedger,
-
-customerSaleItems,
+        customerSaleItems,
         orders,
         payments,
         reminders,
@@ -461,6 +438,9 @@ const after = async <T>(value: T) => {
 export const shopStore = {
   get: getSnapshot,
   reload: loadShopData,
+  setDraftProduct(draft: PublishedProduct | null) {
+    setState({ draftProduct: draft });
+  },
   async addCustomer(customer: Omit<Customer, "id">) {
     const { data, error } = await supabase
       .from("customers")
@@ -507,7 +487,6 @@ export const shopStore = {
     payment: number;
     method: CustomerLedgerEntry["method"];
     remarks?: string;
-    
   }) {
     const { error } = await supabase
       .from("customer_transactions")
@@ -586,7 +565,28 @@ export const shopStore = {
       _remarks: input.remarks ?? null,
     });
     if (error) throw error;
-    return after(data as string);
+
+    const [{ data: suppliers, error: supplierError }, { data: supplierLedger, error: ledgerError }] =
+      await Promise.all([
+        supabase.from("suppliers").select("*").eq("id", input.supplierId).single(),
+        supabase.from("supplier_transactions").select("*").eq("supplier_id", input.supplierId).order("entry_date"),
+      ]);
+
+    if (supplierError) throw supplierError;
+    if (ledgerError) throw ledgerError;
+
+    setState({
+      suppliers: state.suppliers.map((supplier) =>
+        supplier.id === input.supplierId ? toSupplier(suppliers) : supplier,
+      ),
+      supplierLedger: [
+        ...state.supplierLedger.filter((entry) => entry.supplierId !== input.supplierId),
+        ...(supplierLedger ?? []).map(toSupplierLedger),
+      ],
+      loading: false,
+    });
+
+    return data as string;
   },
   async fetchTransactionItems(transactionId: string): Promise<CustomerSaleItem[]> {
     const { data, error } = await supabase
@@ -726,194 +726,65 @@ export const shopStore = {
     await supabase.from("products").delete().eq("id", id);
     return after(undefined);
   },
- async addOrder(order: Omit<Order, "id">) {
-  const payload: any = {
-    delivery_address: order.deliveryAddress,
-    pincode: order.pincode,
-    package_sent_on: order.packageSentOn ?? null,
-    payment_due_on: order.paymentDueOn ?? null,
-
-    code: order.code,
-    channel: order.channel,
-    customer_id: order.customerId ?? null,
-    customer_name: order.customerName,
-    customer_type: order.customerType,
-    village: order.village,
-    mobile: order.mobile,
-    placed_on: order.placedOn,
-    subtotal: order.subtotal,
-    discount: order.discount,
-    tax: order.tax,
-    total: order.total,
-    paid: order.paid,
-    payment_method: order.paymentMethod,
-    payment_status: order.paymentStatus,
-    delivery_status: order.deliveryStatus,
-    order_status: order.orderStatus,
-    invoice_status: order.invoiceStatus,
-    remarks: order.remarks ?? null,
-    timeline: order.timeline,
-  };
-
-  const { data, error } = await supabase
-    .from("orders")
-    .insert(payload)
-    .select()
-    .single();
+  async addOrder(order: Omit<Order, "id">) {
+    const payload: any = {
+      delivery_address: order.deliveryAddress,
+      pincode: order.pincode,
+      package_sent_on: order.packageSentOn ?? null,
+      payment_due_on: order.paymentDueOn ?? null,
+      code: order.code,
+      channel: order.channel,
+      customer_id: order.customerId ?? null,
+      customer_name: order.customerName,
+      customer_type: order.customerType,
+      village: order.village,
+      mobile: order.mobile,
+      placed_on: order.placedOn,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      tax: order.tax,
+      total: order.total,
+      paid: order.paid,
+      payment_method: order.paymentMethod,
+      payment_status: order.paymentStatus,
+      delivery_status: order.deliveryStatus,
+      order_status: order.orderStatus,
+      invoice_status: order.invoiceStatus,
+      remarks: order.remarks ?? null,
+      timeline: order.timeline,
+    };
+    const { data, error } = await supabase.from("orders").insert(payload).select().single();
     if (error) throw error;
     if (order.items.length)
-      await supabase
-        .from("order_items")
-        .insert(
-          order.items.map((item: any) => ({
-            order_id: data.id,
-            product: item.product,
-            quantity: item.quantity,
-            unit: item.unit,
-            rate: item.rate,
-            amount: item.amount,
-          })),
-        );
+      await supabase.from("order_items").insert(
+        order.items.map((item: any) => ({
+          order_id: data.id,
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+          amount: item.amount,
+        })),
+      );
     return after(toOrder(data));
   },
- async updateOrder(id: string, patch: Partial<Order>) {
-  const payload: any = {};
-
-  if (patch.orderStatus !== undefined) {
-    payload.order_status = patch.orderStatus;
-  }
-
-  if (patch.paymentStatus !== undefined) {
-    payload.payment_status = patch.paymentStatus;
-  }
-
-  if (patch.deliveryStatus !== undefined) {
-    payload.delivery_status = patch.deliveryStatus;
-  }
-
-  if (patch.invoiceStatus !== undefined) {
-    payload.invoice_status = patch.invoiceStatus;
-  }
-
-  if (patch.paid !== undefined) {
-    payload.paid = patch.paid;
-  }
-
-  if (patch.packageSentOn !== undefined) {
-    payload.package_sent_on = patch.packageSentOn || null;
-  }
-
-  if (patch.paymentDueOn !== undefined) {
-    payload.payment_due_on = patch.paymentDueOn || null;
-  }
-
-  if (patch.remarks !== undefined) {
-    payload.remarks = patch.remarks || null;
-  }
-
-  if (patch.timeline !== undefined) {
-    payload.timeline = patch.timeline;
-  }
-
-  const { error } = await supabase
-    .from("orders")
-    .update(payload)
-    .eq("id", id);
-
-  if (error) throw error;
-
-  return after(undefined);
-},
-  async addOnlineOrderPayment(input: {
-    orderId: string;
-    amount: number;
-    method: "cash" | "upi" | "bank" | "card" | "online" | "cheque";
-    remarks?: string;
-  }) {
-    const { data, error } = await supabase.rpc(
-      "add_online_order_payment",
-      {
-        _order_id: input.orderId,
-        _amount: input.amount,
-        _method: input.method,
-        _remarks: input.remarks ?? null,
-      },
-    );
-
-    if (error) throw error;
-
-    return after(data);
-  },
- async addPayment(payment: Omit<PaymentRecord, "id">) {
-  const p = payment as any;
-
-  const payload: any = {
-    reference: p.reference,
-    direction: p.direction,
-    party_name: p.partyName,
-    entry_date: p.date,
-    amount: p.amount,
-    method: p.method,
-    status: p.status,
-    order_code: p.orderCode ?? null,
-    remarks: p.remarks ?? null,
-  };
-
-  const { error } = await supabase
-    .from("payments")
-    .insert(payload);
-
-  if (error) throw error;
-
-  return after(undefined);
-},
-  async updateReminder(id: string, patch: Partial<Reminder>) {
+  async updateOrder(id: string, patch: Partial<Order>) {
     const payload: any = {};
-    if (patch.status !== undefined) payload.status = patch.status;
-    if (patch.message !== undefined) payload.message = patch.message;
-    if (patch.schedule !== undefined) payload.schedule = patch.schedule;
-    if (patch.channel !== undefined) payload.channel = patch.channel;
-    const { error } = await supabase.from("reminders").update(payload).eq("id", id);
+    if (patch.orderStatus !== undefined) payload.order_status = patch.orderStatus;
+    if (patch.paymentStatus !== undefined) payload.payment_status = patch.paymentStatus;
+    if (patch.deliveryStatus !== undefined) payload.delivery_status = patch.deliveryStatus;
+    if (patch.invoiceStatus !== undefined) payload.invoice_status = patch.invoiceStatus;
+    if (patch.paid !== undefined) payload.paid = patch.paid;
+    if (patch.packageSentOn !== undefined) payload.package_sent_on = patch.packageSentOn || null;
+    if (patch.paymentDueOn !== undefined) payload.payment_due_on = patch.paymentDueOn || null;
+    if (patch.remarks !== undefined) payload.remarks = patch.remarks || null;
+    if (patch.timeline !== undefined) payload.timeline = patch.timeline;
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
     if (error) throw error;
     return after(undefined);
   },
-  async updateCmsSection(id: string, patch: Partial<CmsSection>) {
-    const payload: any = {};
-    if (patch.headline !== undefined) payload.headline = patch.headline;
-    if (patch.body !== undefined) payload.body = patch.body;
-    if (patch.enabled !== undefined) payload.enabled = patch.enabled;
-    if (patch.visibility !== undefined) payload.visibility = patch.visibility;
-    if (patch.order !== undefined) payload.sort_order = patch.order;
-    const { error } = await supabase.from("cms_sections").update(payload).eq("id", id);
-    if (error) throw error;
-    return after(undefined);
-  },
-  async moveCmsSection(id: string, direction: -1 | 1) {
-    const sorted = [...state.cmsSections].sort((a, b) => a.order - b.order);
-    const index = sorted.findIndex((c) => c.id === id);
-    const target = index + direction;
-    if (index < 0 || target < 0 || target >= sorted.length) return;
-    const current = sorted[index]!,
-      swap = sorted[target]!;
-    await Promise.all([
-      supabase.from("cms_sections").update({ sort_order: swap.order }).eq("id", current.id),
-      supabase.from("cms_sections").update({ sort_order: current.order }).eq("id", swap.id),
-    ]);
-    return after(undefined);
-  },
-  async addBackup(name: string, destination = "Cloud vault") {
-    const { error } = await supabase
-      .from("backups")
-      .insert({ name, type: "manual", destination, status: "completed", size: "—" });
-    if (error) throw error;
-    return after(undefined);
-  },
-  async deleteBackup(id: string) {
-    await supabase.from("backups").delete().eq("id", id);
+  async deleteOrder(id: string) {
+    await supabase.from("orders").delete().eq("id", id);
     return after(undefined);
   },
 };
-
-export const formatCurrency = (value: number) => `₹${Math.round(value).toLocaleString("en-IN")}`;
-export const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
