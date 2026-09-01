@@ -41,7 +41,7 @@ import {
 import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
-import { Timeline } from "@/components/shared/Timeline";
+import { SupplierTransactionTimeline } from "@/components/suppliers/SupplierTransactionTimeline";
 import {
   formatCurrency,
   formatDate,
@@ -398,42 +398,7 @@ function SupplierLedgerPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-soft">
-          <CardHeader>
-            <CardTitle className="text-base">Timeline</CardTitle>
-          </CardHeader>
-
-          <CardContent>
-            {sorted.length === 0 ? (
-              <p className="py-8 text-center text-sm text-muted-foreground">No activity yet.</p>
-            ) : (
-              <Timeline
-                items={sorted.map((entry) => {
-                  const isPurchase = entry.type.toLowerCase() === "purchase";
-                  const otherImportant = entry.remarks?.trim();
-
-                  return {
-                    id: entry.id,
-
-                    title: isPurchase
-                      ? `Purchase · ${(entry as typeof entry & { productName?: string }).productName || entry.reference || "Item"}`
-                      : `${entry.type} · ${entry.reference}`,
-
-                    meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
-
-                    description: `Running balance ${formatCurrency(entry.balance)}${
-                      otherImportant ? ` · ${otherImportant}` : ""
-                    }`,
-
-                    amount: formatCurrency(entry.amount),
-
-                    tone: isPurchase ? "warning" : "success",
-                  };
-                })}
-              />
-            )}
-          </CardContent>
-        </Card>
+        <SupplierTransactionTimeline entries={sorted} />
       </div>
 
       <Dialog open={whatsappOpen} onOpenChange={setWhatsappOpen}>
@@ -536,22 +501,18 @@ function SupplierLedgerPage() {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
             <DialogTitle>Pay Supplier</DialogTitle>
-
             <DialogDescription>Record a payment made to {supplier.company}.</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
             <div className="rounded-lg border bg-muted/30 p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
-
               <p className="font-semibold">{supplier.company}</p>
-
               <p className="text-sm text-muted-foreground">{supplier.name}</p>
             </div>
 
             <div className="space-y-2">
               <Label htmlFor="supplier-payment-amount">Payment amount</Label>
-
               <Input
                 id="supplier-payment-amount"
                 type="number"
@@ -567,7 +528,6 @@ function SupplierLedgerPage() {
 
             <div className="space-y-2">
               <Label htmlFor="supplier-payment-date">Payment date</Label>
-
               <Input
                 id="supplier-payment-date"
                 type="date"
@@ -578,7 +538,6 @@ function SupplierLedgerPage() {
 
             <div className="space-y-2">
               <Label>Payment method</Label>
-
               <Select
                 value={paymentMethod}
                 onValueChange={(value) =>
@@ -588,14 +547,10 @@ function SupplierLedgerPage() {
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
-
                   <SelectItem value="upi">UPI</SelectItem>
-
                   <SelectItem value="bank">Bank Transfer</SelectItem>
-
                   <SelectItem value="cheque">Cheque</SelectItem>
                 </SelectContent>
               </Select>
@@ -606,7 +561,6 @@ function SupplierLedgerPage() {
                 Transaction ID / Reference
                 <span className="ml-1 text-muted-foreground">(optional)</span>
               </Label>
-
               <Input
                 id="supplier-payment-reference"
                 value={paymentReference}
@@ -620,7 +574,6 @@ function SupplierLedgerPage() {
                 Remarks
                 <span className="ml-1 text-muted-foreground">(optional)</span>
               </Label>
-
               <Input
                 id="supplier-payment-remarks"
                 value={paymentRemarks}
@@ -632,19 +585,14 @@ function SupplierLedgerPage() {
             <div className="rounded-lg border p-4 space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Current due</span>
-
                 <span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span>
               </div>
-
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Payment</span>
-
                 <span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span>
               </div>
-
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Remaining due</span>
-
                 <span className="font-bold">
                   {formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}
                 </span>
@@ -662,7 +610,6 @@ function SupplierLedgerPage() {
             >
               Cancel
             </Button>
-
             <Button
               disabled={
                 paymentSaving ||
@@ -672,12 +619,10 @@ function SupplierLedgerPage() {
               }
               onClick={async () => {
                 const amount = Number(paymentAmount);
-
                 if (!amount || amount <= 0) {
                   setPaymentError("Enter a valid payment amount.");
                   return;
                 }
-
                 if (amount > supplier.dueBalance) {
                   setPaymentError(
                     `Payment cannot exceed the current due of ${formatCurrency(
@@ -689,7 +634,6 @@ function SupplierLedgerPage() {
 
                 setPaymentSaving(true);
                 setPaymentError("");
-
                 try {
                   await shopStore.recordSupplierPayment({
                     supplierId: supplier.id,
@@ -699,7 +643,6 @@ function SupplierLedgerPage() {
                     reference: paymentReference.trim(),
                     remarks: paymentRemarks.trim(),
                   });
-
                   setPaymentOpen(false);
                 } catch (error) {
                   setPaymentError(
