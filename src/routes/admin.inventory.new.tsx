@@ -172,6 +172,7 @@ function InventoryEntryPage() {
         }),
       ],
     });
+    if (!supplierId) setSupplierId(inventoryItem.supplierId);
   };
 
   const clearItem = (itemIndex: number) => {
@@ -373,6 +374,9 @@ function InventoryEntryPage() {
                   </DialogContent>
                 </Dialog>
               </div>
+              <p className="text-xs text-muted-foreground">
+                Existing products can auto-select their current supplier. You can change it manually.
+              </p>
             </div>
 
             <div className="space-y-3">
@@ -555,6 +559,7 @@ function InventoryEntryPage() {
                                     updateVariant(itemIndex, variantIndex, { unit: e.target.value })
                                   }
                                   placeholder="bags / kg / L"
+                                  disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
                               <div className="space-y-2">
@@ -566,6 +571,7 @@ function InventoryEntryPage() {
                                   }
                                   inputMode="decimal"
                                   placeholder="1200"
+                                  disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
                             </div>
