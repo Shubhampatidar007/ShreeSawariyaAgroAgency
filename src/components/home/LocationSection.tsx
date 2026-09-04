@@ -14,7 +14,7 @@ export function LocationSection() {
           <Card className="overflow-hidden border-border shadow-soft">
             <div className="relative h-[300px] bg-muted sm:h-[440px]">
               <iframe
-                title="Google Maps preview for Shree Sawariya Agro Agency"
+                title="Google Maps preview for Shree Sanwariya Agro Agency"
                 src={MAP_PREVIEW_URL}
                 loading="lazy"
                 className="h-full w-full border-0"
@@ -37,7 +37,7 @@ export function LocationSection() {
             <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-primary">Store location</p>
             <h2 className="mt-2 font-display text-3xl font-semibold tracking-tight sm:text-4xl">Visit Our Store</h2>
             <p className="mt-4 max-w-xl text-sm leading-6 text-muted-foreground sm:text-base">
-              Visit Shree Sawariya Agro Agency for agricultural inputs, product guidance, and local support.
+              Visit Shree Sanwariya Agro Agency for agricultural inputs, product guidance, and local support.
             </p>
 
             <div className="mt-7 space-y-3">

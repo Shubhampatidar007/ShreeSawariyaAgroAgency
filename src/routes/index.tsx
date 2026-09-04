@@ -9,8 +9,8 @@ import { OffersSection } from "@/components/home/OffersSection";
 import { AboutSection } from "@/components/home/AboutSection";
 import { LocationSection } from "@/components/home/LocationSection";
 
-const title = "Shree Sawariya Agro Agency";
-const description = "Add your own products, offers, and story to this storefront.";
+const title = "Shree Sanwariya Agro Agency";
+const description = "Shree Sanwariya Agro Agency is your local agricultural store for seeds, fertilizers, crop protection products, farm supplies, and practical support for farmers.";
 
 export const Route = createFileRoute("/")({
   head: () => ({

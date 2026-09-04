@@ -78,17 +78,17 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Shree Sawariya Agro Agency" },
+      { title: "Shree Sanwariya Agro Agency" },
       {
         name: "description",
         content:
-          "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
+          "A storefront and shop management platform for managing Shree Sanwariya Agro Agency.",
       },
-      { property: "og:title", content: "Shree Sawariya Agro Agency" },
+      { property: "og:title", content: "Shree Sanwariya Agro Agency" },
       {
         property: "og:description",
         content:
-          "A storefront and shop management platform for managing Shree Sawariya Agro Agency.",
+          "A storefront and shop management platform for managing Shree Sanwariya Agro Agency.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

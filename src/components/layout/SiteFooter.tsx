@@ -38,7 +38,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-2 lg:grid-cols-4">
         <div>
           <Logo />
-          <p className="mt-4 max-w-xs text-sm text-muted-foreground">Add your own shop story, service details, and business information here.</p>
+          <p className="mt-4 max-w-xs text-sm text-muted-foreground">Shree Sanwariya Agro Agency provides quality agricultural products and dependable local service for farmers in Sitamau and nearby areas.</p>
           <ul className="mt-5 space-y-2.5 text-sm text-muted-foreground">
             <li className="flex gap-2"><MapPin className="mt-0.5 size-4 shrink-0" /> {shopInfo.address}</li>
             <li className="flex gap-2"><Phone className="mt-0.5 size-4 shrink-0" /> <a href={`tel:${shopInfo.phone}`} className="hover:text-primary">{shopInfo.phone}</a></li>

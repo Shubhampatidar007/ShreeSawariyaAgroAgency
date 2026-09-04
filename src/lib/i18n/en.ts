@@ -313,7 +313,7 @@ export const en = {
   "commandPalette.publishProduct": "Publish product",
  "home.hero.badge": "Your Trusted Agriculture Partner",
 
-"home.hero.title": "Shree Sawariya Agro Agency",
+"home.hero.title": "Shree Sanwariya Agro Agency",
 
 "home.hero.subtitle":
   "High-quality seeds, fertilizers and agricultural products for better crops and a better future.",

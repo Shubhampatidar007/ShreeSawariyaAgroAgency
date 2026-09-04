@@ -39,18 +39,18 @@ const messagePresets: Record<WhatsAppMessageKind, { label: string; message: stri
   "due-reminder": {
     label: "Due reminder",
     message:
-      "Hello {name},\n\nThis is a quick account update from Shree Sawariya Agro Agency.\n\nCurrent outstanding: {due}\n\nIf you have already made the payment, please ignore this message or contact us for confirmation.\n\nThank you,\nShree Sawariya Agro Agency",
+      "Hello {name},\n\nThis is a quick account update from Shree Sanwariya Agro Agency.\n\nCurrent outstanding: {due}\n\nIf you have already made the payment, please ignore this message or contact us for confirmation.\n\nThank you,\nShree Sanwariya Agro Agency",
   },
 
   "purchase-summary": {
     label: "Total amount record",
     message:
-      "Hello {name},\n\nHere is your account summary from Shree Sawariya Agro Agency:\n\nTotal purchases: {totalPurchase}\nTotal paid: {totalPaid}\nCurrent due: {due}\nLast purchase: {lastPurchase}\n\nFor any clarification, please contact us.\n\nThank you,\nShree Sawariya Agro Agency",
+      "Hello {name},\n\nHere is your account summary from Shree Sanwariya Agro Agency:\n\nTotal purchases: {totalPurchase}\nTotal paid: {totalPaid}\nCurrent due: {due}\nLast purchase: {lastPurchase}\n\nFor any clarification, please contact us.\n\nThank you,\nShree Sanwariya Agro Agency",
   },
 
   custom: {
     label: "Custom message",
-    message: "Hello {name},\n\nWrite your message here.\n\n— Shree Sawariya Agro Agency",
+    message: "Hello {name},\n\nWrite your message here.\n\n— Shree Sanwariya Agro Agency",
   },
 };
 type FilterState = {

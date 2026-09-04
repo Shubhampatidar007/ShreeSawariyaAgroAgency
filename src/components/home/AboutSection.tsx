@@ -37,9 +37,9 @@ export function AboutSection({ content }: { content?: Pick<CmsSection, "headline
     <section id="about" className="bg-card py-16">
       <div className="mx-auto max-w-7xl px-6">
         <SectionHeading
-          eyebrow="Why Shree Sawariya Agro Agency"
+          eyebrow="Why Shree Sanwariya Agro Agency"
           title={content?.headline || "A local agricultural store built around clear, dependable service"}
-          description={content?.body || `Shree Sawariya Agro Agency serves customers from ${shopInfo.address}. Our published catalog and live stock information are used to keep online ordering clear, while our verified business data reflects ${stats?.yearsInBusiness ?? "our"} years of business and ${stats?.customersServed?.toLocaleString("en-IN") ?? "our customers"} customers served.`}
+          description={content?.body || `Shree Sanwariya Agro Agency serves customers from ${shopInfo.address}. Our published catalog and live stock information are used to keep online ordering clear, while our verified business data reflects ${stats?.yearsInBusiness ?? "our"} years of business and ${stats?.customersServed?.toLocaleString("en-IN") ?? "our customers"} customers served.`}
         />
 
         <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">

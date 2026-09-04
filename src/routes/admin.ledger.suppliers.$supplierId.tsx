@@ -84,7 +84,7 @@ const buildSupplierReminderMessage = ({
   [
     `Hello ${supplierName || "Supplier"},`,
     "",
-    "Order update from Shree Sawariya Agro Agency.",
+    "Order update from Shree Sanwariya Agro Agency.",
     "",
     `Total records: ${totalRecords}`,
     `Total purchases: ${formatCurrency(totalPurchases)}`,
@@ -94,7 +94,7 @@ const buildSupplierReminderMessage = ({
     `Other important: ${otherImportant.trim() || "—"}`,
     "",
     "Thank you,",
-    "Shree Sawariya Agro Agency",
+    "Shree Sanwariya Agro Agency",
   ].join("\n");
 
 function SupplierLedgerPage() {

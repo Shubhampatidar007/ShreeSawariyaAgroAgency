@@ -34,7 +34,7 @@ export function Logo({
             inverted ? "text-sidebar-foreground" : "text-foreground",
           )}
         >
-          Shree Sawariya Agro Agency
+          Shree Sanwariya Agro Agency
         </span>
         <span
           className={cn(

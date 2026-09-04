@@ -30,7 +30,7 @@ export function HeroSection({
   const title = content?.headline || "Quality agricultural inputs. Better farming outcomes.";
   const subtitle =
     content?.body ||
-    "Trusted seeds, crop inputs, and practical farmer support from Shree Sawariya Agro Agency.";
+    "Trusted seeds, crop inputs, and practical farmer support from Shree Sanwariya Agro Agency.";
 
   const categoryCount = new Set(publishedProducts.map((product) => product.category)).size;
   const productCount = publishedProducts.length;
@@ -61,7 +61,7 @@ export function HeroSection({
             <div className="w-fit">
               <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-xs font-semibold text-primary">
                 <Leaf className="size-3.5" />
-                Shree Sawariya Agro Agency
+                Shree Sanwariya Agro Agency
               </span>
             </div>
 

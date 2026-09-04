@@ -200,7 +200,7 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
                 <img src={paymentQr} alt="Demo UPI payment QR code" className="size-32 sm:size-36" />
               </div>
               <div className="space-y-2 text-sm">
-                <p className="font-semibold">Shree Sawariya Agro Agency</p>
+                <p className="font-semibold">Shree Sanwariya Agro Agency</p>
                 <p className="text-muted-foreground">
                  Advance Payment Help To Deliver Fast Pakages
                 </p>

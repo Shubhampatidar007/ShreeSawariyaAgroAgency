@@ -32,7 +32,7 @@ export function SmartShoppingSection() {
         <div className="p-5 sm:p-7 lg:p-8">
           <div className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1.5 text-xs font-semibold text-primary">
             <Sparkles className="size-3.5" />
-            Smart shopping
+            Find Agricultural Products
           </div>
           <h2 className="mt-3 font-display text-2xl font-semibold tracking-tight sm:text-3xl">
             What are you looking for?

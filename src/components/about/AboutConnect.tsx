@@ -60,7 +60,7 @@ export function AboutConnect() {
         </div>
 
         <footer className="mt-16 flex flex-col gap-3 border-t border-white/10 pt-5 text-[0.58rem] font-semibold uppercase tracking-[0.15em] text-white/25 sm:mt-24 sm:flex-row sm:items-center sm:justify-between">
-          <span>SHREE SAWARIYA AGRO AGENCY</span>
+          <span>Shree Sanwariya Agro Agency</span>
           <span>8:30 AM - 8:00 PM</span>
           <span>06 / 06 — END OF STORY</span>
         </footer>
