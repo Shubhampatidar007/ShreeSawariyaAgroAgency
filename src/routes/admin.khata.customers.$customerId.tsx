@@ -207,20 +207,14 @@ function CustomerKhataPage() {
                         <TableCell className="font-medium">
   {entry.entryType === "purchase" ? (
     <Button asChild variant="outline" size="sm" className="rounded-full">
-      <Link
-        to="/admin/customers/$customerId"
-        params={{ customerId }}
-      >
+      <Link to="/admin/customers/$customerId" params={{ customerId }}>
         <BookOpen className="size-3.5" />
         View full record
       </Link>
     </Button>
   ) : (
     <Button asChild variant="outline" size="sm" className="rounded-full">
-      <Link
-        to="/admin/customers/$customerId"
-        params={{ customerId }}
-      >
+      <Link to="/admin/customers/$customerId" params={{ customerId }}>
         <BookOpen className="size-3.5" />
         View customer
       </Link>
@@ -266,10 +260,10 @@ function CustomerKhataPage() {
               <Timeline
                 items={ledger.map((entry) => ({
                   id: entry.id,
-                  title: entry.product || "Payment received",
+                  title: entry.entryType === "payment" ? "Payment received" : entry.product || "Transaction",
                   meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
                   description: `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`,
-                  amount: formatCurrency(entry.amount),
+                  amount: formatCurrency(entry.entryType === "payment" ? entry.payment : entry.amount),
                   tone: entry.remainingDue > 0 ? "warning" : "success",
                 }))}
               />
