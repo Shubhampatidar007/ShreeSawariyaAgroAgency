@@ -1,24 +1,24 @@
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./types";
 
-// Browser-safe Supabase project configuration.
-// Environment variables take priority; the fallback matches the connected
-// Shree Sanwariya Agro Agency Supabase project so local/GitHub builds do not
-// silently connect to the retired project.
-const DEFAULT_SUPABASE_URL = "https://cmfqlpcrnkswgxrszoog.supabase.co";
-const DEFAULT_SUPABASE_PUBLISHABLE_KEY = "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i";
+// Browser-safe Supabase configuration must come from environment variables.
+// The publishable key is safe for the browser; authorization is enforced by
+// Supabase Auth + RLS, not by hiding this key.
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL ||
+  (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined);
+
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
+  (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined);
+
+if (!SUPABASE_URL || !SUPABASE_PUBLISHABLE_KEY) {
+  throw new Error(
+    "Missing Supabase configuration. Set VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY.",
+  );
+}
 
 function createSupabaseClient() {
-  const SUPABASE_URL =
-    import.meta.env.VITE_SUPABASE_URL ||
-    (typeof process !== "undefined" ? process.env.SUPABASE_URL : undefined) ||
-    DEFAULT_SUPABASE_URL;
-
-  const SUPABASE_PUBLISHABLE_KEY =
-    import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY ||
-    (typeof process !== "undefined" ? process.env.SUPABASE_PUBLISHABLE_KEY : undefined) ||
-    DEFAULT_SUPABASE_PUBLISHABLE_KEY;
-
   return createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
     auth: {
       storage: typeof window !== "undefined" ? localStorage : undefined,
