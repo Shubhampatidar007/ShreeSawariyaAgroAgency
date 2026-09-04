@@ -10,7 +10,7 @@ USING ((SELECT private.is_staff()) OR (SELECT auth.uid()) = user_id);
 
 CREATE POLICY customers_staff_manage
 ON public.customers
-FOR ALL
+FOR INSERT, UPDATE, DELETE
 TO authenticated
 USING ((SELECT private.is_staff()))
 WITH CHECK ((SELECT private.is_staff()));
@@ -31,22 +31,10 @@ USING (
 
 CREATE POLICY ctx_staff_manage
 ON public.customer_transactions
-FOR INSERT
-TO authenticated
-WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY ctx_staff_update
-ON public.customer_transactions
-FOR UPDATE
+FOR INSERT, UPDATE, DELETE
 TO authenticated
 USING ((SELECT private.is_staff()))
 WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY ctx_staff_delete
-ON public.customer_transactions
-FOR DELETE
-TO authenticated
-USING ((SELECT private.is_staff()));
 
 DROP POLICY IF EXISTS cti_staff ON public.customer_transaction_items;
 CREATE POLICY cti_staff
@@ -65,22 +53,10 @@ USING (
 
 CREATE POLICY cti_staff_manage
 ON public.customer_transaction_items
-FOR INSERT
-TO authenticated
-WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY cti_staff_update
-ON public.customer_transaction_items
-FOR UPDATE
+FOR INSERT, UPDATE, DELETE
 TO authenticated
 USING ((SELECT private.is_staff()))
 WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY cti_staff_delete
-ON public.customer_transaction_items
-FOR DELETE
-TO authenticated
-USING ((SELECT private.is_staff()));
 
 DROP POLICY IF EXISTS orders_staff ON public.orders;
 CREATE POLICY orders_staff
@@ -98,19 +74,7 @@ USING (
 
 CREATE POLICY orders_staff_manage
 ON public.orders
-FOR INSERT
-TO authenticated
-WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY orders_staff_update
-ON public.orders
-FOR UPDATE
+FOR INSERT, UPDATE, DELETE
 TO authenticated
 USING ((SELECT private.is_staff()))
 WITH CHECK ((SELECT private.is_staff()));
-
-CREATE POLICY orders_staff_delete
-ON public.orders
-FOR DELETE
-TO authenticated
-USING ((SELECT private.is_staff()));
