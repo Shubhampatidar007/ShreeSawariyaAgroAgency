@@ -1,1 +1,9 @@
 project_id = "cmfqlpcrnkswgxrszoog"
+
+[auth.hook.password_verification_attempt]
+enabled = true
+uri = "pg-functions://postgres/public/hook_password_verification_attempt"
+
+[auth.hook.before_user_created]
+enabled = true
+uri = "pg-functions://postgres/public/hook_before_user_created_rate_limit"
