@@ -52,7 +52,7 @@ const buildOrderMessage = (order: any) => {
         .join("\n\n")
     : "• No item details available.";
 
-  return `🌾 SHREE SAWARIYA AGRO AGENCY
+  return `🌾 Shree Sanwariya Agro Agency  
 
 🆕 NEW ONLINE ORDER RECEIVED
 
@@ -77,7 +77,7 @@ Order Status: ${order.order_status || "—"}
 
 Please check the admin order section for full details.
 
-🌾 Shree Sawariya Agro Agency`;
+🌾 Shree Sanwariya Agro Agency  `;
 };
 
 const buildCustomerOrderMessage = (order: any) => {
@@ -91,7 +91,7 @@ const buildCustomerOrderMessage = (order: any) => {
         .join("\n")
     : "• No item details available.";
 
-  return `🌾 SHREE SAWARIYA AGRO AGENCY
+  return `🌾 Shree Sanwariya Agro Agency  
 
 ✅ YOUR ORDER HAS BEEN RECEIVED
 
@@ -115,11 +115,11 @@ Order Status: ${order.order_status || "—"}
 
 📦 We will keep you updated when the package is dispatched.
 
-For any further query, please contact Shree Sawariya Agro Agency.
+For any further query, please contactShree Sanwariya Agro Agency  .
 
 Thank you for choosing us. 🙏
 
-🌾 Shree Sawariya Agro Agency`;
+🌾 Shree Sanwariya Agro Agency`;
 };
 
 const sendWhatsAppText = async ({

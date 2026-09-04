@@ -61,7 +61,7 @@ const formatDateTime = (value: string) => {
 const buildPaymentReceiptMessage = (order: OnlineOrderRow, payment: PaymentRow) => {
   const remaining = Math.max(Number(order.total || 0) - Number(order.paid || 0), 0);
 
-  return `🌾 SHREE SAWARIYA AGRO AGENCY
+  return `🌾 Shree Sanwariya Agro Agency  
 
 ✅ PAYMENT RECEIVED
 
@@ -83,7 +83,7 @@ Remaining Due: ₹${money(remaining)}
 
 Thank you for your payment. 🙏
 
-🌾 Shree Sawariya Agro Agency`;
+🌾 Shree Sanwariya Agro Agency  `;
 };
 
 Deno.serve(async (req) => {
