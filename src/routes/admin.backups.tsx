@@ -90,31 +90,19 @@ const DAILY_HEADERS = [
   "Recorded At",
 ];
 
-const PARTY_SUMMARY_HEADERS = [
-  "Party ID",
-  "Party",
-  "Type",
-  "Contact",
-  "Location",
-  "Total Sale / Purchase",
-  "Total Paid / Given",
-  "Current Due / Balance",
-  "Last Activity",
-];
-
-const PARTY_HISTORY_HEADERS = [
+const GROUP_HISTORY_HEADERS = [
   "Date",
-  "Party",
-  "Type",
   "Entry",
   "Particular",
+  "Quantity",
+  "Unit",
+  "Rate",
   "Debit",
   "Credit",
   "Balance",
   "Method",
   "Reference",
   "Remarks",
-  "Transaction ID",
 ];
 
 const MONEY_HEADERS = new Set([
@@ -122,9 +110,6 @@ const MONEY_HEADERS = new Set([
   "Paid / Given",
   "Due / Balance",
   "Rate",
-  "Total Sale / Purchase",
-  "Total Paid / Given",
-  "Current Due / Balance",
   "Debit",
   "Credit",
   "Balance",
@@ -302,7 +287,9 @@ function buildDailyKhataRows(source: Awaited<ReturnType<typeof fetchKhataSource>
       Quantity: formatQuantity(transaction.quantity),
       Unit: "",
       Rate: formatMoney(
-        numberValue(transaction.quantity) ? numberValue(transaction.amount) / numberValue(transaction.quantity) : 0,
+        numberValue(transaction.quantity)
+          ? numberValue(transaction.amount) / numberValue(transaction.quantity)
+          : 0,
       ),
       Amount: formatMoney(transaction.amount),
       "Paid / Given": formatMoney(transaction.payment),
@@ -372,30 +359,28 @@ function buildPartyLedgerRows(dailyRows: KhataRow[]) {
   return dailyRows.map((row) => {
     const isCustomer = row.Type === "Customer";
     const entry = row.Entry.toLowerCase();
-    const debit = isCustomer
-      ? numberValue(row.Amount.replace(/[^\d.-]/g, ""))
-      : entry === "purchase"
-        ? numberValue(row.Amount.replace(/[^\d.-]/g, ""))
-        : 0;
-    const credit = isCustomer
-      ? numberValue(row["Paid / Given"].replace(/[^\d.-]/g, ""))
-      : entry === "purchase"
-        ? 0
-        : numberValue(row["Paid / Given"].replace(/[^\d.-]/g, ""));
+    const amount = numberValue(row.Amount.replace(/[^\d.-]/g, ""));
+    const paid = numberValue(row["Paid / Given"].replace(/[^\d.-]/g, ""));
+    const debit = isCustomer ? amount : entry === "purchase" ? amount : 0;
+    const credit = isCustomer ? paid : entry === "purchase" ? 0 : paid;
 
     return {
       Date: row.Date,
-      Party: row.Party,
-      Type: row.Type,
       Entry: row.Entry,
       Particular: row.Particular,
+      Quantity: row.Quantity,
+      Unit: row.Unit,
+      Rate: row.Rate,
       Debit: formatMoney(debit),
       Credit: formatMoney(credit),
       Balance: row["Due / Balance"],
       Method: row["Payment Method"],
       Reference: row.Reference,
       Remarks: row.Remarks,
+      Party: row.Party,
+      Type: row.Type,
       "Transaction ID": row.ID,
+      "Recorded At": row["Recorded At"],
     };
   });
 }
@@ -455,9 +440,10 @@ function buildPartySummary(
     partyActivity.set(key, current);
   }
 
-  for (const activity of partyActivity.entries()) {
-    const [type, partyName] = activity[0].split(":");
-    const values = activity[1];
+  for (const [activityKey, values] of partyActivity.entries()) {
+    const separatorIndex = activityKey.indexOf(":");
+    const type = activityKey.slice(0, separatorIndex);
+    const partyName = activityKey.slice(separatorIndex + 1);
     const existing = Array.from(summary.values()).find(
       (party) => party.type === type && party.name === partyName,
     );
@@ -483,20 +469,45 @@ function buildPartySummary(
   });
 }
 
-function rowCells(values: string[], styleForColumn?: (column: string) => string) {
-  return values
-    .map((value, index) => {
-      const style = styleForColumn?.(String(index)) ?? "Body";
-      return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
-    })
-    .join("");
+function buildWorksheet(name: string, xml: string, freezeRows = 5) {
+  return `<Worksheet ss:Name="${xmlEscape(name.slice(0, 31))}"><Table>${xml}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><Selected/><FreezePanes/><FrozenNoSplit/><SplitHorizontal>${freezeRows}</SplitHorizontal><TopRowBottomPane>${freezeRows}</TopRowBottomPane><ProtectContents>False</ProtectContents></WorksheetOptions></Worksheet>`;
 }
 
-function buildWorksheet(name: string, xml: string) {
-  return `<Worksheet ss:Name="${xmlEscape(name.slice(0, 31))}"><Table>${xml}</Table><WorksheetOptions xmlns="urn:schemas-microsoft-com:office:excel"><Selected/><FreezePanes/><FrozenNoSplit/><SplitHorizontal>5</SplitHorizontal><TopRowBottomPane>5</TopRowBottomPane><ProtectContents>False</ProtectContents></WorksheetOptions></Worksheet>`;
+function buildPartyBlockXml(
+  party: PartyMaster,
+  rows: ReturnType<typeof buildPartyLedgerRows>,
+) {
+  const partyRows = rows
+    .filter((row) => row.Type === party.type && row.Party === party.name)
+    .sort((a, b) => new Date(a["Recorded At"] || a.Date).getTime() - new Date(b["Recorded At"] || b.Date).getTime());
+
+  const location = party.location && party.location !== "—" ? ` • ${party.location}` : "";
+  const contact = party.contact && party.contact !== "—" ? ` • Mob: ${party.contact}` : "";
+  const heading = `${party.name}${location}${contact} • ${party.type}`;
+  const summary = `Total: ${formatMoney(party.total)}    Paid / Given: ${formatMoney(party.paid)}    Current Due / Balance: ${formatMoney(party.balance)}    Last Activity: ${party.lastActivity || "—"}`;
+  const body = partyRows.length
+    ? partyRows
+        .map((row) => {
+          const values = GROUP_HISTORY_HEADERS.map((header) => row[header] ?? "");
+          return `<Row>${values
+            .map((value, index) => {
+              const header = GROUP_HISTORY_HEADERS[index];
+              const style = MONEY_HEADERS.has(header) ? "Money" : header === "Date" ? "Date" : "Body";
+              return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
+            })
+            .join("")}</Row>`;
+        })
+        .join("")
+    : `<Row><Cell ss:MergeAcross="11" ss:StyleID="Note"><Data ss:Type="String">No transaction entries recorded yet.</Data></Cell></Row>`;
+
+  return `<Row><Cell ss:MergeAcross="11" ss:StyleID="PartyTitle"><Data ss:Type="String">${xmlEscape(heading)}</Data></Cell></Row><Row><Cell ss:MergeAcross="11" ss:StyleID="PartySummary"><Data ss:Type="String">${xmlEscape(summary)}</Data></Cell></Row><Row>${GROUP_HISTORY_HEADERS.map((header) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(header)}</Data></Cell>`).join("")}</Row>${body}<Row><Cell ss:MergeAcross="11" ss:StyleID="Spacer"><Data ss:Type="String"></Data></Cell></Row>`;
 }
 
-function buildHumanReadableWorkbookXml(metadata: Record<string, string>, dailyRows: KhataRow[], partySummary: PartyMaster[]) {
+function buildHumanReadableWorkbookXml(
+  metadata: Record<string, string>,
+  dailyRows: KhataRow[],
+  partySummary: PartyMaster[],
+) {
   const partyHistory = buildPartyLedgerRows(dailyRows);
   const generatedAt = metadata.Created ?? new Date().toLocaleString("en-IN");
 
@@ -518,53 +529,14 @@ function buildHumanReadableWorkbookXml(metadata: Record<string, string>, dailyRo
     })
     .join("");
 
-  const partyHeader = `<Row><Cell ss:MergeAcross="8" ss:StyleID="Title"><Data ss:Type="String">PARTY KHATA — CUSTOMERS &amp; SUPPLIERS</Data></Cell></Row><Row><Cell ss:MergeAcross="8" ss:StyleID="SubTitle"><Data ss:Type="String">One living summary for every party, followed by the complete transaction history.</Data></Cell></Row><Row><Cell ss:MergeAcross="8" ss:StyleID="Section"><Data ss:Type="String">PARTY SUMMARY</Data></Cell></Row><Row>${PARTY_SUMMARY_HEADERS.map((header) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(header)}</Data></Cell>`).join("")}</Row>`;
-  const partyBody = partySummary
-    .map((party) => {
-      const values = [
-        party.id,
-        party.name,
-        party.type,
-        party.contact,
-        party.location,
-        formatMoney(party.total),
-        formatMoney(party.paid),
-        formatMoney(party.balance),
-        party.lastActivity,
-      ];
-      return `<Row>${values
-        .map((value, index) => {
-          const header = PARTY_SUMMARY_HEADERS[index];
-          const style = MONEY_HEADERS.has(header) ? "Money" : header === "Last Activity" ? "Date" : "Body";
-          return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
-        })
-        .join("")}</Row>`;
-    })
-    .join("");
-
-  const partyHistoryHeader = `<Row><Cell ss:MergeAcross="11" ss:StyleID="Section"><Data ss:Type="String">TRANSACTION HISTORY</Data></Cell></Row><Row>${PARTY_HISTORY_HEADERS.map((header) => `<Cell ss:StyleID="Header"><Data ss:Type="String">${xmlEscape(header)}</Data></Cell>`).join("")}</Row>`;
-  const partyHistoryBody = partyHistory
-    .map((row) => {
-      const values = PARTY_HISTORY_HEADERS.map((header) => row[header] ?? "");
-      return `<Row>${values
-        .map((value, index) => {
-          const header = PARTY_HISTORY_HEADERS[index];
-          const style = MONEY_HEADERS.has(header) ? "Money" : header === "Date" ? "Date" : "Body";
-          return `<Cell ss:StyleID="${style}"><Data ss:Type="String">${xmlEscape(value)}</Data></Cell>`;
-        })
-        .join("")}</Row>`;
-    })
-    .join("");
-
-  const infoRow = `<Row><Cell ss:StyleID="Note"><Data ss:Type="String">Records retained locally</Data></Cell><Cell ss:StyleID="Note"><Data ss:Type="String">${xmlEscape(String(dailyRows.length))}</Data></Cell></Row><Row><Cell ss:StyleID="Note"><Data ss:Type="String">Local purpose</Data></Cell><Cell ss:StyleID="Note"><Data ss:Type="String">Human-readable disaster-recovery khata; not stored in Supabase.</Data></Cell></Row>`;
+  const groupHeader = `<Row><Cell ss:MergeAcross="11" ss:StyleID="Title"><Data ss:Type="String">GROUP RECORD — CUSTOMERS &amp; SUPPLIERS</Data></Cell></Row><Row><Cell ss:MergeAcross="11" ss:StyleID="SubTitle"><Data ss:Type="String">Each customer or supplier is kept in one separate block with contact details, current balance, and complete transaction history.</Data></Cell></Row>`;
+  const groupBody = partySummary.map((party) => buildPartyBlockXml(party, partyHistory)).join("");
+  const groupInfo = `<Row><Cell ss:MergeAcross="11" ss:StyleID="Note"><Data ss:Type="String">Parties: ${xmlEscape(String(partySummary.length))} • Transactions retained locally: ${xmlEscape(String(dailyRows.length))} • Generated: ${xmlEscape(generatedAt)}</Data></Cell></Row>`;
 
   const dailySheet = buildWorksheet("Daily Khata", dailyHeader + dailyBody);
-  const partySheet = buildWorksheet(
-    "Party Khata",
-    partyHeader + partyBody + `<Row><Cell ss:MergeAcross="8"><Data ss:Type="String"></Data></Cell></Row>` + partyHistoryHeader + partyHistoryBody + `<Row><Cell ss:MergeAcross="8"><Data ss:Type="String"></Data></Cell></Row>` + infoRow,
-  );
+  const groupSheet = buildWorksheet("Group Record", groupHeader + groupBody + groupInfo, 3);
 
-  const columns = [
+  const dailyColumns = [
     `<Column ss:Width="120"/>`,
     `<Column ss:Width="88"/>`,
     `<Column ss:Width="150"/>`,
@@ -582,8 +554,22 @@ function buildHumanReadableWorkbookXml(metadata: Record<string, string>, dailyRo
     `<Column ss:Width="220"/>`,
     `<Column ss:Width="145"/>`,
   ].join("");
+  const groupColumns = [
+    `<Column ss:Width="90"/>`,
+    `<Column ss:Width="105"/>`,
+    `<Column ss:Width="190"/>`,
+    `<Column ss:Width="80"/>`,
+    `<Column ss:Width="60"/>`,
+    `<Column ss:Width="90"/>`,
+    `<Column ss:Width="115"/>`,
+    `<Column ss:Width="115"/>`,
+    `<Column ss:Width="115"/>`,
+    `<Column ss:Width="110"/>`,
+    `<Column ss:Width="160"/>`,
+    `<Column ss:Width="220"/>`,
+  ].join("");
 
-  return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Shree Sawariya Agro Agency — Khata Book</Title><Subject>Human-readable local disaster recovery khata</Subject><Author>Shree Sawariya Agro Agency</Author></DocumentProperties><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Aptos" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style><Style ss:ID="Title"><Font ss:FontName="Aptos Display" ss:Size="16" ss:Bold="1"/><Alignment ss:Vertical="Center"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#94A3B8"/></Borders></Style><Style ss:ID="SubTitle"><Font ss:FontName="Aptos" ss:Size="10" ss:Italic="1" ss:Color="#475569"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style><Style ss:ID="Section"><Font ss:FontName="Aptos" ss:Size="11" ss:Bold="1"/><Interior ss:Color="#CBD5E1" ss:Pattern="Solid"/></Style><Style ss:ID="Header"><Font ss:FontName="Aptos" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/></Borders></Style><Style ss:ID="Body"><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style><Style ss:ID="Money"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;₹&quot;#,##0.00"/></Style><Style ss:ID="Date"><Alignment ss:Vertical="Center"/></Style><Style ss:ID="Note"><Font ss:FontName="Aptos" ss:Size="9" ss:Color="#475569"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style></Styles>${dailySheet.replace("<Table>", `<Table>${columns}`)}${partySheet}</Workbook>`;
+  return `<?xml version="1.0"?><?mso-application progid="Excel.Sheet"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:o="urn:schemas-microsoft-com:office:office" xmlns:x="urn:schemas-microsoft-com:office:excel" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><DocumentProperties xmlns="urn:schemas-microsoft-com:office:office"><Title>Shree Sawariya Agro Agency — Khata Book</Title><Subject>Human-readable local disaster recovery khata</Subject><Author>Shree Sawariya Agro Agency</Author></DocumentProperties><Styles><Style ss:ID="Default" ss:Name="Normal"><Alignment ss:Vertical="Center"/><Font ss:FontName="Aptos" ss:Size="10"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#E5E7EB"/></Borders></Style><Style ss:ID="Title"><Font ss:FontName="Aptos Display" ss:Size="16" ss:Bold="1"/><Alignment ss:Vertical="Center"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><Borders><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#94A3B8"/></Borders></Style><Style ss:ID="SubTitle"><Font ss:FontName="Aptos" ss:Size="10" ss:Italic="1" ss:Color="#475569"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style><Style ss:ID="PartyTitle"><Font ss:FontName="Aptos Display" ss:Size="13" ss:Bold="1"/><Interior ss:Color="#DBEAFE" ss:Pattern="Solid"/><Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#60A5FA"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#93C5FD"/></Borders></Style><Style ss:ID="PartySummary"><Font ss:FontName="Aptos" ss:Size="10" ss:Bold="1" ss:Color="#334155"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style><Style ss:ID="Header"><Font ss:FontName="Aptos" ss:Size="10" ss:Bold="1"/><Interior ss:Color="#E2E8F0" ss:Pattern="Solid"/><Alignment ss:Vertical="Center" ss:WrapText="1"/><Borders><Border ss:Position="Top" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/><Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="1" ss:Color="#94A3B8"/></Borders></Style><Style ss:ID="Body"><Alignment ss:Vertical="Center" ss:WrapText="1"/></Style><Style ss:ID="Money"><Alignment ss:Horizontal="Right" ss:Vertical="Center"/><NumberFormat ss:Format="&quot;₹&quot;#,##0.00"/></Style><Style ss:ID="Date"><Alignment ss:Vertical="Center"/></Style><Style ss:ID="Note"><Font ss:FontName="Aptos" ss:Size="9" ss:Color="#475569"/><Interior ss:Color="#F8FAFC" ss:Pattern="Solid"/></Style><Style ss:ID="Spacer"><Interior ss:Color="#FFFFFF" ss:Pattern="Solid"/></Style></Styles>${dailySheet.replace("<Table>", `<Table>${dailyColumns}`)}${groupSheet.replace("<Table>", `<Table>${groupColumns}`)}</Workbook>`;
 }
 
 function parseKhataWorkbook(text: string) {
@@ -696,7 +682,7 @@ async function runManualBackup(localRootHandle: any) {
       "Tables included": String(sheets.length),
       "Rows included": String(totalRows),
       "Daily Khata entries": String(dailyRows.length),
-      "Party Khata parties": String(partySummary.length),
+      "Group Record parties": String(partySummary.length),
       "Cloud path": `shop-backups/${path}`,
       "Local structure": `Shree-Sawariya-Agro-Agency/Khata/Khata-Book.xls + Shree-Sawariya-Agro-Agency/${year}/${month}/${name}`,
     };
@@ -1079,7 +1065,7 @@ function BackupsPage() {
               <div>
                 <p className="font-medium">Khata-Book.xls</p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Contains exactly two human-readable sheets: Daily Khata and Party Khata.
+                  Contains exactly two human-readable sheets: Daily Khata and Group Record.
                 </p>
               </div>
             </div>
@@ -1099,9 +1085,10 @@ function BackupsPage() {
             <div>
               <p className="font-semibold">What the local book keeps</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Daily Khata is the append-and-update transaction register. Party Khata keeps all
-                customers and suppliers together with their current totals, balances, and history.
-                It stays local and is never written to a new Supabase table.
+                Daily Khata is the append-and-update transaction register. Group Record keeps every
+                customer and supplier in one separate block with current totals, balances, contact
+                details, and complete transaction history. It stays local and is never written to a
+                new Supabase table.
               </p>
             </div>
           </div>
