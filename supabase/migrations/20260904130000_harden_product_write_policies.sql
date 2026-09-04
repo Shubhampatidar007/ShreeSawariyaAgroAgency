@@ -42,9 +42,9 @@ CREATE POLICY "product_variants_staff_manage"
   USING ((SELECT private.is_staff()))
   WITH CHECK ((SELECT private.is_staff()));
 
--- Defense in depth: these mutation RPCs already enforce staff authorization
--- internally, so anonymous execution is unnecessary.
-REVOKE EXECUTE ON FUNCTION public.publish_inventory_product(uuid, uuid, text, text, numeric, numeric, text, text[], text[], text, text, boolean) FROM anon;
-REVOKE EXECUTE ON FUNCTION public.upsert_product_variant(uuid, uuid, text, numeric, numeric) FROM anon;
+-- Defense in depth: these mutation RPCs already enforce staff authorization.
+-- Remove the default PUBLIC EXECUTE privilege as well as the explicit anon grant.
+REVOKE EXECUTE ON FUNCTION public.publish_inventory_product(uuid, uuid, text, text, numeric, numeric, text, text[], text[], text, text, boolean) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.upsert_product_variant(uuid, uuid, text, numeric, numeric) FROM PUBLIC, anon;
 GRANT EXECUTE ON FUNCTION public.publish_inventory_product(uuid, uuid, text, text, numeric, numeric, text, text[], text[], text, text, boolean) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.upsert_product_variant(uuid, uuid, text, numeric, numeric) TO authenticated;
