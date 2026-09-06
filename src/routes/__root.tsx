@@ -7,6 +7,8 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
+import { Analytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import { useEffect, useRef, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { Toaster } from "@/components/ui/sonner";
@@ -135,8 +137,6 @@ function RootComponent() {
     initLanguage();
     initAuth();
     initCart();
-    // Application startup may load ONLY public storefront data.
-    // Private/admin shop data is loaded by the protected admin route.
     initPublicShopData();
   }, []);
 
@@ -150,6 +150,8 @@ function RootComponent() {
       <SmoothScroll />
       <Outlet />
       <Toaster />
+      <Analytics />
+      <SpeedInsights />
     </QueryClientProvider>
   );
 }
