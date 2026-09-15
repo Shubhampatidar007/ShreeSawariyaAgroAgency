@@ -18,6 +18,8 @@ import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
 import { initPublicShopData } from "@/lib/public-shop-store";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { RouteTransition } from "@/components/layout/RouteTransition";
+import "@/components/layout/route-transition.css";
 
 function NotFoundComponent() {
   return (
@@ -148,7 +150,9 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <SmoothScroll />
-      <Outlet />
+      <RouteTransition>
+        <Outlet />
+      </RouteTransition>
       <Toaster />
       <Analytics />
       <SpeedInsights />
