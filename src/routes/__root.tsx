@@ -19,6 +19,7 @@ import { initCart } from "@/lib/cart-store";
 import { initPublicShopData } from "@/lib/public-shop-store";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { RouteTransition } from "@/components/layout/RouteTransition";
+import "@/components/layout/route-transition.css";
 
 function NotFoundComponent() {
   return (
