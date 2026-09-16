@@ -17,6 +17,7 @@ export function MobileAdminNav() {
 
   const isActive = (to: string) =>
     to === "/admin" ? pathname === "/admin" : pathname.startsWith(to);
+  const isMoreActive = !primaryItems.some((item) => isActive(item.to));
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
@@ -45,7 +46,12 @@ export function MobileAdminNav() {
           <SheetTrigger asChild>
             <Button
               variant="ghost"
-              className="h-auto min-h-14 flex-col gap-1 rounded-xl px-2 text-[11px] font-medium text-muted-foreground hover:bg-muted hover:text-foreground"
+              className={cn(
+                "h-auto min-h-14 flex-col gap-1 rounded-xl px-2 text-[11px] font-medium",
+                isMoreActive
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+              )}
             >
               <Menu className="size-5" />
               <span>More</span>
