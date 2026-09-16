@@ -163,9 +163,10 @@ export function SmoothScroll() {
 
     const handleTouchEnd = (event: TouchEvent) => {
       const touch = event.changedTouches[0];
-      if (!touch || startTarget instanceof Element) {
-        if (startTarget instanceof Element && isInteractiveElement(startTarget)) return;
-        if (startTarget instanceof Element && isTouchInsideHorizontalScroller(startTarget)) return;
+      if (!touch) return;
+      if (startTarget instanceof Element) {
+        if (isInteractiveElement(startTarget)) return;
+        if (isTouchInsideHorizontalScroller(startTarget)) return;
       }
 
       const deltaX = touch.clientX - startX;
