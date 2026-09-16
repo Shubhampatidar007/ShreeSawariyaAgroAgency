@@ -51,8 +51,30 @@ function prepareElement(element: Element) {
   element.style.willChange = "transform, opacity, clip-path";
 }
 
+function isTouchInsideHorizontalScroller(element: Element) {
+  let current: Element | null = element;
+
+  while (current && current !== document.body) {
+    if (current instanceof HTMLElement && current.scrollWidth > current.clientWidth + 1) {
+      return true;
+    }
+    current = current.parentElement;
+  }
+
+  return false;
+}
+
+function isInteractiveElement(element: Element) {
+  return Boolean(
+    element.closest(
+      "a, button, input, textarea, select, option, [role=button], [contenteditable=true], iframe",
+    ),
+  );
+}
+
 export function SmoothScroll() {
   const locationHref = useRouterState({ select: (state) => state.location.href });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   useEffect(() => {
     const reducedMotion = prefersReducedMotion();
@@ -91,6 +113,79 @@ export function SmoothScroll() {
       observer.disconnect();
     };
   }, [locationHref]);
+
+  useEffect(() => {
+    if (pathname !== "/") return;
+
+    const mediaQuery = window.matchMedia("(max-width: 767px)");
+    if (!mediaQuery.matches) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startTarget: EventTarget | null = null;
+
+    const getSections = () => Array.from(document.querySelectorAll<HTMLElement>("main > section"));
+
+    const getCurrentSectionIndex = (sections: HTMLElement[]) => {
+      const scrollPosition = window.scrollY + 80;
+      let currentIndex = 0;
+
+      sections.forEach((section, index) => {
+        if (section.offsetTop <= scrollPosition) currentIndex = index;
+      });
+
+      return currentIndex;
+    };
+
+    const goToSection = (direction: 1 | -1) => {
+      const sections = getSections();
+      if (sections.length < 2) return;
+
+      const currentIndex = getCurrentSectionIndex(sections);
+      const nextIndex = Math.max(0, Math.min(sections.length - 1, currentIndex + direction));
+
+      if (nextIndex === currentIndex) return;
+
+      window.scrollTo({
+        top: Math.max(0, sections[nextIndex].offsetTop),
+        behavior: "auto",
+      });
+    };
+
+    const handleTouchStart = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      if (!touch) return;
+
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startTarget = event.target;
+    };
+
+    const handleTouchEnd = (event: TouchEvent) => {
+      const touch = event.changedTouches[0];
+      if (!touch || startTarget instanceof Element) {
+        if (startTarget instanceof Element && isInteractiveElement(startTarget)) return;
+        if (startTarget instanceof Element && isTouchInsideHorizontalScroller(startTarget)) return;
+      }
+
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      const horizontalDistance = Math.abs(deltaX);
+      const verticalDistance = Math.abs(deltaY);
+
+      if (horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20) return;
+
+      goToSection(deltaX < 0 ? 1 : -1);
+    };
+
+    window.addEventListener("touchstart", handleTouchStart, { passive: true });
+    window.addEventListener("touchend", handleTouchEnd, { passive: true });
+
+    return () => {
+      window.removeEventListener("touchstart", handleTouchStart);
+      window.removeEventListener("touchend", handleTouchEnd);
+    };
+  }, [pathname]);
 
   return null;
 }
