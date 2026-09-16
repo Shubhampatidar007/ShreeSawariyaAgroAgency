@@ -173,7 +173,7 @@ export function SmoothScroll() {
       const currentIndex = getCurrentAdminIndex();
       if (currentIndex < 0) return;
 
-      const nextIndex = Math.max(0, Math.min(adminItems.length - 1, currentIndex + direction));
+      const nextIndex = (currentIndex + direction + adminItems.length) % adminItems.length;
       if (nextIndex === currentIndex) return;
 
       void router.navigate({ to: adminItems[nextIndex].to });
@@ -204,8 +204,8 @@ export function SmoothScroll() {
       if (horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20) return;
 
       if (pathname.startsWith("/admin")) {
-        // A rightward swipe advances through the same order shown in the mobile admin nav.
-        goToAdminPage(deltaX > 0 ? 1 : -1);
+        // Swipe right-to-left to advance: Home -> Sales -> Stock -> Customers -> ... -> Home.
+        goToAdminPage(deltaX < 0 ? 1 : -1);
       } else {
         goToSection(deltaX < 0 ? 1 : -1);
       }
