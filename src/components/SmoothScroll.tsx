@@ -1,6 +1,7 @@
 import { animate } from "motion";
 import { useEffect } from "react";
-import { useRouterState } from "@tanstack/react-router";
+import { useRouter, useRouterState } from "@tanstack/react-router";
+import { adminNavSections } from "@/data/navigation";
 
 const TEXT_SELECTOR =
   "h1, h2, h3, h4, h5, h6, p, li, blockquote, figcaption, label";
@@ -73,6 +74,7 @@ function isInteractiveElement(element: Element) {
 }
 
 export function SmoothScroll() {
+  const router = useRouter();
   const locationHref = useRouterState({ select: (state) => state.location.href });
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
@@ -115,8 +117,6 @@ export function SmoothScroll() {
   }, [locationHref]);
 
   useEffect(() => {
-    if (pathname !== "/") return;
-
     const mediaQuery = window.matchMedia("(max-width: 767px)");
     if (!mediaQuery.matches) return;
 
@@ -139,7 +139,7 @@ export function SmoothScroll() {
 
     const goToSection = (direction: 1 | -1) => {
       const sections = getSections();
-      if (sections.length < 2) return;
+      if (pathname !== "/" || sections.length < 2) return;
 
       const currentIndex = getCurrentSectionIndex(sections);
       const nextIndex = Math.max(0, Math.min(sections.length - 1, currentIndex + direction));
@@ -150,6 +150,26 @@ export function SmoothScroll() {
         top: Math.max(0, sections[nextIndex].offsetTop),
         behavior: "auto",
       });
+    };
+
+    const adminItems = adminNavSections.flatMap((section) => section.items);
+    const getCurrentAdminIndex = () => {
+      const exactIndex = adminItems.findIndex((item) =>
+        item.to === "/admin" ? pathname === "/admin" : pathname.startsWith(item.to),
+      );
+      return exactIndex;
+    };
+
+    const goToAdminPage = (direction: 1 | -1) => {
+      if (!pathname.startsWith("/admin")) return;
+
+      const currentIndex = getCurrentAdminIndex();
+      if (currentIndex < 0) return;
+
+      const nextIndex = Math.max(0, Math.min(adminItems.length - 1, currentIndex + direction));
+      if (nextIndex === currentIndex) return;
+
+      void router.navigate({ to: adminItems[nextIndex].to });
     };
 
     const handleTouchStart = (event: TouchEvent) => {
@@ -176,7 +196,11 @@ export function SmoothScroll() {
 
       if (horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20) return;
 
-      goToSection(deltaX < 0 ? 1 : -1);
+      if (pathname.startsWith("/admin")) {
+        goToAdminPage(deltaX < 0 ? 1 : -1);
+      } else {
+        goToSection(deltaX < 0 ? 1 : -1);
+      }
     };
 
     window.addEventListener("touchstart", handleTouchStart, { passive: true });
@@ -186,7 +210,7 @@ export function SmoothScroll() {
       window.removeEventListener("touchstart", handleTouchStart);
       window.removeEventListener("touchend", handleTouchEnd);
     };
-  }, [pathname]);
+  }, [pathname, router]);
 
   return null;
 }
