@@ -152,13 +152,20 @@ export function SmoothScroll() {
       });
     };
 
-    const adminItems = adminNavSections.flatMap((section) => section.items);
-    const getCurrentAdminIndex = () => {
-      const exactIndex = adminItems.findIndex((item) =>
+    const primaryAdminPaths = ["/admin", "/admin/sales", "/admin/inventory", "/admin/customers"];
+    const allAdminItems = adminNavSections.flatMap((section) => section.items);
+    const additionalAdminItems = allAdminItems.filter(
+      (item) => !primaryAdminPaths.includes(item.to),
+    );
+    const adminItems = [
+      ...primaryAdminPaths.map((to) => allAdminItems.find((item) => item.to === to)).filter(Boolean),
+      ...additionalAdminItems,
+    ] as typeof allAdminItems;
+
+    const getCurrentAdminIndex = () =>
+      adminItems.findIndex((item) =>
         item.to === "/admin" ? pathname === "/admin" : pathname.startsWith(item.to),
       );
-      return exactIndex;
-    };
 
     const goToAdminPage = (direction: 1 | -1) => {
       if (!pathname.startsWith("/admin")) return;
@@ -197,7 +204,8 @@ export function SmoothScroll() {
       if (horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20) return;
 
       if (pathname.startsWith("/admin")) {
-        goToAdminPage(deltaX < 0 ? 1 : -1);
+        // A rightward swipe advances through the same order shown in the mobile admin nav.
+        goToAdminPage(deltaX > 0 ? 1 : -1);
       } else {
         goToSection(deltaX < 0 ? 1 : -1);
       }
