@@ -29,15 +29,15 @@ export function RangeFilter({
   const { t } = useI18n();
 
   return (
-    <div className={cn("flex flex-wrap items-center gap-1.5", className)}>
-      <div className="flex flex-wrap items-center gap-1 rounded-full border border-border bg-muted/60 p-1">
+    <div className={cn("flex w-full flex-wrap items-center gap-1.5 sm:w-auto", className)}>
+      <div className="flex max-w-full flex-nowrap items-center gap-1 overflow-x-auto rounded-full border border-border bg-muted/60 p-1">
         {options.map((option) => (
           <button
             key={option}
             type="button"
             onClick={() => onChange(option)}
             className={cn(
-              "rounded-full px-3 py-1 text-xs font-semibold transition-colors",
+              "shrink-0 rounded-full px-3 py-1 text-xs font-semibold transition-colors",
               value === option
                 ? "bg-primary text-primary-foreground shadow-soft"
                 : "text-muted-foreground hover:text-foreground",
@@ -52,13 +52,13 @@ export function RangeFilter({
           <Button
             variant={value === "custom" ? "default" : "outline"}
             size="sm"
-            className="rounded-full"
+            className="shrink-0 rounded-full"
           >
             <CalendarRange className="size-4" />
             {t("range.custom")}
           </Button>
         </PopoverTrigger>
-        <PopoverContent align="end" className="w-72 space-y-3">
+        <PopoverContent align="end" className="w-72 max-w-[calc(100vw-1rem)] space-y-3">
           <p className="text-sm font-semibold">{t("range.custom")}</p>
           <div className="grid grid-cols-2 gap-2">
             <div className="space-y-1">
