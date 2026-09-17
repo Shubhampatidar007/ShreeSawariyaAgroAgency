@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell } from "lucide-react";
+import { Bell, BookOpen, Eye } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -63,6 +63,20 @@ export function CustomerCard({ customer }: { customer: Customer }) {
           />
           <Row label="Last purchase" value={formatDate(customer.lastPurchase)} />
         </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1 rounded-full" asChild>
+            <Link to="/admin/customers/$customerId" params={{ customerId: customer.id }}>
+              <Eye className="size-3.5" />
+              View details
+            </Link>
+          </Button>
+          <Button size="sm" className="flex-1 rounded-full" asChild>
+            <Link to="/admin/khata/customers/$customerId" params={{ customerId: customer.id }}>
+              <BookOpen className="size-3.5" />
+              Open khata
+            </Link>
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
@@ -99,6 +113,20 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
             }
           />
           <Row label="Last order" value={formatDate(supplier.lastOrder)} />
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" className="flex-1 rounded-full" asChild>
+            <Link to="/admin/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
+              <Eye className="size-3.5" />
+              View details
+            </Link>
+          </Button>
+          <Button size="sm" className="flex-1 rounded-full" asChild>
+            <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
+              <BookOpen className="size-3.5" />
+              Open ledger
+            </Link>
+          </Button>
         </div>
       </CardContent>
     </Card>
