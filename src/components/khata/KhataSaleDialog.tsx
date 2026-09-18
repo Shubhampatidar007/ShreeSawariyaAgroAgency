@@ -273,6 +273,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const [paid, setPaid] = useState("0");
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paymentReference, setPaymentReference] = useState("");
   const [remarks, setRemarks] = useState("");
 
   // receipt choice option: default is 'current'
@@ -425,6 +426,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setPaid("0");
     setMethod("cash");
     setEntryDate(new Date().toISOString().slice(0, 10));
+    setPaymentReference("");
     setRemarks("");
     setReceiptOption("current");
   };
@@ -604,6 +606,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
         paid: paidNum,
         method,
         date: entryDate,
+        reference: paymentReference.trim() || undefined,
 
         ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
       });
@@ -1106,8 +1109,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                 <Label htmlFor="khata-payment-proof">Transaction / Proof reference (optional)</Label>
                 <Input
                   id="khata-payment-proof"
-                  value={remarks}
-                  onChange={(e) => setRemarks(e.target.value)}
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
                   placeholder="UTR, transaction ID, cheque no., etc. (optional)"
                 />
               </div>

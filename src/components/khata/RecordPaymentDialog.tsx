@@ -36,12 +36,14 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState<PaymentMethod>("cash");
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paymentReference, setPaymentReference] = useState("");
   const [remarks, setRemarks] = useState("");
 
   const reset = () => {
     setAmount("");
     setMethod("cash");
     setEntryDate(new Date().toISOString().slice(0, 10));
+    setPaymentReference("");
     setRemarks("");
   };
 
@@ -57,6 +59,7 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
         amount: amountNum,
         method,
         date: entryDate,
+        reference: paymentReference.trim() || undefined,
         remarks: remarks.trim() || undefined,
       });
       toast.success(`Payment of ${formatCurrency(amountNum)} recorded`);
@@ -126,8 +129,8 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
               <Label htmlFor="payment-proof-reference">Transaction / Proof reference (optional)</Label>
               <Input
                 id="payment-proof-reference"
-                value={remarks}
-                onChange={(e) => setRemarks(e.target.value)}
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
                 placeholder="UTR, transaction ID, cheque no., etc. (optional)"
               />
             </div>

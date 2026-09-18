@@ -532,6 +532,7 @@ export const shopStore = {
     method: CustomerLedgerEntry["method"];
     date?: string;
     remarks?: string;
+    reference?: string;
   }) {
     const { data, error } = await supabase.rpc("create_khata_sale" as any, {
       _customer_id: input.customerId,
@@ -547,7 +548,7 @@ export const shopStore = {
       _paid: input.paid,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
-      _remarks: input.remarks ?? null,
+      _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
     });
     if (error) throw error;
     return after(data as string);
@@ -558,13 +559,14 @@ export const shopStore = {
     method: CustomerLedgerEntry["method"];
     date?: string;
     remarks?: string;
+    reference?: string;
   }) {
     const { data, error } = await supabase.rpc("record_khata_payment" as any, {
       _customer_id: input.customerId,
       _amount: input.amount,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
-      _remarks: input.remarks ?? null,
+      _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
     });
     if (error) throw error;
     return after(data as string);
@@ -829,6 +831,7 @@ export const shopStore = {
     amount: number;
     method: "cash" | "upi" | "bank" | "card" | "online" | "cheque";
     remarks?: string;
+    reference?: string;
   }) {
     const { data, error } = await supabase.rpc(
       "add_online_order_payment",
@@ -836,7 +839,7 @@ export const shopStore = {
         _order_id: input.orderId,
         _amount: input.amount,
         _method: input.method,
-        _remarks: input.remarks ?? null,
+        _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
       },
     );
 
