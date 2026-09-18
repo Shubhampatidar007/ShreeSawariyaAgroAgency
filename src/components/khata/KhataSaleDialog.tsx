@@ -1101,6 +1101,17 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
               </Select>
             </div>
 
+            {(method === "upi" || method === "bank" || method === "cheque") && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="khata-payment-proof">Transaction / Proof reference (optional)</Label>
+                <Input
+                  id="khata-payment-proof"
+                  value={remarks}
+                  onChange={(e) => setRemarks(e.target.value)}
+                  placeholder="UTR, transaction ID, cheque no., etc. (optional)"
+                />
+              </div>
+            )}
             <div className="space-y-1.5">
               <Label>Date</Label>
 
