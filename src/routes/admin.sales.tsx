@@ -734,6 +734,17 @@ function OrderViewDialog({
               </Select>
             </div>
 
+            {(paymentMethod === "upi" || paymentMethod === "bank" || paymentMethod === "card" || paymentMethod === "online" || paymentMethod === "cheque") && (
+              <div className="space-y-2">
+                <Label htmlFor="payment-proof-reference">Transaction / Proof reference (optional)</Label>
+                <Input
+                  id="payment-proof-reference"
+                  value={paymentRemarks}
+                  onChange={(e) => setPaymentRemarks(e.target.value)}
+                  placeholder="UTR, transaction ID, cheque no., etc. (optional)"
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="payment-remarks">Remarks</Label>
               <Input
