@@ -383,6 +383,7 @@ function OrderViewDialog({
         orderId: order.id,
         amount,
         method: paymentMethod,
+        reference: paymentReference.trim() || undefined,
         remarks: paymentRemarks,
       });
 
