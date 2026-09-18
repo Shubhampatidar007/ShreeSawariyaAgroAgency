@@ -334,6 +334,7 @@ function OrderViewDialog({
   const [paymentMethod, setPaymentMethod] = useState<
     "cash" | "upi" | "bank" | "card" | "online" | "cheque"
   >("upi");
+  const [paymentReference, setPaymentReference] = useState("");
   const [paymentRemarks, setPaymentRemarks] = useState("");
   const [paymentSaving, setPaymentSaving] = useState(false);
   const [paymentReceiptSending, setPaymentReceiptSending] = useState(false);
@@ -739,8 +740,8 @@ function OrderViewDialog({
                 <Label htmlFor="payment-proof-reference">Transaction / Proof reference (optional)</Label>
                 <Input
                   id="payment-proof-reference"
-                  value={paymentRemarks}
-                  onChange={(e) => setPaymentRemarks(e.target.value)}
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
                   placeholder="UTR, transaction ID, cheque no., etc. (optional)"
                 />
               </div>
