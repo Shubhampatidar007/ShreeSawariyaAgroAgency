@@ -121,6 +121,17 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
               </SelectContent>
             </Select>
           </div>
+          {(method === "upi" || method === "bank" || method === "cheque") && (
+            <div className="space-y-1.5">
+              <Label htmlFor="payment-proof-reference">Transaction / Proof reference (optional)</Label>
+              <Input
+                id="payment-proof-reference"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="UTR, transaction ID, cheque no., etc. (optional)"
+              />
+            </div>
+          )}
           <div className="space-y-1.5">
             <Label>Date</Label>
             <Input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
