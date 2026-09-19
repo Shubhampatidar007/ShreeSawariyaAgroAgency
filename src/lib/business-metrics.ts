@@ -223,3 +223,75 @@ export const getPurchaseCost = (productName: string, inventory: InventoryItem[])
   );
   return item?.purchasePrice ?? 0;
 };
+
+
+export type CustomerProfitOrder = {
+  placedOn: string;
+  items: Array<{
+    product: string;
+    quantity: number;
+    amount: number;
+  }>;
+};
+
+export type CustomerProfitSaleEntry = {
+  id: string;
+  date: string;
+  product: string;
+  quantity: number;
+  amount: number;
+};
+
+// Customer profit intentionally mirrors the sales/cost branches in
+// buildDailyMetrics without changing the existing dashboard calculation.
+export const calculateCustomerProfit = (
+  orders: CustomerProfitOrder[],
+  saleEntries: CustomerProfitSaleEntry[],
+  customerSaleItems: CustomerSaleItem[],
+  inventory: InventoryItem[],
+): number => {
+  const costByProduct = new Map(
+    inventory.map((item) => [item.productName.trim().toLowerCase(), item.purchasePrice]),
+  );
+
+  let sales = 0;
+  let cost = 0;
+
+  orders.forEach((order) => {
+    // Same as buildDailyMetrics: use the actual line-item selling amounts.
+    sales += order.items.reduce((sum, item) => sum + item.amount, 0);
+    cost += order.items.reduce(
+      (sum, item) =>
+        sum + item.quantity * (costByProduct.get(item.product.trim().toLowerCase()) ?? 0),
+      0,
+    );
+  });
+
+  const snapshotTransactionIds = new Set(
+    customerSaleItems
+      .filter((item) => item.purchaseCost != null && item.adminPriceInc != null)
+      .map((item) => item.transactionId),
+  );
+
+  customerSaleItems.forEach((item) => {
+    if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
+      return;
+    }
+
+    sales += item.quantity * item.adminPriceInc;
+    cost += item.quantity * item.purchaseCost;
+  });
+
+  saleEntries.forEach((entry) => {
+    if (snapshotTransactionIds.has(entry.id)) {
+      return;
+    }
+
+    sales += entry.amount;
+    cost +=
+      entry.quantity *
+      (costByProduct.get(entry.product.trim().toLowerCase()) ?? 0);
+  });
+
+  return sales - cost;
+};

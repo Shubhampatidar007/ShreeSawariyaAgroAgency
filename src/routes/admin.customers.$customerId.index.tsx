@@ -11,6 +11,7 @@ import {
   Receipt,
   UserX,
   Wallet,
+  TrendingUp,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
@@ -21,7 +22,9 @@ import { DetailHeader } from "@/components/shared/DetailHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
-import { loadCustomerLedger } from "@/lib/admin-customer-data";
+import { loadCustomerLedger, loadCustomerProfitData } from "@/lib/admin-customer-data";
+import type { CustomerProfitData } from "@/lib/admin-customer-data";
+import { calculateCustomerProfit } from "@/lib/business-metrics";
 import type { CustomerLedgerEntry, CustomerSaleItem } from "@/types/business";
 
 export const Route = createFileRoute("/admin/customers/$customerId/")({
@@ -41,7 +44,10 @@ export const Route = createFileRoute("/admin/customers/$customerId/")({
 function CustomerDetailPage() {
   const { customerId } = Route.useParams();
   const customer = useShopStore((s) => s.customers.find((c) => c.id === customerId));
+  const inventory = useShopStore((s) => s.inventory);
   const [ledger, setLedger] = useState<CustomerLedgerEntry[]>([]);
+  const [customerProfitData, setCustomerProfitData] = useState<CustomerProfitData | null>(null);
+  const [customerProfitLoading, setCustomerProfitLoading] = useState(true);
   const [ledgerLoading, setLedgerLoading] = useState(true);
   const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set());
   const [itemsByTx, setItemsByTx] = useState<Record<string, CustomerSaleItem[] | "loading">>({});
@@ -51,6 +57,20 @@ function CustomerDetailPage() {
     setLedgerLoading(true);
     setExpandedDates(new Set());
     setItemsByTx({});
+    setCustomerProfitData(null);
+    setCustomerProfitLoading(true);
+
+    void loadCustomerProfitData(customerId)
+      .then((data) => {
+        if (!cancelled) setCustomerProfitData(data);
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        console.error("Customer profit load failed:", error);
+      })
+      .finally(() => {
+        if (!cancelled) setCustomerProfitLoading(false);
+      });
 
     void loadCustomerLedger(customerId)
       .then((rows) => {
@@ -79,6 +99,19 @@ function CustomerDetailPage() {
       })
       .map(({ entry }) => entry);
   }, [ledger]);
+
+  const customerProfit = useMemo(
+    () =>
+      customerProfitData
+        ? calculateCustomerProfit(
+            customerProfitData.orders,
+            customerProfitData.saleEntries,
+            customerProfitData.saleItems,
+            inventory,
+          )
+        : 0,
+    [customerProfitData, inventory],
+  );
 
   const dateGroups = useMemo(() => {
     const groups = new Map<string, CustomerLedgerEntry[]>();
@@ -182,6 +215,13 @@ function CustomerDetailPage() {
         items={[
           { label: "Total purchases", value: formatCurrency(customer.totalPurchases), icon: IndianRupee },
           { label: "Total paid", value: formatCurrency(customer.totalPaid), icon: Wallet, tone: "success" },
+          {
+            label: "Customer Profit",
+            value: customerProfitLoading ? "—" : formatCurrency(customerProfit),
+            icon: TrendingUp,
+            tone: customerProfit < 0 ? "warning" : "success",
+            helper: "Gross profit from this customer's sales",
+          },
           {
             label: "Current due",
             value: formatCurrency(customer.currentDue),
