@@ -178,13 +178,14 @@ export function SupplierTransactionTimeline({ entries }: Props) {
                           {group.purchases.map((rawEntry) => {
                             const entry = rawEntry as SupplierTimelineEntry;
                             return (
-                              <div key={entry.id} className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_140px_140px_140px] sm:items-center">
+                              <div key={entry.id} className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_120px_120px_120px_120px] sm:items-center">
                                 <div className="min-w-0">
                                   <p className="truncate text-sm font-semibold">{entry.productName || entry.reference || "Purchase"}</p>
                                   {entry.remarks ? <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p> : null}
                                 </div>
                                 <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Quantity</p><p className="text-sm font-medium">{entry.quantity != null ? `${entry.quantity} ${entry.unit ?? ""}` : "—"}</p></div>
                                 <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Rate</p><p className="text-sm font-medium">{entry.unitPrice != null ? formatCurrency(entry.unitPrice) : "—"}</p></div>
+                                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p><p className="text-sm font-medium uppercase">{entry.method || "—"}</p></div>
                                 <div className="sm:text-right"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Amount</p><p className="text-sm font-semibold">{formatCurrency(entry.amount)}</p></div>
                               </div>
                             );
