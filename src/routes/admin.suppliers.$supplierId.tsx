@@ -55,7 +55,7 @@ function SupplierDetailPage() {
         actions={
           <>
             <Button variant="outline" className="rounded-full" asChild>
-              <Link to="/admin/suppliers/$supplierId/edit" params={{ supplierId }} reloadDocument><Pencil className="size-4" /> Edit</Link>
+              <a href={`/admin/suppliers/${supplierId}/edit`}><Pencil className="size-4" /> Edit</a>
             </Button>
             <Button className="rounded-full" asChild>
             <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId }}>
