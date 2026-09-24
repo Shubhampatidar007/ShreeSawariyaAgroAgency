@@ -31,7 +31,7 @@ import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.
 import { Route as AdminProductsPublishRouteImport } from './routes/admin.products.publish'
 import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
 import { Route as AdminSuppliersSupplierIdRouteImport } from './routes/admin.suppliers.$supplierId'
-import { Route as AdminSuppliersSupplierIdEditRouteImport } from './routes/admin.suppliers.$supplierId.edit'
+import { Route as AdminSuppliersSupplierIdEditRouteImport } from './routes/admin.suppliers_.$supplierId.edit'
 import { Route as ApiWhatsappMessagesRouteImport } from './routes/api.whatsapp.messages'
 import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
 import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
