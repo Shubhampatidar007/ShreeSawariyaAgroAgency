@@ -42,7 +42,7 @@ function EditSupplierPage() {
   );
 }
 
-function SupplierEditForm({ supplier, onCancel, onSaved }: { supplier: Supplier; onCancel: () => void; onSaved: () => void }) {
+export function SupplierEditForm({ supplier, onCancel, onSaved }: { supplier: Supplier; onCancel: () => void; onSaved: () => void }) {
   const [name, setName] = useState(supplier.name);
   const [company, setCompany] = useState(supplier.company);
   const [mobile, setMobile] = useState(supplier.mobile);

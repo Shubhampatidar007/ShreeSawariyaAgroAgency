@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, BookOpen, Eye } from "lucide-react";
+import { Bell, BookOpen, Eye, Pencil } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -122,9 +122,13 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
             </Link>
           </Button>
           <Button size="sm" className="flex-1 rounded-full" asChild>
+            <Link to="/admin/suppliers/$supplierId/edit" params={{ supplierId: supplier.id }}>
+              <Pencil className="size-3.5" /> Edit
+            </Link>
+          </Button>
+          <Button size="sm" className="flex-1 rounded-full" asChild>
             <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
-              <BookOpen className="size-3.5" />
-              Open ledger
+              <BookOpen className="size-3.5" /> Open ledger
             </Link>
           </Button>
         </div>

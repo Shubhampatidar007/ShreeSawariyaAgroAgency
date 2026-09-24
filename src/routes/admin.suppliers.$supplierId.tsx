@@ -1,7 +1,10 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
 import { BookOpen, IndianRupee, Pencil, Truck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { SupplierEditForm } from "./admin.suppliers_.$supplierId.edit";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
@@ -25,6 +28,7 @@ export const Route = createFileRoute("/admin/suppliers/$supplierId")({
 function SupplierDetailPage() {
   const { supplierId } = Route.useParams();
   const supplier = useShopStore((s) => s.suppliers.find((x) => x.id === supplierId));
+  const [editing, setEditing] = useState(false);
 
   if (!supplier) {
     return (
@@ -54,8 +58,8 @@ function SupplierDetailPage() {
         badge={<StatusBadge status={supplier.status} />}
         actions={
           <>
-            <Button variant="outline" className="rounded-full" asChild>
-              <a href={`/admin/suppliers/${supplierId}/edit`}><Pencil className="size-4" /> Edit</a>
+            <Button variant="outline" className="rounded-full" type="button" onClick={() => setEditing(true)}>
+              <Pencil className="size-4" /> Edit
             </Button>
             <Button className="rounded-full" asChild>
             <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId }}>
@@ -65,6 +69,13 @@ function SupplierDetailPage() {
           </>
         }
       />
+
+      <Dialog open={editing} onOpenChange={setEditing}>
+        <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-3xl">
+          <DialogHeader><DialogTitle>Edit {supplier.company || supplier.name}</DialogTitle></DialogHeader>
+          <SupplierEditForm supplier={supplier} onCancel={() => setEditing(false)} onSaved={() => setEditing(false)} />
+        </DialogContent>
+      </Dialog>
 
       <SummaryCards
         items={[
