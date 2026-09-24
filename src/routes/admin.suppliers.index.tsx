@@ -134,14 +134,16 @@ function SupplierListPage() {
                       <StatusBadge status={supplier.status} />
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button variant="ghost" size="sm" asChild>
-                        <Link
-                          to="/admin/ledger/suppliers/$supplierId"
-                          params={{ supplierId: supplier.id }}
-                        >
-                          Open
-                        </Link>
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button variant="ghost" size="icon" asChild aria-label="Edit supplier">
+                          <Link to="/admin/suppliers/$supplierId/edit" params={{ supplierId: supplier.id }}>
+                            <Pencil className="size-4" />
+                          </Link>
+                        </Button>
+                        <Button variant="ghost" size="sm" asChild>
+                          <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId: supplier.id }}>Open</Link>
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

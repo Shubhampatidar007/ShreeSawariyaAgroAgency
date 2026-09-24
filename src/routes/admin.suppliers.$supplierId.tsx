@@ -1,5 +1,5 @@
 import { Link, createFileRoute } from "@tanstack/react-router";
-import { BookOpen, IndianRupee, Truck, Wallet } from "lucide-react";
+import { BookOpen, IndianRupee, Pencil, Truck, Wallet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -53,11 +53,16 @@ function SupplierDetailPage() {
         subtitle={`${supplier.name} · ${supplier.mobile} · ${supplier.email}`}
         badge={<StatusBadge status={supplier.status} />}
         actions={
-          <Button className="rounded-full" asChild>
+          <>
+            <Button variant="outline" className="rounded-full" asChild>
+              <Link to="/admin/suppliers/$supplierId/edit" params={{ supplierId }}><Pencil className="size-4" /> Edit</Link>
+            </Button>
+            <Button className="rounded-full" asChild>
             <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId }}>
               <BookOpen className="size-4" /> Open ledger
             </Link>
-          </Button>
+            </Button>
+          </>
         }
       />
 

@@ -31,6 +31,7 @@ import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.
 import { Route as AdminProductsPublishRouteImport } from './routes/admin.products.publish'
 import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
 import { Route as AdminSuppliersSupplierIdRouteImport } from './routes/admin.suppliers.$supplierId'
+import { Route as AdminSuppliersSupplierIdEditRouteImport } from './routes/admin.suppliers.$supplierId.edit'
 import { Route as ApiWhatsappMessagesRouteImport } from './routes/api.whatsapp.messages'
 import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
 import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
@@ -142,6 +143,9 @@ const AdminSuppliersIndexRoute = AdminSuppliersIndexRouteImport.update({
   path: '/suppliers/',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminSuppliersSupplierIdEditRoute = AdminSuppliersSupplierIdEditRouteImport.update({
+  id: '/suppliers/$supplierId/edit', path: '/suppliers/$supplierId/edit', getParentRoute: () => AdminRoute,
+} as any)
 const AdminSuppliersSupplierIdRoute =
   AdminSuppliersSupplierIdRouteImport.update({
     id: '/suppliers/$supplierId',
@@ -197,6 +201,7 @@ export interface FileRoutesByFullPath {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
@@ -225,6 +230,7 @@ export interface FileRoutesByTo {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
   '/admin/inventory': typeof AdminInventoryIndexRoute
@@ -255,6 +261,7 @@ export interface FileRoutesById {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
+  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
@@ -510,6 +517,9 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuppliersIndexRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/suppliers/$supplierId/edit': {
+      id: '/admin/suppliers/$supplierId/edit', path: '/suppliers/$supplierId/edit', fullPath: '/admin/suppliers/$supplierId/edit', preLoaderRoute: typeof AdminSuppliersSupplierIdEditRouteImport, parentRoute: typeof AdminRoute
+    }
     '/admin/suppliers/$supplierId': {
       id: '/admin/suppliers/$supplierId'
       path: '/suppliers/$supplierId'
@@ -571,6 +581,7 @@ interface AdminRouteChildren {
   AdminInventoryNewRoute: typeof AdminInventoryNewRoute
   AdminProductsPublishRoute: typeof AdminProductsPublishRoute
   AdminSuppliersSupplierIdRoute: typeof AdminSuppliersSupplierIdRoute
+  AdminSuppliersSupplierIdEditRoute: typeof AdminSuppliersSupplierIdEditRoute
   AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
   AdminInventoryIndexRoute: typeof AdminInventoryIndexRoute
   AdminProductsIndexRoute: typeof AdminProductsIndexRoute
@@ -597,6 +608,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInventoryNewRoute: AdminInventoryNewRoute,
   AdminProductsPublishRoute: AdminProductsPublishRoute,
   AdminSuppliersSupplierIdRoute: AdminSuppliersSupplierIdRoute,
+  AdminSuppliersSupplierIdEditRoute: AdminSuppliersSupplierIdEditRoute,
   AdminCustomersIndexRoute: AdminCustomersIndexRoute,
   AdminInventoryIndexRoute: AdminInventoryIndexRoute,
   AdminProductsIndexRoute: AdminProductsIndexRoute,
