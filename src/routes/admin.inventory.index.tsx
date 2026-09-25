@@ -29,7 +29,6 @@ import { ConfirmDialog } from "@/components/shared/ConfirmDialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   formatCurrency,
-  formatDate,
   loadShopData,
   shopStore,
   useShopStore,
@@ -202,11 +201,10 @@ function InventoryListPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead>Supplier</TableHead>
+                  <TableHead>Variant</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
-                  <TableHead>Current stock</TableHead>
-                  <TableHead>Last updated</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -220,19 +218,34 @@ function InventoryListPage() {
 
                   return (
                     <TableRow key={item.id} className="hover:bg-muted/50">
-                      <TableCell className="font-medium">{item.productName}</TableCell>
-                      <TableCell className="text-muted-foreground">{item.supplierName}</TableCell>
-                      <TableCell className="text-right">
-                        {item.quantity} {item.unit}
+                      <TableCell className="min-w-[170px]">
+                        <p className="font-semibold leading-5">{item.productName}</p>
+                      </TableCell>
+                      <TableCell className="min-w-[120px]">
+                        <span className="inline-flex rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
+                          {item.unit}
+                        </span>
                       </TableCell>
                       <TableCell className="text-right">
+                        <span className="inline-flex min-w-12 items-center justify-center rounded-lg bg-muted px-2.5 py-1.5 font-bold tabular-nums">
+                          {item.quantity}
+                        </span>
+                      </TableCell>
+                      <TableCell className="min-w-[150px]">
+                        {item.supplierId ? (
+                          <Link
+                            to="/admin/suppliers/$supplierId"
+                            params={{ supplierId: item.supplierId }}
+                            className="font-medium text-primary underline-offset-4 hover:underline"
+                          >
+                            {item.supplierName}
+                          </Link>
+                        ) : (
+                          <span className="text-muted-foreground">{item.supplierName}</span>
+                        )}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
                         {formatCurrency(item.purchasePrice)}
-                      </TableCell>
-                      <TableCell className="font-semibold">
-                        {item.quantity} {item.unit}
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {formatDate(item.lastUpdated)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">
