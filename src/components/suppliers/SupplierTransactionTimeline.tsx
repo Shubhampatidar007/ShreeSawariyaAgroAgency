@@ -178,15 +178,55 @@ export function SupplierTransactionTimeline({ entries }: Props) {
                           {group.purchases.map((rawEntry) => {
                             const entry = rawEntry as SupplierTimelineEntry;
                             return (
-                              <div key={entry.id} className="grid gap-3 rounded-lg border bg-muted/20 p-3 sm:grid-cols-[minmax(0,1fr)_120px_120px_120px_120px] sm:items-center">
-                                <div className="min-w-0">
-                                  <p className="truncate text-sm font-semibold">{entry.productName || entry.reference || "Purchase"}</p>
-                                  {entry.remarks ? <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p> : null}
+                              <div
+                                key={entry.id}
+                                className="rounded-xl border bg-background p-3 transition-colors hover:bg-muted/20 sm:p-4"
+                              >
+                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                  <div className="min-w-0">
+                                    <p className="truncate text-sm font-semibold sm:text-base">
+                                      {entry.productName || entry.reference || "Purchase"}
+                                    </p>
+                                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                                      <span className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
+                                        Variant: {entry.unit || "—"}
+                                      </span>
+                                      <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums">
+                                        Quantity: {entry.quantity ?? "—"}
+                                      </span>
+                                    </div>
+                                    {entry.remarks ? (
+                                      <p className="mt-2 text-xs text-muted-foreground">{entry.remarks}</p>
+                                    ) : null}
+                                  </div>
+
+                                  <div className="grid grid-cols-2 gap-3 sm:min-w-[360px] sm:grid-cols-3">
+                                    <div className="rounded-lg bg-muted/40 px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Rate
+                                      </p>
+                                      <p className="mt-0.5 text-sm font-semibold">
+                                        {entry.unitPrice != null ? formatCurrency(entry.unitPrice) : "—"}
+                                      </p>
+                                    </div>
+                                    <div className="rounded-lg bg-muted/40 px-3 py-2">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Method
+                                      </p>
+                                      <p className="mt-0.5 text-sm font-semibold uppercase">
+                                        {entry.method || "—"}
+                                      </p>
+                                    </div>
+                                    <div className="col-span-2 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 sm:col-span-1">
+                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                        Amount
+                                      </p>
+                                      <p className="mt-0.5 text-sm font-bold text-primary">
+                                        {formatCurrency(entry.amount)}
+                                      </p>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Quantity</p><p className="text-sm font-medium">{entry.quantity != null ? `${entry.quantity} ${entry.unit ?? ""}` : "—"}</p></div>
-                                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Rate</p><p className="text-sm font-medium">{entry.unitPrice != null ? formatCurrency(entry.unitPrice) : "—"}</p></div>
-                                <div><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Method</p><p className="text-sm font-medium uppercase">{entry.method || "—"}</p></div>
-                                <div className="sm:text-right"><p className="text-[11px] uppercase tracking-wide text-muted-foreground">Amount</p><p className="text-sm font-semibold">{formatCurrency(entry.amount)}</p></div>
                               </div>
                             );
                           })}
