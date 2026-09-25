@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Boxes, Pencil, Plus, Trash2, Upload } from "lucide-react";
+import { Bell, Boxes, Plus, Trash2, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,14 +53,7 @@ function InventoryListPage() {
   const reminders = useShopStore((s) => s.reminders);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-
-  const [editOpen, setEditOpen] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editProductName, setEditProductName] = useState("");
-  const [editQuantity, setEditQuantity] = useState("");
-  const [editUnit, setEditUnit] = useState("");
-  const [editPurchasePrice, setEditPurchasePrice] = useState("");
-  const [editMinStock, setEditMinStock] = useState("");
+undefined
   const [configuringReminderId, setConfiguringReminderId] = useState<string | null>(null);
   const [reminderError, setReminderError] = useState<string | null>(null);
 
@@ -75,35 +68,6 @@ function InventoryListPage() {
           item.supplierName.toLowerCase().includes(term)),
     );
   }, [inventory, query]);
-
-  const openEdit = (item: (typeof inventory)[number]) => {
-    setEditingId(item.id);
-    setEditProductName(item.productName);
-    setEditQuantity(String(item.quantity));
-    setEditUnit(item.unit);
-    setEditPurchasePrice(String(item.purchasePrice));
-    setEditMinStock(String(item.minStockLevel));
-    setEditOpen(true);
-  };
-
-  const saveEdit = async () => {
-    if (!editingId || !editProductName.trim()) return;
-
-    try {
-      await shopStore.updateInventoryItem(editingId, {
-        productName: editProductName.trim(),
-        quantity: Number(editQuantity) || 0,
-        unit: editUnit.trim() || "units",
-        purchasePrice: Number(editPurchasePrice) || 0,
-        minStockLevel: Number(editMinStock) || 0,
-      });
-
-      setEditOpen(false);
-      setEditingId(null);
-    } catch (error) {
-      console.error("Failed to update inventory item:", error);
-    }
-  };
 
   const configureReminder = async (item: (typeof inventory)[number]) => {
     setConfiguringReminderId(item.id);
@@ -268,15 +232,6 @@ function InventoryListPage() {
                                 : "Configure reminder"}
                           </Button>
 
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            aria-label={`Edit ${item.productName}`}
-                            onClick={() => openEdit(item)}
-                          >
-                            <Pencil className="size-4" />
-                          </Button>
-
                           <ConfirmDialog
                             trigger={
                               <Button
@@ -310,69 +265,6 @@ function InventoryListPage() {
         </>
       )}
 
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit inventory item</DialogTitle>
-          </DialogHeader>
-
-          <div className="grid gap-4">
-            <div className="space-y-2">
-              <Label>Product name</Label>
-              <Input
-                value={editProductName}
-                onChange={(e) => setEditProductName(e.target.value)}
-                placeholder="Product name"
-              />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Quantity</Label>
-                <Input
-                  value={editQuantity}
-                  onChange={(e) => setEditQuantity(e.target.value)}
-                  inputMode="numeric"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label>Unit</Label>
-                <Input
-                  value={editUnit}
-                  onChange={(e) => setEditUnit(e.target.value)}
-                  placeholder="bags"
-                />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Purchase price per unit</Label>
-              <Input
-                value={editPurchasePrice}
-                onChange={(e) => setEditPurchasePrice(e.target.value)}
-                inputMode="decimal"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>Minimum stock level</Label>
-              <Input
-                value={editMinStock}
-                onChange={(e) => setEditMinStock(e.target.value)}
-                inputMode="numeric"
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setEditOpen(false)}>
-              Cancel
-            </Button>
-            <Button onClick={saveEdit}>Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }
