@@ -948,7 +948,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
                 </p>
               ) : (
-                <div className="grid gap-2">
+                <div className="h-72 space-y-2 overflow-y-auto pr-1">
                   {catalogOptions.map((option) => (
                     <div
                       key={option.key}
