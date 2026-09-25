@@ -201,6 +201,10 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
     r.entry_date ??
     r.date ??
     undefined,
+  transactionSubtotal:
+    r.customer_transactions?.subtotal == null ? undefined : num(r.customer_transactions.subtotal),
+  transactionDiscount:
+    r.customer_transactions?.discount_amount == null ? undefined : num(r.customer_transactions.discount_amount),
 });
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
@@ -360,7 +364,9 @@ export async function loadShopData() {
     *,
     customer_transactions!inner(
       entry_date,
-      entry_type
+      entry_type,
+      subtotal,
+      discount_amount
     )
   `)
   .eq("customer_transactions.entry_type", "sale")
@@ -529,12 +535,13 @@ export const shopStore = {
     customerId: string;
     items: KhataSaleItemInput[];
     paid: number;
+    bargainingAmount?: number;
     method: CustomerLedgerEntry["method"];
     date?: string;
     remarks?: string;
     reference?: string;
   }) {
-    const { data, error } = await supabase.rpc("create_khata_sale" as any, {
+    const { data, error } = await supabase.rpc("create_khata_sale_with_bargaining" as any, {
       _customer_id: input.customerId,
       _items: input.items.map((i) => ({
         inventory_id: i.inventoryId ?? null,
@@ -546,6 +553,7 @@ export const shopStore = {
         rate: i.rate,
       })),
       _paid: input.paid,
+      _bargaining_amount: input.bargainingAmount ?? 0,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
       _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,

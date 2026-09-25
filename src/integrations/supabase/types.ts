@@ -160,6 +160,8 @@ export type Database = {
           quantity: number;
           remaining_due: number;
           remarks: string | null;
+          subtotal: number;
+          discount_amount: number;
         };
         Insert: {
           amount?: number;
@@ -175,6 +177,8 @@ export type Database = {
           quantity?: number;
           remaining_due?: number;
           remarks?: string | null;
+          subtotal?: number;
+          discount_amount?: number;
         };
         Update: {
           amount?: number;
@@ -190,6 +194,8 @@ export type Database = {
           quantity?: number;
           remaining_due?: number;
           remarks?: string | null;
+          subtotal?: number;
+          discount_amount?: number;
         };
         Relationships: [
           {
@@ -960,6 +966,18 @@ export type Database = {
           _customer_id: string;
           _items: Json;
           _paid?: number;
+          _method?: string;
+          _entry_date?: string;
+          _remarks?: string;
+        };
+        Returns: string;
+      };
+      create_khata_sale_with_bargaining: {
+        Args: {
+          _customer_id: string;
+          _items: Json;
+          _paid?: number;
+          _bargaining_amount?: number;
           _method?: string;
           _entry_date?: string;
           _remarks?: string;

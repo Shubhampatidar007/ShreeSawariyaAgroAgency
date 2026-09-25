@@ -125,6 +125,10 @@ export type CustomerSaleItem = {
 
   // Parent customer_transactions.entry_date
   date?: string | undefined;
+
+  // Historical transaction-level bargaining snapshot; kept out of item UI.
+  transactionSubtotal?: number | undefined;
+  transactionDiscount?: number | undefined;
 };
 
 export type KhataSaleItemInput = {

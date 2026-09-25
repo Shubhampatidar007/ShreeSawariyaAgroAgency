@@ -147,6 +147,8 @@ export const buildDailyMetrics = (
       .map((item) => item.transactionId),
   );
 
+  const customerSaleDiscounts = new Map<string, { date: string; amount: number }>();
+
   customerSaleItems.forEach((item) => {
     if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
       return;
@@ -158,6 +160,21 @@ export const buildDailyMetrics = (
 
     row.sales += item.quantity * item.adminPriceInc;
     row.cost += item.quantity * item.purchaseCost;
+
+    if (item.transactionDiscount != null) {
+      customerSaleDiscounts.set(item.transactionId, {
+        date: item.date,
+        amount: item.transactionDiscount,
+      });
+    }
+  });
+
+  // Bargaining is stored once on the transaction header, so subtract it once
+  // from revenue instead of changing every historical item rate.
+  customerSaleDiscounts.forEach(({ date, amount }) => {
+    if (amount <= 0 || !inRange(date)) return;
+    const row = ensure(isoDay(date));
+    row.sales -= amount;
   });
 
   customerLedger.forEach((entry) => {
@@ -273,6 +290,8 @@ export const calculateCustomerProfit = (
       .map((item) => item.transactionId),
   );
 
+  const customerSaleDiscounts = new Map<string, number>();
+
   customerSaleItems.forEach((item) => {
     if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
       return;
@@ -280,6 +299,14 @@ export const calculateCustomerProfit = (
 
     sales += item.quantity * item.adminPriceInc;
     cost += item.quantity * item.purchaseCost;
+
+    if (item.transactionDiscount != null) {
+      customerSaleDiscounts.set(item.transactionId, item.transactionDiscount);
+    }
+  });
+
+  customerSaleDiscounts.forEach((amount) => {
+    sales -= Math.max(amount, 0);
   });
 
   saleEntries.forEach((entry) => {

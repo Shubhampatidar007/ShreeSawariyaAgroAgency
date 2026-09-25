@@ -50,7 +50,7 @@ const PRODUCT_FULL =
   "id,inventory_id,title,category,selling_price,discount_price,stock,description,tags,images,emoji,visibility,featured,status,published_on";
 const VARIANT_ACTIVE = "id,product_id,inventory_id,label,selling_price,discount_price,stock,status";
 const CUSTOMER_TX =
-  "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks";
+  "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks,subtotal,discount_amount";
 const SUPPLIER_TX =
   "id,supplier_id,entry_date,entry_type,reference,amount,balance,method,remarks,product_name,quantity,unit,rate";
 const ORDER_FULL =
@@ -177,6 +177,10 @@ const toCustomerSaleItem = (r: any): CustomerSaleItem => ({
     r.entry_date ??
     r.date ??
     undefined,
+  transactionSubtotal:
+    r.customer_transactions?.subtotal == null ? undefined : num(r.customer_transactions.subtotal),
+  transactionDiscount:
+    r.customer_transactions?.discount_amount == null ? undefined : num(r.customer_transactions.discount_amount),
 });
 
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
@@ -381,7 +385,7 @@ async function runSectionLoad(section: AdminSection) {
         supabase.from("customer_transactions").select(CUSTOMER_TX).order("entry_date"),
         supabase
           .from("customer_transaction_items")
-          .select(`*, customer_transactions!inner(entry_date, entry_type)`)
+          .select(`*, customer_transactions!inner(entry_date, entry_type, subtotal, discount_amount)`)
           .eq("customer_transactions.entry_type", "sale")
           .order("created_at"),
         supabase.from("supplier_transactions").select(SUPPLIER_TX).order("entry_date"),

@@ -185,6 +185,7 @@ async function sendKhataReceiptToEdgeFunction({
   quantity: item.quantity,
   unit: item.unit,
   rate: item.rate,
+  amount: item.quantity * item.rate,
   purchaseCost: item.purchaseCost,
   adminPriceInc: item.rate,
 })),
@@ -275,6 +276,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [paymentReference, setPaymentReference] = useState("");
   const [remarks, setRemarks] = useState("");
+  const [bargainingAmount, setBargainingAmount] = useState("0");
 
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
@@ -284,8 +286,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     [items],
   );
 
+  const bargainingNum = Number(bargainingAmount) || 0;
+  const finalTotal = Math.max(total - bargainingNum, 0);
   const paidNum = Number(paid) || 0;
-  const due = Math.max(total - paidNum, 0);
+  const due = Math.max(finalTotal - paidNum, 0);
 
   useEffect(() => {
     if (!open) return;
@@ -435,6 +439,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     inventoryRequestRef.current += 1;
 
     setPaid("0");
+    setBargainingAmount("0");
     setMethod("cash");
     setEntryDate(new Date().toISOString().slice(0, 10));
     setPaymentReference("");
@@ -548,12 +553,20 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       return toast.error("Select or create a customer");
     }
 
+    if (bargainingNum < 0) {
+      return toast.error("Bargaining amount cannot be negative");
+    }
+
+    if (bargainingNum > total) {
+      return toast.error("Bargaining amount cannot exceed the sale total");
+    }
+
     if (paidNum < 0) {
       return toast.error("Paid amount cannot be negative");
     }
 
-    if (paidNum > total) {
-      return toast.error("Paid amount cannot exceed the total");
+    if (paidNum > finalTotal) {
+      return toast.error("Paid amount cannot exceed the final total");
     }
 
     setSubmitting(true);
@@ -612,9 +625,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           // Snapshot values at sale time
           purchaseCost: item.purchaseCost,
           adminPriceInc: item.rate,
+          amount: item.quantity * item.rate,
         })),
 
         paid: paidNum,
+        bargainingAmount: bargainingNum,
         method,
         date: entryDate,
         reference: paymentReference.trim() || undefined,
@@ -633,7 +648,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
       if (receiptOption === "none") {
         toast.success(
-          paidNum >= total
+          paidNum >= finalTotal
             ? "Sale recorded — fully paid"
             : paidNum > 0
               ? "Sale recorded — partly paid"
@@ -677,7 +692,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           items,
 
-          total,
+          total: finalTotal,
 
           paid: paidNum,
 
@@ -1135,6 +1150,17 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           {/* Payment */}
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Bargaining amount</Label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                min="0"
+                value={bargainingAmount}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setBargainingAmount(e.target.value)}
+              />
+            </div>
             <div className="space-y-1.5">
               <Label>Amount paid now</Label>
 
@@ -1231,9 +1257,13 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           </div>
 
           {/* Summary */}
-          <div className="flex items-center justify-between rounded-lg bg-muted p-3 text-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
             <span>
-              Total: <strong>{formatCurrency(total)}</strong>
+              Subtotal: <strong>{formatCurrency(total)}</strong>
+            </span>
+
+            <span>
+              Final total: <strong>{formatCurrency(finalTotal)}</strong>
             </span>
 
             <span>
