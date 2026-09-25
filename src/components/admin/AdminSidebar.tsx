@@ -1,5 +1,4 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { LifeBuoy } from "lucide-react";
 import { Logo } from "@/components/layout/Logo";
 import { adminNavSections } from "@/data/navigation";
 import { cn } from "@/lib/utils";
@@ -67,23 +66,6 @@ export function AdminSidebar({ onNavigate }: AdminSidebarProps) {
         ))}
       </nav>
 
-      <div className="border-t border-sidebar-border p-4">
-        <div className="rounded-2xl border border-sidebar-border/70 bg-sidebar-accent/80 p-4 shadow-sm">
-          <div className="flex items-center gap-2 text-sm font-semibold text-sidebar-accent-foreground">
-            <LifeBuoy className="size-4 text-sidebar-primary" />
-            Dealer support
-          </div>
-          <p className="mt-1 text-xs leading-5 text-sidebar-foreground/65">
-            Licence renewals, GST filing help and stock queries — 7 AM to 9 PM.
-          </p>
-          <a
-            href="tel:+919876543210"
-            className="mt-3 inline-block text-xs font-semibold text-sidebar-primary underline-offset-4 transition-colors hover:text-brand-lime hover:underline"
-          >
-            +91 98765 43210
-          </a>
-        </div>
-      </div>
     </div>
   );
 }
