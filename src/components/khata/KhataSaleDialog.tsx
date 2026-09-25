@@ -909,19 +909,33 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
                 </p>
               ) : (
-                <div className="flex flex-wrap gap-2">
+                <div className="grid gap-2 sm:grid-cols-2">
                   {catalogOptions.map((option) => (
                     <Button
                       key={option.key}
                       type="button"
-                      size="sm"
                       variant="outline"
-                      className="h-auto rounded-full px-3 py-2 text-left"
+                      className="h-auto min-h-20 w-full justify-start rounded-xl px-3 py-3 text-left hover:border-primary/40 hover:bg-primary/5"
                       onClick={() => addProductToCart(option)}
                     >
-                      <span>
-                        {option.emoji} {option.title} · {formatCurrency(option.rate)} · {option.stock} {option.unit}
-                      </span>
+                      <div className="min-w-0 w-full">
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="truncate font-semibold">
+                            {option.emoji} {option.title}
+                          </span>
+                          <span className="shrink-0 font-semibold text-primary">
+                            {formatCurrency(option.rate)}
+                          </span>
+                        </div>
+                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-1 font-medium text-primary">
+                            Variant: {option.unit}
+                          </span>
+                          <span className="rounded-full border bg-muted px-2 py-1 font-medium text-muted-foreground">
+                            Stock: {option.stock}
+                          </span>
+                        </div>
+                      </div>
                     </Button>
                   ))}
                 </div>
@@ -965,10 +979,15 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                 <TableBody>
                   {items.map((item) => (
                     <TableRow key={item.key}>
-                      <TableCell className="font-medium">
-                        <div>{item.product}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {item.unit} · Stock {item.maxStock ?? "—"}
+                      <TableCell className="min-w-[180px]">
+                        <div className="font-semibold">{item.product}</div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
+                            Variant: {item.unit}
+                          </span>
+                          <span className="text-muted-foreground">
+                            Stock: {item.maxStock ?? "—"}
+                          </span>
                         </div>
                       </TableCell>
 
