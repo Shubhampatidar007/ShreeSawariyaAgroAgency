@@ -66,7 +66,7 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
         </div>
       </div>
 
-      <div className="mt-7 flex gap-3 overflow-x-auto pb-2 sm:grid sm:grid-cols-2 sm:overflow-visible lg:grid-cols-3 xl:grid-cols-6">
+      <div className="mt-7 grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {categories.map((category, index) => {
           const isSelected = selectedCategory === category.name;
           return (
@@ -80,7 +80,7 @@ export function CategorySection({ content }: { content?: Pick<CmsSection, "headl
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: index * 0.04 }}
-              className="min-w-[158px] shrink-0 text-left sm:min-w-0"
+              className="min-w-0 text-left"
             >
               <Card className={`h-full rounded-2xl transition-all hover:-translate-y-0.5 hover:shadow-lg ${isSelected ? "border-primary ring-2 ring-primary/20" : ""}`}>
                 <CardContent className="p-4">
