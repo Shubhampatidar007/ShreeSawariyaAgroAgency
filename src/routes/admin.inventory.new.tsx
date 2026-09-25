@@ -73,6 +73,7 @@ function InventoryEntryPage() {
   const [advancePaid, setAdvancePaid] = useState("");
   const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
   const [submitting, setSubmitting] = useState(false);
   const [savingSupplier, setSavingSupplier] = useState(false);
@@ -179,9 +180,7 @@ function InventoryEntryPage() {
     updateItem(itemIndex, createItemDraft());
   };
 
-  const submit = async () => {
-    if (submitting) return;
-
+  const validatePurchase = () => {
     const supplier = suppliers.find((item) => item.id === supplierId);
     const cleanedItems = items.map((item) => ({
       ...item,
@@ -195,12 +194,12 @@ function InventoryEntryPage() {
 
     if (!supplier) {
       toast.error("Choose a supplier");
-      return;
+      return false;
     }
 
     if (cleanedItems.some((item) => !item.productName)) {
       toast.error("Fill a product name for every item");
-      return;
+      return false;
     }
 
     if (
@@ -211,16 +210,43 @@ function InventoryEntryPage() {
       )
     ) {
       toast.error("Fill a valid quantity, unit and purchase price for every item");
-      return;
+      return false;
     }
 
     const advance = Math.max(Number(advancePaid) || 0, 0);
     if (advance > totalPrice) {
       toast.error("Advance paid cannot exceed the total purchase value");
-      return;
+      return false;
     }
 
+    return true;
+  };
+
+  const openPreview = () => {
+    if (submitting) return;
+    if (!validatePurchase()) return;
+    setPreviewOpen(true);
+  };
+
+  const submit = async () => {
+    if (submitting || !validatePurchase()) return;
+
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    if (!supplier) return;
+
+    const cleanedItems = items.map((item) => ({
+      ...item,
+      productName: item.productName.trim(),
+      variants: item.variants.map((variant) => ({
+        quantity: Number(variant.quantity),
+        unit: variant.unit.trim(),
+        price: Number(variant.price),
+      })),
+    }));
+    const advance = Math.max(Number(advancePaid) || 0, 0);
+
     setSubmitting(true);
+    setPreviewOpen(false);
 
     try {
       let remainingAdvance = advance;
@@ -644,9 +670,121 @@ function InventoryEntryPage() {
               </p>
             </div>
 
+            <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+              <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-3xl">
+                <DialogHeader>
+                  <DialogTitle>Preview stock purchase</DialogTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Review everything that will be added before confirming the purchase.
+                  </p>
+                </DialogHeader>
+
+                <div className="space-y-4">
+                  <div className="rounded-lg border bg-muted/20 p-3">
+                    <p className="text-xs text-muted-foreground">Supplier</p>
+                    <p className="mt-1 font-semibold">
+                      {suppliers.find((supplier) => supplier.id === supplierId)?.company || "—"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {items.map((item, itemIndex) => (
+                      <div key={itemIndex} className="rounded-lg border p-3">
+                        <div className="mb-3 flex items-center justify-between gap-3">
+                          <div>
+                            <p className="font-medium">
+                              {item.productName.trim() || `Item ${itemIndex + 1}`}
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              {item.variants.length} variant{item.variants.length === 1 ? "" : "s"}
+                            </p>
+                          </div>
+                          <p className="font-semibold">
+                            {formatCurrency(
+                              item.variants.reduce(
+                                (sum, variant) =>
+                                  sum +
+                                  (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
+                                0,
+                              ),
+                            )}
+                          </p>
+                        </div>
+
+                        <div className="overflow-x-auto rounded-md border">
+                          <table className="w-full min-w-[520px] text-sm">
+                            <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+                              <tr>
+                                <th className="px-3 py-2 font-medium">Quantity</th>
+                                <th className="px-3 py-2 font-medium">Unit / size</th>
+                                <th className="px-3 py-2 font-medium">Purchase price</th>
+                                <th className="px-3 py-2 text-right font-medium">Value</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {item.variants.map((variant, variantIndex) => {
+                                const quantity = Number(variant.quantity) || 0;
+                                const price = Number(variant.price) || 0;
+                                return (
+                                  <tr key={variantIndex} className="border-t">
+                                    <td className="px-3 py-2">{quantity}</td>
+                                    <td className="px-3 py-2">{variant.unit.trim() || "—"}</td>
+                                    <td className="px-3 py-2">{formatCurrency(price)}</td>
+                                    <td className="px-3 py-2 text-right font-medium">
+                                      {formatCurrency(quantity * price)}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="rounded-xl border bg-muted/30 p-4">
+                    <div className="grid gap-4 sm:grid-cols-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Products</p>
+                        <p className="text-lg font-semibold">{items.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Total stock value</p>
+                        <p className="text-lg font-semibold">{formatCurrency(totalPrice)}</p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-muted-foreground">Supplier advance</p>
+                        <p className="text-lg font-semibold">
+                          {formatCurrency(Math.max(Number(advancePaid) || 0, 0))}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between border-t pt-3">
+                      <span className="text-sm text-muted-foreground">Remaining supplier due</span>
+                      <span className="font-semibold">
+                        {formatCurrency(
+                          Math.max(0, totalPrice - (Number(advancePaid) || 0)),
+                        )}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setPreviewOpen(false)} disabled={submitting}>
+                    Back to edit
+                  </Button>
+                  <Button type="button" onClick={submit} disabled={submitting}>
+                    {submitting ? "Saving…" : "Confirm & save purchase"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
+
             <div className="flex flex-wrap gap-2">
-              <Button className="rounded-full" onClick={submit} disabled={submitting}>
-                {submitting ? "Saving…" : "Save purchase"}
+              <Button className="rounded-full" onClick={openPreview} disabled={submitting}>
+                {submitting ? "Saving…" : "Preview & save"}
               </Button>
               <Button
                 variant="outline"
