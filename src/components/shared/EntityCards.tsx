@@ -181,20 +181,38 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
       <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <p className="font-display text-sm font-semibold">{item.productName}</p>
-            <p className="text-xs text-muted-foreground">{item.supplierName}</p>
+        <div className="space-y-2">
+          <div className="flex items-start justify-between gap-3">
+            <p className="font-display text-sm font-semibold leading-5">{item.productName}</p>
+            <span className="shrink-0 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
+              {item.unit}
+            </span>
           </div>
-          <div className="rounded-full border bg-background px-2.5 py-1 text-xs font-semibold">
-            Stock {item.quantity} {item.unit}
-          </div>
+          {item.supplierId ? (
+            <Link
+              to="/admin/suppliers/$supplierId"
+              params={{ supplierId: item.supplierId }}
+              className="inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
+            >
+              Supplier: {item.supplierName}
+            </Link>
+          ) : (
+            <p className="text-xs text-muted-foreground">Supplier: {item.supplierName}</p>
+          )}
         </div>
-        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
-          <Row label="Quantity" value={`${item.quantity} ${item.unit}`} />
-          <Row label="Purchase price" value={formatCurrency(item.purchasePrice)} />
-          <Row label="Updated" value={formatDate(item.lastUpdated)} />
-          <Row label="Minimum stock" value={`${item.minStockLevel} ${item.unit}`} />
+        <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 p-3">
+          <div className="rounded-lg border border-border/70 bg-background p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quantity</p>
+            <p className="mt-1 text-lg font-bold tabular-nums">{item.quantity}</p>
+          </div>
+          <div className="rounded-lg border border-border/70 bg-background p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Purchase price</p>
+            <p className="mt-1 font-semibold">{formatCurrency(item.purchasePrice)}</p>
+          </div>
+          <div className="col-span-2 flex items-center justify-between rounded-lg border border-border/70 bg-background px-2.5 py-2">
+            <span className="text-xs text-muted-foreground">Minimum stock</span>
+            <span className="text-xs font-semibold">{item.minStockLevel} {item.unit}</span>
+          </div>
         </div>
         <Button
           className="w-full rounded-full"
