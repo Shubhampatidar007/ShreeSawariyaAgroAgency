@@ -88,7 +88,14 @@ export function SiteHeader() {
                 <SheetTitle>Store menu</SheetTitle>
                 <nav className="mt-5 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
-                    <a key={item.label} href={item.to} onClick={() => setOpen(false)} className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted">
+                    <a
+                      key={item.label}
+                      href={item.to}
+                      onClick={() => {
+                        setOpen(false);
+                      }}
+                      className="rounded-lg px-3 py-2.5 text-sm font-medium hover:bg-muted"
+                    >
                       {t(`storefront.nav.${item.label.toLowerCase()}`, item.label)}
                     </a>
                   ))}
