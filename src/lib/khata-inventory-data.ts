@@ -61,6 +61,36 @@ export async function loadKhataInventoryPage(
   const to = from + safePageSize;
   const search = sanitizeSearch(query);
 
+  let matchingInventoryIds: string[] = [];
+
+  if (search) {
+    const [productsResult, variantsResult] = await Promise.all([
+      supabase
+        .from("products")
+        .select("inventory_id")
+        .not("inventory_id", "is", null)
+        .or(`title.ilike.%${search}%,category.ilike.%${search}%`),
+      supabase
+        .from("product_variants" as any)
+        .select("inventory_id")
+        .eq("status", "active")
+        .not("inventory_id", "is", null)
+        .ilike("label", `%${search}%`),
+    ]);
+
+    if (productsResult.error) throw productsResult.error;
+    if (variantsResult.error) throw variantsResult.error;
+
+    matchingInventoryIds = Array.from(
+      new Set(
+        [
+          ...(productsResult.data ?? []).map((row) => row.inventory_id),
+          ...(variantsResult.data ?? []).map((row: { inventory_id: string | null }) => row.inventory_id),
+        ].filter((id): id is string => Boolean(id)),
+      ),
+    );
+  }
+
   let inventoryQuery = supabase
     .from("inventory_items")
     .select("id,product_name,supplier_name,quantity,unit,purchase_price")
@@ -70,9 +100,16 @@ export async function loadKhataInventoryPage(
     .range(from, to);
 
   if (search) {
-    inventoryQuery = inventoryQuery.or(
-      `product_name.ilike.%${search}%,supplier_name.ilike.%${search}%`,
-    );
+    const searchClauses = [
+      `product_name.ilike.%${search}%`,
+      `supplier_name.ilike.%${search}%`,
+    ];
+
+    if (matchingInventoryIds.length > 0) {
+      searchClauses.push(`id.in.(${matchingInventoryIds.join(",")})`);
+    }
+
+    inventoryQuery = inventoryQuery.or(searchClauses.join(","));
   }
 
   const { data: rawInventory, error: inventoryError } = await inventoryQuery;
