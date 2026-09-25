@@ -909,34 +909,40 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
                 </p>
               ) : (
-                <div className="grid gap-2 sm:grid-cols-2">
+                <div className="grid gap-2">
                   {catalogOptions.map((option) => (
-                    <Button
+                    <div
                       key={option.key}
-                      type="button"
-                      variant="outline"
-                      className="h-auto min-h-20 w-full justify-start rounded-xl px-3 py-3 text-left hover:border-primary/40 hover:bg-primary/5"
-                      onClick={() => addProductToCart(option)}
+                      className="group flex items-center gap-3 rounded-xl border bg-background p-3 transition-all hover:border-primary/40 hover:bg-primary/5"
                     >
-                      <div className="min-w-0 w-full">
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="truncate font-semibold">
-                            {option.emoji} {option.title}
-                          </span>
-                          <span className="shrink-0 font-semibold text-primary">
-                            {formatCurrency(option.rate)}
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
+                        {option.emoji}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <p className="truncate text-sm font-semibold">{option.title}</p>
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                            {option.unit}
                           </span>
                         </div>
-                        <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-1 font-medium text-primary">
-                            Variant: {option.unit}
-                          </span>
-                          <span className="rounded-full border bg-muted px-2 py-1 font-medium text-muted-foreground">
-                            Stock: {option.stock}
-                          </span>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium">Stock: {option.stock}</span>
+                          <span aria-hidden="true">•</span>
+                          <span>Sell price: {formatCurrency(option.rate)}</span>
                         </div>
                       </div>
-                    </Button>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="shrink-0 rounded-full"
+                        onClick={() => addProductToCart(option)}
+                      >
+                        <Plus className="size-3.5" />
+                        Add
+                      </Button>
+                    </div>
                   ))}
                 </div>
               )}
