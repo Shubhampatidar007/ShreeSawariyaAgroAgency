@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Check, Loader2, Plus, ShoppingCart, Trash2 } from "lucide-react";
+import { Check, Loader2, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -356,6 +356,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
   const filteredCustomers = useMemo(() => {
     const q = customerQuery.trim().toLowerCase();
+    const digits = q.replace(/\D/g, "");
+    const terms = q.split(/\s+/).filter(Boolean);
 
     const uniqueCustomers = Array.from(new Map(customers.map((c) => [c.id, c])).values());
 
@@ -364,25 +366,34 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     }
 
     return uniqueCustomers
-      .filter((c) => {
-        const name = c.name.toLowerCase();
-        const mobile = c.mobile.toLowerCase();
+      .map((customer) => {
+        const name = customer.name.toLowerCase();
+        const mobile = customer.mobile.toLowerCase();
+        const village = (customer.village ?? "").toLowerCase();
+        const address = (customer.address ?? "").toLowerCase();
+        const searchable = [name, mobile, village, address].join(" ");
+        const mobileDigits = mobile.replace(/\D/g, "");
 
-        return name.includes(q) || mobile.includes(q);
+        const matchesTerms = terms.every((term) => searchable.includes(term));
+        const matchesMobile = digits.length >= 3 && mobileDigits.includes(digits);
+
+        if (!matchesTerms && !matchesMobile) return null;
+
+        let score = 0;
+        if (name === q) score += 100;
+        if (name.startsWith(q)) score += 60;
+        if (mobileDigits === digits && digits) score += 90;
+        if (mobileDigits.startsWith(digits) && digits) score += 50;
+        if (village.startsWith(q)) score += 25;
+        if (name.includes(q)) score += 15;
+        if (village.includes(q) || address.includes(q)) score += 5;
+
+        return { customer, score };
       })
-      .sort((a, b) => {
-        const aName = a.name.toLowerCase();
-        const bName = b.name.toLowerCase();
-
-        if (aName === q && bName !== q) return -1;
-        if (bName === q && aName !== q) return 1;
-
-        if (aName.startsWith(q) && !bName.startsWith(q)) return -1;
-        if (bName.startsWith(q) && !aName.startsWith(q)) return 1;
-
-        return 0;
-      })
-      .slice(0, 8);
+      .filter((result): result is { customer: (typeof uniqueCustomers)[number]; score: number } => result !== null)
+      .sort((a, b) => b.score - a.score || a.customer.name.localeCompare(b.customer.name))
+      .slice(0, 8)
+      .map((result) => result.customer);
   }, [customers, customerQuery]);
 
   const selectedCustomer = useMemo(
@@ -798,13 +809,27 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                     </div>
                   ) : (
                     <>
-                      <Input
-                        placeholder="Search by name or mobile"
-                        value={customerQuery}
-                        onChange={(e) => setCustomerQuery(e.target.value)}
-                      />
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className="pr-10 pl-9"
+                          placeholder="Search customer name, mobile, village…"
+                          value={customerQuery}
+                          onChange={(e) => setCustomerQuery(e.target.value)}
+                        />
+                        {customerQuery && (
+                          <button
+                            type="button"
+                            aria-label="Clear customer search"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => setCustomerQuery("")}
+                          >
+                            <X className="size-4" />
+                          </button>
+                        )}
+                      </div>
 
-                      <div className="max-h-40 space-y-1 overflow-y-auto">
+                      <div className="h-44 space-y-1 overflow-y-auto rounded-lg border bg-background p-1">
                         {filteredCustomers.map((c) => (
                           <button
                             type="button"
@@ -892,11 +917,25 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           <div className="space-y-3">
             <Label>Add products from inventory</Label>
 
-            <Input
-              placeholder="Search inventory product, stock or price"
-              value={productQuery}
-              onChange={(e) => setProductQuery(e.target.value)}
-            />
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                className="pr-10 pl-9"
+                placeholder="Search product, variant, category or supplier…"
+                value={productQuery}
+                onChange={(e) => setProductQuery(e.target.value)}
+              />
+              {productQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear product search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={() => setProductQuery("")}
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
 
             <div className="space-y-2 rounded-lg border p-3">
               {inventoryLoading && inventoryOptions.length === 0 ? (
