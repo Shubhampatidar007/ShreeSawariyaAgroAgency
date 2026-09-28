@@ -623,7 +623,7 @@ function InventoryEntryPage() {
                                 </button>
                               )}
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                               <div className="space-y-2">
                                 <Label>Quantity / stock</Label>
                                 <Input
@@ -648,28 +648,55 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label>Unit / size</Label>
+                                <Label>Package unit / label</Label>
                                 <Input
                                   data-inventory-unit-input={itemIndex + "-" + variantIndex}
                                   value={variant.unit}
                                   onChange={(e) =>
                                     updateVariant(itemIndex, variantIndex, { unit: e.target.value })
                                   }
-                                  onKeyDown={(e) => {
-                                    if (e.key !== "Enter") return;
-                                    e.preventDefault();
-                                    document
-                                      .querySelector<HTMLInputElement>(
-                                        '[data-inventory-price-input="' + itemIndex + '-' + variantIndex + '"]',
-                                      )
-                                      ?.focus();
-                                  }}
-                                  placeholder="bags / kg / L"
+                                  placeholder="box / bag / kg"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label>Purchase price</Label>
+                                <Label>Base unit</Label>
+                                <Select
+                                  value={variant.baseUnit}
+                                  onValueChange={(value) =>
+                                    updateVariant(itemIndex, variantIndex, { baseUnit: value })
+                                  }
+                                  disabled={Boolean(item.selectedInventoryId)}
+                                >
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Base unit" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {BASE_UNIT_OPTIONS.map((option) => (
+                                      <SelectItem key={option.key} value={option.key}>
+                                        {option.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Pack size in base unit</Label>
+                                <Input
+                                  data-inventory-package-size-input={itemIndex + "-" + variantIndex}
+                                  value={variant.packageSize}
+                                  onChange={(e) =>
+                                    updateVariant(itemIndex, variantIndex, {
+                                      packageSize: e.target.value,
+                                    })
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="1"
+                                  disabled={Boolean(item.selectedInventoryId)}
+                                />
+                              </div>
+                              <div className="space-y-2">
+                                <Label>Purchase price / base unit</Label>
                                 <Input
                                   data-inventory-price-input={itemIndex + "-" + variantIndex}
                                   value={variant.price}
@@ -682,23 +709,23 @@ function InventoryEntryPage() {
                                     if (variant.includeSellingPrice) {
                                       document
                                         .querySelector<HTMLInputElement>(
-                                          '[data-selling-price-input="' + itemIndex + '-' + variantIndex + '"]',
+                                          '[data-selling-price-input="' +
+                                            itemIndex +
+                                            "-" +
+                                            variantIndex +
+                                            '"]',
                                         )
                                         ?.focus();
                                       return;
                                     }
                                     const nextVariant = document.querySelector<HTMLInputElement>(
-                                      '[data-inventory-quantity-input="' + itemIndex + '-' + (variantIndex + 1) + '"]',
+                                      '[data-inventory-quantity-input="' +
+                                        itemIndex +
+                                        "-" +
+                                        (variantIndex + 1) +
+                                        '"]',
                                     );
-                                    if (nextVariant) {
-                                      nextVariant.focus();
-                                      return;
-                                    }
-                                    document
-                                      .querySelector<HTMLInputElement>(
-                                        '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
-                                      )
-                                      ?.focus();
+                                    if (nextVariant) nextVariant.focus();
                                   }}
                                   inputMode="decimal"
                                   placeholder="1200"
@@ -718,9 +745,10 @@ function InventoryEntryPage() {
                                       })
                                     }
                                     className="size-4 rounded border-input"
+                                    disabled={Boolean(item.selectedInventoryId)}
                                   />
                                   <Label htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}>
-                                    Add selling price
+                                    Selling price / base unit
                                   </Label>
                                 </div>
                                 {variant.includeSellingPrice ? (
@@ -734,26 +762,7 @@ function InventoryEntryPage() {
                                     }
                                     inputMode="decimal"
                                     placeholder="e.g. 1350"
-                                    onKeyDown={(e) => {
-                                      if (e.key !== "Enter") return;
-                                      e.preventDefault();
-                                      const nextVariant = document.querySelector<HTMLInputElement>(
-                                        '[data-inventory-quantity-input="' +
-                                          itemIndex +
-                                          "-" +
-                                          (variantIndex + 1) +
-                                          '"]',
-                                      );
-                                      if (nextVariant) {
-                                        nextVariant.focus();
-                                        return;
-                                      }
-                                      document
-                                        .querySelector<HTMLInputElement>(
-                                          '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
-                                        )
-                                        ?.focus();
-                                    }}
+                                    disabled={Boolean(item.selectedInventoryId)}
                                   />
                                 ) : (
                                   <p className="text-xs text-muted-foreground">
@@ -761,14 +770,41 @@ function InventoryEntryPage() {
                                   </p>
                                 )}
                               </div>
+                              <div className="flex items-end">
+                                <label className="flex items-center gap-2 text-sm">
+                                  <input
+                                    id={`loose-sale-toggle-${itemIndex}-${variantIndex}`}
+                                    type="checkbox"
+                                    checked={variant.allowLooseSale}
+                                    onChange={(e) =>
+                                      updateVariant(itemIndex, variantIndex, {
+                                        allowLooseSale: e.target.checked,
+                                      })
+                                    }
+                                    className="size-4 rounded border-input"
+                                    disabled={Boolean(item.selectedInventoryId)}
+                                  />
+                                  <span>Allow loose / partial quantity sales</span>
+                                </label>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs text-muted-foreground">
+                              <span>
+                                1 {variant.unit.trim() || "package"} = {Number(variant.packageSize) || 0}{" "}
+                                {variant.baseUnit || "base unit"}
+                              </span>
+                              <span>
+                                {variant.allowLooseSale ? "Loose / partial sales enabled" : "Full pack only"}
+                              </span>
                             </div>
                             <p className="mt-2 text-right text-xs text-muted-foreground">
-                              Variant total:{" "}
+                              Purchase value:{" "}
                               {formatCurrency(
-                                (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
+                                (Number(variant.quantity) || 0) *
+                                  (Number(variant.packageSize) || 0) *
+                                  (Number(variant.price) || 0),
                               )}
-                            </p>
-                          </div>
+                            </p>                          </div>
                         ))}
                       </div>
                     </div>
