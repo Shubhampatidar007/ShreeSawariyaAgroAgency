@@ -38,6 +38,7 @@ import {
   type KhataInventoryOption,
 } from "@/lib/khata-inventory-data";
 import type { PaymentMethod } from "@/types/business";
+import { convertQuantity, getCompatibleUnitOptions, roundQuantity } from "@/lib/units";
 
 type CartItem = {
   key: string;
@@ -45,11 +46,19 @@ type CartItem = {
   productId?: string;
   productVariantId?: string;
   product: string;
+  /** Customer-entered sale unit. */
   unit: string;
+  packageUnit: string;
+  baseUnit: string;
+  packageSize: number;
+  allowLooseSale: boolean;
   rate: number;
   purchaseCost: number;
   quantity: number;
   maxStock?: number;
+  calculatedAmount: number;
+  finalAmount: number;
+  finalAmountOverridden: boolean;
 };
 
 type Props = {
@@ -67,6 +76,17 @@ type ReceiptOption = "current" | "full" | "none";
 
 const KHATA_RECEIPT_EDGE_FUNCTION =
   import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
+
+const roundMoney = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
+
+const getBaseQuantityPreview = (item: CartItem) => {
+  if (!item.inventoryId) return roundQuantity(item.quantity);
+  if (!item.allowLooseSale) {
+    return roundQuantity(item.quantity * item.packageSize);
+  }
+  return convertQuantity(item.quantity, item.unit, item.baseUnit);
+};
 
 async function sendKhataReceiptToEdgeFunction({
   receiptOption,
@@ -283,7 +303,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
-  const total = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
+  const total = roundMoney(items.reduce((sum, item) => sum + item.finalAmount, 0));
 
   const bargainingNum = Number(bargainingAmount) || 0;
   const finalTotal = Math.max(total - bargainingNum, 0);
