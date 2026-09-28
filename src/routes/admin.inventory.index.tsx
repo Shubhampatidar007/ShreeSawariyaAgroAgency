@@ -193,7 +193,7 @@ undefined
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="inline-flex min-w-12 items-center justify-center rounded-lg bg-muted px-2.5 py-1.5 font-bold tabular-nums">
-                          {item.quantity}
+                          {item.baseQuantity} {item.baseUnit}
                         </span>
                       </TableCell>
                       <TableCell className="min-w-[150px]">
