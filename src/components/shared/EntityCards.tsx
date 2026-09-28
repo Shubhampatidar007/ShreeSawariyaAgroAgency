@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { formatCurrency, formatDate, loadShopData } from "@/lib/shop-store";
+import { formatQuantityWithUnit } from "@/lib/units";
 import { supabase } from "@/integrations/supabase/client";
 import type { Customer, InventoryItem, PublishedProduct, Supplier } from "@/types/business";
 
@@ -203,8 +204,8 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 p-3">
           <div className="rounded-lg border border-border/70 bg-background p-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quantity</p>
-            <p className="mt-1 text-lg font-bold tabular-nums">{item.baseQuantity} {item.baseUnit}</p>
-             <p className="text-xs text-muted-foreground">{item.quantity} {item.unit}</p>
+            <p className="mt-1 text-lg font-bold tabular-nums">{formatQuantityWithUnit(item.baseQuantity, item.baseUnit)}</p>
+             <p className="text-xs text-muted-foreground">{formatQuantityWithUnit(item.quantity, item.unit)}</p>
           </div>
           <div className="rounded-lg border border-border/70 bg-background p-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Purchase price</p>
