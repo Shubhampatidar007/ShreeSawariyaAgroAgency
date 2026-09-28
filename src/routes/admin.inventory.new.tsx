@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import { BASE_UNIT_OPTIONS } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
@@ -38,6 +39,9 @@ export const Route = createFileRoute("/admin/inventory/new")({
 type VariantDraft = {
   quantity: string;
   unit: string;
+  baseUnit: string;
+  packageSize: string;
+  allowLooseSale: boolean;
   price: string;
   sellingPrice: string;
   includeSellingPrice: boolean;
@@ -52,7 +56,10 @@ type ItemDraft = {
 
 const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
   quantity: "",
-  unit: "bags",
+  unit: "kg",
+  baseUnit: "kg",
+  packageSize: "1",
+  allowLooseSale: false,
   price: "",
   sellingPrice: "",
   includeSellingPrice: false,
@@ -104,7 +111,10 @@ function InventoryEntryPage() {
           itemSum +
           item.variants.reduce(
             (variantSum, variant) =>
-              variantSum + (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
+              variantSum +
+              (Number(variant.quantity) || 0) *
+                (Number(variant.packageSize) || 0) *
+                (Number(variant.price) || 0),
             0,
           ),
         0,
@@ -173,10 +183,15 @@ function InventoryEntryPage() {
       variants: [
         createVariantDraft({
           unit: inventoryItem.unit,
-          price: String(inventoryItem.purchasePrice),
+          baseUnit: inventoryItem.baseUnit,
+          packageSize: String(inventoryItem.packageSize),
+          allowLooseSale: inventoryItem.allowLooseSale,
+          price: String(inventoryItem.purchasePricePerBaseUnit),
           sellingPrice:
-            inventoryItem.sellingPrice !== undefined ? String(inventoryItem.sellingPrice) : "",
-          includeSellingPrice: inventoryItem.sellingPrice !== undefined,
+            inventoryItem.sellingPricePerBaseUnit !== undefined
+              ? String(inventoryItem.sellingPricePerBaseUnit)
+              : "",
+          includeSellingPrice: inventoryItem.sellingPricePerBaseUnit !== undefined,
         }),
       ],
     });
@@ -195,6 +210,9 @@ function InventoryEntryPage() {
       variants: item.variants.map((variant) => ({
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
+        baseUnit: variant.baseUnit.trim(),
+        packageSize: Number(variant.packageSize),
+        allowLooseSale: variant.allowLooseSale,
         price: Number(variant.price),
         sellingPrice:
           variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
@@ -217,11 +235,18 @@ function InventoryEntryPage() {
       cleanedItems.some((item) =>
         item.variants.some(
           (variant) =>
+            !Number.isFinite(variant.quantity) ||
             variant.quantity <= 0 ||
             !variant.unit ||
+            !variant.baseUnit ||
+            !Number.isFinite(variant.packageSize) ||
+            variant.packageSize <= 0 ||
+            !Number.isFinite(variant.price) ||
             variant.price < 0 ||
             (variant.includeSellingPrice &&
-              (variant.sellingPrice === undefined || variant.sellingPrice < 0)),
+              (variant.sellingPrice === undefined ||
+                !Number.isFinite(variant.sellingPrice) ||
+                variant.sellingPrice < 0)),
         ),
       )
     ) {
@@ -274,7 +299,8 @@ function InventoryEntryPage() {
 
       for (const item of cleanedItems) {
         for (const variant of item.variants) {
-          const variantTotal = variant.quantity * variant.price;
+          const variantTotal =
+            variant.quantity * variant.packageSize * variant.price;
           const variantAdvance = Math.min(remainingAdvance, variantTotal);
 
           await shopStore.addInventoryItem({
@@ -431,7 +457,7 @@ function InventoryEntryPage() {
                 <div>
                   <Label>Items</Label>
                   <p className="text-xs text-muted-foreground">
-                    Add different products from this supplier in one purchase.
+                    Add different products and define how each stock item is sold.
                   </p>
                 </div>
                 <Button type="button" variant="outline" size="sm" onClick={addItem}>
@@ -464,7 +490,7 @@ function InventoryEntryPage() {
                         <div>
                           <p className="text-sm font-semibold">Item {itemIndex + 1}</p>
                           <p className="text-xs text-muted-foreground">
-                            Product, variants, purchase price and optional selling price
+                            Product, variants, pack size, sale mode and prices
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
