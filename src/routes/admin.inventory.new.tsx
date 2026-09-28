@@ -463,6 +463,7 @@ function InventoryEntryPage() {
                       <div className="space-y-2">
                         <Label>Product</Label>
                         <Input
+                          data-inventory-product-input={itemIndex}
                           value={item.productSearch}
                           onChange={(e) =>
                             updateItem(itemIndex, {
@@ -472,6 +473,15 @@ function InventoryEntryPage() {
                               variants: [createVariantDraft()],
                             })
                           }
+                          onKeyDown={(e) => {
+                            if (e.key !== "Enter") return;
+                            e.preventDefault();
+                            document
+                              .querySelector<HTMLInputElement>(
+                                '[data-inventory-quantity-input="' + itemIndex + '-0"]',
+                              )
+                              ?.focus();
+                          }}
                           placeholder="Search existing product or enter new product name"
                         />
 
@@ -567,12 +577,22 @@ function InventoryEntryPage() {
                               <div className="space-y-2">
                                 <Label>Quantity / stock</Label>
                                 <Input
+                                  data-inventory-quantity-input={itemIndex + "-" + variantIndex}
                                   value={variant.quantity}
                                   onChange={(e) =>
                                     updateVariant(itemIndex, variantIndex, {
                                       quantity: e.target.value,
                                     })
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    document
+                                      .querySelector<HTMLInputElement>(
+                                        '[data-inventory-unit-input="' + itemIndex + '-' + variantIndex + '"]',
+                                      )
+                                      ?.focus();
+                                  }}
                                   inputMode="decimal"
                                   placeholder="20"
                                 />
@@ -580,10 +600,20 @@ function InventoryEntryPage() {
                               <div className="space-y-2">
                                 <Label>Unit / size</Label>
                                 <Input
+                                  data-inventory-unit-input={itemIndex + "-" + variantIndex}
                                   value={variant.unit}
                                   onChange={(e) =>
                                     updateVariant(itemIndex, variantIndex, { unit: e.target.value })
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    document
+                                      .querySelector<HTMLInputElement>(
+                                        '[data-inventory-price-input="' + itemIndex + '-' + variantIndex + '"]',
+                                      )
+                                      ?.focus();
+                                  }}
                                   placeholder="bags / kg / L"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
@@ -591,10 +621,27 @@ function InventoryEntryPage() {
                               <div className="space-y-2">
                                 <Label>Purchase price</Label>
                                 <Input
+                                  data-inventory-price-input={itemIndex + "-" + variantIndex}
                                   value={variant.price}
                                   onChange={(e) =>
                                     updateVariant(itemIndex, variantIndex, { price: e.target.value })
                                   }
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    const nextVariant = document.querySelector<HTMLInputElement>(
+                                      '[data-inventory-quantity-input="' + itemIndex + '-' + (variantIndex + 1) + '"]',
+                                    );
+                                    if (nextVariant) {
+                                      nextVariant.focus();
+                                      return;
+                                    }
+                                    document
+                                      .querySelector<HTMLInputElement>(
+                                        '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
+                                      )
+                                      ?.focus();
+                                  }}
                                   inputMode="decimal"
                                   placeholder="1200"
                                   disabled={Boolean(item.selectedInventoryId)}

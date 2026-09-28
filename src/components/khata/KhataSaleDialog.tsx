@@ -269,6 +269,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const [productQuery, setProductQuery] = useState("");
   const [customName, setCustomName] = useState("");
   const [customRate, setCustomRate] = useState("");
+  const customNameRef = useRef<HTMLInputElement>(null);
+  const customRateRef = useRef<HTMLInputElement>(null);
 
   // payment
   const [paid, setPaid] = useState("0");
@@ -1120,12 +1122,19 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           {/* Custom Item Entry */}
           <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto]">
             <Input
+              ref={customNameRef}
               placeholder="Custom item name"
               value={customName}
               onChange={(e) => setCustomName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                customRateRef.current?.focus();
+              }}
             />
 
             <Input
+              ref={customRateRef}
               className="w-32"
               type="text"
               inputMode="decimal"
@@ -1134,6 +1143,12 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
               value={customRate}
               onFocus={(e) => e.currentTarget.select()}
               onChange={(e) => setCustomRate(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                addCustomItem();
+                requestAnimationFrame(() => customNameRef.current?.focus());
+              }}
             />
 
             <Button
