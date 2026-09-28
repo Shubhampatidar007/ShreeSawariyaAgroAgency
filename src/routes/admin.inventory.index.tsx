@@ -165,8 +165,7 @@ undefined
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead>Variant</TableHead>
-                  <TableHead className="text-right">Quantity</TableHead>
+                                    <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
                   <TableHead className="text-right">Selling price</TableHead>
@@ -185,11 +184,6 @@ undefined
                     <TableRow key={item.id} className="hover:bg-muted/50">
                       <TableCell className="min-w-[170px]">
                         <p className="font-semibold leading-5">{item.productName}</p>
-                      </TableCell>
-                      <TableCell className="min-w-[120px]">
-                        <span className="inline-flex rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
-                          {item.unit}
-                        </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="inline-flex min-w-12 items-center justify-center rounded-lg bg-muted px-2.5 py-1.5 font-bold tabular-nums">
