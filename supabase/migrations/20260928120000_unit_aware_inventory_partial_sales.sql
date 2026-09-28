@@ -5,8 +5,17 @@
 -- The legacy quantity is retained as package count, but widened to 6 decimals so
 -- partial sales of large packages (for example 350 g from a 50 kg bag = 0.007 pack)
 -- do not lose physical-stock precision.
+-- total_price is generated from quantity, so recreate that generated
+-- column while widening quantity for six-decimal partial-package precision.
+ALTER TABLE public.inventory_items
+  DROP COLUMN total_price;
+
 ALTER TABLE public.inventory_items
   ALTER COLUMN quantity TYPE numeric(20,6);
+
+ALTER TABLE public.inventory_items
+  ADD COLUMN total_price numeric(14,2)
+    GENERATED ALWAYS AS (quantity * purchase_price) STORED;
 
 ALTER TABLE public.product_variants
   ALTER COLUMN stock TYPE numeric(20,6);
