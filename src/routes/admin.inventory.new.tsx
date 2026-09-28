@@ -766,11 +766,7 @@ function InventoryEntryPage() {
                                         ?.focus();
                                     }}
                                   />
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">
-                                    Selling price will be shown as “-”.
-                                  </p>
-                                )}
+                                ) : null}
                               </div>
                             </div>
                           </div>
