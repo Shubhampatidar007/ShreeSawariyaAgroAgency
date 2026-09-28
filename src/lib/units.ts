@@ -40,6 +40,14 @@ export const BASE_UNIT_OPTIONS = UNIT_DEFINITIONS.map(({ key, label, dimension }
   key, label, dimension,
 }));
 
+export const getCompatibleUnitOptions = (baseUnit: string) => {
+  const definition = getUnitDefinition(baseUnit);
+  if (!definition) return [{ key: baseUnit, label: baseUnit, dimension: "count" as UnitDimension }];
+  return UNIT_DEFINITIONS
+    .filter((item) => item.group === definition.group)
+    .map(({ key, label, dimension }) => ({ key, label, dimension }));
+};
+
 export const normalizeUnit = (value: string | null | undefined) => {
   const normalized = value?.trim().toLowerCase().replace(/\s+/g, " ") ?? "";
   if (!normalized) return null;
