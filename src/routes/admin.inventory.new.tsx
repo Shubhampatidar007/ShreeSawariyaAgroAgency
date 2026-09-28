@@ -40,6 +40,7 @@ type VariantDraft = {
   unit: string;
   price: string;
   sellingPrice: string;
+  includeSellingPrice: boolean;
 };
 
 type ItemDraft = {
@@ -54,6 +55,7 @@ const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft
   unit: "bags",
   price: "",
   sellingPrice: "",
+  includeSellingPrice: false,
   ...overrides,
 });
 
@@ -174,6 +176,7 @@ function InventoryEntryPage() {
           price: String(inventoryItem.purchasePrice),
           sellingPrice:
             inventoryItem.sellingPrice !== undefined ? String(inventoryItem.sellingPrice) : "",
+          includeSellingPrice: inventoryItem.sellingPrice !== undefined,
         }),
       ],
     });
@@ -194,7 +197,9 @@ function InventoryEntryPage() {
         unit: variant.unit.trim(),
         price: Number(variant.price),
         sellingPrice:
-          variant.sellingPrice.trim() === "" ? undefined : Number(variant.sellingPrice),
+          variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
+            ? Number(variant.sellingPrice)
+            : undefined,
       })),
     }));
 
@@ -215,7 +220,8 @@ function InventoryEntryPage() {
             variant.quantity <= 0 ||
             !variant.unit ||
             variant.price < 0 ||
-            (variant.sellingPrice !== undefined && variant.sellingPrice < 0),
+            (variant.includeSellingPrice &&
+              (variant.sellingPrice === undefined || variant.sellingPrice < 0)),
         ),
       )
     ) {
@@ -252,7 +258,9 @@ function InventoryEntryPage() {
         unit: variant.unit.trim(),
         price: Number(variant.price),
         sellingPrice:
-          variant.sellingPrice.trim() === "" ? undefined : Number(variant.sellingPrice),
+          variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
+            ? Number(variant.sellingPrice)
+            : undefined,
       })),
     }));
     const advance = Math.max(Number(advancePaid) || 0, 0);
@@ -642,6 +650,22 @@ function InventoryEntryPage() {
                                   onKeyDown={(e) => {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
+                                    const sellingInput = document.querySelector<HTMLInputElement>(
+                                      '#selling-price-toggle-' + itemIndex + '-' + variantIndex,
+                                    );
+                                    if (sellingInput?.checked) {
+                                      sellingInput.nextElementSibling?.dispatchEvent(
+                                        new MouseEvent("click", { bubbles: true }),
+                                      );
+                                      requestAnimationFrame(() => {
+                                        document
+                                          .querySelector<HTMLInputElement>(
+                                            '[data-selling-price-input="' + itemIndex + '-' + variantIndex + '"]',
+                                          )
+                                          ?.focus();
+                                      });
+                                      return;
+                                    }
                                     const nextVariant = document.querySelector<HTMLInputElement>(
                                       '[data-inventory-quantity-input="' + itemIndex + '-' + (variantIndex + 1) + '"]',
                                     );
@@ -661,19 +685,60 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label>Selling price (optional)</Label>
-                                <Input
-                                  value={variant.sellingPrice}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, { sellingPrice: e.target.value })
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="e.g. 1350"
-                                  disabled={Boolean(item.selectedInventoryId)}
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                  Leave blank to show “-” in Inventory.
-                                </p>
+                                <div className="flex items-center gap-2">
+                                  <input
+                                    id={`selling-price-toggle-${itemIndex}-${variantIndex}`}
+                                    type="checkbox"
+                                    checked={variant.includeSellingPrice}
+                                    onChange={(e) =>
+                                      updateVariant(itemIndex, variantIndex, {
+                                        includeSellingPrice: e.target.checked,
+                                        sellingPrice: e.target.checked ? variant.sellingPrice : "",
+                                      })
+                                    }
+                                    className="size-4 rounded border-input"
+                                  />
+                                  <Label htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}>
+                                    Add selling price
+                                  </Label>
+                                </div>
+                                {variant.includeSellingPrice ? (
+                                  <Input
+                                    data-selling-price-input={itemIndex + "-" + variantIndex}
+                                    value={variant.sellingPrice}
+                                    onChange={(e) =>
+                                      updateVariant(itemIndex, variantIndex, {
+                                        sellingPrice: e.target.value,
+                                      })
+                                    }
+                                    inputMode="decimal"
+                                    placeholder="e.g. 1350"
+                                    onKeyDown={(e) => {
+                                      if (e.key !== "Enter") return;
+                                      e.preventDefault();
+                                      const nextVariant = document.querySelector<HTMLInputElement>(
+                                        '[data-inventory-quantity-input="' +
+                                          itemIndex +
+                                          "-" +
+                                          (variantIndex + 1) +
+                                          '"]',
+                                      );
+                                      if (nextVariant) {
+                                        nextVariant.focus();
+                                        return;
+                                      }
+                                      document
+                                        .querySelector<HTMLInputElement>(
+                                          '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
+                                        )
+                                        ?.focus();
+                                    }}
+                                  />
+                                ) : (
+                                  <p className="text-xs text-muted-foreground">
+                                    Selling price will be shown as “-”.
+                                  </p>
+                                )}
                               </div>
                             </div>
                             <p className="mt-2 text-right text-xs text-muted-foreground">
