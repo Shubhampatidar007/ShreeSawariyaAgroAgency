@@ -314,6 +314,7 @@ BEGIN
 END;
 $function$
 
+;
 
 REVOKE EXECUTE ON FUNCTION public.create_khata_sale_with_bargaining(uuid, jsonb, numeric, numeric, text, date, text)
   FROM PUBLIC, anon;
