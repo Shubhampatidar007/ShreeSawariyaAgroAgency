@@ -281,6 +281,9 @@ function InventoryEntryPage() {
       variants: item.variants.map((variant) => ({
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
+        baseUnit: variant.baseUnit.trim(),
+        packageSize: Number(variant.packageSize),
+        allowLooseSale: variant.allowLooseSale,
         price: Number(variant.price),
         sellingPrice:
           variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
