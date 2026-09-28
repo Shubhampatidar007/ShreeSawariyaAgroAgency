@@ -112,3 +112,12 @@ begin
   return v_inventory_id;
 end;
 $function$;
+
+
+revoke execute on function public.record_supplier_purchase(
+  uuid, text, numeric, text, numeric, numeric, date, numeric, text, numeric
+) from public, anon;
+
+grant execute on function public.record_supplier_purchase(
+  uuid, text, numeric, text, numeric, numeric, date, numeric, text, numeric
+) to authenticated;
