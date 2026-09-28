@@ -35,6 +35,20 @@ type MetricsCacheEntry = {
 
 const metricsCache: MetricsCacheEntry[] = [];
 
+const getSaleSnapshot = (item: CustomerSaleItem) => {
+  const baseQuantity = item.baseQuantity ?? item.enteredQuantity ?? item.quantity;
+  const revenue =
+    item.finalSaleAmount ??
+    item.amount ??
+    baseQuantity * (item.sellingRatePerBaseUnit ?? item.adminPriceInc ?? item.rate);
+  const costPerBaseUnit = item.purchaseCostPerBaseUnit ?? item.purchaseCost ?? 0;
+  return {
+    baseQuantity,
+    revenue,
+    cost: baseQuantity * costPerBaseUnit,
+  };
+};
+
 export const isoDay = (value: string) => {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
   const date = new Date(value);
@@ -143,23 +157,34 @@ export const buildDailyMetrics = (
   });
   const snapshotTransactionIds = new Set(
     customerSaleItems
-      .filter((item) => item.purchaseCost != null && item.adminPriceInc != null)
+      .filter(
+        (item) =>
+          item.finalSaleAmount != null ||
+          (item.purchaseCost != null && item.adminPriceInc != null),
+      )
       .map((item) => item.transactionId),
   );
 
   const customerSaleDiscounts = new Map<string, { date: string; amount: number }>();
 
   customerSaleItems.forEach((item) => {
-    if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
+    if (!item.date) return;
+    if (
+      item.finalSaleAmount == null &&
+      (item.purchaseCost == null || item.adminPriceInc == null)
+    ) {
       return;
     }
 
     if (!inRange(item.date)) return;
 
     const row = ensure(isoDay(item.date));
+    const snapshot = getSaleSnapshot(item);
 
-    row.sales += item.quantity * item.adminPriceInc;
-    row.cost += item.quantity * item.purchaseCost;
+    // New normalized sales use base quantity + final line revenue.
+    // Legacy snapshots fall back to their original quantity/rate semantics.
+    row.sales += snapshot.revenue;
+    row.cost += snapshot.cost;
 
     if (item.transactionDiscount != null) {
       customerSaleDiscounts.set(item.transactionId, {
@@ -286,19 +311,27 @@ export const calculateCustomerProfit = (
 
   const snapshotTransactionIds = new Set(
     customerSaleItems
-      .filter((item) => item.purchaseCost != null && item.adminPriceInc != null)
+      .filter(
+        (item) =>
+          item.finalSaleAmount != null ||
+          (item.purchaseCost != null && item.adminPriceInc != null),
+      )
       .map((item) => item.transactionId),
   );
 
   const customerSaleDiscounts = new Map<string, number>();
 
   customerSaleItems.forEach((item) => {
-    if (item.purchaseCost == null || item.adminPriceInc == null || !item.date) {
+    if (
+      item.finalSaleAmount == null &&
+      (item.purchaseCost == null || item.adminPriceInc == null)
+    ) {
       return;
     }
 
-    sales += item.quantity * item.adminPriceInc;
-    cost += item.quantity * item.purchaseCost;
+    const snapshot = getSaleSnapshot(item);
+    sales += snapshot.revenue;
+    cost += snapshot.cost;
 
     if (item.transactionDiscount != null) {
       customerSaleDiscounts.set(item.transactionId, item.transactionDiscount);
