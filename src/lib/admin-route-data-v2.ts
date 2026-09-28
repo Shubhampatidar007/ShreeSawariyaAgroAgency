@@ -45,10 +45,10 @@ const CUSTOMER_SUMMARY = "id,status,total_purchases,current_due";
 const SUPPLIER_FULL =
   "id,name,company,mobile,email,gstin,address,products_supplied,total_purchases,total_paid,advance,due_balance,last_order,status";
 const INVENTORY_FULL =
-  "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,selling_price,total_price,min_stock_level,status,last_updated";
+  "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,selling_price,total_price,min_stock_level,status,last_updated,base_quantity,base_unit,package_size,allow_loose_sale,purchase_price_per_base_unit,selling_price_per_base_unit";
 const PRODUCT_FULL =
   "id,inventory_id,title,category,selling_price,discount_price,stock,description,tags,images,emoji,visibility,featured,status,published_on";
-const VARIANT_ACTIVE = "id,product_id,inventory_id,label,selling_price,discount_price,stock,status";
+const VARIANT_ACTIVE = "id,product_id,inventory_id,label,selling_price,discount_price,stock,base_stock,status";
 const CUSTOMER_TX =
   "id,customer_id,entry_date,entry_type,product,quantity,amount,payment,remaining_due,method,remarks,subtotal,discount_amount";
 const SUPPLIER_TX =
@@ -114,6 +114,13 @@ const toInventory = (r: any): InventoryItem => ({
   minStockLevel: num(r.min_stock_level),
   status: r.status,
   lastUpdated: r.last_updated ?? "",
+  baseQuantity: num(r.base_quantity ?? r.quantity),
+  baseUnit: r.base_unit ?? r.unit ?? "unit",
+  packageSize: num(r.package_size ?? 1) || 1,
+  allowLooseSale: Boolean(r.allow_loose_sale),
+  purchasePricePerBaseUnit: num(r.purchase_price_per_base_unit ?? r.purchase_price),
+  sellingPricePerBaseUnit:
+    r.selling_price_per_base_unit == null ? undefined : num(r.selling_price_per_base_unit),
 });
 
 const toVariant = (r: any): ProductVariant => ({
@@ -124,6 +131,7 @@ const toVariant = (r: any): ProductVariant => ({
   sellingPrice: num(r.selling_price),
   discountPrice: r.discount_price == null ? undefined : num(r.discount_price),
   stock: num(r.stock),
+  baseStock: num(r.base_stock ?? r.stock),
   status: r.status ?? "active",
 });
 
