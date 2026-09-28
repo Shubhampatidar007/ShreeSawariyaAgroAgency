@@ -552,6 +552,11 @@ export const shopStore = {
         quantity: i.quantity,
         unit: i.unit,
         rate: i.rate,
+        final_amount:
+          i.finalAmount ??
+          (Number.isFinite(Number(i.quantity)) && Number.isFinite(Number(i.rate))
+            ? Number(i.quantity) * Number(i.rate)
+            : 0),
       })),
       _paid: input.paid,
       _bargaining_amount: input.bargainingAmount ?? 0,
