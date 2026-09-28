@@ -123,6 +123,7 @@ const toInventory = (r: any): InventoryItem => ({
   quantity: num(r.quantity),
   unit: r.unit,
   purchasePrice: num(r.purchase_price),
+  sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
   minStockLevel: num(r.min_stock_level),
   status: r.status,
@@ -651,6 +652,7 @@ export const shopStore = {
     quantity: number;
     unit: string;
     purchasePrice: number;
+    sellingPrice?: number;
     advancePaid: number;
     advanceMethod: "cash" | "upi" | "bank" | "cheque";
     minStockLevel: number;
@@ -662,6 +664,7 @@ export const shopStore = {
       _quantity: item.quantity,
       _unit: item.unit,
       _purchase_price: item.purchasePrice,
+      _selling_price: item.sellingPrice ?? null,
       _min_stock_level: item.minStockLevel,
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,
@@ -676,6 +679,7 @@ export const shopStore = {
     if (patch.quantity !== undefined) payload.quantity = patch.quantity;
     if (patch.unit !== undefined) payload.unit = patch.unit;
     if (patch.purchasePrice !== undefined) payload.purchase_price = patch.purchasePrice;
+    if (patch.sellingPrice !== undefined) payload.selling_price = patch.sellingPrice ?? null;
     if (patch.minStockLevel !== undefined) payload.min_stock_level = patch.minStockLevel;
     if (patch.status !== undefined) payload.status = patch.status;
     const { error } = await supabase.from("inventory_items").update(payload).eq("id", id);

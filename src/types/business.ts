@@ -56,6 +56,7 @@ export type InventoryItem = {
   quantity: number;
   unit: string;
   purchasePrice: number;
+  sellingPrice?: number;
   totalPrice: number;
   minStockLevel: number;
   status: InventoryStatus;

@@ -209,6 +209,10 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Purchase price</p>
             <p className="mt-1 font-semibold">{formatCurrency(item.purchasePrice)}</p>
           </div>
+          <div className="rounded-lg border border-border/70 bg-background p-2.5">
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Selling price</p>
+            <p className="mt-1 font-semibold">{item.sellingPrice === undefined ? "-" : formatCurrency(item.sellingPrice)}</p>
+          </div>
           <div className="col-span-2 flex items-center justify-between rounded-lg border border-border/70 bg-background px-2.5 py-2">
             <span className="text-xs text-muted-foreground">Minimum stock</span>
             <span className="text-xs font-semibold">{item.minStockLevel} {item.unit}</span>

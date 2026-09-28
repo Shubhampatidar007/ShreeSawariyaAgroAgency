@@ -169,6 +169,7 @@ undefined
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
+                  <TableHead className="text-right">Selling price</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -210,6 +211,9 @@ undefined
                       </TableCell>
                       <TableCell className="text-right font-medium">
                         {formatCurrency(item.purchasePrice)}
+                      </TableCell>
+                      <TableCell className="text-right font-medium">
+                        {item.sellingPrice === undefined ? "-" : formatCurrency(item.sellingPrice)}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center justify-end gap-1">

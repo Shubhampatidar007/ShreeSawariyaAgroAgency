@@ -39,6 +39,7 @@ type VariantDraft = {
   quantity: string;
   unit: string;
   price: string;
+  sellingPrice: string;
 };
 
 type ItemDraft = {
@@ -52,6 +53,7 @@ const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft
   quantity: "",
   unit: "bags",
   price: "",
+  sellingPrice: "",
   ...overrides,
 });
 
@@ -170,6 +172,8 @@ function InventoryEntryPage() {
         createVariantDraft({
           unit: inventoryItem.unit,
           price: String(inventoryItem.purchasePrice),
+          sellingPrice:
+            inventoryItem.sellingPrice !== undefined ? String(inventoryItem.sellingPrice) : "",
         }),
       ],
     });
@@ -189,6 +193,8 @@ function InventoryEntryPage() {
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
         price: Number(variant.price),
+        sellingPrice:
+          variant.sellingPrice.trim() === "" ? undefined : Number(variant.sellingPrice),
       })),
     }));
 
@@ -205,7 +211,11 @@ function InventoryEntryPage() {
     if (
       cleanedItems.some((item) =>
         item.variants.some(
-          (variant) => variant.quantity <= 0 || !variant.unit || variant.price < 0,
+          (variant) =>
+            variant.quantity <= 0 ||
+            !variant.unit ||
+            variant.price < 0 ||
+            (variant.sellingPrice !== undefined && variant.sellingPrice < 0),
         ),
       )
     ) {
@@ -241,6 +251,8 @@ function InventoryEntryPage() {
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
         price: Number(variant.price),
+        sellingPrice:
+          variant.sellingPrice.trim() === "" ? undefined : Number(variant.sellingPrice),
       })),
     }));
     const advance = Math.max(Number(advancePaid) || 0, 0);
@@ -264,6 +276,7 @@ function InventoryEntryPage() {
             quantity: variant.quantity,
             unit: variant.unit,
             purchasePrice: variant.price,
+            sellingPrice: variant.sellingPrice,
             advancePaid: variantAdvance,
             advanceMethod,
             minStockLevel: 10,
@@ -443,7 +456,7 @@ function InventoryEntryPage() {
                         <div>
                           <p className="text-sm font-semibold">Item {itemIndex + 1}</p>
                           <p className="text-xs text-muted-foreground">
-                            Product, variants and purchase price
+                            Product, variants, purchase price and optional selling price
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -647,6 +660,21 @@ function InventoryEntryPage() {
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
+                              <div className="space-y-2">
+                                <Label>Selling price (optional)</Label>
+                                <Input
+                                  value={variant.sellingPrice}
+                                  onChange={(e) =>
+                                    updateVariant(itemIndex, variantIndex, { sellingPrice: e.target.value })
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="e.g. 1350"
+                                  disabled={Boolean(item.selectedInventoryId)}
+                                />
+                                <p className="text-xs text-muted-foreground">
+                                  Leave blank to show “-” in Inventory.
+                                </p>
+                              </div>
                             </div>
                             <p className="mt-2 text-right text-xs text-muted-foreground">
                               Variant total:{" "}
@@ -765,6 +793,7 @@ function InventoryEntryPage() {
                                 <th className="px-3 py-2 font-medium">Quantity</th>
                                 <th className="px-3 py-2 font-medium">Unit / size</th>
                                 <th className="px-3 py-2 font-medium">Purchase price</th>
+                                <th className="px-3 py-2 font-medium">Selling price</th>
                                 <th className="px-3 py-2 text-right font-medium">Value</th>
                               </tr>
                             </thead>
@@ -777,6 +806,9 @@ function InventoryEntryPage() {
                                     <td className="px-3 py-2">{quantity}</td>
                                     <td className="px-3 py-2">{variant.unit.trim() || "—"}</td>
                                     <td className="px-3 py-2">{formatCurrency(price)}</td>
+                                    <td className="px-3 py-2">
+                                      {variant.sellingPrice.trim() === "" ? "-" : formatCurrency(Number(variant.sellingPrice) || 0)}
+                                    </td>
                                     <td className="px-3 py-2 text-right font-medium">
                                       {formatCurrency(quantity * price)}
                                     </td>
