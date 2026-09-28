@@ -131,13 +131,9 @@ export const formatQuantityWithUnit = (
 
   const displayUnit =
     definition.group === "weight"
-      ? Math.abs(quantity * definition.toCanonical) >= 1000
-        ? "kg"
-        : "g"
+      ? "kg"
       : definition.group === "volume"
-        ? Math.abs(quantity * definition.toCanonical) >= 1000
-          ? "l"
-          : "ml"
+        ? "l"
         : definition.key;
   const displayQuantity = convertQuantity(quantity, normalized, displayUnit);
 
