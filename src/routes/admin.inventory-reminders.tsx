@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { supabase } from "@/integrations/supabase/client";
 import { loadShopData, useShopStore } from "@/lib/shop-store";
+import { formatQuantityWithUnit } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory-reminders")({
   head: () => ({
@@ -175,7 +176,7 @@ function InventoryRemindersPage() {
                         Current stock
                       </p>
                       <p className="mt-1 text-xl font-bold">
-                        {item.quantity} {item.unit}
+                        {formatQuantityWithUnit(item.baseQuantity, item.baseUnit)}
                       </p>
                     </div>
                     <div className="rounded-xl bg-muted/50 p-4">
