@@ -614,12 +614,46 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     }
 
     for (const item of items) {
-      if (item.quantity <= 0) {
-        return toast.error(`Enter a valid quantity for ${item.product}`);
+      if (!Number.isFinite(item.quantity) || item.quantity <= 0) {
+        return toast.error("Enter a valid quantity for " + item.product);
       }
 
-      if (item.maxStock !== undefined && item.quantity > item.maxStock) {
-        return toast.error(`Only ${item.maxStock} ${item.unit} of ${item.product} in stock`);
+      let baseQuantity = 0;
+      try {
+        baseQuantity = getBaseQuantityPreview(item);
+      } catch (error) {
+        return toast.error(
+          error instanceof Error
+            ? item.product + ": " + error.message
+            : "Choose a valid sale unit for " + item.product,
+        );
+      }
+
+      if (!Number.isFinite(baseQuantity) || baseQuantity <= 0) {
+        return toast.error("Enter a valid quantity/unit for " + item.product);
+      }
+
+      if (item.maxStock !== undefined && baseQuantity > item.maxStock) {
+        return toast.error(
+          "Only " + item.maxStock + " " + item.baseUnit + " of " + item.product + " is in stock",
+        );
+      }
+
+      if (!item.allowLooseSale && item.inventoryId) {
+        if (item.unit.trim().toLowerCase() !== item.packageUnit.trim().toLowerCase()) {
+          return toast.error(item.product + " can only be sold as " + item.packageUnit);
+        }
+        if (!Number.isInteger(item.quantity)) {
+          return toast.error(item.product + " must be sold in complete packs");
+        }
+      }
+
+      if (!Number.isFinite(item.rate) || item.rate < 0) {
+        return toast.error("Enter a valid rate for " + item.product);
+      }
+
+      if (!Number.isFinite(item.finalAmount) || item.finalAmount < 0) {
+        return toast.error("Enter a valid final sale price for " + item.product);
       }
     }
 
