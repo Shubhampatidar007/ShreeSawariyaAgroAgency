@@ -1144,55 +1144,67 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   <TableRow>
                     <TableHead>Item</TableHead>
                     <TableHead className="w-20">Qty</TableHead>
+                    <TableHead className="w-28">Unit</TableHead>
                     <TableHead className="w-24">Rate</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
+                    <TableHead>Calculated</TableHead>
+                    <TableHead className="w-32 text-right">Final sale</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
-
                 <TableBody>
                   {items.map((item) => (
                     <TableRow key={item.key}>
-                      <TableCell className="min-w-[180px]">
+                      <TableCell className="min-w-[190px]">
                         <div className="font-semibold">{item.product}</div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                           <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
-                            Variant: {item.unit}
+                            {item.allowLooseSale ? "Loose sale" : "Full pack"}
                           </span>
                           <span className="text-muted-foreground">
-                            Stock: {item.maxStock ?? "—"}
+                            Stock: {item.maxStock ?? "—"} {item.baseUnit}
                           </span>
+                        </div>
+                        <div className="mt-1 text-xs text-muted-foreground">
+                          Base quantity: {getBaseQuantityPreview(item)} {item.baseUnit}
                         </div>
                       </TableCell>
 
                       <TableCell>
                         <Input
                           type="text"
-                          inputMode="numeric"
-                          minLength={1}
+                          inputMode="decimal"
                           className="h-8 w-16"
                           value={item.quantity}
+                          step={item.allowLooseSale ? "any" : "1"}
                           onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => {
-                            const nextQuantity = Number(e.target.value) || 0;
-
-                            if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
-                              toast.error(
-                                `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
-                              );
-
-                              updateItem(item.key, {
-                                quantity: item.maxStock,
-                              });
-
-                              return;
-                            }
-
+                          onChange={(e) =>
                             updateItem(item.key, {
-                              quantity: nextQuantity,
-                            });
-                          }}
+                              quantity: Number(e.target.value) || 0,
+                            })
+                          }
                         />
+                      </TableCell>
+
+                      <TableCell>
+                        {item.inventoryId && item.allowLooseSale ? (
+                          <Select
+                            value={item.unit}
+                            onValueChange={(value) => updateItem(item.key, { unit: value })}
+                          >
+                            <SelectTrigger className="h-8 w-28">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getCompatibleUnitOptions(item.baseUnit).map((option) => (
+                                <SelectItem key={option.key} value={option.key}>
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        ) : (
+                          <span className="text-sm font-medium">{item.unit}</span>
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -1208,10 +1220,46 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                             })
                           }
                         />
+                        <div className="mt-1 text-[10px] text-muted-foreground">
+                          / {item.baseUnit}
+                        </div>
+                      </TableCell>
+
+                      <TableCell>
+                        <div className="font-medium">{formatCurrency(item.calculatedAmount)}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {getBaseQuantityPreview(item)} {item.baseUnit}
+                        </div>
                       </TableCell>
 
                       <TableCell className="text-right">
-                        {formatCurrency(item.quantity * item.rate)}
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="ml-auto h-8 w-28"
+                          value={item.finalAmount}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) =>
+                            updateItem(item.key, {
+                              finalAmount: Number(e.target.value) || 0,
+                              finalAmountOverridden: true,
+                            })
+                          }
+                        />
+                        {item.finalAmountOverridden && (
+                          <button
+                            type="button"
+                            className="mt-1 text-[10px] text-primary hover:underline"
+                            onClick={() =>
+                              updateItem(item.key, {
+                                finalAmount: item.calculatedAmount,
+                                finalAmountOverridden: false,
+                              })
+                            }
+                          >
+                            Use calculated
+                          </button>
+                        )}
                       </TableCell>
 
                       <TableCell>
@@ -1220,6 +1268,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           size="icon"
                           variant="ghost"
                           onClick={() => removeItem(item.key)}
+                          aria-label={"Remove " + item.product}
                         >
                           <Trash2 className="size-4 text-destructive" />
                         </Button>
