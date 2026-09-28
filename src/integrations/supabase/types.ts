@@ -209,36 +209,69 @@ export type Database = {
       };
       customer_transaction_items: {
         Row: {
+          admin_price_inc: number | null;
           amount: number | null;
+          base_quantity: number | null;
+          base_unit: string | null;
+          calculated_amount: number | null;
           created_at: string;
+          entered_quantity: number | null;
+          entered_unit: string | null;
+          final_sale_amount: number | null;
           id: string;
           product: string;
           product_id: string | null;
+          product_variant_id: string | null;
+          purchase_cost: number | null;
+          purchase_cost_per_base_unit: number | null;
           quantity: number;
           rate: number;
+          selling_rate_per_base_unit: number | null;
           transaction_id: string;
           unit: string;
         };
         Insert: {
+          admin_price_inc?: number | null;
           amount?: number | null;
+          base_quantity?: number | null;
+          base_unit?: string | null;
+          calculated_amount?: number | null;
           created_at?: string;
+          entered_quantity?: number | null;
+          entered_unit?: string | null;
+          final_sale_amount?: number | null;
           id?: string;
           product: string;
           product_id?: string | null;
+          product_variant_id?: string | null;
+          purchase_cost?: number | null;
+          purchase_cost_per_base_unit?: number | null;
           quantity: number;
           rate?: number;
+          selling_rate_per_base_unit?: number | null;
           transaction_id: string;
           unit?: string;
         };
         Update: {
+          admin_price_inc?: number | null;
           amount?: number | null;
+          base_quantity?: number | null;
+          base_unit?: string | null;
+          calculated_amount?: number | null;
           created_at?: string;
+          entered_quantity?: number | null;
+          entered_unit?: string | null;
+          final_sale_amount?: number | null;
           id?: string;
-          product?: string;
+          product: string;
           product_id?: string | null;
-          quantity?: number;
+          product_variant_id?: string | null;
+          purchase_cost?: number | null;
+          purchase_cost_per_base_unit?: number | null;
+          quantity: number;
           rate?: number;
-          transaction_id?: string;
+          selling_rate_per_base_unit?: number | null;
+          transaction_id: string;
           unit?: string;
         };
         Relationships: [
@@ -323,14 +356,21 @@ export type Database = {
       };
       inventory_items: {
         Row: {
+          allow_loose_sale: boolean;
+          base_quantity: number;
+          base_unit: string;
           created_at: string;
           id: string;
           last_updated: string;
           legacy_id: string | null;
           min_stock_level: number;
+          package_size: number;
           product_name: string;
           purchase_price: number;
+          purchase_price_per_base_unit: number;
           quantity: number;
+          selling_price: number | null;
+          selling_price_per_base_unit: number | null;
           status: string;
           supplier_id: string | null;
           supplier_name: string;
@@ -339,14 +379,20 @@ export type Database = {
           updated_at: string;
         };
         Insert: {
+          allow_loose_sale?: boolean;
+          base_unit?: string;
           created_at?: string;
           id?: string;
           last_updated?: string;
           legacy_id?: string | null;
           min_stock_level?: number;
+          package_size?: number;
           product_name: string;
           purchase_price?: number;
+          purchase_price_per_base_unit?: number;
           quantity?: number;
+          selling_price?: number | null;
+          selling_price_per_base_unit?: number | null;
           status?: string;
           supplier_id?: string | null;
           supplier_name?: string;
@@ -355,14 +401,20 @@ export type Database = {
           updated_at?: string;
         };
         Update: {
+          allow_loose_sale?: boolean;
+          base_unit?: string;
           created_at?: string;
           id?: string;
           last_updated?: string;
           legacy_id?: string | null;
           min_stock_level?: number;
+          package_size?: number;
           product_name?: string;
           purchase_price?: number;
+          purchase_price_per_base_unit?: number;
           quantity?: number;
+          selling_price?: number | null;
+          selling_price_per_base_unit?: number | null;
           status?: string;
           supplier_id?: string | null;
           supplier_name?: string;
@@ -969,6 +1021,32 @@ export type Database = {
           _method?: string;
           _entry_date?: string;
           _remarks?: string;
+        };
+        Returns: string;
+      };
+      convert_unit_quantity: {
+        Args: {
+          _quantity: number;
+          _from_unit: string;
+          _to_unit: string;
+        };
+        Returns: number;
+      };
+      record_supplier_purchase_normalized: {
+        Args: {
+          _supplier_id: string;
+          _product_name: string;
+          _quantity: number;
+          _unit: string;
+          _base_unit: string;
+          _package_size: number;
+          _purchase_price_per_base_unit: number;
+          _selling_price_per_base_unit?: number;
+          _allow_loose_sale?: boolean;
+          _min_stock_level?: number;
+          _entry_date?: string;
+          _advance_paid?: number;
+          _advance_method?: string;
         };
         Returns: string;
       };
