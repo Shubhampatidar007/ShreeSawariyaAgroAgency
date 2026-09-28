@@ -8,6 +8,8 @@ export type ProductVariant = {
   sellingPrice: number;
   discountPrice?: number;
   stock: number;
+  /** Physical stock expressed in the canonical inventory base unit. */
+  baseStock: number;
   status: "active" | "inactive" | "archived";
 };
 
