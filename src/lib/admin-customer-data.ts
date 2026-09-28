@@ -71,7 +71,7 @@ const CUSTOMER_PROFIT_ORDER_SELECT =
   "id,customer_id,placed_on,order_items(product,quantity,amount)";
 
 const CUSTOMER_PROFIT_ITEM_SELECT =
-  "id,transaction_id,product_id,product_variant_id,product,quantity,unit,rate,amount,purchase_cost,admin_price_inc,customer_transactions!inner(entry_date,entry_type,customer_id,subtotal,discount_amount)";
+  "id,transaction_id,product_id,product_variant_id,product,quantity,unit,rate,amount,purchase_cost,admin_price_inc,entered_quantity,entered_unit,base_quantity,base_unit,purchase_cost_per_base_unit,selling_rate_per_base_unit,calculated_amount,final_sale_amount,customer_transactions!inner(entry_date,entry_type,customer_id,subtotal,discount_amount)";
 
 const toCustomerProfitOrder = (r: any): CustomerProfitOrder => ({
   placedOn: r.placed_on,
