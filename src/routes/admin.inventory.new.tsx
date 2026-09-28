@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import { BASE_UNIT_OPTIONS, convertQuantity, formatQuantityWithUnit, inferLegacyPackage } from "@/lib/units";
 import { BASE_UNIT_OPTIONS, convertQuantity, inferLegacyPackage } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory/new")({
@@ -583,7 +584,7 @@ function InventoryEntryPage() {
                                     Supplier: {inventoryItem.supplierName}
                                   </p>
                                   <p className="text-xs text-muted-foreground">
-                                    Stock: {inventoryItem.quantity} {inventoryItem.unit}
+                                    Stock: {formatQuantityWithUnit(inventoryItem.baseQuantity, inventoryItem.baseUnit)}
                                   </p>
                                 </div>
                                 <div className="shrink-0 text-right">
