@@ -95,6 +95,8 @@ async function sendKhataReceiptToEdgeFunction({
   customer,
   items,
   total,
+  bargainingAmount,
+  finalTotal,
   paid,
   due,
   paymentMethod,
@@ -110,6 +112,8 @@ async function sendKhataReceiptToEdgeFunction({
   };
   items: CartItem[];
   total: number;
+  bargainingAmount: number;
+  finalTotal: number;
   paid: number;
   due: number;
   paymentMethod: PaymentMethod;
@@ -214,7 +218,7 @@ async function sendKhataReceiptToEdgeFunction({
           purchaseCost: item.purchaseCost,
         })),
         subtotal: total,
-        bargaining: bargainingNum,
+        bargaining: bargainingAmount,
         total: finalTotal,
 
         paid,
@@ -806,7 +810,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           items,
 
-          total: finalTotal,
+          total,
+
+          bargainingAmount: bargainingNum,
+          finalTotal,
 
           paid: paidNum,
 
