@@ -47,6 +47,7 @@ type VariantRow = {
   selling_price: number | string | null;
   discount_price: number | string | null;
   stock: number | string | null;
+  base_stock: number | string | null;
   status: string | null;
 };
 
