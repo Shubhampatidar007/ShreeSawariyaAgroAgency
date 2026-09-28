@@ -125,8 +125,8 @@ function AdminOverview() {
     }
 
     for (const item of inventory) {
-      stockValue += item.quantity * item.purchasePrice;
-      stockUnits += item.quantity;
+      stockValue += item.baseQuantity * item.purchasePricePerBaseUnit;
+      stockUnits += item.baseQuantity;
       if (item.quantity <= item.minStockLevel) lowStockCount += 1;
     }
 
