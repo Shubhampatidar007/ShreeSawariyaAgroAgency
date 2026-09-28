@@ -1105,6 +1105,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                                   Loose sale
                                 </span>
                               ) : null}
+                        </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-medium">Stock: {option.stock} {option.baseUnit}</span>
                           <span aria-hidden="true">•</span>
