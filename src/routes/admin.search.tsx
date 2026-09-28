@@ -20,6 +20,7 @@ import { Form, FormControl, FormField, FormItem, FormMessage } from "@/component
 import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHeader";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { formatCurrency, useShopStore } from "@/lib/shop-store";
+import { formatQuantityWithUnit } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/search")({
   component: AdminSearchPage,
@@ -105,7 +106,7 @@ function AdminSearchPage() {
     ).map((item) => ({
       id: item.id,
       title: item.productName,
-      subtitle: `${item.supplierName} · ${item.quantity} ${item.unit}`,
+      subtitle: `${item.supplierName} · ${formatQuantityWithUnit(item.baseQuantity, item.baseUnit)}`,
       type: "Stock",
       href: "/admin/inventory",
     }));
