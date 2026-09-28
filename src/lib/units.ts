@@ -9,13 +9,13 @@ type UnitDefinition = {
 };
 
 const UNIT_DEFINITIONS: UnitDefinition[] = [
-  { key: "g", label: "gram", dimension: "weight", group: "weight", toCanonical: 1 },
-  { key: "kg", label: "kilogram", dimension: "weight", group: "weight", toCanonical: 1000 },
+  { key: "g", label: "g", dimension: "weight", group: "weight", toCanonical: 1 },
+  { key: "kg", label: "kg", dimension: "weight", group: "weight", toCanonical: 1000 },
   { key: "quintal", label: "quintal", dimension: "weight", group: "weight", toCanonical: 100000 },
   { key: "tonne", label: "tonne", dimension: "weight", group: "weight", toCanonical: 1000000 },
-  { key: "ml", label: "millilitre", dimension: "volume", group: "volume", toCanonical: 1 },
-  { key: "l", label: "litre", dimension: "volume", group: "volume", toCanonical: 1000 },
-  { key: "piece", label: "piece", dimension: "count", group: "piece", toCanonical: 1 },
+  { key: "ml", label: "ml", dimension: "volume", group: "volume", toCanonical: 1 },
+  { key: "l", label: "l", dimension: "volume", group: "volume", toCanonical: 1000 },
+  { key: "piece", label: "pc", dimension: "count", group: "piece", toCanonical: 1 },
   { key: "box", label: "box", dimension: "count", group: "box", toCanonical: 1 },
   { key: "packet", label: "packet", dimension: "count", group: "packet", toCanonical: 1 },
   { key: "bag", label: "bag", dimension: "count", group: "bag", toCanonical: 1 },
