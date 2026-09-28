@@ -140,6 +140,7 @@ export type KhataSaleItemInput = {
   quantity: number;
   unit: string;
   rate: number;
+  finalAmount?: number;
 };
 export type SupplierLedgerEntry = {
   id: string;
