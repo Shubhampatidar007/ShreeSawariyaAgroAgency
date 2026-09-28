@@ -873,7 +873,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="flex max-h-[92vh] w-[96vw] max-w-5xl flex-col overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="size-5" />
@@ -887,7 +887,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="min-h-0 flex-1 space-y-5 overflow-y-auto pr-1">
           {!customer && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="flex gap-2">
@@ -1150,7 +1150,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           {/* Cart Table */}
           {items.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border">
+            <div className="min-w-0 overflow-x-auto rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -1293,7 +1293,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           )}
 
           {/* Custom Item Entry */}
-          <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto]">
+          <div className="grid min-w-0 gap-2 rounded-lg border p-3 sm:grid-cols-[minmax(0,1fr)_auto]">
             <Input
               ref={customNameRef}
               placeholder="Custom item name"
@@ -1328,7 +1328,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
               type="button"
               size="sm"
               variant="secondary"
-              className="sm:col-span-3"
+              className="sm:col-span-2"
               onClick={addCustomItem}
             >
               <Plus className="size-4" />
@@ -1468,7 +1468,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
         </div>
 
         {/* Footer */}
-        <DialogFooter>
+        <DialogFooter className="shrink-0 border-t pt-4">
           <Button
             type="button"
             variant="outline"
