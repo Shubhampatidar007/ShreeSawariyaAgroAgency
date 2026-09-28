@@ -53,7 +53,9 @@ export type InventoryItem = {
   productName: string;
   supplierId: string;
   supplierName: string;
+  /** Legacy/package-equivalent stock quantity. */
   quantity: number;
+  /** Existing display/package unit kept for backward compatibility. */
   unit: string;
   purchasePrice: number;
   sellingPrice?: number;
@@ -62,6 +64,14 @@ export type InventoryItem = {
   status: InventoryStatus;
   lastUpdated: string;
   productVariantId?: string;
+
+  /** Canonical physical stock model. */
+  baseQuantity: number;
+  baseUnit: string;
+  packageSize: number;
+  allowLooseSale: boolean;
+  purchasePricePerBaseUnit: number;
+  sellingPricePerBaseUnit?: number;
 };
 
 export type PublishedProduct = {
@@ -115,12 +125,25 @@ export type CustomerSaleItem = {
   productId?: string | undefined;
   productVariantId?: string | undefined;
   product: string;
+  /** Customer-entered sale quantity/unit. */
   quantity: number;
   unit: string;
+  /** Historical selling rate per canonical base unit. */
   rate: number;
+  /** Historical final line selling value after any explicit line override. */
   amount: number;
 
-  // Historical New Khata snapshot values
+  // Normalized historical sale snapshot
+  enteredQuantity?: number | undefined;
+  enteredUnit?: string | undefined;
+  baseQuantity?: number | undefined;
+  baseUnit?: string | undefined;
+  purchaseCostPerBaseUnit?: number | undefined;
+  sellingRatePerBaseUnit?: number | undefined;
+  calculatedAmount?: number | undefined;
+  finalSaleAmount?: number | undefined;
+
+  // Legacy snapshot fields kept for old transactions/consumers
   purchaseCost?: number | undefined;
   adminPriceInc?: number | undefined;
 
@@ -137,9 +160,13 @@ export type KhataSaleItemInput = {
   productId?: string;
   productVariantId?: string;
   product: string;
+  /** Customer-entered quantity and sale unit. */
   quantity: number;
   unit: string;
+  /** Selling rate per canonical base unit, before line amount override. */
   rate: number;
+  /** Optional final amount override. */
+  finalAmount?: number;
 };
 export type SupplierLedgerEntry = {
   id: string;
