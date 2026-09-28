@@ -49,6 +49,7 @@ type CartItem = {
   rate: number;
   purchaseCost: number;
   quantity: number;
+  quantityInput?: string;
   maxStock?: number;
 };
 
@@ -67,6 +68,25 @@ type ReceiptOption = "current" | "full" | "none";
 
 const KHATA_RECEIPT_EDGE_FUNCTION =
   import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
+
+const parseLooseQuantity = (value: string, baseUnit: string) => {
+  const match = value.trim().toLowerCase().match(/^([0-9]*\.?[0-9]+)\s*([a-z]+)?$/);
+  if (!match) return null;
+  const amount = Number(match[1]);
+  const unit = (match[2] || baseUnit)
+    .replace(/gms?$/, "g")
+    .replace(/kgs?$/, "kg")
+    .replace(/mls?$/, "ml")
+    .replace(/litres?$/, "l")
+    .replace(/liters?$/, "l");
+  if (!Number.isFinite(amount) || amount <= 0) return null;
+  if (unit === baseUnit) return { quantity: amount, unit };
+  if (baseUnit === "kg" && unit === "g") return { quantity: amount / 1000, unit };
+  if (baseUnit === "g" && unit === "kg") return { quantity: amount * 1000, unit };
+  if (baseUnit === "l" && unit === "ml") return { quantity: amount / 1000, unit };
+  if (baseUnit === "ml" && unit === "l") return { quantity: amount * 1000, unit };
+  return null;
+};
 
 const getItemAmount = (item: Pick<CartItem, "quantity" | "rate">) => {
   const quantity = Number(item.quantity);
@@ -486,11 +506,12 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       productId: option.productId,
       productVariantId: option.productVariantId,
       product: option.title,
-      unit: option.unit,
+      unit: option.allowLooseSale ? option.baseUnit : option.unit,
       rate: option.rate,
       purchaseCost: option.purchasePrice,
       quantity: 1,
-      maxStock: option.stock,
+      quantityInput: option.allowLooseSale ? `1 ${option.baseUnit}` : "1",
+      maxStock: option.allowLooseSale ? option.baseStock : option.stock,
     };
 
     setItems((prev) => {
@@ -1084,33 +1105,52 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                       <TableCell>
                         <Input
                           type="text"
-                          inputMode="numeric"
-                          minLength={1}
-                          className="h-8 w-16"
-                          value={item.quantity}
+                          inputMode="decimal"
+                          className="h-8 w-24"
+                          value={item.quantityInput ?? String(item.quantity)}
                           onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) => {
-                            const nextQuantity = Number(e.target.value) || 0;
+                            const raw = e.target.value;
 
-                            if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
-                              toast.error(
-                                `Only ${item.maxStock} ${item.unit} of ${item.product} in stock`,
-                              );
-
+                            if (item.allowLooseSale) {
+                              const parsed = parseLooseQuantity(raw, item.baseUnit ?? "kg");
+                              if (!parsed) {
+                                updateItem(item.key, { quantityInput: raw });
+                                return;
+                              }
+                              if (item.maxStock !== undefined && parsed.quantity > item.maxStock) {
+                                toast.error(`Only ${item.maxStock} ${item.baseUnit ?? item.unit} available`);
+                                return;
+                              }
                               updateItem(item.key, {
-                                quantity: item.maxStock,
+                                quantity: parsed.quantity,
+                                unit: parsed.unit,
+                                quantityInput: raw,
                               });
-
                               return;
                             }
 
+                            const nextQuantity = Number(raw) || 0;
+                            if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
+                              toast.error(`Only ${item.maxStock} ${item.unit} available`);
+                              updateItem(item.key, {
+                                quantity: item.maxStock,
+                                quantityInput: String(item.maxStock),
+                              });
+                              return;
+                            }
                             updateItem(item.key, {
                               quantity: nextQuantity,
+                              quantityInput: raw,
                             });
                           }}
                         />
+                        {item.allowLooseSale ? (
+                          <p className="mt-1 text-[10px] text-muted-foreground">
+                            e.g. 350 g, 0.35 kg, 5.5 kg
+                          </p>
+                        ) : null}
                       </TableCell>
-
                       <TableCell>
                         <Input
                           type="text"
