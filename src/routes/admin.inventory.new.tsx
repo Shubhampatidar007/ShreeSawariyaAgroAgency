@@ -733,12 +733,6 @@ function InventoryEntryPage() {
                                 )}
                               </div>
                             </div>
-                            <p className="mt-2 text-right text-xs text-muted-foreground">
-                              Variant total:{" "}
-                              {formatCurrency(
-                                (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
-                              )}
-                            </p>
                           </div>
                         ))}
                       </div>
