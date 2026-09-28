@@ -718,6 +718,63 @@ export type Database = {
           },
         ];
       };
+      product_variants: {
+        Row: {
+          base_stock: number;
+          created_at: string;
+          discount_price: number | null;
+          id: string;
+          inventory_id: string | null;
+          label: string;
+          product_id: string | null;
+          selling_price: number;
+          status: string;
+          stock: number;
+          updated_at: string;
+        };
+        Insert: {
+          base_stock?: number;
+          created_at?: string;
+          discount_price?: number | null;
+          id?: string;
+          inventory_id?: string | null;
+          label: string;
+          product_id?: string | null;
+          selling_price?: number;
+          status?: string;
+          stock?: number;
+          updated_at?: string;
+        };
+        Update: {
+          base_stock?: number;
+          created_at?: string;
+          discount_price?: number | null;
+          id?: string;
+          inventory_id?: string | null;
+          label?: string;
+          product_id?: string | null;
+          selling_price?: number;
+          status?: string;
+          stock?: number;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_inventory_id_fkey";
+            columns: ["inventory_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "product_variants_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profiles: {
         Row: {
           created_at: string;
