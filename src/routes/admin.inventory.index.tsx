@@ -165,7 +165,7 @@ undefined
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                                    <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
                   <TableHead className="text-right">Selling price</TableHead>
