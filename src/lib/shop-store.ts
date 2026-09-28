@@ -659,20 +659,33 @@ export const shopStore = {
     productName: string;
     quantity: number;
     unit: string;
+    baseUnit?: string;
+    packageSize?: number;
     purchasePrice: number;
     sellingPrice?: number;
+    sellingPricePerBaseUnit?: number;
+    allowLooseSale?: boolean;
     advancePaid: number;
     advanceMethod: "cash" | "upi" | "bank" | "cheque";
     minStockLevel: number;
     lastUpdated: string;
   }) {
-    const { data, error } = await supabase.rpc("record_supplier_purchase" as any, {
+    const baseUnit = item.baseUnit?.trim() || item.unit.trim();
+    const packageSize = item.packageSize ?? 1;
+    const allowLooseSale = item.allowLooseSale ?? false;
+    const sellingPricePerBaseUnit =
+      item.sellingPricePerBaseUnit ?? item.sellingPrice ?? null;
+
+    const { data, error } = await supabase.rpc("record_supplier_purchase_normalized" as any, {
       _supplier_id: item.supplierId,
       _product_name: item.productName,
       _quantity: item.quantity,
       _unit: item.unit,
-      _purchase_price: item.purchasePrice,
-      _selling_price: item.sellingPrice ?? null,
+      _base_unit: baseUnit,
+      _package_size: packageSize,
+      _purchase_price_per_base_unit: item.purchasePrice,
+      _selling_price_per_base_unit: sellingPricePerBaseUnit,
+      _allow_loose_sale: allowLooseSale,
       _min_stock_level: item.minStockLevel,
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,
