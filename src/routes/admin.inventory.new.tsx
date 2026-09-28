@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
-import { BASE_UNIT_OPTIONS } from "@/lib/units";
+import { BASE_UNIT_OPTIONS, convertQuantity, inferLegacyPackage } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
@@ -73,6 +73,30 @@ const createItemDraft = (): ItemDraft => ({
   variants: [createVariantDraft()],
 });
 
+const getPackagePrice = (variant: VariantDraft) => Number(variant.price) || 0;
+
+const getBaseUnitPrice = (variant: VariantDraft) => {
+  const packageSize = Number(variant.packageSize) || 0;
+  const packagePrice = getPackagePrice(variant);
+  return packageSize > 0 ? packagePrice / packageSize : 0;
+};
+
+const getSellingBaseUnitPrice = (variant: VariantDraft) => {
+  const packageSize = Number(variant.packageSize) || 0;
+  const packagePrice = Number(variant.sellingPrice) || 0;
+  return packageSize > 0 ? packagePrice / packageSize : 0;
+};
+
+const inferPackageSizeForBaseUnit = (unitLabel: string, baseUnit: string) => {
+  const inferred = inferLegacyPackage(unitLabel);
+  if (!inferred) return null;
+  try {
+    return convertQuantity(inferred.packageSize, inferred.baseUnit, baseUnit);
+  } catch {
+    return null;
+  }
+};
+
 function InventoryEntryPage() {
   const inventoryItems = useShopStore((s) => s.inventory);
   const suppliers = useShopStore((s) => s.suppliers);
@@ -111,10 +135,7 @@ function InventoryEntryPage() {
           itemSum +
           item.variants.reduce(
             (variantSum, variant) =>
-              variantSum +
-              (Number(variant.quantity) || 0) *
-                (Number(variant.packageSize) || 0) *
-                (Number(variant.price) || 0),
+              variantSum + (Number(variant.quantity) || 0) * getPackagePrice(variant),
             0,
           ),
         0,
@@ -186,10 +207,14 @@ function InventoryEntryPage() {
           baseUnit: inventoryItem.baseUnit,
           packageSize: String(inventoryItem.packageSize),
           allowLooseSale: inventoryItem.allowLooseSale,
-          price: String(inventoryItem.purchasePricePerBaseUnit),
+          price: String(
+            inventoryItem.purchasePricePerBaseUnit * inventoryItem.packageSize,
+          ),
           sellingPrice:
             inventoryItem.sellingPricePerBaseUnit !== undefined
-              ? String(inventoryItem.sellingPricePerBaseUnit)
+              ? String(
+                  inventoryItem.sellingPricePerBaseUnit * inventoryItem.packageSize,
+                )
               : "",
           includeSellingPrice: inventoryItem.sellingPricePerBaseUnit !== undefined,
         }),
@@ -302,8 +327,13 @@ function InventoryEntryPage() {
 
       for (const item of cleanedItems) {
         for (const variant of item.variants) {
-          const variantTotal =
-            variant.quantity * variant.packageSize * variant.price;
+          const variantTotal = variant.quantity * variant.price;
+          const purchasePricePerBaseUnit =
+            variant.packageSize > 0 ? variant.price / variant.packageSize : 0;
+          const sellingPricePerBaseUnit =
+            variant.sellingPrice !== undefined && variant.packageSize > 0
+              ? variant.sellingPrice / variant.packageSize
+              : undefined;
           const variantAdvance = Math.min(remainingAdvance, variantTotal);
 
           await shopStore.addInventoryItem({
@@ -315,8 +345,8 @@ function InventoryEntryPage() {
             baseUnit: variant.baseUnit,
             packageSize: variant.packageSize,
             allowLooseSale: variant.allowLooseSale,
-            purchasePricePerBaseUnit: variant.price,
-            sellingPricePerBaseUnit: variant.sellingPrice,
+            purchasePricePerBaseUnit,
+            sellingPricePerBaseUnit,
             advancePaid: variantAdvance,
             advanceMethod,
             minStockLevel: 10,
@@ -475,7 +505,7 @@ function InventoryEntryPage() {
                 {items.map((item, itemIndex) => {
                   const itemTotal = item.variants.reduce(
                     (sum, variant) =>
-                      sum + (Number(variant.quantity) || 0) * (Number(variant.packageSize) || 0) * (Number(variant.price) || 0),
+                      sum + (Number(variant.quantity) || 0) * getPackagePrice(variant),
                     0,
                   );
                   const matches = item.productSearch.trim()
@@ -655,9 +685,19 @@ function InventoryEntryPage() {
                                 <Input
                                   data-inventory-unit-input={itemIndex + "-" + variantIndex}
                                   value={variant.unit}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, { unit: e.target.value })
-                                  }
+                                  onChange={(e) => {
+                                    const nextUnit = e.target.value;
+                                    const inferredSize = inferPackageSizeForBaseUnit(
+                                      nextUnit,
+                                      variant.baseUnit,
+                                    );
+                                    updateVariant(itemIndex, variantIndex, {
+                                      unit: nextUnit,
+                                      ...(inferredSize !== null
+                                        ? { packageSize: String(inferredSize) }
+                                        : {}),
+                                    });
+                                  }}
                                   placeholder="box / bag / kg"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
@@ -666,9 +706,18 @@ function InventoryEntryPage() {
                                 <Label>Base unit</Label>
                                 <Select
                                   value={variant.baseUnit}
-                                  onValueChange={(value) =>
-                                    updateVariant(itemIndex, variantIndex, { baseUnit: value })
-                                  }
+                                  onValueChange={(value) => {
+                                    const inferredSize = inferPackageSizeForBaseUnit(
+                                      variant.unit,
+                                      value,
+                                    );
+                                    updateVariant(itemIndex, variantIndex, {
+                                      baseUnit: value,
+                                      ...(inferredSize !== null
+                                        ? { packageSize: String(inferredSize) }
+                                        : {}),
+                                    });
+                                  }}
                                   disabled={Boolean(item.selectedInventoryId)}
                                 >
                                   <SelectTrigger>
@@ -699,7 +748,7 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <Label>Purchase price / base unit</Label>
+                                <Label>Purchase price / package</Label>
                                 <Input
                                   data-inventory-price-input={itemIndex + "-" + variantIndex}
                                   value={variant.price}
@@ -731,7 +780,7 @@ function InventoryEntryPage() {
                                     if (nextVariant) nextVariant.focus();
                                   }}
                                   inputMode="decimal"
-                                  placeholder="1200"
+                                  placeholder="e.g. 1200"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
@@ -751,7 +800,7 @@ function InventoryEntryPage() {
                                     disabled={Boolean(item.selectedInventoryId)}
                                   />
                                   <Label htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}>
-                                    Selling price / base unit
+                                    Selling price / package
                                   </Label>
                                 </div>
                                 {variant.includeSellingPrice ? (
@@ -764,7 +813,7 @@ function InventoryEntryPage() {
                                       })
                                     }
                                     inputMode="decimal"
-                                    placeholder="e.g. 1350"
+                                    placeholder="e.g. 1500"
                                     disabled={Boolean(item.selectedInventoryId)}
                                   />
                                 ) : (
@@ -800,13 +849,20 @@ function InventoryEntryPage() {
                                 {variant.allowLooseSale ? "Loose / partial sales enabled" : "Full pack only"}
                               </span>
                             </div>
-                            <p className="mt-2 text-right text-xs text-muted-foreground">
-                              Purchase value:{" "}
-                              {formatCurrency(
-                                (Number(variant.quantity) || 0) *
-                                  (Number(variant.packageSize) || 0) *
-                                  (Number(variant.price) || 0),
+                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
+                              <span>
+                                {formatCurrency(getBaseUnitPrice(variant))} / {variant.baseUnit || "base unit"}
+                                {" · "}
+                                {formatCurrency(getPackagePrice(variant))} / package
+                              </span>
+                              {variant.includeSellingPrice && (
+                                <span>
+                                  {formatCurrency(getSellingBaseUnitPrice(variant))} / {variant.baseUnit || "base unit"} selling
+                                </span>
                               )}
+                            </div>
+                            <p className="mt-1 text-right text-xs text-muted-foreground">
+                              Purchase value: {formatCurrency((Number(variant.quantity) || 0) * getPackagePrice(variant))}
                             </p>                          </div>
                         ))}
                       </div>
@@ -917,8 +973,8 @@ function InventoryEntryPage() {
                               <tr>
                                 <th className="px-3 py-2 font-medium">Quantity</th>
                                 <th className="px-3 py-2 font-medium">Unit / size</th>
-                                <th className="px-3 py-2 font-medium">Purchase price</th>
-                                <th className="px-3 py-2 font-medium">Selling price</th>
+                                <th className="px-3 py-2 font-medium">Purchase / package</th>
+                                <th className="px-3 py-2 font-medium">Selling / package</th>
                                 <th className="px-3 py-2 text-right font-medium">Value</th>
                               </tr>
                             </thead>
