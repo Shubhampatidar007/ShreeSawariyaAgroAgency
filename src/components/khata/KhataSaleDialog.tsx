@@ -197,17 +197,25 @@ async function sendKhataReceiptToEdgeFunction({
       sale: {
         date: saleDate,
 
-       items: items.map((item) => ({
-  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-  ...(item.productId ? { productId: item.productId } : {}),
-  ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
-  product: item.product,
-  quantity: item.quantity,
-  unit: item.unit,
-  rate: item.rate,
-  amount: item.quantity * item.rate,
-  purchaseCost: item.purchaseCost,
-  adminPriceInc: item.rate,
+        items: items.map((item) => ({
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
+          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          packageUnit: item.packageUnit,
+          baseUnit: item.baseUnit,
+          baseQuantity: getBaseQuantityPreview(item),
+          rate: item.rate,
+          calculatedAmount: item.calculatedAmount,
+          amount: item.finalAmount,
+          finalSaleAmount: item.finalAmount,
+          purchaseCost: item.purchaseCost,
+        })),
+        subtotal: total,
+        bargaining: bargainingNum,
+        total,
 })),
         total,
 
@@ -735,12 +743,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           quantity: item.quantity,
           unit: item.unit,
           rate: item.rate,
-
-          // Snapshot values at sale time
-          purchaseCost: item.purchaseCost,
-          adminPriceInc: item.rate,
-          amount: item.quantity * item.rate,
-        })),
+           rate: item.rate,
+           finalAmount: item.finalAmount,
 
         paid: paidNum,
         bargainingAmount: bargainingNum,
