@@ -468,9 +468,16 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
   const addProductToCart = (option: KhataInventoryOption) => {
     if (option.stock <= 0) {
-      toast.error(`${option.title} (${option.unit}) is out of stock`);
+      toast.error(option.title + " is out of stock");
       return;
     }
+
+    const saleUnit = option.allowLooseSale ? option.baseUnit : option.packageUnit;
+    const quantity = 1;
+    const baseQuantity = option.allowLooseSale
+      ? convertQuantity(quantity, saleUnit, option.baseUnit)
+      : roundQuantity(quantity * option.packageSize);
+    const calculatedAmount = roundMoney(baseQuantity * option.rate);
 
     const newItem: CartItem = {
       key: crypto.randomUUID(),
@@ -478,41 +485,60 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       productId: option.productId,
       productVariantId: option.productVariantId,
       product: option.title,
-      unit: option.unit,
+      unit: saleUnit,
+      packageUnit: option.packageUnit,
+      baseUnit: option.baseUnit,
+      packageSize: option.packageSize,
+      allowLooseSale: option.allowLooseSale,
       rate: option.rate,
       purchaseCost: option.purchasePrice,
-      quantity: 1,
+      quantity,
       maxStock: option.stock,
+      calculatedAmount,
+      finalAmount: calculatedAmount,
+      finalAmountOverridden: false,
     };
 
     setItems((prev) => {
-      const existingKey = option.productVariantId ?? option.inventoryId;
       const existing = prev.find(
-        (item) => (item.productVariantId ?? item.inventoryId) === existingKey,
+        (item) =>
+          (item.productVariantId ?? item.inventoryId) ===
+            (option.productVariantId ?? option.inventoryId) &&
+          item.unit === saleUnit,
       );
 
-      if (existing) {
-        if (existing.maxStock !== undefined && existing.quantity >= existing.maxStock) {
-          toast.error(
-            `Only ${existing.maxStock} ${existing.unit} of ${existing.product} is in stock`,
-          );
+      if (!existing) return [...prev, newItem];
 
-          return prev;
-        }
-
-        return prev.map((item) =>
-          item.key === existing.key
-            ? {
-                ...item,
-                quantity: item.quantity + 1,
-              }
-            : item,
+      const existingBase = getBaseQuantityPreview(existing);
+      const nextBase = roundQuantity(existingBase + baseQuantity);
+      if (existing.maxStock !== undefined && nextBase > existing.maxStock) {
+        toast.error(
+          "Only " +
+            existing.maxStock +
+            " " +
+            existing.baseUnit +
+            " of " +
+            existing.product +
+            " is in stock",
         );
+        return prev;
       }
 
-      return [...prev, newItem];
+      const nextQuantity = roundQuantity(existing.quantity + quantity);
+      const calculated = roundMoney(nextBase * existing.rate);
+      return prev.map((item) =>
+        item.key === existing.key
+          ? {
+              ...item,
+              quantity: nextQuantity,
+              calculatedAmount: calculated,
+              finalAmount: item.finalAmountOverridden ? item.finalAmount : calculated,
+            }
+          : item,
+      );
     });
   };
+
   const addCustomItem = () => {
     const name = customName.trim();
     const rate = Number(customRate.trim());
@@ -529,9 +555,16 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       key: crypto.randomUUID(),
       product: name,
       unit: "unit",
+      packageUnit: "unit",
+      baseUnit: "unit",
+      packageSize: 1,
+      allowLooseSale: false,
       rate,
       purchaseCost: 0,
       quantity: 1,
+      calculatedAmount: roundMoney(rate),
+      finalAmount: roundMoney(rate),
+      finalAmountOverridden: false,
     };
 
     setItems((prev) => [...prev, newItem]);
@@ -540,7 +573,35 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   };
 
   const updateItem = (key: string, patch: Partial<CartItem>) => {
-    setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
+    setItems((prev) =>
+      prev.map((item) => {
+        if (item.key !== key) return item;
+
+        const next = { ...item, ...patch };
+        const recalculating =
+          patch.quantity !== undefined ||
+          patch.unit !== undefined ||
+          patch.rate !== undefined;
+
+        if (recalculating) {
+          try {
+            const baseQuantity = getBaseQuantityPreview(next);
+            const calculatedAmount = roundMoney(baseQuantity * next.rate);
+            next.calculatedAmount = calculatedAmount;
+            if (!item.finalAmountOverridden && patch.finalAmount === undefined) {
+              next.finalAmount = calculatedAmount;
+            }
+          } catch {
+            next.calculatedAmount = 0;
+            if (!item.finalAmountOverridden && patch.finalAmount === undefined) {
+              next.finalAmount = 0;
+            }
+          }
+        }
+
+        return next;
+      }),
+    );
   };
 
   const removeItem = (key: string) => {
