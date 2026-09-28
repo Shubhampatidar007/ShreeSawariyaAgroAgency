@@ -125,6 +125,14 @@ const toInventory = (r: any): InventoryItem => ({
   purchasePrice: num(r.purchase_price),
   sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
+  baseUnit: r.base_unit ?? undefined,
+  packageSize: r.package_size == null ? undefined : num(r.package_size),
+  baseQuantity: r.base_quantity == null ? undefined : num(r.base_quantity),
+  allowLooseSale: r.allow_loose_sale == null ? false : Boolean(r.allow_loose_sale),
+  purchasePricePerBaseUnit:
+    r.purchase_price_per_base_unit == null ? undefined : num(r.purchase_price_per_base_unit),
+  sellingPricePerBaseUnit:
+    r.selling_price_per_base_unit == null ? undefined : num(r.selling_price_per_base_unit),
   minStockLevel: num(r.min_stock_level),
   status: r.status,
   lastUpdated: r.last_updated,
