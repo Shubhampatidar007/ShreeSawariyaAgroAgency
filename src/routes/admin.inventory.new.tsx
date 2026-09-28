@@ -74,6 +74,7 @@ function InventoryEntryPage() {
   const [entryDataLoading, setEntryDataLoading] = useState(true);
   const [items, setItems] = useState<ItemDraft[]>([createItemDraft()]);
   const [supplierId, setSupplierId] = useState("");
+  const [supplierQuery, setSupplierQuery] = useState("");
   const [advancePaid, setAdvancePaid] = useState("");
   const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -81,6 +82,14 @@ function InventoryEntryPage() {
   const [newSupplier, setNewSupplier] = useState({ company: "", name: "", mobile: "" });
   const [submitting, setSubmitting] = useState(false);
   const [savingSupplier, setSavingSupplier] = useState(false);
+
+  const filteredSuppliers = useMemo(() => {
+    const query = supplierQuery.trim().toLowerCase();
+    if (!query) return suppliers;
+    return suppliers.filter((supplier) =>
+      `${supplier.company} ${supplier.name} ${supplier.mobile}`.toLowerCase().includes(query),
+    );
+  }, [suppliers, supplierQuery]);
 
   useEffect(() => {
     let active = true;
@@ -337,19 +346,38 @@ function InventoryEntryPage() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Supplier</Label>
-              <div className="flex gap-2">
-                <Select value={supplierId} onValueChange={setSupplierId}>
+              <div className="space-y-2">
+                <Input
+                  value={supplierQuery}
+                  onChange={(e) => setSupplierQuery(e.target.value)}
+                  placeholder="Search supplier by company, contact or mobile…"
+                  aria-label="Search supplier"
+                />
+                <div className="flex gap-2">
+                <Select
+                  value={supplierId}
+                  onValueChange={(value) => {
+                    setSupplierId(value);
+                    setSupplierQuery("");
+                  }}
+                >
                   <SelectTrigger className="flex-1">
                     <SelectValue placeholder="Choose supplier" />
                   </SelectTrigger>
-                  <SelectContent>
-                    {suppliers.map((supplier) => (
+                  <SelectContent className="max-h-60 overflow-y-auto">
+                    {filteredSuppliers.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.company}
                       </SelectItem>
                     ))}
+                    {filteredSuppliers.length === 0 ? (
+                      <SelectItem value="__no_suppliers__" disabled>
+                        No suppliers found
+                      </SelectItem>
+                    ) : null}
                   </SelectContent>
                 </Select>
+                </div>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button type="button" variant="outline">
