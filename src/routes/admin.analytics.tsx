@@ -101,7 +101,7 @@ function AnalyticsPage() {
   const stockMovement = useMemo(() => {
     const map = new Map<string, { onHand: number; outward: number }>();
     store.inventory.forEach((item) => {
-      map.set(item.productName, { onHand: item.quantity, outward: 0 });
+      map.set(item.productName, { onHand: item.baseQuantity, outward: 0 });
     });
     const ensure = (name: string) => {
       const key = name.trim() || "Unknown";
@@ -115,15 +115,35 @@ function AnalyticsPage() {
         ensure(item.product).outward += item.quantity;
       });
     });
+    const snapshotIds = new Set(
+      store.customerSaleItems.map((item) => item.transactionId),
+    );
+    store.customerSaleItems.forEach((item) => {
+      if (item.date && inRange(item.date)) {
+        ensure(item.product).outward += item.baseQuantity ?? item.quantity;
+      }
+    });
     store.customerLedger.forEach((entry) => {
-      if ((entry.entryType as string) === "sale" && inRange(entry.date))
+      if (
+        (entry.entryType as string) === "sale" &&
+        inRange(entry.date) &&
+        !snapshotIds.has(entry.id)
+      ) {
         ensure(entry.product).outward += entry.quantity;
+      }
     });
     return [...map.entries()]
       .map(([product, row]) => ({ product, ...row }))
       .sort((a, b) => b.outward - a.outward)
       .slice(0, 10);
-  }, [store.inventory, store.orders, store.customerLedger, range, custom]);
+  }, [
+    store.inventory,
+    store.orders,
+    store.customerLedger,
+    store.customerSaleItems,
+    range,
+    custom,
+  ]);
 
   const categoryMix = useMemo(() => {
     const categoryByProduct = new Map(
