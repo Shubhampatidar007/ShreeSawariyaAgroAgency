@@ -283,10 +283,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
-  const total = useMemo(
-    () => items.reduce((sum, item) => sum + item.quantity * item.rate, 0),
-    [items],
-  );
+  const total = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
 
   const bargainingNum = Number(bargainingAmount) || 0;
   const finalTotal = Math.max(total - bargainingNum, 0);
@@ -497,27 +494,27 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     });
   };
   const addCustomItem = () => {
-    const rate = Number(customRate);
+    const name = customName.trim();
+    const rate = Number(customRate.trim());
 
-    if (!customName.trim()) {
+    if (!name) {
       return toast.error("Enter an item name");
     }
 
-    if (rate < 0 || Number.isNaN(rate)) {
+    if (!Number.isFinite(rate) || rate < 0) {
       return toast.error("Enter a valid price");
     }
 
-    setItems((prev) => [
-      ...prev,
-      {
-        key: crypto.randomUUID(),
-        product: customName.trim(),
-        unit: "unit",
-        rate,
-        quantity: 1,
-      },
-    ]);
+    const newItem: CartItem = {
+      key: crypto.randomUUID(),
+      product: name,
+      unit: "unit",
+      rate,
+      purchaseCost: 0,
+      quantity: 1,
+    };
 
+    setItems((prev) => [...prev, newItem]);
     setCustomName("");
     setCustomRate("");
   };
