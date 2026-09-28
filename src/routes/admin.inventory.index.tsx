@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { Bell, Boxes, Plus, Trash2, Upload } from "lucide-react";
+import { Bell, Boxes, Plus, Upload } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -236,21 +236,6 @@ undefined
                                 : "Configure reminder"}
                           </Button>
 
-                          <ConfirmDialog
-                            trigger={
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                aria-label={`Delete ${item.productName}`}
-                              >
-                                <Trash2 className="size-4 text-destructive" />
-                              </Button>
-                            }
-                            title={`Delete ${item.productName}?`}
-                            description="This will permanently remove this inventory entry. This action cannot be undone."
-                            confirmLabel="Delete"
-                            onConfirm={() => shopStore.deleteInventoryItem(item.id)}
-                          />
 
                           <Button variant="ghost" size="sm" asChild>
                             <Link to="/admin/products/publish">
