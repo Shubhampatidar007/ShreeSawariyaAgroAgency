@@ -488,6 +488,12 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const getBaseRateFromSaleUnit = (rate: number, item: CartItem) =>
     convertRateToBaseUnit(rate, item.unit, item.baseUnit);
 
+  const getPurchaseRate = (item: CartItem) =>
+    convertRatePerUnit(item.purchaseCost, item.baseUnit, item.unit);
+
+  const getBasePurchaseRateFromSaleUnit = (rate: number, item: CartItem) =>
+    convertRateToBaseUnit(rate, item.unit, item.baseUnit);
+
   const addProductToCart = (option: KhataInventoryOption) => {
     if (option.stock <= 0) {
       toast.error(option.title + " is out of stock");
@@ -1171,7 +1177,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                     <TableHead>Item</TableHead>
                     <TableHead className="w-20">Qty</TableHead>
                     <TableHead className="w-28">Unit</TableHead>
-                    <TableHead className="w-24">Rate</TableHead>
+                    <TableHead className="w-40">Purchase / Selling rate</TableHead>
                     <TableHead>Calculated</TableHead>
                     <TableHead className="w-32 text-right">Final sale</TableHead>
                     <TableHead className="w-10" />
@@ -1233,21 +1239,39 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                         )}
                       </TableCell>
 
-                      <TableCell>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          className="h-8 w-20"
-                          value={getSaleRate(item)}
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) =>
-                            updateItem(item.key, {
-                              rate: getBaseRateFromSaleUnit(Number(e.target.value) || 0, item),
-                            })
-                          }
-                        />
-                        <div className="mt-1 text-[10px] text-muted-foreground">
-                          / {item.unit}
+                      <TableCell className="min-w-[160px]">
+                        <div className="space-y-1.5">
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Purchase rate</Label>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-8 w-24"
+                              value={getPurchaseRate(item)}
+                              onFocus={(e) => e.currentTarget.select()}
+                              onChange={(e) =>
+                                updateItem(item.key, {
+                                  purchaseCost: getBasePurchaseRateFromSaleUnit(
+                                    Number(e.target.value) || 0,
+                                    item,
+                                  ),
+                                })
+                              }
+                            />
+                            <div className="text-[10px] text-muted-foreground">/ {item.unit} · editable</div>
+                          </div>
+                          <div>
+                            <Label className="text-[10px] text-muted-foreground">Selling rate</Label>
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-8 w-24 bg-muted text-muted-foreground"
+                              value={getSaleRate(item)}
+                              disabled
+                              aria-label={item.product + " selling rate"}
+                            />
+                            <div className="text-[10px] text-muted-foreground">/ {item.unit} · reference</div>
+                          </div>
                         </div>
                       </TableCell>
 
