@@ -1,11 +1,18 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Command,
+  CommandEmpty,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/inventory/new")({
@@ -74,7 +82,7 @@ function InventoryEntryPage() {
   const [entryDataLoading, setEntryDataLoading] = useState(true);
   const [items, setItems] = useState<ItemDraft[]>([createItemDraft()]);
   const [supplierId, setSupplierId] = useState("");
-  const [supplierQuery, setSupplierQuery] = useState("");
+  const [supplierPickerOpen, setSupplierPickerOpen] = useState(false);
   const [advancePaid, setAdvancePaid] = useState("");
   const [advanceMethod, setAdvanceMethod] = useState<"cash" | "upi" | "bank" | "cheque">("cash");
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -83,13 +91,6 @@ function InventoryEntryPage() {
   const [submitting, setSubmitting] = useState(false);
   const [savingSupplier, setSavingSupplier] = useState(false);
 
-  const filteredSuppliers = useMemo(() => {
-    const query = supplierQuery.trim().toLowerCase();
-    if (!query) return suppliers;
-    return suppliers.filter((supplier) =>
-      `${supplier.company} ${supplier.name} ${supplier.mobile}`.toLowerCase().includes(query),
-    );
-  }, [suppliers, supplierQuery]);
 
   useEffect(() => {
     let active = true;
@@ -346,38 +347,49 @@ function InventoryEntryPage() {
           <CardContent className="space-y-6">
             <div className="space-y-2">
               <Label>Supplier</Label>
-              <div className="space-y-2">
-                <Input
-                  value={supplierQuery}
-                  onChange={(e) => setSupplierQuery(e.target.value)}
-                  placeholder="Search supplier by company, contact or mobile…"
-                  aria-label="Search supplier"
-                />
-                <div className="flex gap-2">
-                <Select
-                  value={supplierId}
-                  onValueChange={(value) => {
-                    setSupplierId(value);
-                    setSupplierQuery("");
-                  }}
-                >
-                  <SelectTrigger className="flex-1">
-                    <SelectValue placeholder="Choose supplier" />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
-                    {filteredSuppliers.map((supplier) => (
-                      <SelectItem key={supplier.id} value={supplier.id}>
-                        {supplier.company}
-                      </SelectItem>
-                    ))}
-                    {filteredSuppliers.length === 0 ? (
-                      <SelectItem value="__no_suppliers__" disabled>
-                        No suppliers found
-                      </SelectItem>
-                    ) : null}
-                  </SelectContent>
-                </Select>
-                </div>
+              <div className="flex gap-2">
+                <Popover open={supplierPickerOpen} onOpenChange={setSupplierPickerOpen}>
+                  <PopoverTrigger asChild>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      role="combobox"
+                      aria-expanded={supplierPickerOpen}
+                      className="h-10 flex-1 justify-between font-normal"
+                    >
+                      {supplierId
+                        ? suppliers.find((supplier) => supplier.id === supplierId)?.company ?? "Choose supplier"
+                        : "Choose supplier"}
+                      <ChevronsUpDown className="ml-2 size-4 shrink-0 opacity-50" />
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="z-[100] w-[var(--radix-popover-trigger-width)] p-0" align="start">
+                    <Command>
+                      <CommandInput placeholder="Search supplier by company, contact or mobile…" autoFocus />
+                      <CommandList className="max-h-60">
+                        <CommandEmpty>No suppliers found.</CommandEmpty>
+                        {suppliers.map((supplier) => (
+                          <CommandItem
+                            key={supplier.id}
+                            value={`${supplier.company} ${supplier.name} ${supplier.mobile}`}
+                            onSelect={() => {
+                              setSupplierId(supplier.id);
+                              setSupplierPickerOpen(false);
+                            }}
+                          >
+                            <Check
+                              className={`mr-2 size-4 ${supplierId === supplier.id ? "opacity-100" : "opacity-0"}`}
+                            />
+                            <span className="truncate">{supplier.company}</span>
+                            {supplier.mobile ? (
+                              <span className="ml-auto text-xs text-muted-foreground">{supplier.mobile}</span>
+                            ) : null}
+                          </CommandItem>
+                        ))}
+                      </CommandList>
+                    </Command>
+                  </PopoverContent>
+                </Popover>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
                     <Button type="button" variant="outline">
