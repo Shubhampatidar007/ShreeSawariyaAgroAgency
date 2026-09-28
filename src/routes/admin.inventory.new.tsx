@@ -23,7 +23,7 @@ import {
 } from "@/components/ui/select";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
-import { BASE_UNIT_OPTIONS, convertQuantity, formatQuantityWithUnit, inferLegacyPackage } from "@/lib/units";
+import { convertQuantity, formatQuantityWithUnit, getUnitDefinition, inferLegacyPackage } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
@@ -57,8 +57,8 @@ type ItemDraft = {
 const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
   quantity: "",
   unit: "kg",
-  baseUnit: "kg",
-  packageSize: "1",
+  baseUnit: "g",
+  packageSize: "1000",
   allowLooseSale: false,
   price: "",
   sellingPrice: "",
@@ -87,14 +87,42 @@ const getSellingBaseUnitPrice = (variant: VariantDraft) => {
   return packageSize > 0 ? packagePrice / packageSize : 0;
 };
 
-const inferPackageSizeForBaseUnit = (unitLabel: string, baseUnit: string) => {
+const getAutomaticUnitMetadata = (unitLabel: string) => {
   const inferred = inferLegacyPackage(unitLabel);
-  if (!inferred) return null;
-  try {
-    return convertQuantity(inferred.packageSize, inferred.baseUnit, baseUnit);
-  } catch {
-    return null;
+  const definition = getUnitDefinition(inferred?.baseUnit ?? unitLabel);
+
+  if (inferred && definition) {
+    const baseUnit =
+      definition.group === "weight"
+        ? "g"
+        : definition.group === "volume"
+          ? "ml"
+          : definition.key;
+
+    return {
+      baseUnit,
+      packageSize: String(convertQuantity(inferred.packageSize, inferred.baseUnit, baseUnit)),
+    };
   }
+
+  if (!definition) {
+    return {
+      baseUnit: unitLabel.trim() || "piece",
+      packageSize: "1",
+    };
+  }
+
+  const baseUnit =
+    definition.group === "weight"
+      ? "g"
+      : definition.group === "volume"
+        ? "ml"
+        : definition.key;
+
+  return {
+    baseUnit,
+    packageSize: String(convertQuantity(1, unitLabel, baseUnit)),
+  };
 };
 
 function InventoryEntryPage() {
@@ -526,7 +554,7 @@ function InventoryEntryPage() {
                         <div>
                           <p className="text-sm font-semibold">Item {itemIndex + 1}</p>
                           <p className="text-xs text-muted-foreground">
-                            Product, variants, pack size, sale mode and prices
+                            Product, variants, sale mode and prices
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -687,63 +715,13 @@ function InventoryEntryPage() {
                                   value={variant.unit}
                                   onChange={(e) => {
                                     const nextUnit = e.target.value;
-                                    const inferredSize = inferPackageSizeForBaseUnit(
-                                      nextUnit,
-                                      variant.baseUnit,
-                                    );
+                                    const automaticUnitMetadata = getAutomaticUnitMetadata(nextUnit);
                                     updateVariant(itemIndex, variantIndex, {
                                       unit: nextUnit,
-                                      ...(inferredSize !== null
-                                        ? { packageSize: String(inferredSize) }
-                                        : {}),
+                                      ...automaticUnitMetadata,
                                     });
                                   }}
                                   placeholder="box / bag / kg"
-                                  disabled={Boolean(item.selectedInventoryId)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Base unit</Label>
-                                <Select
-                                  value={variant.baseUnit}
-                                  onValueChange={(value) => {
-                                    const inferredSize = inferPackageSizeForBaseUnit(
-                                      variant.unit,
-                                      value,
-                                    );
-                                    updateVariant(itemIndex, variantIndex, {
-                                      baseUnit: value,
-                                      ...(inferredSize !== null
-                                        ? { packageSize: String(inferredSize) }
-                                        : {}),
-                                    });
-                                  }}
-                                  disabled={Boolean(item.selectedInventoryId)}
-                                >
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Base unit" />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    {BASE_UNIT_OPTIONS.map((option) => (
-                                      <SelectItem key={option.key} value={option.key}>
-                                        {option.label}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Pack size in base unit</Label>
-                                <Input
-                                  data-inventory-package-size-input={itemIndex + "-" + variantIndex}
-                                  value={variant.packageSize}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, {
-                                      packageSize: e.target.value,
-                                    })
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="1"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
                               </div>
