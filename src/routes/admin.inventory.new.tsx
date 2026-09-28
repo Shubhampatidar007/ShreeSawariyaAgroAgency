@@ -24,7 +24,6 @@ import {
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
 import { BASE_UNIT_OPTIONS, convertQuantity, formatQuantityWithUnit, inferLegacyPackage } from "@/lib/units";
-import { BASE_UNIT_OPTIONS, convertQuantity, inferLegacyPackage } from "@/lib/units";
 
 export const Route = createFileRoute("/admin/inventory/new")({
   head: () => ({
