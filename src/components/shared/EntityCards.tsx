@@ -203,7 +203,8 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
         <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 p-3">
           <div className="rounded-lg border border-border/70 bg-background p-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quantity</p>
-            <p className="mt-1 text-lg font-bold tabular-nums">{item.quantity}</p>
+            <p className="mt-1 text-lg font-bold tabular-nums">{item.baseQuantity} {item.baseUnit}</p>
+             <p className="text-xs text-muted-foreground">{item.quantity} {item.unit}</p>
           </div>
           <div className="rounded-lg border border-border/70 bg-background p-2.5">
             <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Purchase price</p>
