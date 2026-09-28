@@ -133,7 +133,13 @@ undefined
         }
       />
 
-      <SearchToolbar value={query} onChange={setQuery} placeholder="Search product or supplier…" />
+      <SearchToolbar
+        value={query}
+        onChange={setQuery}
+        placeholder="Search product or supplier…"
+        autoFocus
+        enableSlashShortcut
+      />
 
       {reminderError ? (
         <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
