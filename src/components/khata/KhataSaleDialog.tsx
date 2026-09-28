@@ -1091,13 +1091,17 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <p className="truncate text-sm font-semibold">{option.title}</p>
                           <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                            {option.unit}
+                            {option.packageUnit}
                           </span>
-                        </div>
+                              {option.allowLooseSale ? (
+                                <span className="rounded-full border border-emerald-500/20 bg-emerald-500/5 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400">
+                                  Loose sale
+                                </span>
+                              ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium">Stock: {option.stock}</span>
+                          <span className="font-medium">Stock: {option.stock} {option.baseUnit}</span>
                           <span aria-hidden="true">•</span>
-                          <span>Sell price: {formatCurrency(option.rate)}</span>
+                          <span>Sell price: {formatCurrency(option.rate)} / {option.baseUnit}</span>
                         </div>
                       </div>
 
