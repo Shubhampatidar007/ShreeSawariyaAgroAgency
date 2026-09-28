@@ -63,9 +63,6 @@ const REMINDER_FULL =
   "id,title,audience,target,filter_summary,schedule,channel,due_amount,status,next_run,message,source_id";
 const REMINDER_LOG_FULL = "id,reminder_title,recipient,channel,sent_at,delivery,retries";
 const NOTIFICATION_FULL = "id,title,body,type,link,is_read,source_id,created_at";
-const CMS_FULL =
-  "id,name,type,enabled,visibility,sort_order,headline,body,scheduled_from,scheduled_to,image_label";
-const AD_FULL = "id,title,placement,audience,status,impressions,clicks,starts_on,runs_until";
 const BACKUP_FULL = "id,name,type,size,created_at,status,destination";
 
 const toCustomer = (r: any): Customer => ({
@@ -110,6 +107,7 @@ const toInventory = (r: any): InventoryItem => ({
   quantity: num(r.quantity),
   unit: r.unit ?? "",
   purchasePrice: num(r.purchase_price),
+  sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
   minStockLevel: num(r.min_stock_level),
   status: r.status,
@@ -178,9 +176,13 @@ const toCustomerSaleItem = (r: any): CustomerSaleItem => ({
     r.date ??
     undefined,
   transactionSubtotal:
-    r.customer_transactions?.subtotal == null ? undefined : num(r.customer_transactions.subtotal),
+    r.customer_transactions?.subtotal == null
+      ? undefined
+      : num(r.customer_transactions.subtotal),
   transactionDiscount:
-    r.customer_transactions?.discount_amount == null ? undefined : num(r.customer_transactions.discount_amount),
+    r.customer_transactions?.discount_amount == null
+      ? undefined
+      : num(r.customer_transactions.discount_amount),
 });
 
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
@@ -285,20 +287,6 @@ const toReminderLog = (r: any): ReminderLog => ({
   sentAt: r.sent_at,
   delivery: r.delivery,
   retries: r.retries ?? 0,
-});
-
-const toCms = (r: any): CmsSection => ({
-  id: r.id,
-  name: r.name,
-  type: r.type,
-  enabled: !!r.enabled,
-  visibility: r.visibility,
-  order: r.sort_order,
-  headline: r.headline ?? "",
-  body: r.body ?? "",
-  scheduledFrom: r.scheduled_from ?? undefined,
-  scheduledTo: r.scheduled_to ?? undefined,
-  imageLabel: r.image_label ?? "",
 });
 
 const toBackup = (r: any): Backup => ({
@@ -491,12 +479,6 @@ async function runSectionLoad(section: AdminSection) {
         reminders: (reminders.data ?? []).map(toReminder),
         reminderLogs: (logs.data ?? []).map(toReminderLog),
       });
-      return;
-    }
-    case "cms": {
-      const { data, error } = await supabase.from("cms_sections").select(CMS_FULL).order("sort_order");
-      if (error) throw error;
-      applyState({ cmsSections: (data ?? []).map(toCms) });
       return;
     }
     case "backups": {
