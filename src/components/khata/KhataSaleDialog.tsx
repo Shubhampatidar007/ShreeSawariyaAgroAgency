@@ -275,6 +275,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const [productQuery, setProductQuery] = useState("");
   const [customName, setCustomName] = useState("");
   const [customRate, setCustomRate] = useState("");
+  const productSearchRef = useRef<HTMLInputElement>(null);
   const customNameRef = useRef<HTMLInputElement>(null);
   const customRateRef = useRef<HTMLInputElement>(null);
 
@@ -301,6 +302,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
   useEffect(() => {
     if (!open) return;
+    requestAnimationFrame(() => productSearchRef.current?.focus());
 
     const requestId = ++inventoryRequestRef.current;
     setInventoryLoading(true);
@@ -333,6 +335,23 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
     return () => window.clearTimeout(timer);
   }, [open, productQuery]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) {
+        return;
+      }
+      event.preventDefault();
+      productSearchRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
 
   const loadMoreInventory = async () => {
     if (!open || inventoryLoading || !inventoryHasMore) return;
@@ -943,8 +962,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             <div className="relative">
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
+                ref={productSearchRef}
+                autoFocus
                 className="pr-10 pl-9"
                 placeholder="Search product, variant, category or supplier…"
+                aria-label="Search Khata sale inventory"
                 value={productQuery}
                 onChange={(e) => setProductQuery(e.target.value)}
               />
