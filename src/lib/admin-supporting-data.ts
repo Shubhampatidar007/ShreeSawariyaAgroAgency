@@ -15,6 +15,7 @@ const toVariant = (row: any): ProductVariant => ({
   discountPrice:
     row.discount_price == null ? undefined : num(row.discount_price),
   stock: num(row.stock),
+  baseStock: num(row.base_stock ?? row.stock),
   status: row.status ?? "active",
 });
 
