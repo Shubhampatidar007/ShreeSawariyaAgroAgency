@@ -656,8 +656,8 @@ function InventoryEntryPage() {
                                 </button>
                               )}
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                              <div className="space-y-2">
+                            <div className="grid gap-4 lg:grid-cols-12">
+                              <div className="space-y-2 lg:col-span-3">
                                 <Label>Quantity / stock</Label>
                                 <Input
                                   data-inventory-quantity-input={itemIndex + "-" + variantIndex}
@@ -677,10 +677,14 @@ function InventoryEntryPage() {
                                       ?.focus();
                                   }}
                                   inputMode="decimal"
-                                  placeholder="20"
+                                  placeholder="e.g. 50"
                                 />
+                                <p className="text-[11px] text-muted-foreground">
+                                  Number of packages received.
+                                </p>
                               </div>
-                              <div className="space-y-2">
+
+                              <div className="space-y-2 lg:col-span-3">
                                 <Label>Package unit / label</Label>
                                 <Input
                                   data-inventory-unit-input={itemIndex + "-" + variantIndex}
@@ -698,11 +702,15 @@ function InventoryEntryPage() {
                                         : {}),
                                     });
                                   }}
-                                  placeholder="box / bag / kg"
+                                  placeholder="e.g. 1kg, 25kg bag"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
+                                <p className="text-[11px] text-muted-foreground">
+                                  The package name can auto-fill the base-unit conversion.
+                                </p>
                               </div>
-                              <div className="space-y-2">
+
+                              <div className="space-y-2 lg:col-span-3">
                                 <Label>Base unit</Label>
                                 <Select
                                   value={variant.baseUnit}
@@ -721,7 +729,7 @@ function InventoryEntryPage() {
                                   disabled={Boolean(item.selectedInventoryId)}
                                 >
                                   <SelectTrigger>
-                                    <SelectValue placeholder="Base unit" />
+                                    <SelectValue placeholder="Choose base unit" />
                                   </SelectTrigger>
                                   <SelectContent>
                                     {BASE_UNIT_OPTIONS.map((option) => (
@@ -731,8 +739,12 @@ function InventoryEntryPage() {
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                <p className="text-[11px] text-muted-foreground">
+                                  Smallest unit used for loose sales and pricing.
+                                </p>
                               </div>
-                              <div className="space-y-2">
+
+                              <div className="space-y-2 lg:col-span-3">
                                 <Label>Pack size in base unit</Label>
                                 <Input
                                   data-inventory-package-size-input={itemIndex + "-" + variantIndex}
@@ -743,11 +755,15 @@ function InventoryEntryPage() {
                                     })
                                   }
                                   inputMode="decimal"
-                                  placeholder="1"
+                                  placeholder="e.g. 1000"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
+                                <p className="text-[11px] text-muted-foreground">
+                                  Auto-filled from the package label when it can be detected.
+                                </p>
                               </div>
-                              <div className="space-y-2">
+
+                              <div className="space-y-2 lg:col-span-4">
                                 <Label>Purchase price / package</Label>
                                 <Input
                                   data-inventory-price-input={itemIndex + "-" + variantIndex}
@@ -783,9 +799,13 @@ function InventoryEntryPage() {
                                   placeholder="e.g. 1200"
                                   disabled={Boolean(item.selectedInventoryId)}
                                 />
+                                <p className="text-[11px] text-muted-foreground">
+                                  Example: ₹1,200 for one 1kg package.
+                                </p>
                               </div>
-                              <div className="space-y-2">
-                                <div className="flex items-center gap-2">
+
+                              <div className="rounded-lg border bg-background/60 p-3 lg:col-span-4">
+                                <div className="flex items-start gap-2">
                                   <input
                                     id={`selling-price-toggle-${itemIndex}-${variantIndex}`}
                                     type="checkbox"
@@ -796,14 +816,23 @@ function InventoryEntryPage() {
                                         sellingPrice: e.target.checked ? variant.sellingPrice : "",
                                       })
                                     }
-                                    className="size-4 rounded border-input"
+                                    className="mt-0.5 size-4 shrink-0 rounded border-input"
                                     disabled={Boolean(item.selectedInventoryId)}
                                   />
-                                  <Label htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}>
-                                    Selling price / package
-                                  </Label>
+                                  <div className="min-w-0 flex-1">
+                                    <Label
+                                      htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}
+                                      className="cursor-pointer text-sm font-medium"
+                                    >
+                                      Selling price
+                                    </Label>
+                                    <p className="text-[11px] text-muted-foreground">
+                                      Optional package selling price.
+                                    </p>
+                                  </div>
                                 </div>
-                                {variant.includeSellingPrice ? (
+
+                                {variant.includeSellingPrice && (
                                   <Input
                                     data-selling-price-input={itemIndex + "-" + variantIndex}
                                     value={variant.sellingPrice}
@@ -814,56 +843,74 @@ function InventoryEntryPage() {
                                     }
                                     inputMode="decimal"
                                     placeholder="e.g. 1500"
+                                    className="mt-2"
                                     disabled={Boolean(item.selectedInventoryId)}
                                   />
-                                ) : (
-                                  <p className="text-xs text-muted-foreground">
-                                    Selling price will be shown as “-”.
-                                  </p>
                                 )}
                               </div>
-                              <div className="flex items-end">
-                                <label className="flex items-center gap-2 text-sm">
-                                  <input
-                                    id={`loose-sale-toggle-${itemIndex}-${variantIndex}`}
-                                    type="checkbox"
-                                    checked={variant.allowLooseSale}
-                                    onChange={(e) =>
-                                      updateVariant(itemIndex, variantIndex, {
-                                        allowLooseSale: e.target.checked,
-                                      })
-                                    }
-                                    className="size-4 rounded border-input"
-                                    disabled={Boolean(item.selectedInventoryId)}
-                                  />
-                                  <span>Allow loose / partial quantity sales</span>
-                                </label>
+
+                              <label className="flex items-start gap-2 rounded-lg border bg-background/60 p-3 lg:col-span-4">
+                                <input
+                                  id={`loose-sale-toggle-${itemIndex}-${variantIndex}`}
+                                  type="checkbox"
+                                  checked={variant.allowLooseSale}
+                                  onChange={(e) =>
+                                    updateVariant(itemIndex, variantIndex, {
+                                      allowLooseSale: e.target.checked,
+                                    })
+                                  }
+                                  className="mt-0.5 size-4 shrink-0 rounded border-input"
+                                  disabled={Boolean(item.selectedInventoryId)}
+                                />
+                                <span className="min-w-0">
+                                  <span className="block text-sm font-medium">
+                                    Allow loose / partial sales
+                                  </span>
+                                  <span className="mt-0.5 block text-[11px] text-muted-foreground">
+                                    Lets you sell 350g from a 1kg package.
+                                  </span>
+                                </span>
+                              </label>
+                            </div>
+
+                            <div className="mt-4 grid gap-3 lg:grid-cols-12">
+                              <div className="rounded-lg border bg-background/70 p-3 lg:col-span-8">
+                                <div className="flex flex-wrap items-center justify-between gap-2">
+                                  <div>
+                                    <p className="text-xs font-medium text-muted-foreground">
+                                      Package conversion
+                                    </p>
+                                    <p className="mt-1 text-sm font-semibold">
+                                      1 {variant.unit.trim() || "package"} = {Number(variant.packageSize) || 0}{" "}
+                                      {variant.baseUnit || "base unit"}
+                                    </p>
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">
+                                    {variant.allowLooseSale ? "Loose sale enabled" : "Full package only"}
+                                  </p>
+                                </div>
+
+                                <div className="mt-3 flex flex-wrap gap-x-5 gap-y-1 border-t pt-3 text-xs text-muted-foreground">
+                                  <span>
+                                    Purchase: <span className="font-medium text-foreground">{formatCurrency(getBaseUnitPrice(variant))}</span> / {variant.baseUnit || "base unit"}
+                                  </span>
+                                  {variant.includeSellingPrice && (
+                                    <span>
+                                      Selling: <span className="font-medium text-foreground">{formatCurrency(getSellingBaseUnitPrice(variant))}</span> / {variant.baseUnit || "base unit"}
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+
+                              <div className="flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3 lg:col-span-4">
+                                <div>
+                                  <p className="text-xs text-muted-foreground">Total purchase value</p>
+                                  <p className="mt-1 text-base font-semibold">
+                                    {formatCurrency((Number(variant.quantity) || 0) * getPackagePrice(variant))}
+                                  </p>
+                                </div>
                               </div>
                             </div>
-                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 rounded-md bg-background/60 px-2 py-1.5 text-xs text-muted-foreground">
-                              <span>
-                                1 {variant.unit.trim() || "package"} = {Number(variant.packageSize) || 0}{" "}
-                                {variant.baseUnit || "base unit"}
-                              </span>
-                              <span>
-                                {variant.allowLooseSale ? "Loose / partial sales enabled" : "Full pack only"}
-                              </span>
-                            </div>
-                            <div className="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground">
-                              <span>
-                                {formatCurrency(getBaseUnitPrice(variant))} / {variant.baseUnit || "base unit"}
-                                {" · "}
-                                {formatCurrency(getPackagePrice(variant))} / package
-                              </span>
-                              {variant.includeSellingPrice && (
-                                <span>
-                                  {formatCurrency(getSellingBaseUnitPrice(variant))} / {variant.baseUnit || "base unit"} selling
-                                </span>
-                              )}
-                            </div>
-                            <p className="mt-1 text-right text-xs text-muted-foreground">
-                              Purchase value: {formatCurrency((Number(variant.quantity) || 0) * getPackagePrice(variant))}
-                            </p>                          </div>
                         ))}
                       </div>
                     </div>
