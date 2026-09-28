@@ -311,7 +311,12 @@ function CustomerDetailPage() {
                                               <div className="min-w-0">
                                                 <p className="font-medium">{item.product}</p>
                                                 <p className="text-muted-foreground">Quantity: {item.quantity} {item.unit}</p>
-                                                <p className="text-muted-foreground">Rate: {formatCurrency(item.rate)} / {item.unit}</p>
+                                                <p className="text-muted-foreground">Rate: {formatCurrency(item.rate)} / {item.baseUnit ?? item.unit}</p>
+                                                 {item.calculatedAmount != null && item.finalSaleAmount != null ? (
+                                                   <p className="text-muted-foreground">
+                                                     Calculated: {formatCurrency(item.calculatedAmount)} · Final: {formatCurrency(item.finalSaleAmount)}
+                                                   </p>
+                                                 ) : null}
                                               </div>
                                               <div className="shrink-0 text-right"><p className="font-semibold">{formatCurrency(item.amount)}</p></div>
                                             </div>
