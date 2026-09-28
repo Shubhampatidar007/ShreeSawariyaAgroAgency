@@ -650,20 +650,12 @@ function InventoryEntryPage() {
                                   onKeyDown={(e) => {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
-                                    const sellingInput = document.querySelector<HTMLInputElement>(
-                                      '#selling-price-toggle-' + itemIndex + '-' + variantIndex,
-                                    );
-                                    if (sellingInput?.checked) {
-                                      sellingInput.nextElementSibling?.dispatchEvent(
-                                        new MouseEvent("click", { bubbles: true }),
-                                      );
-                                      requestAnimationFrame(() => {
-                                        document
-                                          .querySelector<HTMLInputElement>(
-                                            '[data-selling-price-input="' + itemIndex + '-' + variantIndex + '"]',
-                                          )
-                                          ?.focus();
-                                      });
+                                    if (variant.includeSellingPrice) {
+                                      document
+                                        .querySelector<HTMLInputElement>(
+                                          '[data-selling-price-input="' + itemIndex + '-' + variantIndex + '"]',
+                                        )
+                                        ?.focus();
                                       return;
                                     }
                                     const nextVariant = document.querySelector<HTMLInputElement>(
