@@ -371,7 +371,9 @@ function InventoryEntryPage() {
                       </SelectItem>
                     ))}
                     {filteredSuppliers.length === 0 ? (
-                      <div className="px-3 py-2 text-sm text-muted-foreground">No suppliers found</div>
+                      <SelectItem value="__no_suppliers__" disabled>
+                        No suppliers found
+                      </SelectItem>
                     ) : null}
                   </SelectContent>
                 </Select>
