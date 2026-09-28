@@ -22,6 +22,7 @@ import { DetailHeader } from "@/components/shared/DetailHeader";
 import { StatusBadge } from "@/components/shared/StatusBadge";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
+import { convertRatePerUnit, formatQuantityWithUnit, getPreferredSaleUnit } from "@/lib/units";
 import { loadCustomerLedger, loadCustomerProfitData } from "@/lib/admin-customer-data";
 import type { CustomerProfitData } from "@/lib/admin-customer-data";
 import { calculateCustomerProfit } from "@/lib/business-metrics";
@@ -310,8 +311,8 @@ function CustomerDetailPage() {
                                             <div key={item.id} className="flex items-center justify-between gap-4 rounded-md border border-border/60 px-3 py-2 text-xs">
                                               <div className="min-w-0">
                                                 <p className="font-medium">{item.product}</p>
-                                                <p className="text-muted-foreground">Quantity: {item.quantity} {item.unit}</p>
-                                                <p className="text-muted-foreground">Rate: {formatCurrency(item.rate)} / {item.baseUnit ?? item.unit}</p>
+                                                <p className="text-muted-foreground">Quantity: {item.baseQuantity != null && item.baseUnit ? formatQuantityWithUnit(item.baseQuantity, item.baseUnit) : formatQuantityWithUnit(item.quantity, item.unit)}</p>
+                                                <p className="text-muted-foreground">Rate: {formatCurrency(convertRatePerUnit(item.rate, item.baseUnit ?? item.unit, getPreferredSaleUnit(item.baseUnit ?? item.unit)))} / {getPreferredSaleUnit(item.baseUnit ?? item.unit)}</p>
                                                  {item.calculatedAmount != null && item.finalSaleAmount != null ? (
                                                    <p className="text-muted-foreground">
                                                      Calculated: {formatCurrency(item.calculatedAmount)} · Final: {formatCurrency(item.finalSaleAmount)}
