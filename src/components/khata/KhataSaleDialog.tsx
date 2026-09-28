@@ -38,7 +38,15 @@ import {
   type KhataInventoryOption,
 } from "@/lib/khata-inventory-data";
 import type { PaymentMethod } from "@/types/business";
-import { convertQuantity, getCompatibleUnitOptions, roundQuantity } from "@/lib/units";
+import {
+  convertQuantity,
+  convertRatePerUnit,
+  convertRateToBaseUnit,
+  formatQuantityWithUnit,
+  getCompatibleUnitOptions,
+  getPreferredSaleUnit,
+  roundQuantity,
+} from "@/lib/units";
 
 type CartItem = {
   key: string;
@@ -474,13 +482,19 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setReceiptOption("current");
   };
 
+  const getSaleRate = (item: CartItem) =>
+    convertRatePerUnit(item.rate, item.baseUnit, item.unit);
+
+  const getBaseRateFromSaleUnit = (rate: number, item: CartItem) =>
+    convertRateToBaseUnit(rate, item.unit, item.baseUnit);
+
   const addProductToCart = (option: KhataInventoryOption) => {
     if (option.stock <= 0) {
       toast.error(option.title + " is out of stock");
       return;
     }
 
-    const saleUnit = option.allowLooseSale ? option.baseUnit : option.packageUnit;
+    const saleUnit = option.allowLooseSale ? getPreferredSaleUnit(option.baseUnit) : option.packageUnit;
     const quantity = 1;
     const baseQuantity = option.allowLooseSale
       ? convertQuantity(quantity, saleUnit, option.baseUnit)
@@ -1107,9 +1121,9 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                               ) : null}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium">Stock: {option.stock} {option.baseUnit}</span>
+                          <span className="font-medium">Stock: {formatQuantityWithUnit(option.stock, option.baseUnit)}</span>
                           <span aria-hidden="true">•</span>
-                          <span>Sell price: {formatCurrency(option.rate)} / {option.baseUnit}</span>
+                          <span>Sell price: {formatCurrency(convertRatePerUnit(option.rate, option.baseUnit, getPreferredSaleUnit(option.baseUnit)))} / {getPreferredSaleUnit(option.baseUnit)}</span>
                         </div>
                       </div>
 
@@ -1173,11 +1187,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                             {item.allowLooseSale ? "Loose sale" : "Full pack"}
                           </span>
                           <span className="text-muted-foreground">
-                            Stock: {item.maxStock ?? "—"} {item.baseUnit}
+                            Stock: {item.maxStock === undefined ? "—" : formatQuantityWithUnit(item.maxStock, item.baseUnit)}
                           </span>
                         </div>
                         <div className="mt-1 text-xs text-muted-foreground">
-                          Base quantity: {getBaseQuantityPreview(item)} {item.baseUnit}
+                          Base quantity: {formatQuantityWithUnit(getBaseQuantityPreview(item), item.baseUnit)}
                         </div>
                       </TableCell>
 
@@ -1224,23 +1238,23 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           type="text"
                           inputMode="decimal"
                           className="h-8 w-20"
-                          value={item.rate}
+                          value={getSaleRate(item)}
                           onFocus={(e) => e.currentTarget.select()}
                           onChange={(e) =>
                             updateItem(item.key, {
-                              rate: Number(e.target.value) || 0,
+                              rate: getBaseRateFromSaleUnit(Number(e.target.value) || 0, item),
                             })
                           }
                         />
                         <div className="mt-1 text-[10px] text-muted-foreground">
-                          / {item.baseUnit}
+                          / {item.unit}
                         </div>
                       </TableCell>
 
                       <TableCell>
                         <div className="font-medium">{formatCurrency(item.calculatedAmount)}</div>
                         <div className="text-[10px] text-muted-foreground">
-                          {getBaseQuantityPreview(item)} {item.baseUnit}
+                          {formatQuantityWithUnit(getBaseQuantityPreview(item), item.baseUnit)}
                         </div>
                       </TableCell>
 
