@@ -653,6 +653,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           purchaseCost: item.purchaseCost,
           adminPriceInc: item.rate,
           amount: getItemAmount(item),
+          finalAmount: getItemAmount(item),
         })),
 
         paid: paidNum,
