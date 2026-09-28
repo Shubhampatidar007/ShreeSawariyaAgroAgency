@@ -286,7 +286,7 @@ function ReportsPage() {
                   <Link key={`supplier-${i.id}`} to="/admin/inventory/" className="hover:underline">
                     {i.supplierName}
                   </Link>,
-                  `${i.quantity} ${i.unit}`,
+                  `${i.baseQuantity} ${i.baseUnit} (packages: ${i.quantity} ${i.unit})`,
                   formatCurrency(i.purchasePrice),
                   formatCurrency(i.quantity * i.purchasePrice),
                   <StatusBadge key={`status-${i.id}`} status={i.status} />,
