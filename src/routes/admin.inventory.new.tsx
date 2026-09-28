@@ -312,8 +312,11 @@ function InventoryEntryPage() {
             supplierName: supplier.company,
             quantity: variant.quantity,
             unit: variant.unit,
-            purchasePrice: variant.price,
-            sellingPrice: variant.sellingPrice,
+            baseUnit: variant.baseUnit,
+            packageSize: variant.packageSize,
+            allowLooseSale: variant.allowLooseSale,
+            purchasePricePerBaseUnit: variant.price,
+            sellingPricePerBaseUnit: variant.sellingPrice,
             advancePaid: variantAdvance,
             advanceMethod,
             minStockLevel: 10,
@@ -472,7 +475,7 @@ function InventoryEntryPage() {
                 {items.map((item, itemIndex) => {
                   const itemTotal = item.variants.reduce(
                     (sum, variant) =>
-                      sum + (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
+                      sum + (Number(variant.quantity) || 0) * (Number(variant.packageSize) || 0) * (Number(variant.price) || 0),
                     0,
                   );
                   const matches = item.productSearch.trim()
@@ -909,7 +912,7 @@ function InventoryEntryPage() {
                         </div>
 
                         <div className="overflow-x-auto rounded-md border">
-                          <table className="w-full min-w-[520px] text-sm">
+                          <table className="w-full min-w-[760px] text-sm">
                             <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
                               <tr>
                                 <th className="px-3 py-2 font-medium">Quantity</th>
