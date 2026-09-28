@@ -68,6 +68,12 @@ type ReceiptOption = "current" | "full" | "none";
 const KHATA_RECEIPT_EDGE_FUNCTION =
   import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
 
+const getItemAmount = (item: Pick<CartItem, "quantity" | "rate">) => {
+  const quantity = Number(item.quantity);
+  const rate = Number(item.rate);
+  return Number.isFinite(quantity) && Number.isFinite(rate) ? quantity * rate : 0;
+};
+
 async function sendKhataReceiptToEdgeFunction({
   receiptOption,
   customerId,
@@ -185,7 +191,7 @@ async function sendKhataReceiptToEdgeFunction({
   quantity: item.quantity,
   unit: item.unit,
   rate: item.rate,
-  amount: item.quantity * item.rate,
+  amount: getItemAmount(item),
   purchaseCost: item.purchaseCost,
   adminPriceInc: item.rate,
 })),
@@ -283,7 +289,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
-  const total = items.reduce((sum, item) => sum + item.quantity * item.rate, 0);
+  const total = useMemo(
+    () => items.reduce((sum, item) => sum + getItemAmount(item), 0),
+    [items],
+  );
 
   const bargainingNum = Number(bargainingAmount) || 0;
   const finalTotal = Math.max(total - bargainingNum, 0);
@@ -624,7 +633,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           // Snapshot values at sale time
           purchaseCost: item.purchaseCost,
           adminPriceInc: item.rate,
-          amount: item.quantity * item.rate,
+          amount: getItemAmount(item),
         })),
 
         paid: paidNum,
@@ -1096,7 +1105,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                       </TableCell>
 
                       <TableCell className="text-right">
-                        {formatCurrency(item.quantity * item.rate)}
+                        {formatCurrency(getItemAmount(item))}
                       </TableCell>
 
                       <TableCell>
