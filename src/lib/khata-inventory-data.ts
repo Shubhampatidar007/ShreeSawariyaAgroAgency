@@ -9,6 +9,13 @@ type InventoryRow = {
   quantity: number | string | null;
   unit: string | null;
   purchase_price: number | string | null;
+  selling_price: number | string | null;
+  base_quantity: number | string | null;
+  base_unit: string | null;
+  package_size: number | string | null;
+  allow_loose_sale: boolean | null;
+  purchase_price_per_base_unit: number | string | null;
+  selling_price_per_base_unit: number | string | null;
 };
 
 type ProductRow = {
@@ -29,6 +36,7 @@ type VariantRow = {
   selling_price: number | string | null;
   discount_price: number | string | null;
   stock: number | string | null;
+  base_stock: number | string | null;
   status: string | null;
 };
 
@@ -41,7 +49,12 @@ export type KhataInventoryOption = {
   subtitle: string;
   emoji: string;
   unit: string;
+  packageUnit: string;
+  baseUnit: string;
+  packageSize: number;
+  allowLooseSale: boolean;
   rate: number;
+  purchasePrice: number;
   stock: number;
 };
 
@@ -93,7 +106,7 @@ export async function loadKhataInventoryPage(
 
   let inventoryQuery = supabase
     .from("inventory_items")
-    .select("id,product_name,supplier_name,quantity,unit,purchase_price")
+    .select("id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,base_quantity,base_unit,package_size,allow_loose_sale,purchase_price_per_base_unit,selling_price_per_base_unit")
     .gt("quantity", 0)
     .order("product_name", { ascending: true })
     .order("id", { ascending: true })
@@ -131,7 +144,7 @@ export async function loadKhataInventoryPage(
       .in("inventory_id", inventoryIds),
     supabase
       .from("product_variants" as any)
-      .select("id,inventory_id,product_id,label,selling_price,discount_price,stock,status")
+      .select("id,inventory_id,product_id,label,selling_price,discount_price,stock,base_stock,status")
       .in("inventory_id", inventoryIds)
       .eq("status", "active"),
   ]);
@@ -159,12 +172,17 @@ export async function loadKhataInventoryPage(
   const rows = pageRows.map((inventory) => {
     const product = inventory.id ? productByInventory.get(inventory.id) : undefined;
     const variant = inventory.id ? variantByInventory.get(inventory.id) : undefined;
-    const stock = num(inventory.quantity);
-    const rate = variant
-      ? num(variant.discount_price ?? variant.selling_price)
-      : product
-        ? num(product.discount_price ?? product.selling_price)
-        : num(inventory.purchase_price);
+    const packageSize = Math.max(num(inventory.package_size) || 1, 0.000001);
+    const baseUnit = inventory.base_unit ?? inventory.unit ?? "unit";
+    const stock = Math.max(num(inventory.base_quantity ?? inventory.quantity), 0);
+    const rate =
+      inventory.selling_price_per_base_unit != null
+        ? num(inventory.selling_price_per_base_unit)
+        : variant?.selling_price != null
+          ? num(variant.selling_price) / packageSize
+          : product
+            ? num(product.discount_price ?? product.selling_price) / packageSize
+            : num(inventory.purchase_price) / packageSize;
 
     return {
       key: variant?.id ?? inventory.id,
@@ -174,8 +192,16 @@ export async function loadKhataInventoryPage(
       title: product?.title ?? inventory.product_name,
       subtitle: product?.category ?? inventory.supplier_name ?? "Inventory",
       emoji: product?.emoji ?? "🌾",
-      unit: variant?.label ?? inventory.unit ?? "unit",
+      unit: inventory.unit ?? "unit",
+      packageUnit: inventory.unit ?? "unit",
+      baseUnit,
+      packageSize,
+      allowLooseSale: Boolean(inventory.allow_loose_sale),
       rate,
+      purchasePrice:
+        inventory.purchase_price_per_base_unit != null
+          ? num(inventory.purchase_price_per_base_unit)
+          : num(inventory.purchase_price) / packageSize,
       stock,
     } satisfies KhataInventoryOption;
   });
