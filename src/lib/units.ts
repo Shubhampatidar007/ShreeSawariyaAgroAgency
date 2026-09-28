@@ -107,3 +107,71 @@ export const inferLegacyPackage = (value: string) => {
 
   return { baseUnit, packageSize };
 };
+
+
+/** Prefer practical display units for physical quantities without changing stored values. */
+export const getPreferredDisplayUnit = (unit: string) => {
+  const definition = getUnitDefinition(unit);
+  if (!definition) return unit;
+
+  if (definition.group === "weight") return "kg";
+  if (definition.group === "volume") return "l";
+  return definition.key;
+};
+
+export const formatQuantityWithUnit = (
+  quantity: number,
+  unit: string,
+  decimals = 3,
+) => {
+  if (!Number.isFinite(quantity)) return "—";
+  const normalized = normalizeUnit(unit) ?? unit;
+  const definition = getUnitDefinition(normalized);
+  if (!definition) return `${quantity.toLocaleString("en-IN", { maximumFractionDigits: decimals })} ${unit}`;
+
+  const displayUnit =
+    definition.group === "weight"
+      ? Math.abs(quantity * definition.toCanonical) >= 1000
+        ? "kg"
+        : "g"
+      : definition.group === "volume"
+        ? Math.abs(quantity * definition.toCanonical) >= 1000
+          ? "l"
+          : "ml"
+        : definition.key;
+  const displayQuantity = convertQuantity(quantity, normalized, displayUnit);
+
+  return `${displayQuantity.toLocaleString("en-IN", {
+    maximumFractionDigits: decimals,
+  })} ${displayUnit}`;
+};
+
+/** Prefer kg/l as the admin's input unit whenever the inventory is weight/volume based. */
+export const getPreferredSaleUnit = (baseUnit: string) => {
+  const definition = getUnitDefinition(baseUnit);
+  if (!definition) return baseUnit;
+  if (definition.group === "weight") return "kg";
+  if (definition.group === "volume") return "l";
+  return definition.key;
+};
+
+/** Convert a rate quoted per canonical base unit into the selected sale unit. */
+export const convertRatePerUnit = (
+  ratePerBaseUnit: number,
+  baseUnit: string,
+  saleUnit: string,
+) => {
+  const unitsPerBase = convertQuantity(1, saleUnit, baseUnit);
+  return roundQuantity(ratePerBaseUnit * unitsPerBase, 6);
+};
+
+/** Convert an admin-entered rate in the selected sale unit back to the stored base-unit rate. */
+export const convertRateToBaseUnit = (
+  ratePerSaleUnit: number,
+  saleUnit: string,
+  baseUnit: string,
+) => {
+  const unitsPerBase = convertQuantity(1, saleUnit, baseUnit);
+  if (unitsPerBase === 0) return 0;
+  return roundQuantity(ratePerSaleUnit / unitsPerBase, 6);
+};
