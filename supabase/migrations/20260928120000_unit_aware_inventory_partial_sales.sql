@@ -5,9 +5,13 @@
 -- The legacy quantity is retained as package count, but widened to 6 decimals so
 -- partial sales of large packages (for example 350 g from a 50 kg bag = 0.007 pack)
 -- do not lose physical-stock precision.
--- total_price is generated from quantity. Temporarily remove only its
--- generation expression (the stored values are retained), widen quantity for
--- six-decimal partial-package precision, then restore the same expression.
+-- total_price is generated from quantity and two existing triggers
+-- reference quantity in their UPDATE OF definitions. Temporarily remove only
+-- those dependencies, widen quantity for six-decimal partial-package precision,
+-- then restore the same generated column and trigger definitions.
+DROP TRIGGER IF EXISTS inventory_variant_stock_sync ON public.inventory_items;
+DROP TRIGGER IF EXISTS t_inventory_stock_watch ON public.inventory_items;
+
 ALTER TABLE public.inventory_items
   ALTER COLUMN total_price DROP EXPRESSION;
 
@@ -16,6 +20,16 @@ ALTER TABLE public.inventory_items
 
 ALTER TABLE public.inventory_items
   ALTER COLUMN total_price SET EXPRESSION AS (quantity * purchase_price);
+
+CREATE TRIGGER inventory_variant_stock_sync
+  AFTER INSERT OR UPDATE OF quantity ON public.inventory_items
+  FOR EACH ROW
+  EXECUTE FUNCTION sync_product_variant_stock();
+
+CREATE TRIGGER t_inventory_stock_watch
+  AFTER INSERT OR UPDATE OF quantity, min_stock_level ON public.inventory_items
+  FOR EACH ROW
+  EXECUTE FUNCTION inventory_stock_watch();
 
 ALTER TABLE public.product_variants
   ALTER COLUMN stock TYPE numeric(20,6);
