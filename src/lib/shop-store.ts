@@ -483,6 +483,11 @@ const after = async <T>(value: T) => {
   return value;
 };
 
+const capitalizeFirstLetter = (value: string) => {
+  const trimmed = value.trim();
+  return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1) : trimmed;
+};
+
 export const shopStore = {
   get: getSnapshot,
   reload: loadShopData,
@@ -490,7 +495,7 @@ export const shopStore = {
     const { data, error } = await supabase
       .from("customers")
       .insert({
-        name: customer.name,
+        name: capitalizeFirstLetter(customer.name),
         mobile: customer.mobile,
         village: customer.village,
         address: customer.address,
@@ -631,8 +636,8 @@ export const shopStore = {
     const { data, error } = await supabase
       .from("suppliers")
       .insert({
-        name: supplier.name,
-        company: supplier.company,
+        name: capitalizeFirstLetter(supplier.name),
+        company: capitalizeFirstLetter(supplier.company),
         mobile: supplier.mobile,
         email: supplier.email,
         gstin: supplier.gstin,
@@ -684,7 +689,7 @@ export const shopStore = {
   }) {
     const { data, error } = await supabase.rpc("record_supplier_purchase_normalized" as any, {
       _supplier_id: item.supplierId,
-      _product_name: item.productName,
+      _product_name: capitalizeFirstLetter(item.productName),
       _quantity: item.quantity,
       _unit: item.unit,
       _base_unit: item.baseUnit,
