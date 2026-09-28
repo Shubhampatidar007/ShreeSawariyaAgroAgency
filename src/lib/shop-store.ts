@@ -128,6 +128,13 @@ const toInventory = (r: any): InventoryItem => ({
   minStockLevel: num(r.min_stock_level),
   status: r.status,
   lastUpdated: r.last_updated,
+  baseQuantity: num(r.base_quantity ?? r.quantity),
+  baseUnit: r.base_unit ?? r.unit ?? "unit",
+  packageSize: num(r.package_size ?? 1) || 1,
+  allowLooseSale: Boolean(r.allow_loose_sale),
+  purchasePricePerBaseUnit: num(r.purchase_price_per_base_unit ?? r.purchase_price),
+  sellingPricePerBaseUnit:
+    r.selling_price_per_base_unit == null ? undefined : num(r.selling_price_per_base_unit),
 });
 
 
@@ -140,6 +147,7 @@ const toProductVariant = (r: any): ProductVariant => ({
   discountPrice:
     r.discount_price == null ? undefined : num(r.discount_price),
   stock: num(r.stock),
+  baseStock: num(r.base_stock ?? r.stock),
   status: r.status ?? "active",
 });
 const toProduct = (
@@ -186,6 +194,16 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
   unit: r.unit,
   rate: num(r.rate),
   amount: num(r.amount),
+  enteredQuantity: r.entered_quantity == null ? undefined : num(r.entered_quantity),
+  enteredUnit: r.entered_unit ?? undefined,
+  baseQuantity: r.base_quantity == null ? undefined : num(r.base_quantity),
+  baseUnit: r.base_unit ?? undefined,
+  purchaseCostPerBaseUnit:
+    r.purchase_cost_per_base_unit == null ? undefined : num(r.purchase_cost_per_base_unit),
+  sellingRatePerBaseUnit:
+    r.selling_rate_per_base_unit == null ? undefined : num(r.selling_rate_per_base_unit),
+  calculatedAmount: r.calculated_amount == null ? undefined : num(r.calculated_amount),
+  finalSaleAmount: r.final_sale_amount == null ? undefined : num(r.final_sale_amount),
 
   purchaseCost:
     r.purchase_cost == null
@@ -552,6 +570,7 @@ export const shopStore = {
         quantity: i.quantity,
         unit: i.unit,
         rate: i.rate,
+        final_amount: i.finalAmount ?? null,
       })),
       _paid: input.paid,
       _bargaining_amount: input.bargainingAmount ?? 0,
@@ -651,6 +670,11 @@ export const shopStore = {
     productName: string;
     quantity: number;
     unit: string;
+    baseUnit: string;
+    packageSize: number;
+    allowLooseSale: boolean;
+    purchasePricePerBaseUnit: number;
+    sellingPricePerBaseUnit?: number;
     purchasePrice: number;
     sellingPrice?: number;
     advancePaid: number;
@@ -658,13 +682,16 @@ export const shopStore = {
     minStockLevel: number;
     lastUpdated: string;
   }) {
-    const { data, error } = await supabase.rpc("record_supplier_purchase" as any, {
+    const { data, error } = await supabase.rpc("record_supplier_purchase_normalized" as any, {
       _supplier_id: item.supplierId,
       _product_name: item.productName,
       _quantity: item.quantity,
       _unit: item.unit,
-      _purchase_price: item.purchasePrice,
-      _selling_price: item.sellingPrice ?? null,
+      _base_unit: item.baseUnit,
+      _package_size: item.packageSize,
+      _purchase_price_per_base_unit: item.purchasePricePerBaseUnit,
+      _selling_price_per_base_unit: item.sellingPricePerBaseUnit ?? null,
+      _allow_loose_sale: item.allowLooseSale,
       _min_stock_level: item.minStockLevel,
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,
@@ -680,6 +707,13 @@ export const shopStore = {
     if (patch.unit !== undefined) payload.unit = patch.unit;
     if (patch.purchasePrice !== undefined) payload.purchase_price = patch.purchasePrice;
     if (patch.sellingPrice !== undefined) payload.selling_price = patch.sellingPrice ?? null;
+    if (patch.baseUnit !== undefined) payload.base_unit = patch.baseUnit;
+    if (patch.packageSize !== undefined) payload.package_size = patch.packageSize;
+    if (patch.allowLooseSale !== undefined) payload.allow_loose_sale = patch.allowLooseSale;
+    if (patch.purchasePricePerBaseUnit !== undefined)
+      payload.purchase_price_per_base_unit = patch.purchasePricePerBaseUnit;
+    if (patch.sellingPricePerBaseUnit !== undefined)
+      payload.selling_price_per_base_unit = patch.sellingPricePerBaseUnit ?? null;
     if (patch.minStockLevel !== undefined) payload.min_stock_level = patch.minStockLevel;
     if (patch.status !== undefined) payload.status = patch.status;
     const { error } = await supabase.from("inventory_items").update(payload).eq("id", id);
