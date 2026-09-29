@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import {
   Command,
   CommandEmpty,
@@ -698,6 +699,31 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
+                                <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
+                                  <div className="min-w-0">
+                                    <Label
+                                      htmlFor={`allow-loose-${itemIndex}-${variantIndex}`}
+                                      className="text-sm"
+                                    >
+                                      Loose / partial sale
+                                    </Label>
+                                    <p className="truncate text-[11px] text-muted-foreground">
+                                      Sell smaller quantities
+                                    </p>
+                                  </div>
+                                  <Switch
+                                    id={`allow-loose-${itemIndex}-${variantIndex}`}
+                                    checked={variant.allowLooseSale}
+                                    onCheckedChange={(checked) =>
+                                      updateVariant(itemIndex, variantIndex, {
+                                        allowLooseSale: checked,
+                                      })
+                                    }
+                                    aria-label="Allow loose or partial sale"
+                                  />
+                                </div>
+                              </div>
+                              <div className="space-y-2">
                                 <Label>Base unit</Label>
                                 <Input
                                   value={variant.baseUnit}
@@ -754,7 +780,11 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
+                                <Label htmlFor={`selling-price-${itemIndex}-${variantIndex}`}>
+                                  Selling Price (Optional)
+                                </Label>
                                 <Input
+                                  id={`selling-price-${itemIndex}-${variantIndex}`}
                                   data-selling-price-input={itemIndex + "-" + variantIndex}
                                   value={variant.sellingPrice}
                                   onChange={(e) =>
@@ -763,7 +793,8 @@ function InventoryEntryPage() {
                                     })
                                   }
                                   inputMode="decimal"
-                                  placeholder="Optional — e.g. 1350"
+                                  min="0"
+                                  placeholder="e.g. 1350"
                                   onKeyDown={(e) => {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
@@ -785,6 +816,9 @@ function InventoryEntryPage() {
                                       ?.focus();
                                   }}
                                 />
+                                <p className="text-[11px] text-muted-foreground">
+                                  Leave blank to use no selling price.
+                                </p>
                               </div>
                             </div>
                           </div>
