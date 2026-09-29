@@ -42,7 +42,17 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
       return false;
     }
 
-    const missingVariant = items.find((item) => !item.productVariantId);
+    const invalidCustomItem = items.find(
+      (item) =>
+        item.isCustom &&
+        (!item.title.trim() || !Number.isFinite(item.price) || item.price < 0),
+    );
+    if (invalidCustomItem) {
+      toast.error(`${invalidCustomItem.title || "Custom item"} has an invalid name or price.`);
+      return false;
+    }
+
+    const missingVariant = items.find((item) => !item.isCustom && !item.productVariantId);
     if (missingVariant) {
       toast.error(`${missingVariant.title} is missing its product variant.`);
       return false;
@@ -58,8 +68,9 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
     try {
       const { data, error } = await supabase.rpc("create_customer_order" as any, {
         _items: items.map((item) => ({
-          product_id: item.productId ?? null,
-          product_variant_id: item.productVariantId,
+          product_id: item.isCustom ? null : (item.productId ?? null),
+          product_variant_id: item.isCustom ? null : (item.productVariantId ?? null),
+          is_custom: item.isCustom === true,
           product: item.title,
           quantity: item.qty,
           unit: item.unit,
@@ -127,7 +138,7 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
         <DialogHeader>
           <DialogTitle>Checkout</DialogTitle>
           <DialogDescription>
-            Review your variant selections and provide delivery details. Payment is currently cash on delivery.
+            Review your product variants and custom items, then provide delivery details. Payment is currently cash on delivery.
           </DialogDescription>
         </DialogHeader>
 
@@ -136,7 +147,14 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
             {items.map((item) => (
               <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
                 <div className="min-w-0">
-                  <p className="truncate font-medium">{item.title}</p>
+                  <div className="flex items-center gap-2">
+                    <p className="truncate font-medium">{item.title}</p>
+                    {item.isCustom ? (
+                      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+                        Custom
+                      </span>
+                    ) : null}
+                  </div>
                   <p className="text-xs text-muted-foreground">
                     {item.unit} · Qty {item.qty} · {formatCurrency(item.price)}
                   </p>

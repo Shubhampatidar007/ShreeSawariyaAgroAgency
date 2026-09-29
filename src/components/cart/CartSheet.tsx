@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import { cartCount, cartStore, cartSubtotal, useCart } from "@/lib/cart-store";
 import { formatCurrency } from "@/lib/shop-store";
 import { usePublicShopStore } from "@/lib/public-shop-store";
@@ -22,6 +23,8 @@ export function CartSheet() {
   const [authOpen, setAuthOpen] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>("register");
   const [checkoutOpen, setCheckoutOpen] = useState(false);
+  const [customItemName, setCustomItemName] = useState("");
+  const [customItemPrice, setCustomItemPrice] = useState("");
 
   useEffect(() => {
     if (products.length) {
@@ -31,7 +34,36 @@ export function CartSheet() {
 
   const count = cartCount(items);
   const subtotal = cartSubtotal(items);
-  const cartReady = items.length > 0 && items.every((item) => item.productId && item.productVariantId);
+  const cartReady =
+    items.length > 0 &&
+    items.every((item) => item.isCustom || (item.productId && item.productVariantId));
+
+  const addCustomItem = () => {
+    const title = customItemName.trim();
+    const priceText = customItemPrice.trim();
+    const price = Number(priceText);
+
+    if (!title) {
+      toast.error("Enter an item name");
+      return;
+    }
+    if (!priceText || !Number.isFinite(price) || price < 0) {
+      toast.error("Enter a valid item price");
+      return;
+    }
+
+    cartStore.add({
+      id: "custom:" + crypto.randomUUID(),
+      title,
+      price,
+      unit: "unit",
+      emoji: "🧾",
+      isCustom: true,
+    });
+    setCustomItemName("");
+    setCustomItemPrice("");
+    toast.success(title + " added to cart");
+  };
 
   return (
     <Sheet>
@@ -53,6 +85,40 @@ export function CartSheet() {
       <SheetContent side="right" className="flex w-full flex-col sm:max-w-md">
         <SheetTitle>{t("cart.title", "Your cart")}</SheetTitle>
 
+        <div className="mb-3 rounded-xl border border-border bg-muted/20 p-3">
+          <div className="mb-3">
+            <p className="text-sm font-semibold">Add custom item</p>
+            <p className="text-xs text-muted-foreground">
+              Add an item that is not in the catalogue with its own price.
+            </p>
+          </div>
+          <div className="grid gap-2 sm:grid-cols-[1fr_120px]">
+            <Input
+              value={customItemName}
+              onChange={(event) => setCustomItemName(event.target.value)}
+              placeholder="Item name"
+              aria-label="Custom item name"
+            />
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={customItemPrice}
+              onChange={(event) => setCustomItemPrice(event.target.value)}
+              placeholder="Price"
+              aria-label="Custom item price"
+            />
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            className="mt-2 w-full rounded-lg"
+            onClick={addCustomItem}
+          >
+            Add item
+          </Button>
+        </div>
+
         {items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
             <ShoppingCart className="size-8 text-muted-foreground" />
@@ -70,7 +136,14 @@ export function CartSheet() {
                     {item.emoji}
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-sm font-medium">{item.title}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="truncate text-sm font-medium">{item.title}</p>
+                      {item.isCustom ? (
+                        <Badge variant="secondary" className="shrink-0 rounded-full px-2 py-0.5 text-[10px]">
+                          Custom
+                        </Badge>
+                      ) : null}
+                    </div>
                     <p className="text-xs text-muted-foreground">
                       {formatCurrency(item.price)} / {item.unit}
                     </p>

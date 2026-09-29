@@ -10,6 +10,7 @@ export type CartItem = {
   qty: number;
   productId?: string;
   productVariantId?: string;
+  isCustom?: boolean;
 };
 
 const STORAGE_KEY = "agrikisan-cart";
@@ -19,7 +20,8 @@ let items: CartItem[] = [];
 let hydrated = false;
 const listeners = new Set<() => void>();
 
-const isResolved = (item: CartItem) => Boolean(item.productId && item.productVariantId);
+const isResolved = (item: CartItem) =>
+  !item.isCustom && Boolean(item.productId && item.productVariantId);
 
 const toStoredItem = (item: CartItem) => ({
   productId: item.productId,
@@ -90,6 +92,9 @@ function effectivePrice(variant: ProductVariant) {
 }
 
 function resolveItem(item: CartItem, products: PublishedProduct[]): CartItem | null {
+  // Custom checkout lines are not backed by catalog records.
+  if (item.isCustom) return item;
+
   const productById = item.productId
     ? products.find((candidate) => candidate.id === item.productId)
     : undefined;
