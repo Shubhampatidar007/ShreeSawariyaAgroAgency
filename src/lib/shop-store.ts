@@ -125,14 +125,7 @@ const toInventory = (r: any): InventoryItem => ({
   purchasePrice: num(r.purchase_price),
   sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
-  baseUnit: r.base_unit ?? undefined,
-  packageSize: r.package_size == null ? undefined : num(r.package_size),
-  baseQuantity: r.base_quantity == null ? undefined : num(r.base_quantity),
   allowLooseSale: r.allow_loose_sale == null ? false : Boolean(r.allow_loose_sale),
-  purchasePricePerBaseUnit:
-    r.purchase_price_per_base_unit == null ? undefined : num(r.purchase_price_per_base_unit),
-  sellingPricePerBaseUnit:
-    r.selling_price_per_base_unit == null ? undefined : num(r.selling_price_per_base_unit),
   minStockLevel: num(r.min_stock_level),
   status: r.status,
   lastUpdated: r.last_updated,
@@ -659,33 +652,22 @@ export const shopStore = {
     productName: string;
     quantity: number;
     unit: string;
-    baseUnit?: string;
-    packageSize?: number;
     purchasePrice: number;
     sellingPrice?: number;
-    sellingPricePerBaseUnit?: number;
     allowLooseSale?: boolean;
     advancePaid: number;
     advanceMethod: "cash" | "upi" | "bank" | "cheque";
     minStockLevel: number;
     lastUpdated: string;
   }) {
-    const baseUnit = item.baseUnit?.trim() || item.unit.trim();
-    const packageSize = item.packageSize ?? 1;
-    const allowLooseSale = item.allowLooseSale ?? false;
-    const sellingPricePerBaseUnit =
-      item.sellingPricePerBaseUnit ?? item.sellingPrice ?? null;
-
-    const { data, error } = await supabase.rpc("record_supplier_purchase_normalized" as any, {
+    const { data, error } = await supabase.rpc("record_inventory_lot_purchase" as any, {
       _supplier_id: item.supplierId,
       _product_name: item.productName,
       _quantity: item.quantity,
       _unit: item.unit,
-      _base_unit: baseUnit,
-      _package_size: packageSize,
-      _purchase_price_per_base_unit: item.purchasePrice,
-      _selling_price_per_base_unit: sellingPricePerBaseUnit,
-      _allow_loose_sale: allowLooseSale,
+      _purchase_price_per_unit: item.purchasePrice,
+      _reference_selling_price_per_unit: item.sellingPrice ?? null,
+      _allow_loose_sale: item.allowLooseSale ?? false,
       _min_stock_level: item.minStockLevel,
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,

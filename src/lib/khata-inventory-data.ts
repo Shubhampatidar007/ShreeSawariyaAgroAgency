@@ -10,12 +10,7 @@ type InventoryRow = {
   unit: string | null;
   purchase_price: number | string | null;
   selling_price: number | string | null;
-  base_unit: string | null;
-  package_size: number | string | null;
-  base_quantity: number | string | null;
   allow_loose_sale: boolean | null;
-  purchase_price_per_base_unit: number | string | null;
-  selling_price_per_base_unit: number | string | null;
 };
 
 type ProductRow = {
@@ -50,9 +45,6 @@ export type KhataInventoryOption = {
   unit: string;
   rate: number;
   stock: number;
-  baseUnit: string;
-  packageSize: number;
-  baseStock: number;
   allowLooseSale: boolean;
   suggestedRate: number;
 };
@@ -105,7 +97,7 @@ export async function loadKhataInventoryPage(
 
   let inventoryQuery = supabase
     .from("inventory_items")
-    .select("id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,base_unit,package_size,base_quantity,allow_loose_sale,purchase_price_per_base_unit,selling_price_per_base_unit")
+    .select("id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,allow_loose_sale")
     .gt("quantity", 0)
     .order("product_name", { ascending: true })
     .order("id", { ascending: true })
@@ -171,37 +163,15 @@ export async function loadKhataInventoryPage(
   const rows = pageRows.map((inventory) => {
     const product = inventory.id ? productByInventory.get(inventory.id) : undefined;
     const variant = inventory.id ? variantByInventory.get(inventory.id) : undefined;
-    const stock = num(inventory.quantity);
+    const stock = Math.max(num(inventory.quantity), 0);
     const allowLooseSale = Boolean(inventory.allow_loose_sale);
-    const packageSize = Math.max(num(inventory.package_size) || 1, 0.000001);
-    const baseUnit = inventory.base_unit?.trim() || inventory.unit?.trim() || "unit";
-    const baseStock = Math.max(
-      num(inventory.base_quantity) || stock * packageSize,
-      0,
-    );
-
-    const packageRate = variant
+    const inventoryRate = num(inventory.selling_price ?? inventory.purchase_price);
+    const variantRate = variant
       ? num(variant.discount_price ?? variant.selling_price)
       : product
         ? num(product.discount_price ?? product.selling_price)
-        : num(inventory.selling_price ?? inventory.purchase_price);
-
-    const normalizedSellingRate = num(inventory.selling_price_per_base_unit);
-    const normalizedPurchaseRate = num(inventory.purchase_price_per_base_unit);
-    const derivedSellingRate = num(inventory.selling_price) / packageSize;
-    const derivedPurchaseRate = num(inventory.purchase_price) / packageSize;
-
-    const suggestedRate = allowLooseSale
-      ? (normalizedSellingRate > 0
-          ? normalizedSellingRate
-          : normalizedPurchaseRate > 0
-            ? normalizedPurchaseRate
-            : derivedSellingRate > 0
-              ? derivedSellingRate
-              : derivedPurchaseRate)
-      : packageRate;
-
-    const rate = Number.isFinite(suggestedRate) && suggestedRate >= 0 ? suggestedRate : packageRate;
+        : inventoryRate;
+    const rate = Number.isFinite(variantRate) && variantRate >= 0 ? variantRate : inventoryRate;
 
     return {
       key: variant?.id ?? inventory.id,
@@ -211,12 +181,9 @@ export async function loadKhataInventoryPage(
       title: product?.title ?? inventory.product_name,
       subtitle: product?.category ?? inventory.supplier_name ?? "Inventory",
       emoji: product?.emoji ?? "🌾",
-      unit: variant?.label ?? inventory.unit ?? "unit",
+      unit: inventory.unit ?? variant?.label ?? "unit",
       rate,
-      stock: allowLooseSale ? baseStock : stock,
-      baseUnit,
-      packageSize,
-      baseStock,
+      stock,
       allowLooseSale,
       suggestedRate: rate,
     } satisfies KhataInventoryOption;

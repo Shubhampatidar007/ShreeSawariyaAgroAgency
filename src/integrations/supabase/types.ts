@@ -329,14 +329,18 @@ export type Database = {
           legacy_id: string | null;
           min_stock_level: number;
           product_name: string;
+          product_variant_id: string | null;
           purchase_price: number;
           quantity: number;
+          selling_price: number | null;
           status: string;
           supplier_id: string | null;
           supplier_name: string;
           total_price: number | null;
           unit: string;
           updated_at: string;
+          allow_loose_sale: boolean;
+          session_id: string | null;
         };
         Insert: {
           created_at?: string;
@@ -345,14 +349,18 @@ export type Database = {
           legacy_id?: string | null;
           min_stock_level?: number;
           product_name: string;
+          product_variant_id?: string | null;
           purchase_price?: number;
           quantity?: number;
+          selling_price?: number | null;
           status?: string;
           supplier_id?: string | null;
           supplier_name?: string;
           total_price?: number | null;
           unit?: string;
           updated_at?: string;
+          allow_loose_sale?: boolean;
+          session_id?: string | null;
         };
         Update: {
           created_at?: string;
@@ -361,14 +369,18 @@ export type Database = {
           legacy_id?: string | null;
           min_stock_level?: number;
           product_name?: string;
+          product_variant_id?: string | null;
           purchase_price?: number;
           quantity?: number;
+          selling_price?: number | null;
           status?: string;
           supplier_id?: string | null;
           supplier_name?: string;
           total_price?: number | null;
           unit?: string;
           updated_at?: string;
+          allow_loose_sale?: boolean;
+          session_id?: string | null;
         };
         Relationships: [
           {
@@ -376,6 +388,13 @@ export type Database = {
             columns: ["supplier_id"];
             isOneToOne: false;
             referencedRelation: "suppliers";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_items_product_variant_id_fkey";
+            columns: ["product_variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
             referencedColumns: ["id"];
           },
         ];

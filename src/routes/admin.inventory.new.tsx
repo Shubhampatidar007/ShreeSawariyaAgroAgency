@@ -47,8 +47,6 @@ export const Route = createFileRoute("/admin/inventory/new")({
 type VariantDraft = {
   quantity: string;
   unit: string;
-  baseUnit: string;
-  packageSize: string;
   price: string;
   sellingPrice: string;
   allowLooseSale: boolean;
@@ -63,9 +61,7 @@ type ItemDraft = {
 
 const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
   quantity: "",
-  unit: "bags",
-  baseUnit: "kg",
-  packageSize: "1",
+  unit: "kg",
   price: "",
   sellingPrice: "",
   allowLooseSale: false,
@@ -120,9 +116,7 @@ function InventoryEntryPage() {
           item.variants.reduce(
             (variantSum, variant) =>
               variantSum +
-                (Number(variant.quantity) || 0) *
-                (Number(variant.packageSize) || 1) *
-                (Number(variant.price) || 0),
+                (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
             0,
           ),
         0,
@@ -191,15 +185,8 @@ function InventoryEntryPage() {
       variants: [
         createVariantDraft({
           unit: inventoryItem.unit,
-          baseUnit: inventoryItem.baseUnit ?? inventoryItem.unit,
-          packageSize: String(inventoryItem.packageSize ?? 1),
-          price: String(inventoryItem.purchasePricePerBaseUnit ?? inventoryItem.purchasePrice),
-          sellingPrice:
-            inventoryItem.sellingPricePerBaseUnit !== undefined
-              ? String(inventoryItem.sellingPricePerBaseUnit)
-              : inventoryItem.sellingPrice !== undefined
-                ? String(inventoryItem.sellingPrice)
-                : "",
+          price: String(inventoryItem.purchasePrice),
+          sellingPrice: inventoryItem.sellingPrice !== undefined ? String(inventoryItem.sellingPrice) : "",
           allowLooseSale: inventoryItem.allowLooseSale ?? false,
         }),
       ],
@@ -219,8 +206,6 @@ function InventoryEntryPage() {
       variants: item.variants.map((variant) => ({
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
-        baseUnit: variant.baseUnit.trim() || variant.unit.trim(),
-        packageSize: Number(variant.packageSize) || 1,
         price: Number(variant.price),
         sellingPrice:
           variant.sellingPrice.trim() !== "" ? Number(variant.sellingPrice) : undefined,
@@ -280,8 +265,6 @@ function InventoryEntryPage() {
       variants: item.variants.map((variant) => ({
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
-        baseUnit: variant.baseUnit.trim() || variant.unit.trim(),
-        packageSize: Number(variant.packageSize) || 1,
         price: Number(variant.price),
         sellingPrice:
           variant.sellingPrice.trim() !== "" ? Number(variant.sellingPrice) : undefined,
@@ -299,8 +282,7 @@ function InventoryEntryPage() {
 
       for (const item of cleanedItems) {
         for (const variant of item.variants) {
-          const variantTotal =
-            variant.quantity * variant.packageSize * variant.price;
+          const variantTotal = variant.quantity * variant.price;
           const variantAdvance = Math.min(remainingAdvance, variantTotal);
 
           await shopStore.addInventoryItem({
@@ -309,10 +291,8 @@ function InventoryEntryPage() {
             supplierName: supplier.company,
             quantity: variant.quantity,
             unit: variant.unit,
-            baseUnit: variant.baseUnit,
-            packageSize: variant.packageSize,
             purchasePrice: variant.price,
-            sellingPricePerBaseUnit: variant.sellingPrice,
+            sellingPrice: variant.sellingPrice,
             allowLooseSale: variant.allowLooseSale,
             advancePaid: variantAdvance,
             advanceMethod,
@@ -502,7 +482,7 @@ function InventoryEntryPage() {
                 {items.map((item, itemIndex) => {
                   const itemTotal = item.variants.reduce(
                     (sum, variant) =>
-                      sum + (Number(variant.quantity) || 0) * (Number(variant.packageSize) || 1) * (Number(variant.price) || 0),
+                      sum + (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
                     0,
                   );
                   const matches = item.productSearch.trim()
@@ -523,7 +503,7 @@ function InventoryEntryPage() {
                         <div>
                           <p className="text-sm font-semibold">Item {itemIndex + 1}</p>
                           <p className="text-xs text-muted-foreground">
-                            Product, variants, purchase price and optional selling price
+                            Product, inventory lot, purchase cost and reference selling price
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
@@ -624,9 +604,9 @@ function InventoryEntryPage() {
                       <div className="mt-4 space-y-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
-                            <Label>Variants</Label>
+                            <Label>Inventory lots</Label>
                             <p className="text-xs text-muted-foreground">
-                              Use multiple rows for different pack sizes, units or purchase rates.
+                              Use separate rows for independent inventory lots or different purchase rates.
                             </p>
                           </div>
                           <Button
@@ -642,7 +622,7 @@ function InventoryEntryPage() {
                         {item.variants.map((variant, variantIndex) => (
                           <div key={variantIndex} className="rounded-lg border bg-muted/10 p-3">
                             <div className="mb-3 flex items-center justify-between">
-                              <p className="text-sm font-medium">Variant {variantIndex + 1}</p>
+                              <p className="text-sm font-medium">Lot {variantIndex + 1}</p>
                               {item.variants.length > 1 && (
                                 <button
                                   type="button"
@@ -724,34 +704,7 @@ function InventoryEntryPage() {
                                 </div>
                               </div>
                               <div className="space-y-2">
-                                <Label>Base unit</Label>
-                                <Input
-                                  value={variant.baseUnit}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, {
-                                      baseUnit: e.target.value,
-                                    })
-                                  }
-                                  placeholder="kg / g / L"
-                                  disabled={Boolean(item.selectedInventoryId)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Package size</Label>
-                                <Input
-                                  value={variant.packageSize}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, {
-                                      packageSize: e.target.value,
-                                    })
-                                  }
-                                  inputMode="decimal"
-                                  placeholder="1"
-                                  disabled={Boolean(item.selectedInventoryId)}
-                                />
-                              </div>
-                              <div className="space-y-2">
-                                <Label>Purchase price / base unit</Label>
+                                <Label>Purchase price / unit</Label>
                                 <Input
                                   data-inventory-price-input={itemIndex + "-" + variantIndex}
                                   value={variant.price}
@@ -918,7 +871,7 @@ function InventoryEntryPage() {
                               item.variants.reduce(
                                 (sum, variant) =>
                                   sum +
-                                  (Number(variant.quantity) || 0) * (Number(variant.packageSize) || 1) * (Number(variant.price) || 0),
+                                  (Number(variant.quantity) || 0) * (Number(variant.price) || 0),
                                 0,
                               ),
                             )}

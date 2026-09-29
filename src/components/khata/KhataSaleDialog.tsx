@@ -7,16 +7,16 @@ const normalizeUnit = (value: string) => {
   return unit || "unit";
 };
 
-const getLooseUnitOptions = (baseUnit: string) => {
-  const normalized = normalizeUnit(baseUnit);
+const getLooseUnitOptions = (inventoryUnit: string) => {
+  const normalized = normalizeUnit(inventoryUnit);
   if (normalized === "kg" || normalized === "g") return ["kg", "g"];
   if (normalized === "l" || normalized === "ml") return ["l", "ml"];
   return [normalized];
 };
 
-const getUnitInBaseFactor = (unit: string, baseUnit: string) => {
+const getUnitInBaseFactor = (unit: string, inventoryUnit: string) => {
   const normalizedUnit = normalizeUnit(unit);
-  const normalizedBase = normalizeUnit(baseUnit);
+  const normalizedBase = normalizeUnit(inventoryUnit);
   const factors: Record<string, number> = { g: 1, kg: 1000, ml: 1, l: 1000 };
   const unitFactor = factors[normalizedUnit];
   const baseFactor = factors[normalizedBase];
@@ -35,8 +35,8 @@ const convertLooseQuantity = (quantity: number, fromUnit: string, toUnit: string
   return quantity * (factors[from] / factors[to]);
 };
 
-const getLooseBaseQuantity = (quantity: number, saleUnit: string, baseUnit: string) => {
-  const factor = getUnitInBaseFactor(saleUnit, baseUnit);
+const getLooseBaseQuantity = (quantity: number, saleUnit: string, inventoryUnit: string) => {
+  const factor = getUnitInBaseFactor(saleUnit, inventoryUnit);
   return factor === null ? quantity : quantity * factor;
 };
 
@@ -114,7 +114,6 @@ type CartItem = {
   quantityInput?: string;
   maxStock?: number;
   allowLooseSale?: boolean;
-  baseUnit?: string;
   baseRate?: number;
   looseRate?: number;
   looseTotal?: number;
@@ -135,25 +134,6 @@ type ReceiptOption = "current" | "full" | "none";
 
 const KHATA_RECEIPT_EDGE_FUNCTION =
   import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
-
-const parseLooseQuantity = (value: string, baseUnit: string) => {
-  const match = value.trim().toLowerCase().match(/^([0-9]*\.?[0-9]+)\s*([a-z]+)?$/);
-  if (!match) return null;
-  const amount = Number(match[1]);
-  const unit = (match[2] || baseUnit)
-    .replace(/gms?$/, "g")
-    .replace(/kgs?$/, "kg")
-    .replace(/mls?$/, "ml")
-    .replace(/litres?$/, "l")
-    .replace(/liters?$/, "l");
-  if (!Number.isFinite(amount) || amount <= 0) return null;
-  if (unit === baseUnit) return { quantity: amount, unit };
-  if (baseUnit === "kg" && unit === "g") return { quantity: amount / 1000, unit };
-  if (baseUnit === "g" && unit === "kg") return { quantity: amount * 1000, unit };
-  if (baseUnit === "l" && unit === "ml") return { quantity: amount / 1000, unit };
-  if (baseUnit === "ml" && unit === "l") return { quantity: amount * 1000, unit };
-  return null;
-};
 
 async function sendKhataReceiptToEdgeFunction({
   receiptOption,
@@ -561,13 +541,9 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       return;
     }
 
-    const baseUnit = normalizeUnit(option.baseUnit || option.unit);
     const baseRate = Number(option.suggestedRate ?? option.rate) || 0;
-    const initialUnit = option.allowLooseSale ? baseUnit : option.unit;
-    const initialUnitFactor = option.allowLooseSale
-      ? getUnitInBaseFactor(initialUnit, baseUnit) ?? 1
-      : 1;
-    const initialLooseRate = baseRate * initialUnitFactor;
+    const initialUnit = normalizeUnit(option.unit);
+    const initialLooseRate = baseRate;
 
     const newItem: CartItem = {
       key: crypto.randomUUID(),
@@ -580,9 +556,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       purchaseCost: option.purchasePrice,
       quantity: 1,
       quantityInput: "1",
-      maxStock: option.allowLooseSale ? option.baseStock : option.stock,
+      maxStock: option.stock,
       allowLooseSale: option.allowLooseSale,
-      baseUnit,
       baseRate,
       looseRate: option.allowLooseSale ? initialLooseRate : undefined,
       looseTotal: option.allowLooseSale ? initialLooseRate : undefined,
@@ -662,14 +637,14 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
         return toast.error(`Enter a valid quantity for ${item.product}`);
       }
 
-      const baseUnit = normalizeUnit(item.baseUnit ?? item.unit);
+      const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
       const requestedBaseQuantity = item.allowLooseSale
-        ? getLooseBaseQuantity(enteredQuantity, item.unit, baseUnit)
+        ? getLooseBaseQuantity(enteredQuantity, item.unit, inventoryUnit)
         : enteredQuantity;
 
       if (item.maxStock !== undefined && requestedBaseQuantity > item.maxStock) {
         return toast.error(
-          `Only ${item.maxStock} ${baseUnit} of ${item.product} in stock`,
+          `Only ${item.maxStock} ${inventoryUnit} of ${item.product} in stock`,
         );
       }
 
@@ -1187,8 +1162,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                 <TableBody>
                   {items.map((item) => {
                     const isLoose = Boolean(item.allowLooseSale);
-                    const baseUnit = normalizeUnit(item.baseUnit ?? item.unit);
-                    const unitOptions = getLooseUnitOptions(baseUnit);
+                    const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+                    const unitOptions = getLooseUnitOptions(inventoryUnit);
                     const baseRate = Number(item.baseRate ?? item.rate) || 0;
                     const looseRate = Number(item.looseRate ?? baseRate);
                     const looseTotal = Number(item.looseTotal ?? item.quantity * looseRate);
@@ -1208,7 +1183,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                             ) : null}
                           </div>
                           <p className="mt-1 text-xs text-muted-foreground">
-                            Stock: {isLoose ? item.maxStock + " " + baseUnit : item.maxStock ?? "—"}
+                            Stock: {isLoose ? item.maxStock + " " + inventoryUnit : item.maxStock ?? "—"}
                           </p>
                         </TableCell>
 
@@ -1232,11 +1207,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                                 const requestedBase = getLooseBaseQuantity(
                                   nextQuantity,
                                   item.unit,
-                                  baseUnit,
+                                  inventoryUnit,
                                 );
                                 if (requestedBase > item.maxStock) {
                                   toast.error(
-                                    "Only " + item.maxStock + " " + baseUnit + " available",
+                                    "Only " + item.maxStock + " " + inventoryUnit + " available",
                                   );
                                   return;
                                 }
@@ -1267,12 +1242,12 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                                   nextUnit,
                                 );
                                 const nextFactor =
-                                  getUnitInBaseFactor(nextUnit, baseUnit) ?? 1;
+                                  getUnitInBaseFactor(nextUnit, inventoryUnit) ?? 1;
                                 const nextLooseRate = baseRate * nextFactor;
                                 const nextBaseQuantity = getLooseBaseQuantity(
                                   convertedQuantity,
                                   nextUnit,
-                                  baseUnit,
+                                  inventoryUnit,
                                 );
 
                                 if (
@@ -1280,7 +1255,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                                   nextBaseQuantity > item.maxStock
                                 ) {
                                   toast.error(
-                                    "Only " + item.maxStock + " " + baseUnit + " available",
+                                    "Only " + item.maxStock + " " + inventoryUnit + " available",
                                   );
                                   return;
                                 }
@@ -1318,13 +1293,13 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           {isLoose ? (
                             <div className="space-y-1">
                               <Input
-                                value={formatCurrency(baseRate) + " / " + baseUnit}
+                                value={formatCurrency(baseRate) + " / " + inventoryUnit}
                                 disabled
                                 className="h-9 bg-muted/60 font-medium opacity-100"
-                                aria-label={"Base price: 1 " + baseUnit}
+                                aria-label={"Base price: 1 " + inventoryUnit}
                               />
                               <p className="text-[10px] text-muted-foreground">
-                                1 {baseUnit} price
+                                1 {inventoryUnit} price
                               </p>
                             </div>
                           ) : (
