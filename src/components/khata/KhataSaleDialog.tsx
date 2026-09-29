@@ -1329,7 +1329,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                         </TableCell>
 
                         <TableCell className="align-top">
-                          {isLoose ? (
+                          {item.referenceRate !== undefined ? (
                             <div className="space-y-1">
                               <Input
                                 value={formatCurrency(referenceRate) + " / " + inventoryUnit}
