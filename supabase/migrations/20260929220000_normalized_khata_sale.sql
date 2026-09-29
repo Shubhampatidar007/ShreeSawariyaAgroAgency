@@ -304,3 +304,6 @@ REVOKE ALL ON FUNCTION public.create_khata_sale(uuid,jsonb,numeric,text,date,tex
 GRANT EXECUTE ON FUNCTION public.create_khata_sale(uuid,jsonb,numeric,text,date,text) TO authenticated;
 
 COMMIT;
+-- Harden the unit helper functions used by the normalized Khata RPC.
+ALTER FUNCTION public.convert_unit_quantity(numeric,text,text) SET search_path = public;
+ALTER FUNCTION public.normalize_inventory_unit(text) SET search_path = public;
