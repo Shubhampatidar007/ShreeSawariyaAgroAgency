@@ -210,11 +210,18 @@ export type Database = {
       customer_transaction_items: {
         Row: {
           amount: number | null;
+          admin_price_inc: number | null;
+          calculated_amount: number | null;
           created_at: string;
+          entered_quantity: number | null;
+          entered_unit: string | null;
+          final_sale_amount: number | null;
           id: string;
           inventory_id: string | null;
           product: string;
           product_id: string | null;
+          product_variant_id: string | null;
+          purchase_cost: number | null;
           quantity: number;
           rate: number;
           transaction_id: string;
@@ -222,11 +229,18 @@ export type Database = {
         };
         Insert: {
           amount?: number | null;
+          admin_price_inc?: number | null;
+          calculated_amount?: number | null;
           created_at?: string;
+          entered_quantity?: number | null;
+          entered_unit?: string | null;
+          final_sale_amount?: number | null;
           id?: string;
           inventory_id?: string | null;
           product: string;
           product_id?: string | null;
+          product_variant_id?: string | null;
+          purchase_cost?: number | null;
           quantity: number;
           rate?: number;
           transaction_id: string;
@@ -234,11 +248,18 @@ export type Database = {
         };
         Update: {
           amount?: number | null;
+          admin_price_inc?: number | null;
+          calculated_amount?: number | null;
           created_at?: string;
+          entered_quantity?: number | null;
+          entered_unit?: string | null;
+          final_sale_amount?: number | null;
           id?: string;
           inventory_id?: string | null;
           product?: string;
           product_id?: string | null;
+          product_variant_id?: string | null;
+          purchase_cost?: number | null;
           quantity?: number;
           rate?: number;
           transaction_id?: string;
