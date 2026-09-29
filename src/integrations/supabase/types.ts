@@ -212,6 +212,7 @@ export type Database = {
           amount: number | null;
           created_at: string;
           id: string;
+          inventory_id: string | null;
           product: string;
           product_id: string | null;
           quantity: number;
@@ -223,6 +224,7 @@ export type Database = {
           amount?: number | null;
           created_at?: string;
           id?: string;
+          inventory_id?: string | null;
           product: string;
           product_id?: string | null;
           quantity: number;
@@ -234,6 +236,7 @@ export type Database = {
           amount?: number | null;
           created_at?: string;
           id?: string;
+          inventory_id?: string | null;
           product?: string;
           product_id?: string | null;
           quantity?: number;
@@ -242,6 +245,13 @@ export type Database = {
           unit?: string;
         };
         Relationships: [
+          {
+            foreignKeyName: "customer_transaction_items_inventory_id_fkey";
+            columns: ["inventory_id"];
+            isOneToOne: false;
+            referencedRelation: "inventory_items";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "customer_transaction_items_product_id_fkey";
             columns: ["product_id"];
@@ -327,6 +337,7 @@ export type Database = {
           id: string;
           last_updated: string;
           legacy_id: string | null;
+          product_id: string | null;
           min_stock_level: number;
           product_name: string;
           product_variant_id: string | null;
@@ -347,6 +358,7 @@ export type Database = {
           id?: string;
           last_updated?: string;
           legacy_id?: string | null;
+          product_id?: string | null;
           min_stock_level?: number;
           product_name: string;
           product_variant_id?: string | null;
@@ -383,6 +395,13 @@ export type Database = {
           session_id?: string | null;
         };
         Relationships: [
+          {
+            foreignKeyName: "inventory_items_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          },
           {
             foreignKeyName: "inventory_items_supplier_id_fkey";
             columns: ["supplier_id"];

@@ -127,6 +127,7 @@ const toInventory = (r: any): InventoryItem => ({
   totalPrice: num(r.total_price),
   allowLooseSale: r.allow_loose_sale == null ? false : Boolean(r.allow_loose_sale),
   minStockLevel: num(r.min_stock_level),
+  productId: r.product_id ?? undefined,
   status: r.status,
   lastUpdated: r.last_updated,
 });
@@ -180,6 +181,7 @@ const toCustomerLedger = (r: any): CustomerLedgerEntry => ({
 const toSaleItem = (r: any): CustomerSaleItem => ({
   id: r.id,
   transactionId: r.transaction_id,
+  inventoryId: r.inventory_id ?? undefined,
   productId: r.product_id ?? undefined,
   productVariantId: r.product_variant_id ?? undefined,
   product: r.product,
@@ -553,6 +555,9 @@ export const shopStore = {
         quantity: i.quantity,
         unit: i.unit,
         rate: i.rate,
+        entered_quantity: i.quantity,
+        entered_unit: i.unit,
+        final_amount: i.finalAmount ?? null,
       })),
       _paid: input.paid,
       _bargaining_amount: input.bargainingAmount ?? 0,

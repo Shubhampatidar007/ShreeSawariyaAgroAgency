@@ -62,8 +62,8 @@ export type InventoryItem = {
   minStockLevel: number;
   status: InventoryStatus;
   lastUpdated: string;
+  productId?: string;
   productVariantId?: string;
-};
 
 export type PublishedProduct = {
   id: string;
@@ -113,6 +113,7 @@ export type CustomerLedgerEntry = {
 export type CustomerSaleItem = {
   id: string;
   transactionId: string;
+  inventoryId?: string | undefined;
   productId?: string | undefined;
   productVariantId?: string | undefined;
   product: string;

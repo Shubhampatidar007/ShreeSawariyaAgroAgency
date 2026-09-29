@@ -71,7 +71,7 @@ const CUSTOMER_PROFIT_ORDER_SELECT =
   "id,customer_id,placed_on,order_items(product,quantity,amount)";
 
 const CUSTOMER_PROFIT_ITEM_SELECT =
-  "id,transaction_id,product_id,product_variant_id,product,quantity,unit,rate,amount,purchase_cost,admin_price_inc,customer_transactions!inner(entry_date,entry_type,customer_id,subtotal,discount_amount)";
+  "id,transaction_id,inventory_id,product_id,product_variant_id,product,quantity,unit,rate,amount,purchase_cost,admin_price_inc,customer_transactions!inner(entry_date,entry_type,customer_id,subtotal,discount_amount)";
 
 const toCustomerProfitOrder = (r: any): CustomerProfitOrder => ({
   placedOn: r.placed_on,
@@ -93,6 +93,7 @@ const toCustomerProfitSaleEntry = (r: any): CustomerProfitSaleEntry => ({
 const toCustomerProfitSaleItem = (r: any): CustomerSaleItem => ({
   id: r.id,
   transactionId: r.transaction_id,
+  inventoryId: r.inventory_id ?? undefined,
   productId: r.product_id ?? undefined,
   productVariantId: r.product_variant_id ?? undefined,
   product: r.product ?? "",

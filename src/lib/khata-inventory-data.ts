@@ -4,6 +4,7 @@ export const KHATA_INVENTORY_PAGE_SIZE = 40;
 
 type InventoryRow = {
   id: string;
+  product_id: string | null;
   product_name: string;
   supplier_name: string | null;
   quantity: number | string | null;
@@ -18,8 +19,6 @@ type ProductRow = {
   inventory_id: string | null;
   title: string;
   category: string | null;
-  selling_price: number | string | null;
-  discount_price: number | string | null;
   emoji: string | null;
 };
 
@@ -28,9 +27,6 @@ type VariantRow = {
   inventory_id: string | null;
   product_id: string | null;
   label: string | null;
-  selling_price: number | string | null;
-  discount_price: number | string | null;
-  stock: number | string | null;
   status: string | null;
 };
 
@@ -43,10 +39,10 @@ export type KhataInventoryOption = {
   subtitle: string;
   emoji: string;
   unit: string;
-  rate: number;
   stock: number;
+  purchaseCostPerUnit: number;
+  referenceSellingPricePerUnit: number;
   allowLooseSale: boolean;
-  suggestedRate: number;
 };
 
 const num = (value: unknown) => Number(value ?? 0);
@@ -66,12 +62,13 @@ export async function loadKhataInventoryPage(
   const search = sanitizeSearch(query);
 
   let matchingInventoryIds: string[] = [];
+  let matchingProductIds: string[] = [];
 
   if (search) {
     const [productsResult, variantsResult] = await Promise.all([
       supabase
         .from("products")
-        .select("inventory_id")
+        .select("id,inventory_id")
         .not("inventory_id", "is", null)
         .or(`title.ilike.%${search}%,category.ilike.%${search}%`),
       supabase
@@ -85,19 +82,20 @@ export async function loadKhataInventoryPage(
     if (productsResult.error) throw productsResult.error;
     if (variantsResult.error) throw variantsResult.error;
 
+    matchingProductIds = Array.from(
+      new Set((productsResult.data ?? []).map((row) => row.id).filter(Boolean)),
+    );
     matchingInventoryIds = Array.from(
-      new Set(
-        [
-          ...(productsResult.data ?? []).map((row) => row.inventory_id),
-          ...(variantsResult.data ?? []).map((row: { inventory_id: string | null }) => row.inventory_id),
-        ].filter((id): id is string => Boolean(id)),
-      ),
+      new Set([
+        ...(productsResult.data ?? []).map((row) => row.inventory_id),
+        ...(variantsResult.data ?? []).map((row: { inventory_id: string | null }) => row.inventory_id),
+      ].filter((id): id is string => Boolean(id))),
     );
   }
 
   let inventoryQuery = supabase
     .from("inventory_items")
-    .select("id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,allow_loose_sale")
+    .select("id,product_id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,allow_loose_sale")
     .gt("quantity", 0)
     .order("product_name", { ascending: true })
     .order("id", { ascending: true })
@@ -108,11 +106,12 @@ export async function loadKhataInventoryPage(
       `product_name.ilike.%${search}%`,
       `supplier_name.ilike.%${search}%`,
     ];
-
     if (matchingInventoryIds.length > 0) {
       searchClauses.push(`id.in.(${matchingInventoryIds.join(",")})`);
     }
-
+    if (matchingProductIds.length > 0) {
+      searchClauses.push(`product_id.in.(${matchingProductIds.join(",")})`);
+    }
     inventoryQuery = inventoryQuery.or(searchClauses.join(","));
   }
 
@@ -123,37 +122,45 @@ export async function loadKhataInventoryPage(
   const hasMore = inventoryRows.length > safePageSize;
   const pageRows = hasMore ? inventoryRows.slice(0, safePageSize) : inventoryRows;
   const inventoryIds = pageRows.map((row) => row.id);
+  const productIds = Array.from(
+    new Set(pageRows.map((row) => row.product_id).filter((id): id is string => Boolean(id))),
+  );
 
   if (inventoryIds.length === 0) {
     return { rows: [] as KhataInventoryOption[], hasMore: false, page: safePage };
   }
 
-  const [productsResult, variantsResult] = await Promise.all([
+  const [productsByInventoryResult, productsByIdResult, variantsResult] = await Promise.all([
     supabase
       .from("products")
-      .select("id,inventory_id,title,category,selling_price,discount_price,emoji")
+      .select("id,inventory_id,title,category,emoji")
       .in("inventory_id", inventoryIds),
+    productIds.length > 0
+      ? supabase.from("products").select("id,inventory_id,title,category,emoji").in("id", productIds)
+      : Promise.resolve({ data: [], error: null }),
     supabase
       .from("product_variants" as any)
-      .select("id,inventory_id,product_id,label,selling_price,discount_price,stock,status")
+      .select("id,inventory_id,product_id,label,status")
       .in("inventory_id", inventoryIds)
       .eq("status", "active"),
   ]);
 
-  if (productsResult.error) throw productsResult.error;
+  if (productsByInventoryResult.error) throw productsByInventoryResult.error;
+  if (productsByIdResult.error) throw productsByIdResult.error;
   if (variantsResult.error) throw variantsResult.error;
 
-  const products = (productsResult.data ?? []) as ProductRow[];
+  const products = [...(productsByInventoryResult.data ?? []), ...(productsByIdResult.data ?? [])] as ProductRow[];
   const variants = (variantsResult.data ?? []) as VariantRow[];
   const productByInventory = new Map<string, ProductRow>();
+  const productById = new Map<string, ProductRow>();
   const variantByInventory = new Map<string, VariantRow>();
 
   for (const product of products) {
+    productById.set(product.id, product);
     if (product.inventory_id && !productByInventory.has(product.inventory_id)) {
       productByInventory.set(product.inventory_id, product);
     }
   }
-
   for (const variant of variants) {
     if (variant.inventory_id && !variantByInventory.has(variant.inventory_id)) {
       variantByInventory.set(variant.inventory_id, variant);
@@ -161,37 +168,30 @@ export async function loadKhataInventoryPage(
   }
 
   const rows = pageRows.map((inventory) => {
-    const product = inventory.id ? productByInventory.get(inventory.id) : undefined;
-    const variant = inventory.id ? variantByInventory.get(inventory.id) : undefined;
+    const product =
+      (inventory.product_id ? productById.get(inventory.product_id) : undefined) ??
+      productByInventory.get(inventory.id);
+    const variant = variantByInventory.get(inventory.id);
     const stock = Math.max(num(inventory.quantity), 0);
-    const allowLooseSale = Boolean(inventory.allow_loose_sale);
-    const inventoryRate = num(inventory.selling_price ?? inventory.purchase_price);
-    const variantRate = variant
-      ? num(variant.discount_price ?? variant.selling_price)
-      : product
-        ? num(product.discount_price ?? product.selling_price)
-        : inventoryRate;
-    const rate = Number.isFinite(variantRate) && variantRate >= 0 ? variantRate : inventoryRate;
+    const purchaseCostPerUnit = num(inventory.purchase_price);
+    const referenceSellingPricePerUnit =
+      inventory.selling_price == null ? purchaseCostPerUnit : num(inventory.selling_price);
 
     return {
-      key: variant?.id ?? inventory.id,
+      key: inventory.id,
       inventoryId: inventory.id,
-      productId: variant?.product_id ?? product?.id ?? undefined,
+      productId: inventory.product_id ?? product?.id ?? undefined,
       productVariantId: variant?.id ?? undefined,
       title: product?.title ?? inventory.product_name,
       subtitle: product?.category ?? inventory.supplier_name ?? "Inventory",
       emoji: product?.emoji ?? "🌾",
-      unit: inventory.unit ?? variant?.label ?? "unit",
-      rate,
+      unit: inventory.unit ?? "unit",
       stock,
-      allowLooseSale,
-      suggestedRate: rate,
+      purchaseCostPerUnit,
+      referenceSellingPricePerUnit,
+      allowLooseSale: Boolean(inventory.allow_loose_sale),
     } satisfies KhataInventoryOption;
   });
 
-  return {
-    rows,
-    hasMore,
-    page: safePage,
-  };
+  return { rows, hasMore, page: safePage };
 }
