@@ -1,3 +1,65 @@
+const normalizeUnit = (value: string) => {
+  const unit = value.trim().toLowerCase().replace(/^[0-9.\s]+/, "");
+  if (unit === "gm" || unit === "gram" || unit === "grams" || unit === "g") return "g";
+  if (unit === "kg" || unit === "kgs" || unit === "kilo" || unit === "kilos" || unit === "kilogram" || unit === "kilograms") return "kg";
+  if (unit === "ml" || unit === "millilitre" || unit === "millilitres" || unit === "milliliter" || unit === "milliliters") return "ml";
+  if (unit === "l" || unit === "lt" || unit === "ltr" || unit === "litre" || unit === "litres" || unit === "liter" || unit === "liters") return "l";
+  return unit || "unit";
+};
+
+const getLooseUnitOptions = (baseUnit: string) => {
+  const normalized = normalizeUnit(baseUnit);
+  if (normalized === "kg" || normalized === "g") return ["kg", "g"];
+  if (normalized === "l" || normalized === "ml") return ["l", "ml"];
+  return [normalized];
+};
+
+const getUnitInBaseFactor = (unit: string, baseUnit: string) => {
+  const normalizedUnit = normalizeUnit(unit);
+  const normalizedBase = normalizeUnit(baseUnit);
+  const factors: Record<string, number> = { g: 1, kg: 1000, ml: 1, l: 1000 };
+  const unitFactor = factors[normalizedUnit];
+  const baseFactor = factors[normalizedBase];
+  if (unitFactor === undefined || baseFactor === undefined) {
+    return normalizedUnit === normalizedBase ? 1 : null;
+  }
+  return unitFactor / baseFactor;
+};
+
+const convertLooseQuantity = (quantity: number, fromUnit: string, toUnit: string) => {
+  const from = normalizeUnit(fromUnit);
+  const to = normalizeUnit(toUnit);
+  if (from === to) return quantity;
+  const factors: Record<string, number> = { g: 1, kg: 1000, ml: 1, l: 1000 };
+  if (factors[from] === undefined || factors[to] === undefined) return quantity;
+  return quantity * (factors[from] / factors[to]);
+};
+
+const getLooseBaseQuantity = (quantity: number, saleUnit: string, baseUnit: string) => {
+  const factor = getUnitInBaseFactor(saleUnit, baseUnit);
+  return factor === null ? quantity : quantity * factor;
+};
+
+const getItemAmount = (
+  item: Pick<CartItem, "quantity" | "rate"> & {
+    allowLooseSale?: boolean;
+    looseRate?: number;
+    looseTotal?: number;
+  },
+) => {
+  if (item.allowLooseSale) {
+    const looseRate = Number(item.looseRate ?? item.rate);
+    const looseTotal = Number(item.looseTotal);
+    if (Number.isFinite(looseTotal) && looseTotal >= 0) return looseTotal;
+    return Number.isFinite(item.quantity) && Number.isFinite(looseRate)
+      ? item.quantity * looseRate
+      : 0;
+  }
+  const quantity = Number(item.quantity);
+  const rate = Number(item.rate);
+  return Number.isFinite(quantity) && Number.isFinite(rate) ? quantity * rate : 0;
+};
+
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Check, Loader2, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
@@ -51,6 +113,11 @@ type CartItem = {
   quantity: number;
   quantityInput?: string;
   maxStock?: number;
+  allowLooseSale?: boolean;
+  baseUnit?: string;
+  baseRate?: number;
+  looseRate?: number;
+  looseTotal?: number;
 };
 
 type Props = {
@@ -500,18 +567,31 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       return;
     }
 
+    const baseUnit = normalizeUnit(option.baseUnit || option.unit);
+    const baseRate = Number(option.suggestedRate ?? option.rate) || 0;
+    const initialUnit = option.allowLooseSale ? baseUnit : option.unit;
+    const initialUnitFactor = option.allowLooseSale
+      ? getUnitInBaseFactor(initialUnit, baseUnit) ?? 1
+      : 1;
+    const initialLooseRate = baseRate * initialUnitFactor;
+
     const newItem: CartItem = {
       key: crypto.randomUUID(),
       inventoryId: option.inventoryId,
       productId: option.productId,
       productVariantId: option.productVariantId,
       product: option.title,
-      unit: option.allowLooseSale ? option.baseUnit : option.unit,
+      unit: initialUnit,
       rate: option.rate,
       purchaseCost: option.purchasePrice,
       quantity: 1,
-      quantityInput: option.allowLooseSale ? `1 ${option.baseUnit}` : "1",
+      quantityInput: "1",
       maxStock: option.allowLooseSale ? option.baseStock : option.stock,
+      allowLooseSale: option.allowLooseSale,
+      baseUnit,
+      baseRate,
+      looseRate: option.allowLooseSale ? initialLooseRate : undefined,
+      looseTotal: option.allowLooseSale ? initialLooseRate : undefined,
     };
 
     setItems((prev) => {
@@ -800,7 +880,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     >
       <DialogTrigger asChild>{trigger}</DialogTrigger>
 
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
+      <DialogContent className="max-h-[92vh] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-6xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="size-5" />
@@ -1076,112 +1156,228 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           {/* Cart Table */}
           {items.length > 0 && (
             <div className="overflow-x-auto rounded-lg border">
-              <Table>
+              <Table className="min-w-[980px]">
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Item</TableHead>
-                    <TableHead className="w-20">Qty</TableHead>
-                    <TableHead className="w-24">Rate</TableHead>
-                    <TableHead className="text-right">Subtotal</TableHead>
+                    <TableHead className="min-w-[210px]">Item</TableHead>
+                    <TableHead className="w-[100px]">Qty</TableHead>
+                    <TableHead className="w-[92px]">Unit</TableHead>
+                    <TableHead className="w-[145px]">Base price</TableHead>
+                    <TableHead className="w-[140px]">Rate / unit</TableHead>
+                    <TableHead className="w-[145px] text-right">Total</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
                 </TableHeader>
 
                 <TableBody>
-                  {items.map((item) => (
-                    <TableRow key={item.key}>
-                      <TableCell className="min-w-[180px]">
-                        <div className="font-semibold">{item.product}</div>
-                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
-                            Variant: {item.unit}
-                          </span>
-                          <span className="text-muted-foreground">
-                            Stock: {item.maxStock ?? "—"}
-                          </span>
-                        </div>
-                      </TableCell>
+                  {items.map((item) => {
+                    const isLoose = Boolean(item.allowLooseSale);
+                    const baseUnit = normalizeUnit(item.baseUnit ?? item.unit);
+                    const unitOptions = getLooseUnitOptions(baseUnit);
+                    const baseRate = Number(item.baseRate ?? item.rate) || 0;
+                    const looseRate = Number(item.looseRate ?? baseRate);
+                    const looseTotal = Number(item.looseTotal ?? item.quantity * looseRate);
 
-                      <TableCell>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          className="h-8 w-24"
-                          value={item.quantityInput ?? String(item.quantity)}
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) => {
-                            const raw = e.target.value;
+                    return (
+                      <TableRow key={item.key}>
+                        <TableCell className="min-w-[210px] align-top">
+                          <div className="font-semibold">{item.product}</div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                            <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
+                              Variant: {item.unit}
+                            </span>
+                            {isLoose ? (
+                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-600 dark:text-amber-400">
+                                Loose sale
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Stock: {isLoose ? item.maxStock + " " + baseUnit : item.maxStock ?? "—"}
+                          </p>
+                        </TableCell>
 
-                            if (item.allowLooseSale) {
-                              const parsed = parseLooseQuantity(raw, item.baseUnit ?? "kg");
-                              if (!parsed) {
+                        <TableCell className="align-top">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="h-9 w-24"
+                            value={item.quantityInput ?? String(item.quantity)}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const nextQuantity = Number(raw);
+
+                              if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
                                 updateItem(item.key, { quantityInput: raw });
                                 return;
                               }
-                              if (item.maxStock !== undefined && parsed.quantity > item.maxStock) {
-                                toast.error(`Only ${item.maxStock} ${item.baseUnit ?? item.unit} available`);
+
+                              if (isLoose && item.maxStock !== undefined) {
+                                const requestedBase = getLooseBaseQuantity(
+                                  nextQuantity,
+                                  item.unit,
+                                  baseUnit,
+                                );
+                                if (requestedBase > item.maxStock) {
+                                  toast.error(
+                                    "Only " + item.maxStock + " " + baseUnit + " available",
+                                  );
+                                  return;
+                                }
+                              } else if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
+                                toast.error(
+                                  "Only " + item.maxStock + " " + item.unit + " available",
+                                );
                                 return;
                               }
+
                               updateItem(item.key, {
-                                quantity: parsed.quantity,
-                                unit: parsed.unit,
+                                quantity: nextQuantity,
                                 quantityInput: raw,
+                                ...(isLoose ? { looseTotal: nextQuantity * looseRate } : {}),
                               });
-                              return;
-                            }
+                            }}
+                          />
+                        </TableCell>
 
-                            const nextQuantity = Number(raw) || 0;
-                            if (item.maxStock !== undefined && nextQuantity > item.maxStock) {
-                              toast.error(`Only ${item.maxStock} ${item.unit} available`);
-                              updateItem(item.key, {
-                                quantity: item.maxStock,
-                                quantityInput: String(item.maxStock),
-                              });
-                              return;
-                            }
-                            updateItem(item.key, {
-                              quantity: nextQuantity,
-                              quantityInput: raw,
-                            });
-                          }}
-                        />
-                        {item.allowLooseSale ? (
-                          <p className="mt-1 text-[10px] text-muted-foreground">
-                            e.g. 350 g, 0.35 kg, 5.5 kg
-                          </p>
-                        ) : null}
-                      </TableCell>
-                      <TableCell>
-                        <Input
-                          type="text"
-                          inputMode="decimal"
-                          className="h-8 w-20"
-                          value={item.rate}
-                          onFocus={(e) => e.currentTarget.select()}
-                          onChange={(e) =>
-                            updateItem(item.key, {
-                              rate: Number(e.target.value) || 0,
-                            })
-                          }
-                        />
-                      </TableCell>
+                        <TableCell className="align-top">
+                          {isLoose ? (
+                            <Select
+                              value={normalizeUnit(item.unit)}
+                              onValueChange={(nextUnit) => {
+                                const convertedQuantity = convertLooseQuantity(
+                                  item.quantity,
+                                  item.unit,
+                                  nextUnit,
+                                );
+                                const nextFactor =
+                                  getUnitInBaseFactor(nextUnit, baseUnit) ?? 1;
+                                const nextLooseRate = baseRate * nextFactor;
+                                const nextBaseQuantity = getLooseBaseQuantity(
+                                  convertedQuantity,
+                                  nextUnit,
+                                  baseUnit,
+                                );
 
-                      <TableCell className="text-right">
-                        {formatCurrency(getItemAmount(item))}
-                      </TableCell>
+                                if (
+                                  item.maxStock !== undefined &&
+                                  nextBaseQuantity > item.maxStock
+                                ) {
+                                  toast.error(
+                                    "Only " + item.maxStock + " " + baseUnit + " available",
+                                  );
+                                  return;
+                                }
 
-                      <TableCell>
-                        <Button
-                          type="button"
-                          size="icon"
-                          variant="ghost"
-                          onClick={() => removeItem(item.key)}
-                        >
-                          <Trash2 className="size-4 text-destructive" />
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                                updateItem(item.key, {
+                                  unit: nextUnit,
+                                  quantity: convertedQuantity,
+                                  quantityInput: String(
+                                    Number(convertedQuantity.toFixed(6)),
+                                  ),
+                                  looseRate: nextLooseRate,
+                                  looseTotal: convertedQuantity * nextLooseRate,
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="h-9 w-[88px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {unitOptions.map((unit) => (
+                                  <SelectItem key={unit} value={unit}>
+                                    {unit}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="inline-flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">
+                              {item.unit}
+                            </span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          {isLoose ? (
+                            <div className="space-y-1">
+                              <Input
+                                value={formatCurrency(baseRate) + " / " + baseUnit}
+                                disabled
+                                className="h-9 bg-muted/60 font-medium opacity-100"
+                                aria-label={"Base price: 1 " + baseUnit}
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                1 {baseUnit} price
+                              </p>
+                            </div>
+                          ) : (
+                            <span className="text-sm text-muted-foreground">—</span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <div className="space-y-1">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-9 w-[125px]"
+                              value={isLoose ? looseRate : item.rate}
+                              onFocus={(e) => e.currentTarget.select()}
+                              onChange={(e) => {
+                                const nextRate = Number(e.target.value) || 0;
+                                if (isLoose) {
+                                  updateItem(item.key, {
+                                    looseRate: nextRate,
+                                    looseTotal: item.quantity * nextRate,
+                                  });
+                                  return;
+                                }
+                                updateItem(item.key, { rate: nextRate });
+                              }}
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                              per {isLoose ? normalizeUnit(item.unit) : item.unit}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="align-top text-right">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="h-9 w-[125px] text-right font-semibold"
+                            value={isLoose ? looseTotal : getItemAmount(item)}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) => {
+                              if (isLoose) {
+                                updateItem(item.key, {
+                                  looseTotal: Number(e.target.value) || 0,
+                                });
+                              }
+                            }}
+                            readOnly={!isLoose}
+                            aria-label={isLoose ? "Editable total" : "Calculated total"}
+                          />
+                          {isLoose ? (
+                            <p className="mt-1 text-[10px] text-muted-foreground">Editable</p>
+                          ) : null}
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeItem(item.key)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
             </div>
