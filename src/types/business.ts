@@ -58,12 +58,7 @@ export type InventoryItem = {
   purchasePrice: number;
   sellingPrice?: number;
   totalPrice: number;
-  baseUnit?: string;
-  packageSize?: number;
-  baseQuantity?: number;
   allowLooseSale?: boolean;
-  purchasePricePerBaseUnit?: number;
-  sellingPricePerBaseUnit?: number;
   minStockLevel: number;
   status: InventoryStatus;
   lastUpdated: string;
@@ -146,6 +141,8 @@ export type KhataSaleItemInput = {
   quantity: number;
   unit: string;
   rate: number;
+  enteredQuantity?: number;
+  enteredUnit?: string;
   finalAmount?: number;
 };
 export type SupplierLedgerEntry = {
