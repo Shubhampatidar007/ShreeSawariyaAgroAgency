@@ -114,6 +114,7 @@ type CartItem = {
   quantityInput?: string;
   maxStock?: number;
   allowLooseSale?: boolean;
+  inventoryUnit?: string;
   baseRate?: number;
   looseRate?: number;
   looseTotal?: number;
@@ -558,6 +559,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       quantityInput: "1",
       maxStock: option.stock,
       allowLooseSale: option.allowLooseSale,
+      inventoryUnit: normalizeUnit(option.unit),
       baseRate,
       looseRate: option.allowLooseSale ? initialLooseRate : undefined,
       looseTotal: option.allowLooseSale ? initialLooseRate : undefined,
