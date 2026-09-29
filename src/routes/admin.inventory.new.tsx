@@ -50,7 +50,6 @@ type VariantDraft = {
   packageSize: string;
   price: string;
   sellingPrice: string;
-  includeSellingPrice: boolean;
   allowLooseSale: boolean;
 };
 
@@ -68,7 +67,6 @@ const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft
   packageSize: "1",
   price: "",
   sellingPrice: "",
-  includeSellingPrice: false,
   allowLooseSale: false,
   ...overrides,
 });
@@ -201,9 +199,6 @@ function InventoryEntryPage() {
               : inventoryItem.sellingPrice !== undefined
                 ? String(inventoryItem.sellingPrice)
                 : "",
-          includeSellingPrice:
-            inventoryItem.sellingPricePerBaseUnit !== undefined ||
-            inventoryItem.sellingPrice !== undefined,
           allowLooseSale: inventoryItem.allowLooseSale ?? false,
         }),
       ],
@@ -227,9 +222,7 @@ function InventoryEntryPage() {
         packageSize: Number(variant.packageSize) || 1,
         price: Number(variant.price),
         sellingPrice:
-          variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
-            ? Number(variant.sellingPrice)
-            : undefined,
+          variant.sellingPrice.trim() !== "" ? Number(variant.sellingPrice) : undefined,
         allowLooseSale: variant.allowLooseSale,
       })),
     }));
@@ -251,8 +244,7 @@ function InventoryEntryPage() {
             variant.quantity <= 0 ||
             !variant.unit ||
             variant.price < 0 ||
-            (variant.includeSellingPrice &&
-              (variant.sellingPrice === undefined || variant.sellingPrice < 0)),
+            (variant.sellingPrice !== undefined && variant.sellingPrice < 0),
         ),
       )
     ) {
@@ -291,9 +283,7 @@ function InventoryEntryPage() {
         packageSize: Number(variant.packageSize) || 1,
         price: Number(variant.price),
         sellingPrice:
-          variant.includeSellingPrice && variant.sellingPrice.trim() !== ""
-            ? Number(variant.sellingPrice)
-            : undefined,
+          variant.sellingPrice.trim() !== "" ? Number(variant.sellingPrice) : undefined,
         allowLooseSale: variant.allowLooseSale,
       })),
     }));
@@ -745,14 +735,6 @@ function InventoryEntryPage() {
                                   onKeyDown={(e) => {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
-                                    if (variant.includeSellingPrice) {
-                                      document
-                                        .querySelector<HTMLInputElement>(
-                                          '[data-selling-price-input="' + itemIndex + '-' + variantIndex + '"]',
-                                        )
-                                        ?.focus();
-                                      return;
-                                    }
                                     const nextVariant = document.querySelector<HTMLInputElement>(
                                       '[data-inventory-quantity-input="' + itemIndex + '-' + (variantIndex + 1) + '"]',
                                     );
@@ -772,69 +754,37 @@ function InventoryEntryPage() {
                                 />
                               </div>
                               <div className="space-y-2">
-                                <div className="flex items-center gap-2">
-                                  <input
-                                    id={`selling-price-toggle-${itemIndex}-${variantIndex}`}
-                                    type="checkbox"
-                                    checked={variant.includeSellingPrice}
-                                    onChange={(e) =>
-                                      updateVariant(itemIndex, variantIndex, {
-                                        includeSellingPrice: e.target.checked,
-                                        sellingPrice: e.target.checked ? variant.sellingPrice : "",
-                                      })
+                                <Input
+                                  data-selling-price-input={itemIndex + "-" + variantIndex}
+                                  value={variant.sellingPrice}
+                                  onChange={(e) =>
+                                    updateVariant(itemIndex, variantIndex, {
+                                      sellingPrice: e.target.value,
+                                    })
+                                  }
+                                  inputMode="decimal"
+                                  placeholder="Optional — e.g. 1350"
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter") return;
+                                    e.preventDefault();
+                                    const nextVariant = document.querySelector<HTMLInputElement>(
+                                      '[data-inventory-quantity-input="' +
+                                        itemIndex +
+                                        "-" +
+                                        (variantIndex + 1) +
+                                        '"]',
+                                    );
+                                    if (nextVariant) {
+                                      nextVariant.focus();
+                                      return;
                                     }
-                                    className="size-4 rounded border-input"
-                                  />
-                                  <Label htmlFor={`selling-price-toggle-${itemIndex}-${variantIndex}`}>
-                                    Add selling price
-                                  </Label>
-                                </div>
-                                <label className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
-                                  <input
-                                    type="checkbox"
-                                    checked={variant.allowLooseSale}
-                                    onChange={(e) =>
-                                      updateVariant(itemIndex, variantIndex, {
-                                        allowLooseSale: e.target.checked,
-                                      })
-                                    }
-                                    className="size-4 rounded border-input"
-                                  />
-                                  Allow loose / partial sale
-                                </label>
-                                {variant.includeSellingPrice ? (
-                                  <Input
-                                    data-selling-price-input={itemIndex + "-" + variantIndex}
-                                    value={variant.sellingPrice}
-                                    onChange={(e) =>
-                                      updateVariant(itemIndex, variantIndex, {
-                                        sellingPrice: e.target.value,
-                                      })
-                                    }
-                                    inputMode="decimal"
-                                    placeholder="e.g. 1350"
-                                    onKeyDown={(e) => {
-                                      if (e.key !== "Enter") return;
-                                      e.preventDefault();
-                                      const nextVariant = document.querySelector<HTMLInputElement>(
-                                        '[data-inventory-quantity-input="' +
-                                          itemIndex +
-                                          "-" +
-                                          (variantIndex + 1) +
-                                          '"]',
-                                      );
-                                      if (nextVariant) {
-                                        nextVariant.focus();
-                                        return;
-                                      }
-                                      document
-                                        .querySelector<HTMLInputElement>(
-                                          '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
-                                        )
-                                        ?.focus();
-                                    }}
-                                  />
-                                ) : null}
+                                    document
+                                      .querySelector<HTMLInputElement>(
+                                        '[data-inventory-product-input="' + (itemIndex + 1) + '"]',
+                                      )
+                                      ?.focus();
+                                  }}
+                                />
                               </div>
                             </div>
                           </div>
