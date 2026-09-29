@@ -130,7 +130,7 @@ type CartItem = {
   maxStock?: number;
   allowLooseSale?: boolean;
   inventoryUnit?: string;
-  referenceRate: number;
+  referenceRate?: number;
   finalAmount?: number;
 };
 
@@ -593,11 +593,22 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           return prev;
         }
 
+        const nextQuantity = item.quantity + 1;
+        const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+        const nextFinalAmount =
+          item.allowLooseSale && item.rate >= 0
+            ? roundMoney(
+                getNormalizedQuantity(nextQuantity, item.unit, inventoryUnit, true) * item.rate,
+              )
+            : item.finalAmount;
+
         return prev.map((item) =>
           item.key === existing.key
             ? {
                 ...item,
-                quantity: item.quantity + 1,
+                quantity: nextQuantity,
+                quantityInput: String(nextQuantity),
+                ...(item.allowLooseSale ? { finalAmount: nextFinalAmount } : {}),
               }
             : item,
         );
@@ -1261,8 +1272,14 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                             <Select
                               value={normalizeUnit(item.unit)}
                               onValueChange={(nextUnit) => {
+                                const currentQuantity = Number(item.quantityInput ?? item.quantity);
+                                if (!Number.isFinite(currentQuantity) || currentQuantity <= 0) {
+                                  toast.error("Enter a valid quantity before changing the unit");
+                                  return;
+                                }
+
                                 const convertedQuantity = convertCompatibleQuantity(
-                                  item.quantity,
+                                  currentQuantity,
                                   item.unit,
                                   nextUnit,
                                 );
@@ -1344,7 +1361,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                                     rate: nextRate,
                                     finalAmount: roundMoney(
                                       getNormalizedQuantity(
-                                        item.quantity,
+                                        Number(item.quantityInput ?? item.quantity),
                                         item.unit,
                                         inventoryUnit,
                                         true,

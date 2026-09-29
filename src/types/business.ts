@@ -64,6 +64,7 @@ export type InventoryItem = {
   lastUpdated: string;
   productId?: string;
   productVariantId?: string;
+};
 
 export type PublishedProduct = {
   id: string;
