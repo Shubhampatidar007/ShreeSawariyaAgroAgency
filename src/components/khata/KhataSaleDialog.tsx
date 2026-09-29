@@ -155,12 +155,6 @@ const parseLooseQuantity = (value: string, baseUnit: string) => {
   return null;
 };
 
-const getItemAmount = (item: Pick<CartItem, "quantity" | "rate">) => {
-  const quantity = Number(item.quantity);
-  const rate = Number(item.rate);
-  return Number.isFinite(quantity) && Number.isFinite(rate) ? quantity * rate : 0;
-};
-
 async function sendKhataReceiptToEdgeFunction({
   receiptOption,
   customerId,
