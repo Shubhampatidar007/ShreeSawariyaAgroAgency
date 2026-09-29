@@ -204,9 +204,8 @@ function InventoryEntryPage() {
     updateItem(itemIndex, createItemDraft());
   };
 
-  const validatePurchase = () => {
-    const supplier = suppliers.find((item) => item.id === supplierId);
-    const cleanedItems = items.map((item) => ({
+  const getCleanedItems = () =>
+    items.map((item) => ({
       ...item,
       productName: item.productName.trim(),
       variants: item.variants.map((variant) => ({
@@ -218,6 +217,61 @@ function InventoryEntryPage() {
         allowLooseSale: variant.allowLooseSale,
       })),
     }));
+
+  const validatePurchase = () => {
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    const cleanedItems = getCleanedItems();
+
+    if (!supplier) {
+      toast.error("Choose a supplier");
+      return false;
+    }
+
+    if (cleanedItems.some((item) => !item.productName)) {
+      toast.error("Fill a product name for every item");
+      return false;
+    }
+
+    if (
+      cleanedItems.some((item) =>
+        item.variants.some(
+          (variant) =>
+            !Number.isFinite(variant.quantity) ||
+            variant.quantity <= 0 ||
+            !variant.unit ||
+            !Number.isFinite(variant.price) ||
+            variant.price < 0 ||
+            (variant.sellingPrice !== undefined &&
+              (!Number.isFinite(variant.sellingPrice) || variant.sellingPrice < 0)),
+        ),
+      )
+    ) {
+      toast.error("Fill a valid quantity, unit and purchase price for every item");
+      return false;
+    }
+
+    const advance = Math.max(Number(advancePaid) || 0, 0);
+    if (advance > totalPrice) {
+      toast.error("Advance paid cannot exceed the total purchase value");
+      return false;
+    }
+
+    return true;
+  };
+
+  const openPreview = () => {
+    if (submitting) return;
+    if (!validatePurchase()) return;
+    setPreviewOpen(true);
+  };
+
+  const submit = async () => {
+    if (submitting || !validatePurchase()) return;
+
+    const supplier = suppliers.find((item) => item.id === supplierId);
+    if (!supplier) return;
+
+    const cleanedItems = getCleanedItems();
     const advance = Math.max(Number(advancePaid) || 0, 0);
 
     setSubmitting(true);
