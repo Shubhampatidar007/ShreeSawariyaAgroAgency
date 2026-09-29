@@ -662,12 +662,33 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     }
 
     for (const item of items) {
-      if (item.quantity <= 0) {
+      const enteredQuantity = Number(item.quantityInput ?? item.quantity);
+
+      if (!Number.isFinite(enteredQuantity) || enteredQuantity <= 0) {
         return toast.error(`Enter a valid quantity for ${item.product}`);
       }
 
-      if (item.maxStock !== undefined && item.quantity > item.maxStock) {
-        return toast.error(`Only ${item.maxStock} ${item.unit} of ${item.product} in stock`);
+      const baseUnit = normalizeUnit(item.baseUnit ?? item.unit);
+      const requestedBaseQuantity = item.allowLooseSale
+        ? getLooseBaseQuantity(enteredQuantity, item.unit, baseUnit)
+        : enteredQuantity;
+
+      if (item.maxStock !== undefined && requestedBaseQuantity > item.maxStock) {
+        return toast.error(
+          `Only ${item.maxStock} ${baseUnit} of ${item.product} in stock`,
+        );
+      }
+
+      if (
+        item.allowLooseSale &&
+        (!Number.isFinite(Number(item.looseRate)) ||
+          Number(item.looseRate) < 0 ||
+          !Number.isFinite(Number(item.looseTotal)) ||
+          Number(item.looseTotal) < 0)
+      ) {
+        return toast.error(
+          `Enter a valid loose-sale rate and total for ${item.product}`,
+        );
       }
     }
 
