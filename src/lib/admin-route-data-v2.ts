@@ -45,7 +45,7 @@ const CUSTOMER_SUMMARY = "id,status,total_purchases,current_due";
 const SUPPLIER_FULL =
   "id,name,company,mobile,email,gstin,address,products_supplied,total_purchases,total_paid,advance,due_balance,last_order,status";
 const INVENTORY_FULL =
-  "id,product_name,supplier_id,supplier_name,quantity,unit,purchase_price,selling_price,total_price,min_stock_level,status,last_updated";
+  "id,product_name,supplier_id,supplier_name,quantity,unit,quantity_per_product,purchase_price,selling_price,total_price,min_stock_level,status,last_updated";
 const PRODUCT_FULL =
   "id,inventory_id,title,category,selling_price,discount_price,stock,description,tags,images,emoji,visibility,featured,status,published_on";
 const VARIANT_ACTIVE = "id,product_id,inventory_id,label,selling_price,discount_price,stock,status";
