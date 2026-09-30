@@ -679,6 +679,17 @@ function InventoryEntryPage() {
                                 </Select>
                               </div>
                               <div className="space-y-2">
+                                <Label htmlFor={`quantity-per-product-${itemIndex}-${variantIndex}`}>
+                                  Quantity per product
+                                </Label>
+                                <Input
+                                  id={`quantity-per-product-${itemIndex}-${variantIndex}`}
+                                  name="quantityPerProduct"
+                                  inputMode="decimal"
+                                  placeholder="20"
+                                />
+                              </div>
+                              <div className="space-y-2">
                                 <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
                                   <div className="min-w-0">
                                     <Label
