@@ -106,6 +106,8 @@ const toInventory = (r: any): InventoryItem => ({
   supplierName: r.supplier_name ?? "",
   quantity: num(r.quantity),
   unit: r.unit ?? "",
+  quantityPerProduct:
+    r.quantity_per_product == null ? undefined : num(r.quantity_per_product),
   purchasePrice: num(r.purchase_price),
   sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
