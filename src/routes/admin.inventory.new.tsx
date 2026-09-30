@@ -636,7 +636,7 @@ function InventoryEntryPage() {
                             </div>
                             <div className="grid gap-3 sm:grid-cols-3">
                               <div className="space-y-2">
-                                <Label>Quantity / stock</Label>
+                                <Label>Quantity</Label>
                                 <Input
                                   data-inventory-quantity-input={itemIndex + "-" + variantIndex}
                                   value={variant.quantity}
@@ -649,7 +649,7 @@ function InventoryEntryPage() {
                                     if (e.key !== "Enter") return;
                                     e.preventDefault();
                                     document
-                                      .querySelector<HTMLInputElement>(
+                                      .querySelector<HTMLElement>(
                                         '[data-inventory-unit-input="' + itemIndex + '-' + variantIndex + '"]',
                                       )
                                       ?.focus();
@@ -660,24 +660,23 @@ function InventoryEntryPage() {
                               </div>
                               <div className="space-y-2">
                                 <Label>Unit</Label>
-                                <Input
-                                  data-inventory-unit-input={itemIndex + "-" + variantIndex}
+                                <Select
                                   value={variant.unit}
-                                  onChange={(e) =>
-                                    updateVariant(itemIndex, variantIndex, { unit: e.target.value })
+                                  onValueChange={(value) =>
+                                    updateVariant(itemIndex, variantIndex, { unit: value })
                                   }
-                                  onKeyDown={(e) => {
-                                    if (e.key !== "Enter") return;
-                                    e.preventDefault();
-                                    document
-                                      .querySelector<HTMLInputElement>(
-                                        '[data-inventory-price-input="' + itemIndex + '-' + variantIndex + '"]',
-                                      )
-                                      ?.focus();
-                                  }}
-                                  placeholder="kg / g / L"
-                                 
-                                />
+                                >
+                                  <SelectTrigger
+                                    data-inventory-unit-input={itemIndex + "-" + variantIndex}
+                                  >
+                                    <SelectValue placeholder="Select unit" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="kg">kg</SelectItem>
+                                    <SelectItem value="l">l</SelectItem>
+                                    <SelectItem value="gram">gram</SelectItem>
+                                  </SelectContent>
+                                </Select>
                               </div>
                               <div className="space-y-2">
                                 <div className="flex min-h-10 items-center justify-between gap-3 rounded-md border bg-muted/20 px-3 py-2">
