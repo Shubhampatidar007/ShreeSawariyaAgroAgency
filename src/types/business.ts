@@ -55,6 +55,7 @@ export type InventoryItem = {
   supplierName: string;
   quantity: number;
   unit: string;
+  quantityPerProduct?: number;
   purchasePrice: number;
   sellingPrice?: number;
   totalPrice: number;
