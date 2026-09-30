@@ -10,6 +10,7 @@ type InventoryRow = {
   unit: string | null;
   purchase_price: number | string | null;
   selling_price: number | string | null;
+  quantity_per_product: number | string | null;
   allow_loose_sale: boolean | null;
 };
 
@@ -46,6 +47,7 @@ export type KhataInventoryOption = {
   rate: number;
   purchasePrice: number;
   stock: number;
+  quantityPerProduct?: number;
   allowLooseSale: boolean;
 };
 
@@ -100,7 +102,7 @@ export async function loadKhataInventoryPage(
   let inventoryQuery = supabase
     .from("inventory_items")
     .select(
-      "id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,allow_loose_sale",
+      "id,product_name,supplier_name,quantity,unit,purchase_price,selling_price,quantity_per_product,allow_loose_sale",
     )
     .gt("quantity", 0)
     .order("product_name", { ascending: true })
@@ -170,7 +172,7 @@ export async function loadKhataInventoryPage(
     const product = inventory.id ? productByInventory.get(inventory.id) : undefined;
     const variant = inventory.id ? variantByInventory.get(inventory.id) : undefined;
     const stock = Math.max(num(inventory.quantity), 0);
-    const rate =
+    const packagePrice =
       inventory.selling_price != null
         ? num(inventory.selling_price)
         : variant?.discount_price != null
@@ -182,6 +184,16 @@ export async function loadKhataInventoryPage(
               : product?.selling_price != null
                 ? num(product.selling_price)
                 : num(inventory.purchase_price);
+
+    const quantityPerProduct = num(inventory.quantity_per_product);
+    const rate =
+      Boolean(inventory.allow_loose_sale) &&
+      Number.isFinite(quantityPerProduct) &&
+      quantityPerProduct > 0 &&
+      Number.isFinite(packagePrice) &&
+      packagePrice >= 0
+        ? packagePrice / quantityPerProduct
+        : packagePrice;
 
     return {
       key: variant?.id ?? inventory.id,
@@ -195,6 +207,10 @@ export async function loadKhataInventoryPage(
       rate: Number.isFinite(rate) && rate >= 0 ? rate : num(inventory.purchase_price),
       purchasePrice: num(inventory.purchase_price),
       stock,
+      quantityPerProduct:
+        Number.isFinite(quantityPerProduct) && quantityPerProduct > 0
+          ? quantityPerProduct
+          : undefined,
       allowLooseSale: Boolean(inventory.allow_loose_sale),
     } satisfies KhataInventoryOption;
   });
