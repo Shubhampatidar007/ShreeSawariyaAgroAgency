@@ -172,6 +172,7 @@ undefined
                 <TableRow>
                   <TableHead>Product</TableHead>
                   <TableHead>Variant</TableHead>
+                  <TableHead>Per product</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Supplier</TableHead>
                   <TableHead className="text-right">Purchase price</TableHead>
@@ -196,6 +197,15 @@ undefined
                         <span className="inline-flex rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
                           {item.unit}
                         </span>
+                      </TableCell>
+                      <TableCell className="min-w-[130px]">
+                        {item.quantityPerProduct === undefined ? (
+                          <span className="text-muted-foreground">-</span>
+                        ) : (
+                          <span className="inline-flex rounded-full border border-border/70 bg-muted/50 px-2.5 py-1 text-xs font-semibold tabular-nums">
+                            {item.quantityPerProduct} {item.unit}
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="inline-flex min-w-12 items-center justify-center rounded-lg bg-muted px-2.5 py-1.5 font-bold tabular-nums">
