@@ -122,6 +122,8 @@ const toInventory = (r: any): InventoryItem => ({
   supplierName: r.supplier_name ?? "",
   quantity: num(r.quantity),
   unit: r.unit ?? "unit",
+  quantityPerProduct:
+    r.quantity_per_product == null ? undefined : num(r.quantity_per_product),
   purchasePrice: num(r.purchase_price),
   sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
@@ -656,6 +658,7 @@ export const shopStore = {
     productName: string;
     quantity: number;
     unit: string;
+    quantityPerProduct?: number;
     purchasePrice: number;
     sellingPrice?: number;
     allowLooseSale?: boolean;
@@ -673,6 +676,7 @@ export const shopStore = {
       _reference_selling_price_per_unit: item.sellingPrice ?? null,
       _allow_loose_sale: item.allowLooseSale ?? false,
       _min_stock_level: item.minStockLevel,
+      _quantity_per_product: item.quantityPerProduct ?? null,
       _entry_date: item.lastUpdated,
       _advance_paid: item.advancePaid,
       _advance_method: item.advanceMethod,
