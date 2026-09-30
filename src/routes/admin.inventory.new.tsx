@@ -47,6 +47,7 @@ export const Route = createFileRoute("/admin/inventory/new")({
 type VariantDraft = {
   quantity: string;
   unit: string;
+  quantityPerProduct: string;
   price: string;
   sellingPrice: string;
   allowLooseSale: boolean;
@@ -62,6 +63,7 @@ type ItemDraft = {
 const createVariantDraft = (overrides: Partial<VariantDraft> = {}): VariantDraft => ({
   quantity: "",
   unit: "kg",
+  quantityPerProduct: "",
   price: "",
   sellingPrice: "",
   allowLooseSale: false,
@@ -188,6 +190,10 @@ function InventoryEntryPage() {
       variants: [
         createVariantDraft({
           unit: inventoryItem.unit,
+          quantityPerProduct:
+            inventoryItem.quantityPerProduct != null
+              ? String(inventoryItem.quantityPerProduct)
+              : "",
           price: String(inventoryItem.purchasePrice),
           sellingPrice:
             inventoryItem.sellingPrice !== undefined
@@ -211,6 +217,10 @@ function InventoryEntryPage() {
       variants: item.variants.map((variant) => ({
         quantity: Number(variant.quantity),
         unit: variant.unit.trim(),
+        quantityPerProduct:
+          variant.quantityPerProduct.trim() !== ""
+            ? Number(variant.quantityPerProduct)
+            : undefined,
         price: Number(variant.price),
         sellingPrice:
           variant.sellingPrice.trim() !== "" ? Number(variant.sellingPrice) : undefined,
@@ -242,7 +252,9 @@ function InventoryEntryPage() {
             !Number.isFinite(variant.price) ||
             variant.price < 0 ||
             (variant.sellingPrice !== undefined &&
-              (!Number.isFinite(variant.sellingPrice) || variant.sellingPrice < 0)),
+              (!Number.isFinite(variant.sellingPrice) || variant.sellingPrice < 0)) ||
+            (variant.quantityPerProduct !== undefined &&
+              (!Number.isFinite(variant.quantityPerProduct) || variant.quantityPerProduct <= 0)),
         ),
       )
     ) {
@@ -292,6 +304,7 @@ function InventoryEntryPage() {
             supplierName: supplier.company,
             quantity: variant.quantity,
             unit: variant.unit,
+            quantityPerProduct: variant.quantityPerProduct,
             purchasePrice: variant.price,
             sellingPrice: variant.sellingPrice,
             allowLooseSale: variant.allowLooseSale,
@@ -685,7 +698,14 @@ function InventoryEntryPage() {
                                 <Input
                                   id={`quantity-per-product-${itemIndex}-${variantIndex}`}
                                   name="quantityPerProduct"
+                                  value={variant.quantityPerProduct}
+                                  onChange={(e) =>
+                                    updateVariant(itemIndex, variantIndex, {
+                                      quantityPerProduct: e.target.value,
+                                    })
+                                  }
                                   inputMode="decimal"
+                                  min="0"
                                   placeholder="20"
                                 />
                               </div>
