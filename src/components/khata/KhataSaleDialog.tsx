@@ -1,3 +1,752 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import type { ReactNode } from "react";
+import { Check, Loader2, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import {
+  KHATA_INVENTORY_PAGE_SIZE,
+  loadKhataInventoryPage,
+  type KhataInventoryOption,
+} from "@/lib/khata-inventory-data";
+import type { PaymentMethod } from "@/types/business";
+
+type CartItem = {
+  key: string;
+  inventoryId?: string;
+  productId?: string;
+  productVariantId?: string;
+  product: string;
+  unit: string;
+  inventoryUnit?: string;
+  rate: number;
+  purchaseCost: number;
+  quantity: number;
+  quantityInput?: string;
+  maxStock?: number;
+  allowLooseSale?: boolean;
+  calculatedAmount: number;
+  finalAmount: number;
+  finalAmountOverridden: boolean;
+};
+
+type Props = {
+  /** Preselect a customer (from the Khata / customer detail page). Omit to search or create one. */
+  customer?: {
+    id: string;
+    name: string;
+    mobile?: string;
+  };
+  trigger: ReactNode;
+  onCreated?: (transactionId: string) => void;
+};
+
+type ReceiptOption = "current" | "full" | "none";
+
+const KHATA_RECEIPT_EDGE_FUNCTION =
+  import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
+
+const normalizeUnit = (value: string) => {
+  const unit = value.trim().toLowerCase().replace(/^[0-9.\s]+/, "");
+  if (unit === "gm" || unit === "gram" || unit === "grams" || unit === "g") return "g";
+  if (unit === "kg" || unit === "kgs" || unit === "kilo" || unit === "kilos" || unit === "kilogram" || unit === "kilograms") return "kg";
+  if (unit === "q" || unit === "quintal" || unit === "quintals") return "quintal";
+  if (unit === "t" || unit === "ton" || unit === "tons" || unit === "tonne" || unit === "tonnes") return "tonne";
+  if (unit === "ml" || unit === "millilitre" || unit === "millilitres" || unit === "milliliter" || unit === "milliliters") return "ml";
+  if (unit === "l" || unit === "lt" || unit === "ltr" || unit === "litre" || unit === "litres" || unit === "liter" || unit === "liters") return "l";
+  if (unit === "pc" || unit === "pcs" || unit === "piece" || unit === "pieces") return "piece";
+  if (unit === "box" || unit === "boxes") return "box";
+  if (unit === "pack" || unit === "packs" || unit === "packet" || unit === "packets") return "packet";
+  if (unit === "bag" || unit === "bags") return "bag";
+  return unit || "unit";
+};
+
+const UNIT_FACTORS: Record<string, { group: string; factor: number }> = {
+  g: { group: "weight", factor: 1 },
+  kg: { group: "weight", factor: 1000 },
+  quintal: { group: "weight", factor: 100000 },
+  tonne: { group: "weight", factor: 1000000 },
+  ml: { group: "volume", factor: 1 },
+  l: { group: "volume", factor: 1000 },
+  piece: { group: "piece", factor: 1 },
+  box: { group: "box", factor: 1 },
+  packet: { group: "packet", factor: 1 },
+  bag: { group: "bag", factor: 1 },
+};
+
+const getCompatibleUnitOptions = (inventoryUnit: string) => {
+  const normalized = normalizeUnit(inventoryUnit);
+  const definition = UNIT_FACTORS[normalized];
+  if (!definition) return [normalized];
+
+  return Object.entries(UNIT_FACTORS)
+    .filter(([, item]) => item.group === definition.group)
+    .sort((a, b) => b[1].factor - a[1].factor)
+    .map(([unit]) => unit);
+};
+
+const convertQuantity = (quantity: number, fromUnit: string, toUnit: string) => {
+  const from = UNIT_FACTORS[normalizeUnit(fromUnit)];
+  const to = UNIT_FACTORS[normalizeUnit(toUnit)];
+  if (!from || !to || from.group !== to.group) return null;
+  return (quantity * from.factor) / to.factor;
+};
+
+const roundMoney = (value: number) =>
+  Math.round((value + Number.EPSILON) * 100) / 100;
+
+const getInventoryQuantity = (item: CartItem, quantity = item.quantity) => {
+  if (!item.inventoryId) return quantity;
+  const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+  const converted = convertQuantity(quantity, item.unit, inventoryUnit);
+  return converted == null ? quantity : converted;
+};
+
+const getItemAmount = (item: CartItem) => {
+  const amount = Number(item.finalAmount);
+  if (Number.isFinite(amount) && amount >= 0) return amount;
+  return roundMoney(getInventoryQuantity(item) * (Number(item.rate) || 0));
+};
+
+
+
+async function sendKhataReceiptToEdgeFunction({
+  receiptOption,
+  customerId,
+  transactionId,
+  customer,
+  items,
+  total,
+  paid,
+  due,
+  paymentMethod,
+  saleDate,
+}: {
+  receiptOption: ReceiptOption;
+  customerId: string;
+  transactionId: string;
+  customer: {
+    id: string;
+    name: string;
+    mobile?: string;
+  };
+  items: CartItem[];
+  total: number;
+  paid: number;
+  due: number;
+  paymentMethod: PaymentMethod;
+  saleDate: string;
+}) {
+  if (receiptOption === "none") {
+    return {
+      success: true,
+      skipped: true,
+    };
+  }
+
+  const {
+    data: { session },
+    error: sessionError,
+  } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    throw new Error(`Could not get Supabase session: ${sessionError.message}`);
+  }
+
+  if (!session?.access_token) {
+    throw new Error("You are not logged in. Please sign in again.");
+  }
+
+  const supabaseUrl = "https://cmfqlpcrnkswgxrszoog.supabase.co";
+
+  const edgeFunctionUrl = `${supabaseUrl}/functions/v1/${KHATA_RECEIPT_EDGE_FUNCTION}`;
+  /*
+   * Send only structured data.
+   *
+   * The Edge Function is responsible for:
+   *
+   * 1. Building the current receipt
+   * 2. Querying purchase history for full receipt
+   * 3. Calculating totals
+   * 4. Sending WhatsApp through Meta
+   */
+  const response = await fetch(edgeFunctionUrl, {
+    method: "POST",
+
+    headers: {
+      "Content-Type": "application/json",
+
+      apikey: "sb_publishable_4VzGDmax-6XyPaW1NomaNQ_kotGVa9i",
+
+      Authorization: `Bearer ${session.access_token}`,
+    },
+
+    body: JSON.stringify({
+      /*
+       * This tells the existing Edge Function
+       * to enter the new receipt code.
+       */
+      kind: "purchase-receipt",
+
+      /*
+       * current / full / none
+       */
+      receiptOption,
+
+      /*
+       * Required by the Edge Function to identify
+       * the newly-created transaction.
+       */
+      transactionId,
+
+      /*
+       * Required for Sup—abase purchase-history query.
+       */
+      customerId,
+
+      /*
+       * Customer information.
+       */
+      customer: {
+        id: customer.id,
+        name: customer.name,
+        mobile: customer.mobile ?? "",
+      },
+
+      /*
+       * Current sale information.
+       */
+      sale: {
+        date: saleDate,
+
+       items: items.map((item) => ({
+  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+  ...(item.productId ? { productId: item.productId } : {}),
+  ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+  product: item.product,
+  quantity: getInventoryQuantity(item),
+  unit: normalizeUnit(item.inventoryUnit ?? item.unit),
+  enteredQuantity: item.quantity,
+  enteredUnit: normalizeUnit(item.unit),
+  rate: item.rate,
+  amount: getItemAmount(item),
+  purchaseCost: item.purchaseCost,
+  adminPriceInc: item.rate,
+})),
+        total,
+
+        paid,
+
+        due,
+
+        paymentMethod,
+      },
+    }),
+  });
+
+  /*
+   * Read Edge Function response.
+   */
+  const responseText = await response.text();
+
+  let result: unknown;
+
+  try {
+    result = responseText ? JSON.parse(responseText) : null;
+  } catch {
+    result = responseText;
+  }
+
+  /*
+   * Edge Function returned an error.
+   */
+  if (!response.ok) {
+    const errorMessage =
+      typeof result === "object" &&
+      result !== null &&
+      "error" in result &&
+      typeof (
+        result as {
+          error?: unknown;
+        }
+      ).error === "string"
+        ? (
+            result as {
+              error: string;
+            }
+          ).error
+        : `Receipt Edge Function failed with status ${response.status}`;
+
+    throw new Error(errorMessage);
+  }
+
+  /*
+   * Successful response.
+   */
+  return result;
+}
+
+export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
+  const customers = useShopStore((s) => s.customers);
+
+  const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [inventoryLoading, setInventoryLoading] = useState(false);
+  const [inventoryOptions, setInventoryOptions] = useState<KhataInventoryOption[]>([]);
+  const [inventoryHasMore, setInventoryHasMore] = useState(false);
+  const [inventoryPage, setInventoryPage] = useState(1);
+  const inventoryRequestRef = useRef(0);
+
+  // customer selection
+  const [customerMode, setCustomerMode] = useState<"select" | "new">("select");
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
+  const [customerQuery, setCustomerQuery] = useState("");
+  const [newCustomer, setNewCustomer] = useState({
+    name: "",
+    mobile: "",
+    village: "",
+    address: "",
+  });
+
+  // cart
+  const [items, setItems] = useState<CartItem[]>([]);
+  const [productQuery, setProductQuery] = useState("");
+  const [customName, setCustomName] = useState("");
+  const [customRate, setCustomRate] = useState("");
+  const productSearchRef = useRef<HTMLInputElement>(null);
+  const customNameRef = useRef<HTMLInputElement>(null);
+  const customRateRef = useRef<HTMLInputElement>(null);
+
+  // payment
+  const [paid, setPaid] = useState("0");
+  const [method, setMethod] = useState<PaymentMethod>("cash");
+  const [entryDate, setEntryDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [paymentReference, setPaymentReference] = useState("");
+  const [remarks, setRemarks] = useState("");
+  const [bargainingAmount, setBargainingAmount] = useState("0");
+
+  // receipt choice option: default is 'current'
+  const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
+
+  const total = useMemo(
+    () => items.reduce((sum, item) => sum + getItemAmount(item), 0),
+    [items],
+  );
+
+  const bargainingNum = Number(bargainingAmount) || 0;
+  const finalTotal = Math.max(total - bargainingNum, 0);
+  const paidNum = Number(paid) || 0;
+  const due = Math.max(finalTotal - paidNum, 0);
+
+  useEffect(() => {
+    if (!open) return;
+    requestAnimationFrame(() => productSearchRef.current?.focus());
+
+    const requestId = ++inventoryRequestRef.current;
+    setInventoryLoading(true);
+    setInventoryOptions([]);
+    setInventoryPage(1);
+    setInventoryHasMore(false);
+
+    const delay = productQuery.trim() ? 250 : 0;
+    const timer = window.setTimeout(() => {
+      void loadKhataInventoryPage(productQuery, 1, KHATA_INVENTORY_PAGE_SIZE)
+        .then((result) => {
+          if (requestId !== inventoryRequestRef.current) return;
+          setInventoryOptions(result.rows);
+          setInventoryPage(result.page);
+          setInventoryHasMore(result.hasMore);
+        })
+        .catch((error) => {
+          if (requestId !== inventoryRequestRef.current) return;
+          console.error("Failed to load Khata inventory:", error);
+          setInventoryOptions([]);
+          setInventoryPage(1);
+          setInventoryHasMore(false);
+        })
+        .finally(() => {
+          if (requestId === inventoryRequestRef.current) {
+            setInventoryLoading(false);
+          }
+        });
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [open, productQuery]);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
+      const target = event.target as HTMLElement | null;
+      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) {
+        return;
+      }
+      event.preventDefault();
+      productSearchRef.current?.focus();
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [open]);
+
+  const loadMoreInventory = async () => {
+    if (!open || inventoryLoading || !inventoryHasMore) return;
+
+    const requestId = inventoryRequestRef.current;
+    const nextPage = inventoryPage + 1;
+    setInventoryLoading(true);
+
+    try {
+      const result = await loadKhataInventoryPage(
+        productQuery,
+        nextPage,
+        KHATA_INVENTORY_PAGE_SIZE,
+      );
+      if (requestId !== inventoryRequestRef.current) return;
+
+      setInventoryOptions((current) => {
+        const seen = new Set(current.map((item) => item.key));
+        return [...current, ...result.rows.filter((item) => !seen.has(item.key))];
+      });
+      setInventoryPage(result.page);
+      setInventoryHasMore(result.hasMore);
+    } catch (error) {
+      if (requestId === inventoryRequestRef.current) {
+        toast.error(error instanceof Error ? error.message : "Could not load more inventory");
+      }
+    } finally {
+      if (requestId === inventoryRequestRef.current) {
+        setInventoryLoading(false);
+      }
+    }
+  };
+
+  const filteredCustomers = useMemo(() => {
+    const q = customerQuery.trim().toLowerCase();
+    const digits = q.replace(/\D/g, "");
+    const terms = q.split(/\s+/).filter(Boolean);
+
+    const uniqueCustomers = Array.from(new Map(customers.map((c) => [c.id, c])).values());
+
+    if (!q) {
+      return uniqueCustomers.slice(0, 8);
+    }
+
+    return uniqueCustomers
+      .map((customer) => {
+        const name = customer.name.toLowerCase();
+        const mobile = customer.mobile.toLowerCase();
+        const village = (customer.village ?? "").toLowerCase();
+        const address = (customer.address ?? "").toLowerCase();
+        const searchable = [name, mobile, village, address].join(" ");
+        const mobileDigits = mobile.replace(/\D/g, "");
+
+        const matchesTerms = terms.every((term) => searchable.includes(term));
+        const matchesMobile = digits.length >= 3 && mobileDigits.includes(digits);
+
+        if (!matchesTerms && !matchesMobile) return null;
+
+        let score = 0;
+        if (name === q) score += 100;
+        if (name.startsWith(q)) score += 60;
+        if (mobileDigits === digits && digits) score += 90;
+        if (mobileDigits.startsWith(digits) && digits) score += 50;
+        if (village.startsWith(q)) score += 25;
+        if (name.includes(q)) score += 15;
+        if (village.includes(q) || address.includes(q)) score += 5;
+
+        return { customer, score };
+      })
+      .filter((result): result is { customer: (typeof uniqueCustomers)[number]; score: number } => result !== null)
+      .sort((a, b) => b.score - a.score || a.customer.name.localeCompare(b.customer.name))
+      .slice(0, 8)
+      .map((result) => result.customer);
+  }, [customers, customerQuery]);
+
+  const selectedCustomer = useMemo(
+    () => customers.find((c) => c.id === selectedCustomerId) ?? null,
+    [customers, selectedCustomerId],
+  );
+
+  const catalogOptions = useMemo(() => {
+    const q = productQuery.trim().toLowerCase();
+
+    if (!q) return inventoryOptions;
+
+    return inventoryOptions.filter((option) =>
+      `${option.title} ${option.subtitle} ${option.unit} ${option.stock} ${option.rate}`
+        .toLowerCase()
+        .includes(q),
+    );
+  }, [inventoryOptions, productQuery]);
+
+  const reset = () => {
+    setCustomerMode("select");
+    setSelectedCustomerId(null);
+    setCustomerQuery("");
+    setNewCustomer({
+      name: "",
+      mobile: "",
+      village: "",
+      address: "",
+    });
+
+    setItems([]);
+    setProductQuery("");
+    setCustomName("");
+    setCustomRate("");
+    setInventoryOptions([]);
+    setInventoryPage(1);
+    setInventoryHasMore(false);
+    setInventoryLoading(false);
+    inventoryRequestRef.current += 1;
+
+    setPaid("0");
+    setBargainingAmount("0");
+    setMethod("cash");
+    setEntryDate(new Date().toISOString().slice(0, 10));
+    setPaymentReference("");
+    setRemarks("");
+    setReceiptOption("current");
+  };
+
+  const addProductToCart = (option: KhataInventoryOption) => {
+    if (option.stock <= 0) {
+      toast.error(`${option.title} (${option.unit}) is out of stock`);
+      return;
+    }
+
+    const inventoryUnit = normalizeUnit(option.unit);
+    const rate = Number(option.rate) || 0;
+    const newItem: CartItem = {
+      key: crypto.randomUUID(),
+      inventoryId: option.inventoryId,
+      productId: option.productId,
+      productVariantId: option.productVariantId,
+      product: option.title,
+      unit: inventoryUnit,
+      inventoryUnit,
+      rate,
+      purchaseCost: option.purchasePrice,
+      quantity: 1,
+      quantityInput: "1",
+      maxStock: option.stock,
+      allowLooseSale: option.allowLooseSale,
+      calculatedAmount: roundMoney(rate),
+      finalAmount: roundMoney(rate),
+      finalAmountOverridden: false,
+    };
+
+    setItems((prev) => {
+      const existingKey = option.productVariantId ?? option.inventoryId;
+      const existing = prev.find(
+        (item) => (item.productVariantId ?? item.inventoryId) === existingKey,
+      );
+
+      if (existing) {
+        const nextQuantity = existing.quantity + 1;
+        if (
+          existing.maxStock !== undefined &&
+          getInventoryQuantity(existing, nextQuantity) > existing.maxStock
+        ) {
+          toast.error(
+            `Only ${existing.maxStock} ${normalizeUnit(existing.inventoryUnit ?? existing.unit)} of ${existing.product} is in stock`,
+          );
+          return prev;
+        }
+
+        const calculatedAmount = roundMoney(
+          getInventoryQuantity(existing, nextQuantity) * existing.rate,
+        );
+
+        return prev.map((item) =>
+          item.key === existing.key
+            ? {
+                ...item,
+                quantity: nextQuantity,
+                quantityInput: String(nextQuantity),
+                calculatedAmount,
+                finalAmount: item.finalAmountOverridden
+                  ? item.finalAmount
+                  : calculatedAmount,
+              }
+            : item,
+        );
+      }
+
+      return [...prev, newItem];
+    });
+  };
+  const addCustomItem = () => {
+    const name = customName.trim();
+    const rate = Number(customRate.trim());
+
+    if (!name) {
+      return toast.error("Enter an item name");
+    }
+
+    if (!Number.isFinite(rate) || rate < 0) {
+      return toast.error("Enter a valid price");
+    }
+
+    const newItem: CartItem = {
+      key: crypto.randomUUID(),
+      product: name,
+      unit: "unit",
+      rate,
+      purchaseCost: 0,
+      quantity: 1,
+      calculatedAmount: roundMoney(rate),
+      finalAmount: roundMoney(rate),
+      finalAmountOverridden: false,
+    };
+
+    setItems((prev) => [...prev, newItem]);
+    setCustomName("");
+    setCustomRate("");
+  };
+
+  const updateItem = (key: string, patch: Partial<CartItem>) => {
+    setItems((prev) => prev.map((item) => (item.key === key ? { ...item, ...patch } : item)));
+  };
+
+  const removeItem = (key: string) => {
+    setItems((prev) => prev.filter((item) => item.key !== key));
+  };
+
+  const handleSubmit = async () => {
+    if (items.length === 0) {
+      return toast.error("Add at least one product to the sale");
+    }
+
+    for (const item of items) {
+      const enteredQuantity = Number(item.quantityInput ?? item.quantity);
+      const enteredUnit = normalizeUnit(item.unit);
+
+      if (!Number.isFinite(enteredQuantity) || enteredQuantity <= 0) {
+        return toast.error(`Enter a valid quantity for ${item.product}`);
+      }
+
+      let inventoryQuantity = enteredQuantity;
+
+      if (item.inventoryId) {
+        const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+
+        if (item.allowLooseSale) {
+          const converted = convertQuantity(enteredQuantity, enteredUnit, inventoryUnit);
+          if (converted == null) {
+            return toast.error(
+              `${item.product} cannot be converted from ${enteredUnit} to ${inventoryUnit}`,
+            );
+          }
+          inventoryQuantity = converted;
+        } else if (
+          enteredUnit !== inventoryUnit ||
+          enteredQuantity !== Math.trunc(enteredQuantity)
+        ) {
+          return toast.error(
+            `${item.product} must be sold as complete ${inventoryUnit} units`,
+          );
+        }
+
+        if (item.maxStock !== undefined && inventoryQuantity > item.maxStock) {
+          return toast.error(
+            `Only ${item.maxStock} ${inventoryUnit} of ${item.product} in stock`,
+          );
+        }
+      }
+
+      if (!Number.isFinite(Number(item.finalAmount)) || Number(item.finalAmount) < 0) {
+        return toast.error(`Enter a valid sale amount for ${item.product}`);
+      }
+    }
+
+    let customerId = customer?.id ?? selectedCustomerId ?? undefined;
+
+    if (!customerId && customerMode === "new") {
+      if (!newCustomer.name.trim() || !newCustomer.mobile.trim()) {
+        return toast.error("Enter the customer's name and mobile number");
+      }
+    } else if (!customerId) {
+      return toast.error("Select or create a customer");
+    }
+
+    if (bargainingNum < 0) {
+      return toast.error("Bargaining amount cannot be negative");
+    }
+
+    if (bargainingNum > total) {
+      return toast.error("Bargaining amount cannot exceed the sale total");
+    }
+
+    if (paidNum < 0) {
+      return toast.error("Paid amount cannot be negative");
+    }
+
+    if (paidNum > finalTotal) {
+      return toast.error("Paid amount cannot exceed the final total");
+    }
+
+    setSubmitting(true);
+
+    try {
+      /*
+       * ---------------------------------------------------------
+       * STEP 1: CREATE CUSTOMER IF NEEDED
+       * ---------------------------------------------------------
+       */
+
+      if (!customerId) {
+        const created = await shopStore.addCustomer({
+          name: newCustomer.name.trim(),
+          mobile: newCustomer.mobile.trim(),
+          village: newCustomer.village.trim(),
+          address: newCustomer.address.trim(),
+          joinedOn: new Date().toISOString().slice(0, 10),
+          creditLimit: 0,
+          creditBalance: 0,
+          totalPurchases: 0,
+          totalPaid: 0,
+          currentDue: 0,
+          lastPurchase: "",
+          status: "active",
+        });
+
+        customerId = created.id;
+      }
+
+      /*
+       * ---------------------------------------------------------
        * STEP 2: SAVE THE SALE
        *
        * IMPORTANT:
@@ -41,3 +790,817 @@
         method,
         date: entryDate,
         reference: paymentReference.trim() || undefined,
+
+        ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
+      });
+
+      /*
+       * ---------------------------------------------------------
+       * STEP 3: NONE
+       *
+       * Sale is already saved.
+       * Do not call Edge Function.
+       * ---------------------------------------------------------
+       */
+
+      if (receiptOption === "none") {
+        toast.success(
+          paidNum >= finalTotal
+            ? "Sale recorded — fully paid"
+            : paidNum > 0
+              ? "Sale recorded — partly paid"
+              : "Sale recorded on credit (udhari)",
+        );
+
+        onCreated?.(txId);
+        setOpen(false);
+        reset();
+
+        return;
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * STEP 4: FIND CUSTOMER DATA FOR RECEIPT
+       * ---------------------------------------------------------
+       */
+
+      const receiptCustomer = customer
+        ? {
+            id: customer.id,
+            name: customer.name,
+            mobile: customer.mobile ?? customers.find((c) => c.id === customer.id)?.mobile ?? "",
+          }
+        : {
+            id: customerId,
+            name: selectedCustomer?.name ?? newCustomer.name.trim(),
+            mobile: selectedCustomer?.mobile ?? newCustomer.mobile.trim(),
+          };
+
+      try {
+        await sendKhataReceiptToEdgeFunction({
+          receiptOption,
+
+          customerId,
+
+          transactionId: txId,
+
+          customer: receiptCustomer,
+
+          items,
+
+          total: finalTotal,
+
+          paid: paidNum,
+
+          due,
+
+          paymentMethod: method,
+
+          saleDate: entryDate,
+        });
+
+        toast.success(
+          receiptOption === "full"
+            ? "Sale recorded and full receipt sent"
+            : "Sale recorded and current receipt sent",
+        );
+      } catch (receiptError) {
+        /*
+         * IMPORTANT:
+         * Sale has already been successfully saved.
+         *
+         * Therefore we DO NOT show "sale failed".
+         * We only tell the admin that WhatsApp receipt failed.
+         */
+
+        toast.error(
+          receiptError instanceof Error
+            ? `Sale saved, but receipt failed: ${receiptError.message}`
+            : "Sale saved, but WhatsApp receipt could not be sent",
+        );
+      }
+
+      /*
+       * ---------------------------------------------------------
+       * STEP 6: FINISH
+       * ---------------------------------------------------------
+       */
+
+      onCreated?.(txId);
+      setOpen(false);
+      reset();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not record the sale");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(next) => {
+        setOpen(next);
+
+        if (!next) {
+          reset();
+        }
+      }}
+    >
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+
+      <DialogContent className="max-h-[92vh] max-w-[calc(100vw-1rem)] overflow-y-auto sm:max-w-6xl">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <ShoppingCart className="size-5" />
+            New khata sale
+          </DialogTitle>
+
+          <DialogDescription>
+            {customer
+              ? `Recording a sale for ${customer.name}`
+              : "Select or create a customer, add products, then save."}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-6">
+          {!customer && (
+            <div className="space-y-3 rounded-lg border p-3">
+              <div className="flex gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={customerMode === "select" ? "default" : "outline"}
+                  className="rounded-full"
+                  onClick={() => {
+                    setCustomerMode("select");
+                  }}
+                >
+                  Existing customer
+                </Button>
+
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={customerMode === "new" ? "default" : "outline"}
+                  className="rounded-full"
+                  onClick={() => {
+                    setCustomerMode("new");
+                    setSelectedCustomerId(null);
+                    setCustomerQuery("");
+                  }}
+                >
+                  New customer
+                </Button>
+              </div>
+
+              {customerMode === "select" ? (
+                <div className="space-y-2">
+                  {selectedCustomer ? (
+                    <div className="flex items-center justify-between rounded-lg border border-primary/30 bg-primary/5 p-3">
+                      <div>
+                        <p className="text-xs text-muted-foreground">Selected customer</p>
+
+                        <p className="font-medium">{selectedCustomer.name}</p>
+
+                        <p className="text-xs text-muted-foreground">{selectedCustomer.mobile}</p>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        className="rounded-full"
+                        onClick={() => {
+                          setSelectedCustomerId(null);
+                          setCustomerQuery("");
+                        }}
+                      >
+                        Change
+                      </Button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="relative">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                        <Input
+                          className="pr-10 pl-9"
+                          placeholder="Search customer name, mobile, village…"
+                          value={customerQuery}
+                          onChange={(e) => setCustomerQuery(e.target.value)}
+                        />
+                        {customerQuery && (
+                          <button
+                            type="button"
+                            aria-label="Clear customer search"
+                            className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => setCustomerQuery("")}
+                          >
+                            <X className="size-4" />
+                          </button>
+                        )}
+                      </div>
+
+                      <div className="h-44 space-y-1 overflow-y-auto rounded-lg border bg-background p-1">
+                        {filteredCustomers.map((c) => (
+                          <button
+                            type="button"
+                            key={c.id}
+                            onClick={() => {
+                              setCustomerMode("select");
+                              setSelectedCustomerId(c.id);
+                              setCustomerQuery(c.name);
+                            }}
+                            className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-muted ${
+                              selectedCustomerId === c.id
+                                ? "border border-primary bg-primary/5 font-medium"
+                                : ""
+                            }`}
+                          >
+                            <span>{c.name}</span>
+
+                            <span className="text-muted-foreground">
+                              {c.village || "Village not available"}
+                            </span>
+                          </button>
+                        ))}
+
+                        {filteredCustomers.length === 0 && (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">
+                            No customers found
+                          </p>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+              ) : (
+                <div className="grid gap-2 sm:grid-cols-2">
+                  <Input
+                    placeholder="Customer name"
+                    value={newCustomer.name}
+                    onChange={(e) =>
+                      setNewCustomer((v) => ({
+                        ...v,
+                        name: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    placeholder="Mobile number"
+                    inputMode="numeric"
+                    value={newCustomer.mobile}
+                    onChange={(e) =>
+                      setNewCustomer((v) => ({
+                        ...v,
+                        mobile: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    placeholder="Village"
+                    value={newCustomer.village}
+                    onChange={(e) =>
+                      setNewCustomer((v) => ({
+                        ...v,
+                        village: e.target.value,
+                      }))
+                    }
+                  />
+
+                  <Input
+                    placeholder="Address"
+                    value={newCustomer.address}
+                    onChange={(e) =>
+                      setNewCustomer((v) => ({
+                        ...v,
+                        address: e.target.value,
+                      }))
+                    }
+                  />
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Products */}
+          <div className="space-y-3">
+            <Label>Add products from inventory</Label>
+
+            <div className="relative">
+              <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                ref={productSearchRef}
+                autoFocus
+                className="pr-10 pl-9"
+                placeholder="Search product, variant, category or supplier…"
+                aria-label="Search Khata sale inventory"
+                value={productQuery}
+                onChange={(e) => setProductQuery(e.target.value)}
+              />
+              {productQuery && (
+                <button
+                  type="button"
+                  aria-label="Clear product search"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 rounded-full p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                  onClick={() => setProductQuery("")}
+                >
+                  <X className="size-4" />
+                </button>
+              )}
+            </div>
+
+            <div className="space-y-2 rounded-lg border p-3">
+              {inventoryLoading && inventoryOptions.length === 0 ? (
+                <div className="flex min-h-24 items-center justify-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="size-4 animate-spin" />
+                  Loading inventory…
+                </div>
+              ) : catalogOptions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">
+                  {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
+                </p>
+              ) : (
+                <div className="h-72 space-y-2 overflow-y-auto pr-1">
+                  {catalogOptions.map((option) => (
+                    <div
+                      key={option.key}
+                      className="group flex items-center gap-3 rounded-xl border bg-background p-3 transition-all hover:border-primary/40 hover:bg-primary/5"
+                    >
+                      <div className="flex size-10 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-lg">
+                        {option.emoji}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <p className="truncate text-sm font-semibold">{option.title}</p>
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                            {option.unit}
+                          </span>
+                        </div>
+                        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                          <span className="font-medium">Stock: {option.stock}</span>
+                          <span aria-hidden="true">•</span>
+                          <span>Sell price: {formatCurrency(option.rate)}</span>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="shrink-0 rounded-full"
+                        onClick={() => addProductToCart(option)}
+                      >
+                        <Plus className="size-3.5" />
+                        Add
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {inventoryLoading && inventoryOptions.length > 0 ? (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                  <Loader2 className="size-3 animate-spin" />
+                  Updating inventory…
+                </div>
+              ) : null}
+
+              {inventoryHasMore && !inventoryLoading ? (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="w-full rounded-full"
+                  onClick={() => void loadMoreInventory()}
+                >
+                  Load more inventory
+                </Button>
+              ) : null}
+            </div>
+          </div>
+
+          {/* Cart Table */}
+          {items.length > 0 && (
+            <div className="overflow-x-auto rounded-lg border">
+              <Table className="min-w-[980px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead className="min-w-[210px]">Item</TableHead>
+                    <TableHead className="w-[100px]">Qty</TableHead>
+                    <TableHead className="w-[92px]">Unit</TableHead>
+                              <TableHead className="w-[140px]">Rate / unit</TableHead>
+                    <TableHead className="w-[145px] text-right">Total</TableHead>
+                    <TableHead className="w-10" />
+                  </TableRow>
+                </TableHeader>
+
+                <TableBody>
+                  {items.map((item) => {
+                    const isLoose = Boolean(item.allowLooseSale);
+                    const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+                    const unitOptions = isLoose
+                      ? getCompatibleUnitOptions(inventoryUnit)
+                      : [inventoryUnit];
+
+                    return (
+                      <TableRow key={item.key}>
+                        <TableCell className="min-w-[210px] align-top">
+                          <div className="font-semibold">{item.product}</div>
+                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                            <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
+                              Variant: {item.unit}
+                            </span>
+                            {isLoose ? (
+                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-600 dark:text-amber-400">
+                                Loose sale
+                              </span>
+                            ) : null}
+                          </div>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            Stock: {item.maxStock !== undefined
+                              ? `${item.maxStock} ${inventoryUnit}`
+                              : "—"}
+                          </p>
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="h-9 w-24"
+                            value={item.quantityInput ?? String(item.quantity)}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) => {
+                              const raw = e.target.value;
+                              const nextQuantity = Number(raw);
+
+                              if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
+                                updateItem(item.key, { quantityInput: raw });
+                                return;
+                              }
+
+                              const requestedInventoryQuantity = getInventoryQuantity(
+                                item,
+                                nextQuantity,
+                              );
+                              if (
+                                item.maxStock !== undefined &&
+                                requestedInventoryQuantity > item.maxStock
+                              ) {
+                                toast.error(
+                                  `Only ${item.maxStock} ${inventoryUnit} available`,
+                                );
+                                return;
+                              }
+
+                              const nextCalculatedAmount = roundMoney(
+                                requestedInventoryQuantity * (Number(item.rate) || 0),
+                              );
+
+                              updateItem(item.key, {
+                                quantity: nextQuantity,
+                                quantityInput: raw,
+                                calculatedAmount: nextCalculatedAmount,
+                                finalAmount: item.finalAmountOverridden
+                                  ? item.finalAmount
+                                  : nextCalculatedAmount,
+                              });
+                            }}
+                          />
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          {isLoose ? (
+                            <Select
+                              value={normalizeUnit(item.unit)}
+                              onValueChange={(nextUnit) => {
+                                const convertedQuantity = convertQuantity(
+                                  item.quantity,
+                                  item.unit,
+                                  nextUnit,
+                                );
+                                if (convertedQuantity == null) return;
+
+                                const nextItem = { ...item, unit: nextUnit };
+                                const nextInventoryQuantity = getInventoryQuantity(
+                                  nextItem,
+                                  convertedQuantity,
+                                );
+
+                                if (
+                                  item.maxStock !== undefined &&
+                                  nextInventoryQuantity > item.maxStock
+                                ) {
+                                  toast.error(
+                                    `Only ${item.maxStock} ${inventoryUnit} available`,
+                                  );
+                                  return;
+                                }
+
+                                const nextCalculatedAmount = roundMoney(
+                                  nextInventoryQuantity * (Number(item.rate) || 0),
+                                );
+
+                                updateItem(item.key, {
+                                  unit: nextUnit,
+                                  quantity: convertedQuantity,
+                                  quantityInput: String(
+                                    Number(convertedQuantity.toFixed(6)),
+                                  ),
+                                  calculatedAmount: nextCalculatedAmount,
+                                  finalAmount: item.finalAmountOverridden
+                                    ? item.finalAmount
+                                    : nextCalculatedAmount,
+                                });
+                              }}
+                            >
+                              <SelectTrigger className="h-9 w-[88px]">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {unitOptions.map((unit) => (
+                                  <SelectItem key={unit} value={unit}>
+                                    {unit}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            <span className="inline-flex h-9 items-center rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
+                              {item.unit}
+                            </span>
+                          )}
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <div className="space-y-1">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-9 w-[125px]"
+                              value={item.rate}
+                              onFocus={(e) => e.currentTarget.select()}
+                              onChange={(e) => {
+                                const nextRate = Number(e.target.value) || 0;
+                                const nextCalculatedAmount = roundMoney(
+                                  getInventoryQuantity(item) * nextRate,
+                                );
+                                updateItem(item.key, {
+                                  rate: nextRate,
+                                  calculatedAmount: nextCalculatedAmount,
+                                  finalAmount: item.finalAmountOverridden
+                                    ? item.finalAmount
+                                    : nextCalculatedAmount,
+                                });
+                              }}
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                              per {item.inventoryId ? inventoryUnit : item.unit}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="align-top text-right">
+                          <Input
+                            type="text"
+                            inputMode="decimal"
+                            className="h-9 w-[125px] text-right font-semibold"
+                            value={getItemAmount(item)}
+                            onFocus={(e) => e.currentTarget.select()}
+                            onChange={(e) => {
+                              if (!isLoose) return;
+                              const nextTotal = Number(e.target.value) || 0;
+                              updateItem(item.key, {
+                                finalAmount: nextTotal,
+                                finalAmountOverridden: true,
+                              });
+                            }}
+                            readOnly={!isLoose}
+                            aria-label={isLoose ? "Editable total" : "Calculated total"}
+                          />
+                          {isLoose ? (
+                            <p className="mt-1 text-[10px] text-muted-foreground">Editable</p>
+                          ) : null}
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <Button
+                            type="button"
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => removeItem(item.key)}
+                          >
+                            <Trash2 className="size-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+
+          {/* Custom Item Entry */}
+          <div className="grid gap-2 rounded-lg border p-3 sm:grid-cols-[1fr_auto_auto]">
+            <Input
+              ref={customNameRef}
+              placeholder="Custom item name"
+              value={customName}
+              onChange={(e) => setCustomName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                customRateRef.current?.focus();
+              }}
+            />
+
+            <Input
+              ref={customRateRef}
+              className="w-32"
+              type="text"
+              inputMode="decimal"
+              min="0"
+              placeholder="Price"
+              value={customRate}
+              onFocus={(e) => e.currentTarget.select()}
+              onChange={(e) => setCustomRate(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key !== "Enter") return;
+                e.preventDefault();
+                addCustomItem();
+                requestAnimationFrame(() => customNameRef.current?.focus());
+              }}
+            />
+
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              className="sm:col-span-3"
+              onClick={addCustomItem}
+            >
+              <Plus className="size-4" />
+              Add custom item
+            </Button>
+          </div>
+
+          {/* Payment */}
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Bargaining amount</Label>
+              <Input
+                type="text"
+                inputMode="decimal"
+                min="0"
+                value={bargainingAmount}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setBargainingAmount(e.target.value)}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label>Amount paid now</Label>
+
+              <Input
+                type="text"
+                inputMode="decimal"
+                min="0"
+                value={paid}
+                onFocus={(e) => e.currentTarget.select()}
+                onChange={(e) => setPaid(e.target.value)}
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <Label>Payment method</Label>
+
+              <Select value={method} onValueChange={(v) => setMethod(v as PaymentMethod)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+
+                  <SelectItem value="upi">UPI</SelectItem>
+
+                  <SelectItem value="bank">Bank transfer</SelectItem>
+
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {(method === "upi" || method === "bank" || method === "cheque") && (
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label htmlFor="khata-payment-proof">Transaction / Proof reference (optional)</Label>
+                <Input
+                  id="khata-payment-proof"
+                  value={paymentReference}
+                  onChange={(e) => setPaymentReference(e.target.value)}
+                  placeholder="UTR, transaction ID, cheque no., etc. (optional)"
+                />
+              </div>
+            )}
+            <div className="space-y-1.5">
+              <Label>Date</Label>
+
+              <Input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
+            </div>
+
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label>Remarks (optional)</Label>
+
+              <Textarea rows={2} value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+            </div>
+          </div>
+
+          {/* Receipt Options Section */}
+          <div className="space-y-2 rounded-lg border p-3">
+            <Label className="text-sm font-medium">Receipt send options</Label>
+
+            <div className="grid grid-cols-3 gap-2">
+              {[
+                { id: "current", label: "Current receipt" },
+                { id: "full", label: "Full receipt" },
+                { id: "none", label: "No receipt" },
+              ].map((opt) => {
+                const active = receiptOption === opt.id;
+                return (
+                  <button
+                    key={opt.id}
+                    type="button"
+                    onClick={() => setReceiptOption(opt.id as "current" | "full" | "none")}
+                    className={`flex items-center justify-center gap-2 rounded-lg border p-2 text-xs font-medium transition-all ${
+                      active
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "bg-background text-muted-foreground hover:bg-muted"
+                    }`}
+                  >
+                    <div
+                      className={`flex size-4 items-center justify-center rounded-full border ${
+                        active
+                          ? "border-primary bg-primary text-primary-foreground"
+                          : "border-muted-foreground"
+                      }`}
+                    >
+                      {active && <Check className="size-3" />}
+                    </div>
+                    {opt.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Summary */}
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
+            <span>
+              Subtotal: <strong>{formatCurrency(total)}</strong>
+            </span>
+
+            <span>
+              Final total: <strong>{formatCurrency(finalTotal)}</strong>
+            </span>
+
+            <span>
+              Paid: <strong className="text-success">{formatCurrency(paidNum)}</strong>
+            </span>
+
+            <span>
+              Due:{" "}
+              <strong className={due > 0 ? "text-warning" : "text-success"}>
+                {formatCurrency(due)}
+              </strong>
+            </span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <DialogFooter>
+          <Button
+            type="button"
+            variant="outline"
+            className="rounded-full"
+            onClick={() => setOpen(false)}
+          >
+            Cancel
+          </Button>
+
+          <Button
+            type="button"
+            className="rounded-full"
+            onClick={handleSubmit}
+            disabled={submitting || inventoryLoading && items.length === 0}
+          >
+            {submitting && <Loader2 className="size-4 animate-spin" />}
+            Save sale
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
