@@ -651,11 +651,41 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   };
 
   const handleSubmit = async () => {
-    if (items.length === 0) {
+    const customNameValue = customName.trim();
+    const customRateValue = Number(customRate.trim());
+    const hasCustomName = Boolean(customNameValue);
+    const hasCustomRate = customRate.trim() !== "";
+
+    if (hasCustomName !== hasCustomRate) {
+      return toast.error("Enter both the custom item name and price before saving");
+    }
+
+    const customItem =
+      hasCustomName && Number.isFinite(customRateValue) && customRateValue >= 0
+        ? ({
+            key: "custom-draft:" + customNameValue.toLowerCase(),
+            product: customNameValue,
+            unit: "unit",
+            rate: customRateValue,
+            purchaseCost: 0,
+            quantity: 1,
+            calculatedAmount: roundMoney(customRateValue),
+            finalAmount: roundMoney(customRateValue),
+            finalAmountOverridden: false,
+          } satisfies CartItem)
+        : null;
+
+    const saleItems = customItem ? [...items, customItem] : items;
+
+    if (saleItems.length === 0) {
       return toast.error("Add at least one product to the sale");
     }
 
-    for (const item of items) {
+    if (customNameValue && (!Number.isFinite(customRateValue) || customRateValue < 0)) {
+      return toast.error("Enter a valid custom item price");
+    }
+
+    for (const item of saleItems) {
       const enteredQuantity = Number(item.quantityInput ?? item.quantity);
       const enteredUnit = normalizeUnit(item.unit);
 
@@ -767,7 +797,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       const txId = await shopStore.createKhataSale({
         customerId,
 
-        items: items.map((item) => {
+        items: saleItems.map((item) => {
           const enteredQuantity = Number(item.quantityInput ?? item.quantity);
           const enteredUnit = normalizeUnit(item.unit);
           const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
@@ -853,7 +883,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           customer: receiptCustomer,
 
-          items,
+          items: saleItems,
 
           total: finalTotal,
 
