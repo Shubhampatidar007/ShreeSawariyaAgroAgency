@@ -84,7 +84,7 @@ export function SupplierTransactionTimeline({ entries }: Props) {
         paidTotal,
         due: dayEntries[dayEntries.length - 1]?.balance ?? 0,
       };
-    });
+    }).sort((a, b) => b.date.localeCompare(a.date));
   }, [entries]);
 
   const payments = useMemo(
