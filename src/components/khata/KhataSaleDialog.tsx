@@ -356,9 +356,15 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
+  const customDraftAmount = Number.isFinite(Number(customRate))
+    ? Math.max(Number(customRate), 0)
+    : 0;
+
   const total = useMemo(
-    () => items.reduce((sum, item) => sum + getItemAmount(item), 0),
-    [items],
+    () =>
+      items.reduce((sum, item) => sum + getItemAmount(item), 0) +
+      customDraftAmount,
+    [items, customDraftAmount],
   );
 
   const bargainingNum = Number(bargainingAmount) || 0;
