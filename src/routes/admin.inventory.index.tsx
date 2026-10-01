@@ -171,7 +171,6 @@ undefined
               <TableHeader>
                 <TableRow>
                   <TableHead>Product</TableHead>
-                  <TableHead>Variant</TableHead>
                   <TableHead>Per product</TableHead>
                   <TableHead className="text-right">Quantity</TableHead>
                   <TableHead>Supplier</TableHead>
@@ -193,11 +192,6 @@ undefined
                       <TableCell className="min-w-[170px]">
                         <p className="font-semibold leading-5">{item.productName}</p>
                       </TableCell>
-                      <TableCell className="min-w-[120px]">
-                        <span className="inline-flex rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
-                          {item.unit}
-                        </span>
-                      </TableCell>
                       <TableCell className="min-w-[130px]">
                         {item.quantityPerProduct === undefined ? (
                           <span className="text-muted-foreground">-</span>
@@ -217,7 +211,7 @@ undefined
                           <Link
                             to="/admin/suppliers/$supplierId"
                             params={{ supplierId: item.supplierId }}
-                            className="font-medium text-primary underline-offset-4 hover:underline"
+                            className="font-medium text-foreground underline-offset-4 hover:underline"
                           >
                             {item.supplierName}
                           </Link>
