@@ -234,6 +234,22 @@ BEGIN
     END IF;
 
     /*
+     * A true custom line uses a hidden draft product with no inventory.
+     * Keep that identity's displayed price synchronized with the price used
+     * on this transaction without touching published catalogue products.
+     */
+    IF v_inventory_id IS NULL
+       AND NULLIF(v_item->>'product_id', '') IS NULL
+       AND NULLIF(v_item->>'product_variant_id', '') IS NULL THEN
+      UPDATE public.products
+      SET selling_price = v_rate,
+          updated_at = now()
+      WHERE id = v_product_id
+        AND visibility = 'hidden'
+        AND status = 'draft';
+    END IF;
+
+    /*
      * Pull purchase cost from inventory when available.
      */
     IF v_inventory_id IS NOT NULL THEN
@@ -459,6 +475,16 @@ BEGIN
 
     IF v_variant_id IS NULL THEN
       RAISE EXCEPTION 'Product variant identity could not be resolved for %', v_product_name;
+    END IF;
+
+    IF v_inventory_id IS NULL
+       AND NULLIF(v_item->>'product_id', '') IS NULL
+       AND NULLIF(v_item->>'product_variant_id', '') IS NULL THEN
+      UPDATE public.product_variants
+      SET selling_price = v_rate,
+          updated_at = now()
+      WHERE id = v_variant_id
+        AND product_id = v_product_id;
     END IF;
 
     IF v_inventory_id IS NOT NULL THEN
