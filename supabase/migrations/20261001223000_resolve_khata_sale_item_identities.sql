@@ -283,6 +283,13 @@ BEGIN
           v_product_name, v_available, v_qty;
       END IF;
     ELSIF v_stock_managed
+          AND NULLIF(v_item->>'product_variant_id', '') IS NOT NULL
+          AND NULLIF(v_item->>'product_id', '') IS NULL THEN
+      IF v_available < v_qty THEN
+        RAISE EXCEPTION 'Insufficient stock for %: available %, requested %',
+          v_product_name, v_available, v_qty;
+      END IF;
+    ELSIF v_stock_managed
           AND NULLIF(v_item->>'product_id', '') IS NOT NULL THEN
       SELECT stock
       INTO v_available
