@@ -192,7 +192,7 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
             <Link
               to="/admin/suppliers/$supplierId"
               params={{ supplierId: item.supplierId }}
-              className="inline-flex text-xs font-medium text-primary underline-offset-4 hover:underline"
+              className="inline-flex text-xs font-medium text-foreground underline-offset-4 hover:underline"
             >
               Supplier: {item.supplierName}
             </Link>
