@@ -383,22 +383,47 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
                     )}
                     {item.selected == null && (
                       <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-lg border bg-background p-1 shadow-lg">
-                        {matches.length === 0 && item.search.trim() ? (
-                          <p className="px-3 py-2 text-sm text-muted-foreground">No existing product found.</p>
-                        ) : (
-                          matches.map((option) => (
-                            <button
-                              key={option.key}
-                              type="button"
-                              className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
-                              onClick={() => selectProduct(item, option)}
-                            >
-                              <span className="block text-sm font-medium">{option.emoji} {option.title}</span>
-                              <span className="block text-xs text-muted-foreground">
-                                {option.category} · Stock {option.stock} {option.inventoryUnit}
-                              </span>
-                            </button>
-                          ))
+                        {matches.map((option) => (
+                          <button
+                            key={option.key}
+                            type="button"
+                            className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
+                            onClick={() => selectProduct(item, option)}
+                          >
+                            <span className="block text-sm font-medium">{option.emoji} {option.title}</span>
+                            <span className="block text-xs text-muted-foreground">
+                              {option.category} · Stock {option.stock} {option.inventoryUnit}
+                            </span>
+                          </button>
+                        ))}
+                        {item.search.trim() && matches.length === 0 && (
+                          <button
+                            type="button"
+                            className="w-full rounded-md px-3 py-2 text-left hover:bg-muted"
+                            onClick={() =>
+                              selectProduct(item, {
+                                key: "new:" + item.search.trim().toLowerCase(),
+                                title: item.search.trim(),
+                                category: "New inventory item",
+                                emoji: "📦",
+                                inventoryUnit: "kg",
+                                purchasePrice: 0,
+                                sellingPrice: undefined,
+                                allowLooseSale: false,
+                                stock: 0,
+                              })
+                            }
+                          >
+                            <span className="block text-sm font-medium">
+                              Use “{item.search.trim()}” as new inventory item
+                            </span>
+                            <span className="block text-xs text-muted-foreground">
+                              This will create the inventory record when you save the return.
+                            </span>
+                          </button>
+                        )}
+                        {!item.search.trim() && matches.length === 0 && (
+                          <p className="px-3 py-2 text-sm text-muted-foreground">Type a product name to search.</p>
                         )}
                       </div>
                     )}
