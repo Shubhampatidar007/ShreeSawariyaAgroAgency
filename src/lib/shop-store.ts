@@ -569,7 +569,47 @@ export const shopStore = {
     if (error) throw error;
     return after(data as string);
   },
-  async recordKhataPayment(input: {
+  async recordKhataReturn(input: {
+    customerId: string;
+    items: Array<{
+      inventoryId?: string;
+      productId?: string;
+      productVariantId?: string;
+      product: string;
+      quantity: number;
+      unit: string;
+      loose: boolean;
+      price: number;
+    }>;
+    date?: string;
+    remarks?: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_customer_product_return" as any, {
+      _customer_id: input.customerId,
+      _items: input.items.map((item) => ({
+        inventory_id: item.inventoryId ?? null,
+        product_id: item.productId ?? null,
+        product_variant_id: item.productVariantId ?? null,
+        product: item.product,
+        quantity: item.quantity,
+        unit: item.unit,
+        loose: item.loose,
+        price: item.price,
+      })),
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _remarks: input.remarks?.trim() || null,
+    });
+
+    if (error) throw error;
+    return after(data as {
+      transaction_id: string;
+      total: number;
+      due_before: number;
+      due_reduced: number;
+      due_after: number;
+      advance_added: number;
+    });
+  },
     customerId: string;
     amount: number;
     method: CustomerLedgerEntry["method"];

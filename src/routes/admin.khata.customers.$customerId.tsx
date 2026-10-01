@@ -7,6 +7,7 @@ import {
   Printer,
   Receipt,
   ShoppingCart,
+  RotateCcw,
   UserX,
   Wallet,
 } from "lucide-react";
@@ -20,6 +21,7 @@ import { Timeline } from "@/components/shared/Timeline";
 import { TablePagination } from "@/components/shared/TablePagination";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
+import { KhataReturnDialog } from "@/components/khata/KhataReturnDialog";
 import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 import { CUSTOMER_KHATA_PAGE_SIZE, loadCustomerKhataPage } from "@/lib/admin-customer-data";
 import type { CustomerLedgerEntry } from "@/types/business";
@@ -51,6 +53,7 @@ function CustomerKhataPage() {
   const [pageCount, setPageCount] = useState(1);
   const [totalTransactions, setTotalTransactions] = useState(0);
   const [ledgerLoading, setLedgerLoading] = useState(true);
+  const [ledgerRefreshKey, setLedgerRefreshKey] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -77,7 +80,7 @@ function CustomerKhataPage() {
     return () => {
       cancelled = true;
     };
-  }, [customerId, page]);
+  }, [customerId, page, ledgerRefreshKey]);
 
   const totals = useMemo(
     () => ({
@@ -120,6 +123,15 @@ function CustomerKhataPage() {
               trigger={
                 <Button variant="outline" className="rounded-full">
                   <Wallet className="size-4" /> Record payment
+                </Button>
+              }
+            />
+            <KhataReturnDialog
+              customer={{ id: customer.id, name: customer.name, currentDue: customer.currentDue }}
+              onCreated={() => setLedgerRefreshKey((value) => value + 1)}
+              trigger={
+                <Button variant="outline" className="rounded-full">
+                  <RotateCcw className="size-4" /> Return product
                 </Button>
               }
             />

@@ -102,7 +102,7 @@ export type CustomerLedgerEntry = {
   id: string;
   customerId: string;
   date: string;
-  entryType: "purchase" | "payment" | "credit" | "adjustment";
+  entryType: "purchase" | "payment" | "credit" | "adjustment" | "return";
   product: string;
   quantity: number;
   amount: number;
