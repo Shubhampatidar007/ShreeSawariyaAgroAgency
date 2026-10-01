@@ -1191,7 +1191,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                     <TableHead className="min-w-[210px]">Item</TableHead>
                     <TableHead className="w-[100px]">Qty</TableHead>
                     <TableHead className="w-[92px]">Unit</TableHead>
-                              <TableHead className="w-[140px]">Rate / unit</TableHead>
+                              <TableHead className="w-[140px]">Purchase / unit</TableHead>
+                    <TableHead className="w-[140px]">Selling / unit</TableHead>
                     <TableHead className="w-[145px] text-right">Total</TableHead>
                     <TableHead className="w-10" />
                   </TableRow>
@@ -1341,21 +1342,30 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                               type="text"
                               inputMode="decimal"
                               className="h-9 w-[125px]"
-                              value={item.rate}
+                              value={item.purchaseCost}
                               onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const nextRate = Number(e.target.value) || 0;
-                                const nextCalculatedAmount = roundMoney(
-                                  getInventoryQuantity(item) * nextRate,
-                                );
+                                const nextPurchaseCost = Number(e.target.value) || 0;
                                 updateItem(item.key, {
-                                  rate: nextRate,
-                                  calculatedAmount: nextCalculatedAmount,
-                                  finalAmount: item.finalAmountOverridden
-                                    ? item.finalAmount
-                                    : nextCalculatedAmount,
+                                  purchaseCost: nextPurchaseCost,
                                 });
                               }}
+                            />
+                            <p className="text-[10px] text-muted-foreground">
+                              per {item.inventoryId ? inventoryUnit : item.unit}
+                            </p>
+                          </div>
+                        </TableCell>
+
+                        <TableCell className="align-top">
+                          <div className="space-y-1">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-9 w-[125px]"
+                              value={item.rate}
+                              disabled
+                              aria-label="Selling price per unit"
                             />
                             <p className="text-[10px] text-muted-foreground">
                               per {item.inventoryId ? inventoryUnit : item.unit}
