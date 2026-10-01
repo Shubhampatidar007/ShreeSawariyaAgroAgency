@@ -610,6 +610,7 @@ export const shopStore = {
       advance_added: number;
     });
   },
+  async recordKhataPayment(input: {
     customerId: string;
     amount: number;
     method: CustomerLedgerEntry["method"];
