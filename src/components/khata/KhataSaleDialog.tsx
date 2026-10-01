@@ -831,6 +831,28 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       });
 
       /*
+       * The database resolves/creates stable product + variant identities
+       * for every saved sale line. Reload the committed line items before
+       * sending the receipt so the receipt receives the authoritative amount
+       * and IDs from the saved transaction, including custom items.
+       */
+      let receiptItems = saleItems;
+      try {
+        const savedItems = await shopStore.fetchTransactionItems(txId);
+        if (savedItems.length === saleItems.length) {
+          receiptItems = saleItems.map((item, index) => ({
+            ...item,
+            productId: savedItems[index]?.productId ?? item.productId,
+            productVariantId: savedItems[index]?.productVariantId ?? item.productVariantId,
+            rate: savedItems[index]?.rate ?? item.rate,
+            finalAmount: savedItems[index]?.amount ?? item.finalAmount,
+          }));
+        }
+      } catch (error) {
+        console.error("Could not reload saved Khata sale items for receipt:", error);
+      }
+
+      /*
        * ---------------------------------------------------------
        * STEP 3: NONE
        *
@@ -883,7 +905,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
           customer: receiptCustomer,
 
-          items: saleItems,
+          items: receiptItems,
 
           total: finalTotal,
 
