@@ -146,15 +146,19 @@ const buildProductOptions = (inventory: InventoryItem[], products: PublishedProd
     return {
       key: variant?.id ?? item.id,
       inventoryId: item.id,
-      productId: variant?.productId ?? product?.id,
-      productVariantId: variant?.id ?? item.productVariantId,
+      ...(variant?.productId ?? product?.id
+        ? { productId: variant?.productId ?? product?.id }
+        : {}),
+      ...(variant?.id ?? item.productVariantId
+        ? { productVariantId: variant?.id ?? item.productVariantId }
+        : {}),
       title: product?.title ?? item.productName,
       category: product?.category ?? item.supplierName ?? "Inventory",
       emoji: product?.emoji ?? "🌾",
       inventoryUnit: normalizeUnit(item.unit),
-      quantityPerProduct,
+      ...(quantityPerProduct !== undefined ? { quantityPerProduct } : {}),
       purchasePrice: item.purchasePrice,
-      sellingPrice: looseRate,
+      ...(looseRate !== undefined ? { sellingPrice: looseRate } : {}),
       allowLooseSale: Boolean(item.allowLooseSale),
       stock: Math.max(item.quantity, 0),
     };
