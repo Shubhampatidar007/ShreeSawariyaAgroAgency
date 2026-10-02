@@ -47,6 +47,7 @@ type CartItem = {
   product: string;
   unit: string;
   inventoryUnit?: string;
+  quantityPerProduct?: number;
   rate: number;
   purchaseCost: number;
   quantity: number;
@@ -604,6 +605,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       product: option.title,
       unit: inventoryUnit,
       inventoryUnit,
+      quantityPerProduct: option.quantityPerProduct,
       rate,
       purchaseCost: option.purchasePrice,
       quantity: 1,
@@ -1319,9 +1321,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                             <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
                               Variant: {formatVariantSize(
-                                item.inventoryId
-                                  ? inventoryOptions.find((option) => option.inventoryId === item.inventoryId)?.quantityPerProduct
-                                  : undefined,
+                                item.quantityPerProduct,
                                 item.inventoryUnit ?? item.unit,
                               )}
                             </span>
