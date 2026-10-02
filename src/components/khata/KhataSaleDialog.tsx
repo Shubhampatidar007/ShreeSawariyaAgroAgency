@@ -566,7 +566,9 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       purchaseCost: option.purchasePrice,
       quantity: 1,
       quantityInput: "1",
-      maxStock: option.stock,
+      // For loose sales, maxStock is the total quantity available in the
+            // inventory unit (e.g. 15 packs × 250 g = 3750 g), not the pack count.
+      maxStock: option.availableQuantity,
       allowLooseSale: option.allowLooseSale,
       calculatedAmount: roundMoney(rate),
       finalAmount: roundMoney(rate),
@@ -1199,7 +1201,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                          <span className="font-medium">Stock: {option.stock}</span>
+                          <span className="font-medium">
+                            Stock: {option.allowLooseSale && option.quantityPerProduct
+                              ? `${option.stock} products • ${option.availableQuantity} ${option.unit} available`
+                              : `${option.stock} ${option.unit}`}
+                          </span>
                           <span aria-hidden="true">•</span>
                           <span>Sell price: {formatCurrency(option.rate)}</span>
                         </div>
@@ -1280,7 +1286,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           </div>
                           <p className="mt-1 text-xs text-muted-foreground">
                             Stock: {item.maxStock !== undefined
-                              ? `${item.maxStock} ${inventoryUnit}`
+                              ? `${item.maxStock} ${inventoryUnit} available`
                               : "—"}
                           </p>
                         </TableCell>
