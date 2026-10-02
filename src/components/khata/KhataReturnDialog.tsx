@@ -85,14 +85,23 @@ const normalizeUnit = (value: string) => {
   return unit || "unit";
 };
 
-const unitOptions = (inventoryUnit: string, loose: boolean) => {
+const unitOptions = (inventoryUnit: string) => {
   const normalized = normalizeUnit(inventoryUnit);
-  if (!loose) return [normalized];
   const definition = UNIT_DEFS[normalized];
-  if (!definition) return [normalized];
+  if (!definition || (definition.group !== "weight" && definition.group !== "volume")) {
+    return [normalized];
+  }
+
+  // Returns can be received in a smaller compatible unit even when the
+  // original inventory item is stored in the base unit (kg/L).
+  // Keep the inventory unit first so the stock remains canonical.
   return [normalized, ...Object.entries(UNIT_DEFS)
-    .filter(([unit, value]) => unit !== normalized && value.group === definition.group)
-    .sort((a, b) => a[1].factor - b[1].factor)
+    .filter(([unit, value]) =>
+      unit !== normalized &&
+      value.group === definition.group &&
+      value.factor < definition.factor
+    )
+    .sort((a, b) => b[1].factor - a[1].factor)
     .map(([unit]) => unit)];
 };
 
@@ -101,6 +110,13 @@ const convertToInventoryUnit = (quantity: number, fromUnit: string, inventoryUni
   const to = UNIT_DEFS[normalizeUnit(inventoryUnit)];
   if (!from || !to || from.group !== to.group) return null;
   return quantity * from.factor / to.factor;
+};
+
+const convertRateBetweenUnits = (rate: number, fromUnit: string, toUnit: string) => {
+  const from = UNIT_DEFS[normalizeUnit(fromUnit)];
+  const to = UNIT_DEFS[normalizeUnit(toUnit)];
+  if (!from || !to || from.group !== to.group) return null;
+  return rate * to.factor / from.factor;
 };
 
 const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
@@ -237,6 +253,27 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
     });
   };
 
+  const changeUnit = (item: ReturnItem, nextUnit: string) => {
+    const normalizedNext = normalizeUnit(nextUnit);
+    const currentUnit = normalizeUnit(item.unit);
+    const currentPrice = Number(item.price);
+    const convertedPrice =
+      Number.isFinite(currentPrice) && currentPrice > 0
+        ? convertRateBetweenUnits(currentPrice, currentUnit, normalizedNext)
+        : null;
+
+    updateItem(item.key, {
+      unit: normalizedNext,
+      // Choosing g/ml means this return is a partial/loose quantity even if
+      // the original inventory item did not have loose sales enabled.
+      loose: item.loose || normalizedNext !== item.selected?.inventoryUnit,
+      price:
+        convertedPrice != null && convertedPrice > 0
+          ? String(roundMoney(convertedPrice))
+          : item.price,
+    });
+  };
+
   const addItem = () => setItems((current) => [...current, emptyItem()]);
 
   const handleSubmit = async () => {
@@ -326,7 +363,7 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
           {items.map((item, index) => {
             const matches = matchingOptions(item);
             const availableUnits = item.selected
-              ? unitOptions(item.selected.inventoryUnit, item.loose)
+              ? unitOptions(item.selected.inventoryUnit)
               : ["kg", "l", "g"];
 
             return (
@@ -449,9 +486,14 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
 
                   <div className="space-y-1.5">
                     <Label>Unit</Label>
+                    {item.selected && (item.selected.inventoryUnit === "kg" || item.selected.inventoryUnit === "l") && (
+                      <p className="text-[11px] text-muted-foreground">
+                        Smaller return units are converted back to {item.selected.inventoryUnit} for stock.
+                      </p>
+                    )}
                     <Select
                       value={normalizeUnit(item.unit)}
-                      onValueChange={(value) => updateItem(item.key, { unit: value })}
+                      onValueChange={(value) => changeUnit(item, value)}
                     >
                       <SelectTrigger><SelectValue placeholder="Select unit" /></SelectTrigger>
                       <SelectContent>
