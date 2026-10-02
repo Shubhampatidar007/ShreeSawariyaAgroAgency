@@ -269,8 +269,17 @@ BEGIN
       IF NOT FOUND THEN
         RAISE EXCEPTION 'Inventory item not found for %', v_product_name;
       END IF;
+
+      v_quantity_per_product := COALESCE(NULLIF(v_quantity_per_product, 0), 1);
+      v_stock_quantity := CASE
+        WHEN v_stock_managed AND v_quantity_per_product > 0
+          THEN v_qty / v_quantity_per_product
+        ELSE v_qty
+      END;
     ELSE
       v_purchase_cost := 0;
+      v_quantity_per_product := 1;
+      v_stock_quantity := v_qty;
     END IF;
 
     /*
