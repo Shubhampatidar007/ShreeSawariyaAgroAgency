@@ -47,6 +47,7 @@ type CartItem = {
   product: string;
   unit: string;
   inventoryUnit?: string;
+  quantityPerProduct?: number;
   rate: number;
   purchaseCost: number;
   quantity: number;
@@ -122,6 +123,48 @@ const convertQuantity = (quantity: number, fromUnit: string, toUnit: string) => 
 
 const roundMoney = (value: number) =>
   Math.round((value + Number.EPSILON) * 100) / 100;
+
+const formatQuantity = (value: number) => {
+  if (!Number.isFinite(value)) return "";
+  return String(Number(value.toFixed(6)));
+};
+
+/**
+ * Shows the actual package/variant size instead of only the inventory unit.
+ * Examples: 0.25 kg -> 250 g, 1 kg -> 1 kg, 0.5 l -> 500 ml.
+ */
+const formatVariantSize = (quantity: number | undefined, unit: string) => {
+  if (!Number.isFinite(quantity) || Number(quantity) <= 0) {
+    return normalizeUnit(unit);
+  }
+
+  const normalized = normalizeUnit(unit);
+  const definition = UNIT_FACTORS[normalized];
+  if (!definition) {
+    return formatQuantity(Number(quantity)) + " " + normalized;
+  }
+
+  const baseQuantity = Number(quantity) * definition.factor;
+
+  if (definition.group === "weight") {
+    if (baseQuantity >= 1000000) {
+      return formatQuantity(baseQuantity / 1000000) + " tonne";
+    }
+    if (baseQuantity >= 1000) {
+      return formatQuantity(baseQuantity / 1000) + " kg";
+    }
+    return formatQuantity(baseQuantity) + " g";
+  }
+
+  if (definition.group === "volume") {
+    if (baseQuantity >= 1000) {
+      return formatQuantity(baseQuantity / 1000) + " l";
+    }
+    return formatQuantity(baseQuantity) + " ml";
+  }
+
+  return formatQuantity(Number(quantity)) + " " + normalized;
+};
 
 const getInventoryQuantity = (item: CartItem, quantity = item.quantity) => {
   if (!item.inventoryId) return quantity;
@@ -562,6 +605,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       product: option.title,
       unit: inventoryUnit,
       inventoryUnit,
+      quantityPerProduct: option.quantityPerProduct,
       rate,
       purchaseCost: option.purchasePrice,
       quantity: 1,
@@ -1197,7 +1241,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                         <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
                           <p className="truncate text-sm font-semibold">{option.title}</p>
                           <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-semibold text-primary">
-                            {option.unit}
+                            Variant: {formatVariantSize(option.quantityPerProduct, option.unit)}
                           </span>
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
@@ -1276,7 +1320,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                           <div className="font-semibold">{item.product}</div>
                           <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
                             <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
-                              Variant: {item.unit}
+                              Variant: {formatVariantSize(
+                                item.quantityPerProduct,
+                                item.inventoryUnit ?? item.unit,
+                              )}
                             </span>
                             {isLoose ? (
                               <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-600 dark:text-amber-400">
@@ -1446,10 +1493,17 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                             onFocus={(e) => e.currentTarget.select()}
                             onChange={(e) => {
                               if (!isLoose) return;
+
                               const nextTotal = Number(e.target.value) || 0;
+                              const inventoryQuantity = getInventoryQuantity(item);
+
                               updateItem(item.key, {
                                 finalAmount: nextTotal,
                                 finalAmountOverridden: true,
+                                rate:
+                                  inventoryQuantity > 0
+                                    ? roundMoney(nextTotal / inventoryQuantity)
+                                    : item.rate,
                               });
                             }}
                             readOnly={!isLoose}
