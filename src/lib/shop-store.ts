@@ -982,5 +982,24 @@ export const shopStore = {
 };
 
 export const formatCurrency = (value: number) => `₹${Math.round(value).toLocaleString("en-IN")}`;
-export const formatDate = (value: string) =>
-  new Date(value).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+export const formatDate = (value: string) => {
+  if (!value) return "";
+  // PostgreSQL DATE values are calendar dates, not UTC timestamps.
+  // Parsing YYYY-MM-DD with new Date() treats them as UTC midnight and
+  // shifts them to the previous day in India and other positive-offset zones.
+  const dateOnly = /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+    ? new Date(
+        Number(value.slice(0, 4)),
+        Number(value.slice(5, 7)) - 1,
+        Number(value.slice(8, 10)),
+      )
+    : new Date(value);
+
+  return Number.isNaN(dateOnly.getTime())
+    ? value
+    : dateOnly.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+};
