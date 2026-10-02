@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
-import type { InventoryItem, ProductVariant, PublishedProduct } from "@/types/business";
+import type { InventoryItem, PublishedProduct } from "@/types/business";
 
 type Props = {
   customer: { id: string; name: string; currentDue: number };
@@ -257,9 +257,9 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
       }
 
       return {
-        inventoryId: item.selected.inventoryId,
-        productId: item.selected.productId,
-        productVariantId: item.selected.productVariantId,
+        ...(item.selected.inventoryId ? { inventoryId: item.selected.inventoryId } : {}),
+        ...(item.selected.productId ? { productId: item.selected.productId } : {}),
+        ...(item.selected.productVariantId ? { productVariantId: item.selected.productVariantId } : {}),
         product: item.selected.title,
         quantity,
         unit,
@@ -408,7 +408,6 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
                                 emoji: "📦",
                                 inventoryUnit: "kg",
                                 purchasePrice: 0,
-                                sellingPrice: undefined,
                                 allowLooseSale: false,
                                 stock: 0,
                               })
