@@ -47,6 +47,8 @@ export type KhataInventoryOption = {
   rate: number;
   purchasePrice: number;
   stock: number;
+  /** Total sellable quantity in the inventory unit for loose-sale stock. */
+  availableQuantity: number;
   quantityPerProduct?: number;
   allowLooseSale: boolean;
 };
@@ -186,6 +188,11 @@ export async function loadKhataInventoryPage(
                 : num(inventory.purchase_price);
 
     const quantityPerProduct = num(inventory.quantity_per_product);
+    const allowLooseSale = Boolean(inventory.allow_loose_sale);
+    const availableQuantity =
+      allowLooseSale && Number.isFinite(quantityPerProduct) && quantityPerProduct > 0
+        ? stock * quantityPerProduct
+        : stock;
     const rate =
       Boolean(inventory.allow_loose_sale) &&
       Number.isFinite(quantityPerProduct) &&
@@ -207,6 +214,7 @@ export async function loadKhataInventoryPage(
       rate: Number.isFinite(rate) && rate >= 0 ? rate : num(inventory.purchase_price),
       purchasePrice: num(inventory.purchase_price),
       stock,
+      availableQuantity,
       quantityPerProduct:
         Number.isFinite(quantityPerProduct) && quantityPerProduct > 0
           ? quantityPerProduct
