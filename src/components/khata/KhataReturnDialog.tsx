@@ -90,10 +90,10 @@ const unitOptions = (inventoryUnit: string, loose: boolean) => {
   if (!loose) return [normalized];
   const definition = UNIT_DEFS[normalized];
   if (!definition) return [normalized];
-  return Object.entries(UNIT_DEFS)
-    .filter(([, value]) => value.group === definition.group)
-    .sort((a, b) => b[1].factor - a[1].factor)
-    .map(([unit]) => unit);
+  return [normalized, ...Object.entries(UNIT_DEFS)
+    .filter(([unit, value]) => unit !== normalized && value.group === definition.group)
+    .sort((a, b) => a[1].factor - b[1].factor)
+    .map(([unit]) => unit)];
 };
 
 const convertToInventoryUnit = (quantity: number, fromUnit: string, inventoryUnit: string) => {
@@ -483,10 +483,10 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
                         checked={item.loose}
                         onChange={(event) => {
                           const loose = event.target.checked;
-                          const nextUnits = unitOptions(item.selected?.inventoryUnit ?? item.unit, loose);
+                          const inventoryUnit = item.selected?.inventoryUnit ?? item.unit;
                           updateItem(item.key, {
                             loose,
-                            unit: nextUnits[0] ?? item.unit,
+                            unit: loose ? normalizeUnit(inventoryUnit) : normalizeUnit(inventoryUnit),
                           });
                         }}
                       />
