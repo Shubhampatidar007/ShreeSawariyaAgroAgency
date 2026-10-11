@@ -1,8 +1,134 @@
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
+
+// PWA configuration
+// - registerType: 'prompt' — never silently reload the user's tab; show a toast instead.
+// - manifest describes installable metadata; icons live in /public/icons.
+// - workbox runtime-caching strategies:
+//   * Supabase REST/Auth endpoints → NetworkFirst (online-first, fall back to cache when offline)
+//   * Supabase Storage images → CacheFirst (immutable CDN assets)
+//   * Google Fonts → StaleWhileRevalidate
+// - devOptions.enabled: SW is registered during `npm run dev` so we can iterate
+//   on PWA behaviour without a full production build.
+//
+// NOTE: TanStack Start generates the HTML shell at runtime (no static index.html),
+// so the manifest link + theme-color meta are injected manually in src/routes/__root.tsx
+// via the route's `head()` function rather than relying on VitePWA's auto-inject.
+const pwaConfig = {
+  registerType: "prompt" as const,
+  includeAssets: ["favicon.jpg", "icons/favicon-16x16.png", "icons/favicon-32x32.png"],
+  manifest: {
+    name: "Shree Sawariya Agro Agency",
+    short_name: "Shree Sawariya",
+    description:
+      "Agriculture shop management and e-commerce platform for Shree Sawariya Agro Agency — admin panel, storefront, inventory, khata ledger, and reminders.",
+    categories: ["business", "shopping", "productivity"],
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#ffffff",
+    theme_color: "#16a34a", // matches --primary (oklch 0.56 0.19 148) light theme
+    lang: "en",
+    dir: "ltr",
+    icons: [
+      {
+        src: "/icons/pwa-192x192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/pwa-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any",
+      },
+      {
+        src: "/icons/pwa-maskable-512x512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "maskable",
+      },
+    ],
+    shortcuts: [
+      {
+        name: "Storefront",
+        short_name: "Shop",
+        description: "Browse the storefront",
+        url: "/",
+      },
+      {
+        name: "Admin Dashboard",
+        short_name: "Admin",
+        description: "Open the admin panel",
+        url: "/admin",
+      },
+    ],
+  },
+  workbox: {
+    globPatterns: ["**/*.{js,css,html,svg,png,ico,jpg,jpeg,woff2,woff}"],
+    navigateFallback: "/index.html",
+    navigateFallbackDenylist: [
+      /^\/api\//,
+      /^\/auth\//,
+      /^\/realtime\//,
+    ],
+    runtimeCaching: [
+      {
+        // Supabase REST + Auth — online-first, fall back to cache when network fails.
+        // 5s network timeout so a slow connection doesn't block the UI forever.
+        urlPattern: /^https:\/\/[^/]+\.supabase\.co\/(?:rest|auth|functions)\//i,
+        handler: "NetworkFirst" as const,
+        options: {
+          cacheName: "supabase-api",
+          networkTimeoutSeconds: 5,
+          expiration: { maxEntries: 100, maxAgeSeconds: 60 * 60 * 24 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      {
+        // Supabase Storage images — immutable CDN assets, cache-first.
+        urlPattern: /^https:\/\/[^/]+\.supabase\.co\/storage\//i,
+        handler: "CacheFirst" as const,
+        options: {
+          cacheName: "supabase-storage",
+          expiration: { maxEntries: 200, maxAgeSeconds: 60 * 60 * 24 * 7 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      {
+        // Google Fonts stylesheets — stale-while-revalidate for instant paint.
+        urlPattern: /^https:\/\/fonts\.googleapis\.com\//i,
+        handler: "StaleWhileRevalidate" as const,
+        options: {
+          cacheName: "google-fonts-stylesheets",
+          expiration: { maxEntries: 20, maxAgeSeconds: 60 * 60 * 24 * 30 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+      {
+        // Google Fonts woff2 files — immutable, cache-first.
+        urlPattern: /^https:\/\/fonts\.gstatic\.com\//i,
+        handler: "CacheFirst" as const,
+        options: {
+          cacheName: "google-fonts-webfonts",
+          expiration: { maxEntries: 30, maxAgeSeconds: 60 * 60 * 24 * 365 },
+          cacheableResponse: { statuses: [0, 200] },
+        },
+      },
+    ],
+  },
+  devOptions: {
+    enabled: true,
+    type: "module" as const,
+  },
+};
 
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts for SSR error handling.
     server: { entry: "server" },
   },
+  plugins: [VitePWA(pwaConfig)],
 });
