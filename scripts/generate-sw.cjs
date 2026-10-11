@@ -24,12 +24,18 @@ const REPO_ROOT = path.resolve(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, '.output/public');
 
 async function main() {
-  // Try a few known output dirs — Vercel's TanStack Start preset uses
-  // `.output/public/` (Nitro default), but if Vercel ever uses plain Vite
-  // preset, the dir would be `dist/`. Fall back gracefully.
+  // Try every known output dir across environments:
+  //   - `.output/public/`  → local dev with Nitro (TanStack Start default)
+  //   - `.vercel/output/static/` → Vercel deploy folder for TanStack Start preset
+  //   - `dist/` → plain Vite preset (fallback)
+  // On Vercel, the deploy folder is `.vercel/output/static/`, NOT `.output/public/`
+  // — Nitro on Vercel writes directly to the Vercel output API v3 path.
+  // Without checking this path, the SW never lands on the deployed site,
+  // which causes "App cannot be installed" because there's no registered SW.
   const candidateDirs = [
-    OUT_DIR, // .output/public (Nitro / TanStack Start default)
-    path.join(REPO_ROOT, 'dist'), // Vite default (fallback)
+    path.join(REPO_ROOT, '.vercel/output/static'), // Vercel deploy folder (production deploys)
+    OUT_DIR, // .output/public (local Nitro dev)
+    path.join(REPO_ROOT, 'dist'), // plain Vite fallback
   ];
   const foundDir = candidateDirs.find((d) => fs.existsSync(d));
   if (!foundDir) {
