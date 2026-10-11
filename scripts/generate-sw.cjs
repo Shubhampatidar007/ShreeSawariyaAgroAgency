@@ -18,24 +18,45 @@ const { generateSW } = require('workbox-build');
 const path = require('path');
 const fs = require('fs');
 
-const REPO_ROOT = '/home/z/my-project/repos/ShreeSawariyaAgroAgency';
+// Resolve repo root from this script's location so the path works on any
+// environment (local dev, CI, Vercel build container, etc.) — never hardcode.
+const REPO_ROOT = path.resolve(__dirname, '..');
 const OUT_DIR = path.join(REPO_ROOT, '.output/public');
 
 async function main() {
-  if (!fs.existsSync(OUT_DIR)) {
-    console.error(`ERROR: ${OUT_DIR} does not exist. Run "npm run build" first.`);
-    process.exit(1);
+  // Try a few known output dirs — Vercel's TanStack Start preset uses
+  // `.output/public/` (Nitro default), but if Vercel ever uses plain Vite
+  // preset, the dir would be `dist/`. Fall back gracefully.
+  const candidateDirs = [
+    OUT_DIR, // .output/public (Nitro / TanStack Start default)
+    path.join(REPO_ROOT, 'dist'), // Vite default (fallback)
+  ];
+  const foundDir = candidateDirs.find((d) => fs.existsSync(d));
+  if (!foundDir) {
+    console.warn(
+      'PWA: No build output directory found (.output/public/ or dist/). ' +
+        'Skipping SW generation — the app will still deploy, but without ' +
+        'offline caching. If this is unexpected, check that vite build ran ' +
+        'before this script.',
+    );
+    // Exit 0 so we don't fail the deploy — better to deploy without SW
+    // than to block the entire release.
+    process.exit(0);
+  }
+  const OUT = foundDir;
+  if (OUT !== OUT_DIR) {
+    console.log(`PWA: Using alternate output dir: ${OUT}`);
   }
 
   const fileCount = fs
-    .readdirSync(OUT_DIR, { withFileTypes: true })
-    .flatMap((e) => (e.isDirectory() ? fs.readdirSync(path.join(OUT_DIR, e.name)) : [e.name]))
+    .readdirSync(OUT, { withFileTypes: true })
+    .flatMap((e) => (e.isDirectory() ? fs.readdirSync(path.join(OUT, e.name)) : [e.name]))
     .length;
-  console.log(`Scanning ${OUT_DIR} (${fileCount}+ entries)...`);
+  console.log(`Scanning ${OUT} (${fileCount}+ entries)...`);
 
   const result = await generateSW({
-    swDest: path.join(OUT_DIR, 'sw.js'),
-    globDirectory: OUT_DIR,
+    swDest: path.join(OUT, 'sw.js'),
+    globDirectory: OUT,
     globPatterns: ['**/*.{js,css,html,svg,png,ico,jpg,jpeg,woff2,woff}'],
     globIgnores: ['**/sw.js', '**/workbox-*.js'],
     // Skip cache-busting for already-hashed Vite assets — Vite adds content
@@ -90,14 +111,14 @@ async function main() {
   });
 
   console.log(`\nSW generated:`);
-  console.log(`  sw.js:                ${path.join(OUT_DIR, 'sw.js')}`);
+  console.log(`  sw.js:                ${path.join(OUT, 'sw.js')}`);
   console.log(`  precached entries:    ${result.count}`);
   console.log(`  precached size:       ${(result.size / 1024).toFixed(1)} KB`);
   console.log(`  warnings:             ${result.warnings?.length ?? 0}`);
 
   // Also write a small marker file so we can verify postbuild ran
   fs.writeFileSync(
-    path.join(OUT_DIR, '_pwa-build-info.json'),
+    path.join(OUT, '_pwa-build-info.json'),
     JSON.stringify(
       {
         generatedAt: new Date().toISOString(),
