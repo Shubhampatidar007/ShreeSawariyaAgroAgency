@@ -18,6 +18,7 @@ import { initAuth, useAuth, useAuthReady } from "@/lib/auth-store";
 import { initCart } from "@/lib/cart-store";
 import { initPublicShopData } from "@/lib/public-shop-store";
 import { SmoothScroll } from "@/components/SmoothScroll";
+import { registerPWA } from "@/lib/pwa";
 
 function NotFoundComponent() {
   return (
@@ -86,6 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "A storefront and shop management platform for managing Shree Sanwariya Agro Agency.",
       },
+      // PWA / mobile meta
+      { name: "theme-color", content: "#16a34a" },
+      { name: "apple-mobile-web-app-capable", content: "yes" },
+      { name: "apple-mobile-web-app-status-bar-style", content: "default" },
+      { name: "apple-mobile-web-app-title", content: "Shree Sawariya" },
+      { name: "mobile-web-app-capable", content: "yes" },
       { property: "og:title", content: "Shree Sanwariya Agro Agency" },
       {
         property: "og:description",
@@ -98,6 +105,8 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     links: [
       { rel: "stylesheet", href: appCss },
       { rel: "icon", href: "/favicon.jpg", type: "image/jpeg" },
+      { rel: "apple-touch-icon", href: "/icons/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.webmanifest" },
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
@@ -138,6 +147,9 @@ function RootComponent() {
     initAuth();
     initCart();
     initPublicShopData();
+    // Register service worker — no-op on server (guard inside registerPWA)
+    // and on browsers without SW support.
+    registerPWA();
   }, []);
 
   useEffect(() => {
