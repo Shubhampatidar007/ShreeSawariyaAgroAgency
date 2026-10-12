@@ -1,20 +1,39 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   AlertTriangle,
   Bell,
   BookOpen,
   CheckCircle2,
   Eye,
+  MoreVertical,
   Pencil,
+  Trash2,
   Upload,
   XCircle,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { StatusBadge } from "@/components/shared/StatusBadge";
-import { formatCurrency, formatDate, loadShopData } from "@/lib/shop-store";
+import { formatCurrency, formatDate, loadShopData, shopStore } from "@/lib/shop-store";
 import { supabase } from "@/integrations/supabase/client";
 import type { Customer, InventoryItem, PublishedProduct, Supplier } from "@/types/business";
 
@@ -36,13 +55,27 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
 }
 
 export function CustomerCard({ customer }: { customer: Customer }) {
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const handleDelete = async () => {
+    try {
+      await shopStore.deleteCustomer(customer.id);
+      toast.success(`${customer.name} deleted`);
+    } catch (err) {
+      toast.error(
+        err instanceof Error ? err.message : "Could not delete the customer",
+      );
+    }
+  };
+
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
-      <CardContent className="space-y-2 p-3 sm:space-y-3 sm:p-4">
-        <div className="flex items-start justify-between gap-2 sm:gap-3">
-          <div className="flex items-center gap-2 sm:gap-3">
-            <Avatar className="size-8 sm:size-10">
-              <AvatarFallback className="bg-primary/10 text-[10px] text-primary sm:text-xs">
+      <CardContent className="space-y-3 p-4">
+        {/* Header row: avatar + name + mobile + status badge + ⋮ menu */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <Avatar className="size-11 shrink-0">
+              <AvatarFallback className="bg-primary/10 text-xs font-semibold text-primary">
                 {initials(customer.name)}
               </AvatarFallback>
             </Avatar>
@@ -50,43 +83,112 @@ export function CustomerCard({ customer }: { customer: Customer }) {
               <Link
                 to="/admin/customers/$customerId"
                 params={{ customerId: customer.id }}
-                className="font-display text-xs font-semibold hover:text-primary sm:text-sm"
+                className="font-display text-sm font-bold leading-tight hover:text-primary"
               >
                 {customer.name}
               </Link>
-              <p className="text-[10px] text-muted-foreground sm:text-xs">{customer.mobile}</p>
+              <p className="mt-0.5 text-xs font-medium text-muted-foreground">{customer.mobile}</p>
             </div>
           </div>
-          <StatusBadge status={customer.status} />
+          <div className="flex shrink-0 items-center gap-1.5">
+            <StatusBadge status={customer.status} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button
+                  type="button"
+                  className="flex size-8 items-center justify-center rounded-full text-muted-foreground hover:bg-muted"
+                  aria-label="Customer actions"
+                >
+                  <MoreVertical className="size-4" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem asChild>
+                  <Link to="/admin/customers/$customerId/edit" params={{ customerId: customer.id }}>
+                    <Pencil className="size-3.5" />
+                    Edit details
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onSelect={(e) => {
+                    e.preventDefault();
+                    setDeleteOpen(true);
+                  }}
+                  className="text-destructive focus:text-destructive"
+                >
+                  <Trash2 className="size-3.5" />
+                  Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
-        <div className="space-y-1.5 rounded-lg bg-muted/50 p-2 sm:p-3">
-          <Row label="Village" value={customer.village} />
-          <Row label="Total purchases" value={formatCurrency(customer.totalPurchases)} />
-          <Row
-            label="Current due"
-            value={
-              <span className={customer.currentDue > 0 ? "text-destructive" : "text-success"}>
-                {formatCurrency(customer.currentDue)}
-              </span>
-            }
-          />
-          <Row label="Last purchase" value={formatDate(customer.lastPurchase)} />
+
+        {/* 2x2 stats grid: Village | Current due | Total purchases | Last purchase */}
+        <div className="grid grid-cols-2 gap-x-4 gap-y-2 rounded-xl bg-muted/40 p-3 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Village</span>
+            <span className="truncate text-xs font-semibold">{customer.village || "—"}</span>
+          </div>
+          <div className="flex items-center justify-between border-l border-border/50 pl-3">
+            <span className="text-xs text-muted-foreground">Current due</span>
+            <span
+              className={`text-xs font-bold ${customer.currentDue > 0 ? "text-destructive" : "text-success"}`}
+            >
+              {formatCurrency(customer.currentDue)}
+            </span>
+          </div>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-xs text-muted-foreground">Total purchases</span>
+            <span className="text-xs font-bold">{formatCurrency(customer.totalPurchases)}</span>
+          </div>
+          <div className="flex items-center justify-between border-l border-border/50 pl-3">
+            <span className="text-xs text-muted-foreground">Last purchase</span>
+            <span className="text-xs font-medium">{formatDate(customer.lastPurchase)}</span>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1 rounded-full text-xs" asChild>
+
+        {/* Action buttons: View (muted) + Khata (green, bold) */}
+        <div className="flex gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            className="flex-1 rounded-xl text-sm font-semibold"
+            asChild
+          >
             <Link to="/admin/customers/$customerId" params={{ customerId: customer.id }}>
-              <Eye className="size-3 sm:size-3.5" />
+              <Eye className="size-4" />
               View
             </Link>
           </Button>
-          <Button size="sm" className="flex-1 rounded-full text-xs" asChild>
+          <Button
+            size="sm"
+            className="flex-[2] rounded-xl text-sm font-bold shadow-sm"
+            asChild
+          >
             <Link to="/admin/khata/customers/$customerId" params={{ customerId: customer.id }}>
-              <BookOpen className="size-3 sm:size-3.5" />
+              <BookOpen className="size-4" />
               Khata
             </Link>
           </Button>
         </div>
       </CardContent>
+
+      {/* Delete confirmation dialog (controlled by ⋮ menu) */}
+      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {customer.name}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This removes the customer and their khata records from this view. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }

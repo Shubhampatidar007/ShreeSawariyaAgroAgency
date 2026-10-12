@@ -59,8 +59,18 @@ function CustomerListPage() {
   const customers = useShopStore((s) => s.customers);
   const [query, setQuery] = useState("");
   const [status, setStatus] = useState("all");
+  const [village, setVillage] = useState("all");
   const [sort, setSort] = useState("recent");
   const [page, setPage] = useState(1);
+
+  // Unique village list for the village filter dropdown — derived from customer data
+  const villages = useMemo(() => {
+    const seen = new Set<string>();
+    for (const c of customers) {
+      if (c.village && !seen.has(c.village)) seen.add(c.village);
+    }
+    return [...seen].sort((a, b) => a.localeCompare(b));
+  }, [customers]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -71,7 +81,8 @@ function CustomerListPage() {
         customer.mobile.includes(term) ||
         customer.village.toLowerCase().includes(term);
       const matchesStatus = status === "all" || customer.status === status;
-      return matchesTerm && matchesStatus;
+      const matchesVillage = village === "all" || customer.village === village;
+      return matchesTerm && matchesStatus && matchesVillage;
     });
 
     return [...list].sort((a, b) => {
@@ -80,7 +91,7 @@ function CustomerListPage() {
       if (sort === "purchases") return b.totalPurchases - a.totalPurchases;
       return b.lastPurchase.localeCompare(a.lastPurchase);
     });
-  }, [customers, query, status, sort]);
+  }, [customers, query, status, village, sort]);
 
   const pageCount = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const currentPage = Math.min(page, pageCount);
@@ -175,6 +186,25 @@ function CustomerListPage() {
             <SelectItem value="blocked">Blocked</SelectItem>
           </SelectContent>
         </Select>
+        <Select
+          value={village}
+          onValueChange={(value) => {
+            setVillage(value);
+            setPage(1);
+          }}
+        >
+          <SelectTrigger className="w-[150px] rounded-full">
+            <SelectValue placeholder="Village" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All villages</SelectItem>
+            {villages.map((v) => (
+              <SelectItem key={v} value={v}>
+                {v}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <Select value={sort} onValueChange={setSort}>
           <SelectTrigger className="w-[180px] rounded-full">
             <ArrowUpDown className="size-3.5" />
@@ -202,7 +232,7 @@ function CustomerListPage() {
         />
       ) : (
         <>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:hidden">
+          <div className="grid grid-cols-1 gap-3 lg:hidden">
             {rows.map((customer) => (
               <CustomerCard key={customer.id} customer={customer} />
             ))}
