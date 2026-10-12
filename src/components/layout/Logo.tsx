@@ -18,9 +18,9 @@ export function Logo({
   compactOnMobile = false,
 }: LogoProps) {
   return (
-    <Link to={to} className={cn("flex min-w-0 items-center gap-2.5", className)}>
+    <Link to={to} aria-label="Shree Sanwariya Agro Agency home" className={cn("flex min-w-0 items-center gap-2.5 rounded-md focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-ring", className)}>
       <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-soft">
-        <Sprout className="size-5" />
+        <Sprout className="size-5" aria-hidden="true" />
       </span>
       <span
         className={cn(
