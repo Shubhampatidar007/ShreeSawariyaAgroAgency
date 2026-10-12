@@ -333,7 +333,7 @@ function InventoryEntryPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[
           { label: "Admin", to: "/admin" },
@@ -357,7 +357,7 @@ function InventoryEntryPage() {
           <CardHeader>
             <CardTitle className="text-base">Purchase details</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-4 sm:space-y-6">
             <div className="space-y-2">
               <Label>Supplier</Label>
               <div className="flex gap-2">
@@ -495,7 +495,7 @@ function InventoryEntryPage() {
                 </Button>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-3 sm:space-y-4">
                 {items.map((item, itemIndex) => {
                   const itemTotal = item.variants.reduce(
                     (sum, variant) =>
@@ -515,16 +515,16 @@ function InventoryEntryPage() {
                     : [];
 
                   return (
-                    <div key={itemIndex} className="rounded-xl border p-4">
-                      <div className="mb-4 flex items-center justify-between gap-3">
+                    <div key={itemIndex} className="rounded-lg border p-3 sm:rounded-xl sm:p-4">
+                      <div className="mb-2 flex items-center justify-between gap-2 sm:mb-4 sm:gap-3">
                         <div>
-                          <p className="text-sm font-semibold">Item {itemIndex + 1}</p>
-                          <p className="text-xs text-muted-foreground">
+                          <p className="text-xs font-semibold sm:text-sm">Item {itemIndex + 1}</p>
+                          <p className="text-[10px] text-muted-foreground sm:text-xs">
                             Product, variants, purchase price and optional selling price
                           </p>
                         </div>
-                        <div className="flex items-center gap-3">
-                          <p className="text-sm font-semibold">{formatCurrency(itemTotal)}</p>
+                        <div className="flex items-center gap-2 sm:gap-3">
+                          <p className="text-xs font-semibold sm:text-sm">{formatCurrency(itemTotal)}</p>
                           {items.length > 1 && (
                             <button
                               type="button"
@@ -594,17 +594,17 @@ function InventoryEntryPage() {
                         )}
 
                         {item.productSearch.trim() && matches.length === 0 && (
-                          <div className="rounded-md border bg-muted/20 px-3 py-2 text-sm text-muted-foreground">
+                          <div className="rounded-md border bg-muted/20 px-2 py-1.5 text-xs text-muted-foreground sm:px-3 sm:py-2 sm:text-sm">
                             No existing product found. This will be recorded as a new product.
                           </div>
                         )}
                       </div>
 
                       {item.selectedInventoryId && (
-                        <div className="mt-3 flex items-center justify-between gap-3 rounded-lg border bg-muted/30 p-3">
+                        <div className="mt-3 flex items-center justify-between gap-2 rounded-lg border bg-muted/30 p-2 sm:gap-3 sm:p-3">
                           <div>
-                            <p className="text-sm font-medium">Existing inventory selected</p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-xs font-medium sm:text-sm">Existing inventory selected</p>
+                            <p className="text-[10px] text-muted-foreground sm:text-xs">
                               Enter the additional stock you are receiving below.
                             </p>
                           </div>
@@ -618,11 +618,11 @@ function InventoryEntryPage() {
                         </div>
                       )}
 
-                      <div className="mt-4 space-y-3">
+                      <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-3">
                         <div className="flex items-center justify-between gap-3">
                           <div>
                             <Label>Variants</Label>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground sm:text-xs">
                               Use multiple rows for different units or purchase rates.
                             </p>
                           </div>
@@ -639,9 +639,9 @@ function InventoryEntryPage() {
                         </div>
 
                         {item.variants.map((variant, variantIndex) => (
-                          <div key={variantIndex} className="rounded-lg border bg-muted/10 p-3">
-                            <div className="mb-3 flex items-center justify-between">
-                              <p className="text-sm font-medium">Variant {variantIndex + 1}</p>
+                          <div key={variantIndex} className="rounded-md border bg-muted/10 p-2 sm:rounded-lg sm:p-3">
+                            <div className="mb-2 flex items-center justify-between sm:mb-3">
+                              <p className="text-xs font-medium sm:text-sm">Variant {variantIndex + 1}</p>
                               {item.variants.length > 1 && (
                                 <button
                                   type="button"
@@ -652,7 +652,7 @@ function InventoryEntryPage() {
                                 </button>
                               )}
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-3">
+                            <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-3">
                               <div className="space-y-2">
                                 <Label>Quantity</Label>
                                 <Input
@@ -851,19 +851,19 @@ function InventoryEntryPage() {
               </div>
             </div>
 
-            <div className="rounded-xl border bg-muted/30 p-4">
-              <div className="grid gap-4 sm:grid-cols-3">
+            <div className="rounded-lg border bg-muted/30 p-3 sm:rounded-xl sm:p-4">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                 <div>
-                  <p className="text-xs text-muted-foreground">Items</p>
-                  <p className="text-lg font-semibold">{items.length}</p>
+                  <p className="text-[10px] text-muted-foreground sm:text-xs">Items</p>
+                  <p className="text-base font-semibold sm:text-lg">{items.length}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Total purchase value</p>
-                  <p className="text-lg font-semibold">{formatCurrency(totalPrice)}</p>
+                  <p className="text-[10px] text-muted-foreground sm:text-xs">Total purchase value</p>
+                  <p className="text-base font-semibold sm:text-lg">{formatCurrency(totalPrice)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Remaining after advance</p>
-                  <p className="text-lg font-semibold">
+                  <p className="text-[10px] text-muted-foreground sm:text-xs">Remaining after advance</p>
+                  <p className="text-base font-semibold sm:text-lg">
                     {formatCurrency(Math.max(0, totalPrice - (Number(advancePaid) || 0)))}
                   </p>
                 </div>
@@ -882,9 +882,9 @@ function InventoryEntryPage() {
                   </p>
                 </DialogHeader>
 
-                <div className="space-y-4">
-                  <div className="rounded-lg border bg-muted/20 p-3">
-                    <p className="text-xs text-muted-foreground">Supplier</p>
+                <div className="space-y-3 sm:space-y-4">
+                  <div className="rounded-md border bg-muted/20 p-2 sm:rounded-lg sm:p-3">
+                    <p className="text-[10px] text-muted-foreground sm:text-xs">Supplier</p>
                     <p className="mt-1 font-semibold">
                       {suppliers.find((supplier) => supplier.id === supplierId)?.company || "—"}
                     </p>
@@ -892,13 +892,13 @@ function InventoryEntryPage() {
 
                   <div className="space-y-3">
                     {items.map((item, itemIndex) => (
-                      <div key={itemIndex} className="rounded-lg border p-3">
-                        <div className="mb-3 flex items-center justify-between gap-3">
+                      <div key={itemIndex} className="rounded-md border p-2 sm:rounded-lg sm:p-3">
+                        <div className="mb-2 flex items-center justify-between gap-2 sm:mb-3 sm:gap-3">
                           <div>
-                            <p className="font-medium">
+                            <p className="text-xs font-medium sm:font-medium">
                               {item.productName.trim() || `Item ${itemIndex + 1}`}
                             </p>
-                            <p className="text-xs text-muted-foreground">
+                            <p className="text-[10px] text-muted-foreground sm:text-xs">
                               {item.variants.length} variant{item.variants.length === 1 ? "" : "s"}
                             </p>
                           </div>
@@ -950,25 +950,25 @@ function InventoryEntryPage() {
                     ))}
                   </div>
 
-                  <div className="rounded-xl border bg-muted/30 p-4">
-                    <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="rounded-lg border bg-muted/30 p-3 sm:rounded-xl sm:p-4">
+                    <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
                       <div>
-                        <p className="text-xs text-muted-foreground">Products</p>
-                        <p className="text-lg font-semibold">{items.length}</p>
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">Products</p>
+                        <p className="text-base font-semibold sm:text-lg">{items.length}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Total stock value</p>
-                        <p className="text-lg font-semibold">{formatCurrency(totalPrice)}</p>
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">Total stock value</p>
+                        <p className="text-base font-semibold sm:text-lg">{formatCurrency(totalPrice)}</p>
                       </div>
                       <div>
-                        <p className="text-xs text-muted-foreground">Supplier advance</p>
-                        <p className="text-lg font-semibold">
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">Supplier advance</p>
+                        <p className="text-base font-semibold sm:text-lg">
                           {formatCurrency(Math.max(Number(advancePaid) || 0, 0))}
                         </p>
                       </div>
                     </div>
                     <div className="mt-3 flex items-center justify-between border-t pt-3">
-                      <span className="text-sm text-muted-foreground">Remaining supplier due</span>
+                      <span className="text-xs text-muted-foreground sm:text-sm">Remaining supplier due</span>
                       <span className="font-semibold">
                         {formatCurrency(
                           Math.max(0, totalPrice - (Number(advancePaid) || 0)),
