@@ -554,7 +554,7 @@ function OrderViewDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base">
@@ -563,7 +563,7 @@ function OrderViewDialog({
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="grid gap-4 sm:grid-cols-2">
+              <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
                 <Info label="Name" value={order.customerName} />
                 <Info label="Customer type" value={order.customerType} />
                 <Info
@@ -631,15 +631,15 @@ function OrderViewDialog({
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-5">
-                <div className="grid gap-4 sm:grid-cols-3">
+              <CardContent className="space-y-4 sm:space-y-5">
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 sm:gap-4">
                   <Info label="Order total" value={formatCurrency(order.total)} />
                   <Info label="Total paid" value={formatCurrency(order.paid)} />
                   <Info label="Remaining" value={formatCurrency(due)} />
                 </div>
 
                 {due === 0 ? (
-                  <div className="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3 text-center text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                  <div className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-center text-xs font-medium text-emerald-700 sm:rounded-xl sm:p-3 sm:text-sm dark:text-emerald-400">
                     Payment Completed
                   </div>
                 ) : (
@@ -664,8 +664,8 @@ function OrderViewDialog({
                 </CardTitle>
               </CardHeader>
 
-              <CardContent className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-2">
+              <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
+                <div className="space-y-1.5 sm:space-y-2">
                   <Label htmlFor="package-sent-on">Package sent date</Label>
                   <Input
                     id="package-sent-on"
@@ -675,7 +675,7 @@ function OrderViewDialog({
                   />
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <Label>Order status</Label>
                   <Select
                     value={orderStatus}
@@ -694,7 +694,7 @@ function OrderViewDialog({
                   </Select>
                 </div>
 
-                <div className="space-y-2">
+                <div className="space-y-1.5 sm:space-y-2">
                   <Label>Delivery status</Label>
                   <Select
                     value={deliveryStatus}
@@ -726,21 +726,21 @@ function OrderViewDialog({
                 <CardTitle className="text-base">Other information</CardTitle>
               </CardHeader>
 
-              <CardContent className="space-y-2">
+              <CardContent className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="order-remarks">Remarks / internal notes</Label>
                 <Input
                   id="order-remarks"
                   value={remarks}
                   onChange={(e) => setRemarks(e.target.value)}
-                  placeholder="Add any additional order information..."
+                  placeholder="Add any additional order information…"
                 />
               </CardContent>
             </Card>
 
-            <div className="rounded-xl border bg-muted/40 p-4 text-sm">
+            <div className="rounded-lg border bg-muted/40 p-3 text-xs sm:rounded-xl sm:p-4 sm:text-sm">
               <div className="flex items-center justify-between">
                 <span className="text-muted-foreground">Remaining due</span>
-                <span className="font-display text-xl font-semibold">
+                <span className="font-display text-lg font-semibold sm:text-xl">
                   {formatCurrency(due)}
                 </span>
               </div>
@@ -770,15 +770,15 @@ function OrderViewDialog({
             </DialogDescription>
           </DialogHeader>
 
-          <div className="space-y-4">
-            <div className="rounded-xl border bg-muted/40 p-4">
-              <div className="flex justify-between text-sm">
+          <div className="space-y-3 sm:space-y-4">
+            <div className="rounded-lg border bg-muted/40 p-3 sm:rounded-xl sm:p-4">
+              <div className="flex justify-between text-xs sm:text-sm">
                 <span>Remaining due</span>
                 <span className="font-semibold">{formatCurrency(due)}</span>
               </div>
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label htmlFor="payment-amount">Payment amount</Label>
               <Input
                 id="payment-amount"
@@ -789,7 +789,7 @@ function OrderViewDialog({
               />
             </div>
 
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label>Payment method</Label>
               <Select
                 value={paymentMethod}
@@ -810,7 +810,7 @@ function OrderViewDialog({
             </div>
 
             {(paymentMethod === "upi" || paymentMethod === "bank" || paymentMethod === "card" || paymentMethod === "online" || paymentMethod === "cheque") && (
-              <div className="space-y-2">
+              <div className="space-y-1.5 sm:space-y-2">
                 <Label htmlFor="payment-proof-reference">Transaction / Proof reference (optional)</Label>
                 <Input
                   id="payment-proof-reference"
@@ -820,7 +820,7 @@ function OrderViewDialog({
                 />
               </div>
             )}
-            <div className="space-y-2">
+            <div className="space-y-1.5 sm:space-y-2">
               <Label htmlFor="payment-remarks">Remarks</Label>
               <Input
                 id="payment-remarks"
@@ -858,7 +858,7 @@ function OrderViewDialog({
               onClick={() => void handleAddPayment(true)}
             >
               <MessageCircle className="size-4" />
-              {paymentReceiptSending ? "Saving & sending..." : "Save & send payment receipt"}
+              {paymentReceiptSending ? "Saving & sending…" : "Save & send payment receipt"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -878,11 +878,11 @@ function Info({
 }) {
   return (
     <div className="space-y-1">
-      <p className="flex items-center gap-1 text-xs text-muted-foreground">
+      <p className="flex items-center gap-1 text-[10px] text-muted-foreground sm:text-xs">
         {icon}
         {label}
       </p>
-      <p className="font-medium capitalize">{value}</p>
+      <p className="text-xs font-medium capitalize sm:text-sm">{value}</p>
     </div>
   );
 }
