@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import { Package, Pencil, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/admin/EmptyState";
@@ -94,7 +95,18 @@ function ProductsPage() {
                     title={`Delete ${product.title}?`}
                     description="The product is removed from the storefront. Inventory stock is kept."
                     confirmLabel="Delete"
-                    onConfirm={() => shopStore.deleteProduct(product.id)}
+                    onConfirm={async () => {
+                      try {
+                        await shopStore.deleteProduct(product.id);
+                        toast.success(`${product.title} deleted`);
+                      } catch (err) {
+                        toast.error(
+                          err instanceof Error
+                            ? err.message
+                            : "Could not delete the product",
+                        );
+                      }
+                    }}
                   />
                 </>
               }
