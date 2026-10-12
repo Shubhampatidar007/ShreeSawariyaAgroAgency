@@ -11,6 +11,9 @@ import {
   Truck,
   UserRound,
   WalletCards,
+  Save,
+  Eye,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -215,85 +218,153 @@ function SalesPage() {
           description="No online customer orders match the current filters."
         />
       ) : (
-        <Card className="shadow-soft">
-          <CardContent className="overflow-x-auto p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order</TableHead>
-                  <TableHead>Customer</TableHead>
-                  <TableHead className="text-right">Items</TableHead>
-                  <TableHead className="text-right">Amount</TableHead>
-                  <TableHead>Advance</TableHead>
-                  <TableHead>Due</TableHead>
-                  <TableHead>Delivery</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Action</TableHead>
-                </TableRow>
-              </TableHeader>
+        <>
+          {/* Desktop: full table (hidden on mobile) */}
+          <div className="hidden lg:block">
+            <Card className="shadow-soft">
+              <CardContent className="overflow-x-auto p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order</TableHead>
+                      <TableHead>Customer</TableHead>
+                      <TableHead className="text-right">Items</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead>Advance</TableHead>
+                      <TableHead>Due</TableHead>
+                      <TableHead>Delivery</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Action</TableHead>
+                    </TableRow>
+                  </TableHeader>
 
-              <TableBody>
-                {filtered.map((order) => {
-                  const due = Math.max(order.total - order.paid, 0);
+                  <TableBody>
+                    {filtered.map((order) => {
+                      const due = Math.max(order.total - order.paid, 0);
 
-                  return (
-                    <TableRow key={order.id}>
-                      <TableCell>
+                      return (
+                        <TableRow key={order.id}>
+                          <TableCell>
+                            <p className="font-semibold">{order.code}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(order.placedOn)}
+                            </p>
+                          </TableCell>
+
+                          <TableCell>
+                            <p className="font-medium">{order.customerName}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {order.mobile} · {order.village}
+                            </p>
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            {order.items.length}
+                          </TableCell>
+
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(order.total)}
+                          </TableCell>
+
+                          <TableCell>{formatCurrency(order.paid)}</TableCell>
+
+                          <TableCell>{formatCurrency(due)}</TableCell>
+
+                          <TableCell className="text-xs capitalize text-muted-foreground">
+                            {order.deliveryStatus.replace(/-/g, " ")}
+                          </TableCell>
+
+                          <TableCell>
+                            <Badge
+                              variant="outline"
+                              className="rounded-full capitalize"
+                            >
+                              {order.orderStatus}
+                            </Badge>
+                          </TableCell>
+
+                          <TableCell className="text-right">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-full gap-1.5"
+                              onClick={() => setActive(order)}
+                            >
+                              <Eye className="size-3.5" />
+                              View
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile: card grid (hidden on desktop) */}
+          <div className="grid gap-3 lg:hidden sm:grid-cols-2">
+            {filtered.map((order) => {
+              const due = Math.max(order.total - order.paid, 0);
+              return (
+                <Card key={order.id} className="shadow-soft">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0">
                         <p className="font-semibold">{order.code}</p>
                         <p className="text-xs text-muted-foreground">
                           {formatDate(order.placedOn)}
                         </p>
-                      </TableCell>
-
-                      <TableCell>
-                        <p className="font-medium">{order.customerName}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {order.mobile} · {order.village}
+                      </div>
+                      <Badge variant="outline" className="rounded-full capitalize">
+                        {order.orderStatus}
+                      </Badge>
+                    </div>
+                    <div className="mt-3 space-y-1 text-sm">
+                      <p className="font-medium">{order.customerName}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {order.mobile} · {order.village}
+                      </p>
+                    </div>
+                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
+                      <div>
+                        <p className="text-muted-foreground">Items</p>
+                        <p className="font-semibold">{order.items.length}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Advance</p>
+                        <p className="font-semibold">{formatCurrency(order.paid)}</p>
+                      </div>
+                      <div>
+                        <p className="text-muted-foreground">Due</p>
+                        <p className="font-semibold text-destructive">
+                          {formatCurrency(due)}
                         </p>
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        {order.items.length}
-                      </TableCell>
-
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(order.total)}
-                      </TableCell>
-
-                      <TableCell>{formatCurrency(order.paid)}</TableCell>
-
-                      <TableCell>{formatCurrency(due)}</TableCell>
-
-                      <TableCell className="text-xs capitalize text-muted-foreground">
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between gap-2">
+                      <span className="text-xs capitalize text-muted-foreground">
                         {order.deliveryStatus.replace(/-/g, " ")}
-                      </TableCell>
-
-                      <TableCell>
-                        <Badge
-                          variant="outline"
-                          className="rounded-full capitalize"
-                        >
-                          {order.orderStatus}
-                        </Badge>
-                      </TableCell>
-
-                      <TableCell className="text-right">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="rounded-full"
-                          onClick={() => setActive(order)}
-                        >
-                          View
-                        </Button>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+                      </span>
+                      <span className="text-right font-bold">
+                        {formatCurrency(order.total)}
+                      </span>
+                    </div>
+                    <Button
+                      className="mt-3 w-full rounded-full gap-1.5"
+                      size="sm"
+                      onClick={() => setActive(order)}
+                    >
+                      <Eye className="size-3.5" />
+                      View order
+                    </Button>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </>
       )}
 
       <OrderViewDialog
@@ -677,12 +748,14 @@ function OrderViewDialog({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={onClose}>
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={onClose}>
+              <X className="size-4" />
               Cancel
             </Button>
 
-            <Button className="rounded-full" onClick={() => void save()} disabled={saving}>
-              {saving ? "Saving..." : "Save order"}
+            <Button className="rounded-full gap-1.5" onClick={() => void save()} disabled={saving}>
+              <Save className="size-4" />
+              {saving ? "Saving…" : "Save order"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -761,20 +834,22 @@ function OrderViewDialog({
           <DialogFooter>
             <Button
               variant="outline"
-              className="rounded-full"
+              className="rounded-full gap-1.5"
               onClick={() => setPaymentDialogOpen(false)}
               disabled={paymentSaving}
             >
+              <X className="size-4" />
               Cancel
             </Button>
 
             <Button
-              className="rounded-full"
+              className="rounded-full gap-1.5"
               variant="secondary"
               disabled={paymentSaving}
               onClick={() => void handleAddPayment(false)}
             >
-              {paymentSaving && !paymentReceiptSending ? "Saving..." : "Save payment"}
+              <Save className="size-4" />
+              {paymentSaving && !paymentReceiptSending ? "Saving…" : "Save payment"}
             </Button>
 
             <Button

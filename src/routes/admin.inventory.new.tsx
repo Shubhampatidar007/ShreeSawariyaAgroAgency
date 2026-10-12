@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { Check, ChevronsUpDown, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, Eye, Loader2, Plus, Save, X } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -405,7 +405,8 @@ function InventoryEntryPage() {
                 </Popover>
                 <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
-                    <Button type="button" variant="outline">
+                    <Button type="button" variant="outline" className="gap-1.5">
+                      <Plus className="size-4" />
                       New supplier
                     </Button>
                   </DialogTrigger>
@@ -468,6 +469,7 @@ function InventoryEntryPage() {
                           }
                         }}
                       >
+                        <Save className="size-4" />
                         {savingSupplier ? "Saving…" : "Save supplier"}
                       </Button>
                     </DialogFooter>
@@ -487,8 +489,9 @@ function InventoryEntryPage() {
                     Add different inventory items from this supplier in one purchase.
                   </p>
                 </div>
-                <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                  + Add item
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={addItem}>
+                  <Plus className="size-3.5" />
+                  Add item
                 </Button>
               </div>
 
@@ -627,9 +630,11 @@ function InventoryEntryPage() {
                             type="button"
                             variant="outline"
                             size="sm"
+                            className="gap-1.5"
                             onClick={() => addVariant(itemIndex)}
                           >
-                            + Add variant
+                            <Plus className="size-3.5" />
+                            Add variant
                           </Button>
                         </div>
 

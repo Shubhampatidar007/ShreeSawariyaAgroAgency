@@ -78,21 +78,21 @@ export function CartSheet() {
                       <Button
                         variant="outline"
                         size="icon"
-                        className="size-7 rounded-full"
+                        className="size-9 rounded-full"
                         aria-label={t("cart.decrease", "Decrease quantity")}
                         onClick={() => cartStore.setQty(item.id, item.qty - 1)}
                       >
-                        <Minus className="size-3.5" />
+                        <Minus className="size-4" />
                       </Button>
                       <span className="w-6 text-center text-sm font-semibold">{item.qty}</span>
                       <Button
                         variant="outline"
                         size="icon"
-                        className="size-7 rounded-full"
+                        className="size-9 rounded-full"
                         aria-label={t("cart.increase", "Increase quantity")}
                         onClick={() => cartStore.setQty(item.id, item.qty + 1)}
                       >
-                        <Plus className="size-3.5" />
+                        <Plus className="size-4" />
                       </Button>
                       <Button
                         variant="ghost"
