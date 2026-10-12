@@ -236,7 +236,7 @@ function RemindersPage() {
   };
 
   return (
-    <div className="relative space-y-6">
+    <div className="relative space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[{ label: "Admin", to: "/admin" }, { label: "Reminders" }]}
         eyebrow="Customer records"
@@ -250,7 +250,7 @@ function RemindersPage() {
         }
       />
 
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
         <Metric
           label="Customers matched"
           value={String(filteredCustomers.length)}
@@ -275,7 +275,7 @@ function RemindersPage() {
         </div>
       ) : null}
 
-      <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+      <Tabs value={tab} onValueChange={setTab} className="space-y-3 sm:space-y-4">
         <TabsList className="grid w-full max-w-md grid-cols-2 rounded-xl p-1">
           <TabsTrigger value="send" className="rounded-lg py-2.5">
             <Send className="mr-2 size-4" />
@@ -569,7 +569,7 @@ function RemindersPage() {
 
       {sending ? (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-background/70 px-6 backdrop-blur-sm">
-          <div className="w-full max-w-xs rounded-2xl border bg-card p-6 text-center shadow-2xl">
+          <div className="w-full max-w-xs rounded-2xl border bg-card p-4 sm:p-6 text-center shadow-2xl">
             <div className="mx-auto flex size-12 items-center justify-center rounded-full bg-primary/10">
               <span
                 className="size-5 animate-spin rounded-full border-2 border-primary/20 border-t-primary"
@@ -700,7 +700,7 @@ function CustomerPreviewDialog({
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex justify-between gap-4 rounded-lg bg-muted/40 px-3 py-2"
+                      className="flex justify-between gap-3 sm:gap-4 rounded-lg bg-muted/40 px-3 py-2"
                     >
                       <span>
                         {item.product} · {item.quantity} {item.unit} × {formatCurrency(item.rate)}
