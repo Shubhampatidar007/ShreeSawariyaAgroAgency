@@ -1,6 +1,6 @@
 -- Limit anonymous reads to the public marketing fields. Keep authenticated admin access to the base table.
 CREATE OR REPLACE VIEW public.business_stats_public
-WITH (security_barrier = true)
+WITH (security_barrier = true, security_invoker = true)
 AS
 SELECT id, years_in_business, customers_served, services_offered
 FROM public.business_stats;
