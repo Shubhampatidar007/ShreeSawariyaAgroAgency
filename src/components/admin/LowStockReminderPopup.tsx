@@ -97,7 +97,7 @@ export function LowStockReminderPopup() {
         onPointerDownOutside={(event) => event.preventDefault()}
         onEscapeKeyDown={(event) => event.preventDefault()}
       >
-        <div className="border-b border-destructive/10 bg-destructive/5 px-6 py-5 sm:px-8">
+        <div className="border-b border-destructive/10 bg-destructive/5 px-4 py-4 sm:px-6 sm:py-5 sm:px-8">
           <div className="flex items-start gap-3">
             <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-destructive/10 text-destructive">
               <AlertTriangle className="size-6" />
@@ -113,42 +113,42 @@ export function LowStockReminderPopup() {
         </div>
 
         {current && (
-          <div className="space-y-6 px-6 py-6 sm:px-8 sm:py-8">
-            <div className="rounded-2xl border bg-card p-5 shadow-sm">
+          <div className="space-y-4 sm:space-y-6 px-4 py-4 sm:px-6 sm:py-6 sm:px-8 sm:py-8">
+            <div className="rounded-2xl border bg-card p-4 sm:p-5 shadow-sm">
               <div className="flex items-start gap-4">
                 <div className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                   <PackageCheck className="size-6" />
                 </div>
 
                 <div className="min-w-0 flex-1">
-                  <p className="text-lg font-semibold tracking-tight">{current.item.productName}</p>
+                  <p className="text-base sm:text-lg font-semibold tracking-tight">{current.item.productName}</p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Inventory item needs restocking.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-xl bg-muted/50 p-4">
+              <div className="mt-4 sm:mt-6 grid gap-3 sm:grid-cols-2">
+                <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Current quantity
                   </p>
-                  <p className="mt-1 text-2xl font-bold tracking-tight">
+                  <p className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">
                     {current.item.quantity} {current.item.unit}
                   </p>
                 </div>
 
-                <div className="rounded-xl bg-muted/50 p-4">
+                <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
                   <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
                     Minimum stock level
                   </p>
-                  <p className="mt-1 text-2xl font-bold tracking-tight">
+                  <p className="mt-1 text-xl sm:text-2xl font-bold tracking-tight">
                     {current.item.minStockLevel} {current.item.unit}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
+              <div className="mt-3 sm:mt-4 flex items-start gap-3 rounded-xl border border-destructive/20 bg-destructive/5 p-3 sm:p-4 text-sm text-destructive">
                 <BellRing className="mt-0.5 size-4 shrink-0" />
                 <p>
                   Stock is at or below the configured minimum. Review this product in Inventory and

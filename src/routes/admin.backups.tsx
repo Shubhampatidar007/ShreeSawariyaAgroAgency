@@ -965,7 +965,7 @@ function BackupsPage() {
   }, [today, localRootHandle]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="System"
         title="Backups"
@@ -997,7 +997,7 @@ function BackupsPage() {
         }
       />
 
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-3">
         <Card className="shadow-soft lg:col-span-2">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
@@ -1092,7 +1092,7 @@ function BackupsPage() {
       </div>
 
       <Card className="border-primary/20 bg-primary/5 shadow-soft">
-        <CardContent className="flex flex-col gap-3 p-5 md:flex-row md:items-center md:justify-between">
+        <CardContent className="flex flex-col gap-3 p-3 sm:p-5 md:flex-row md:items-center md:justify-between">
           <div className="flex items-start gap-3">
             <FileSpreadsheet className="mt-0.5 size-5 text-primary" />
             <div>
@@ -1117,8 +1117,8 @@ function BackupsPage() {
             <GitCompare className="size-4 text-primary" /> Compare data
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-5">
-          <div className="grid gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
+        <CardContent className="space-y-4 sm:space-y-5">
+          <div className="grid gap-3 sm:gap-4 md:grid-cols-[1fr_1fr_auto] md:items-end">
             <div className="space-y-2">
               <label className="text-sm font-medium" htmlFor="backup-old-date">
                 Older date
@@ -1161,7 +1161,7 @@ function BackupsPage() {
           </p>
 
           {comparison ? (
-            <div className="space-y-4 rounded-2xl border bg-muted/20 p-4">
+            <div className="space-y-3 sm:space-y-4 rounded-2xl border bg-muted/20 p-3 sm:p-4">
               <div className="grid gap-3 sm:grid-cols-3">
                 <div className="rounded-xl border bg-background p-3">
                   <p className="text-xs text-muted-foreground">Older snapshot</p>
@@ -1173,7 +1173,7 @@ function BackupsPage() {
                 </div>
                 <div className="rounded-xl border bg-background p-3">
                   <p className="text-xs text-muted-foreground">New records</p>
-                  <p className="mt-1 text-lg font-bold">
+                  <p className="mt-1 text-base sm:text-lg font-bold">
                     {comparison.totalNewRows.toLocaleString("en-IN")}
                   </p>
                 </div>
@@ -1224,7 +1224,7 @@ function BackupsPage() {
                   })}
                 </div>
               ) : (
-                <div className="rounded-xl border bg-background p-5 text-center text-sm text-muted-foreground">
+                <div className="rounded-xl border bg-background p-4 sm:p-5 text-center text-sm text-muted-foreground">
                   No new records were added between the selected backup dates.
                 </div>
               )}
@@ -1234,7 +1234,7 @@ function BackupsPage() {
       </Card>
 
       <Card className="border-primary/20 bg-primary/5 shadow-soft">
-        <CardContent className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+        <CardContent className="flex flex-col gap-3 p-3 sm:p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-semibold">Daily backup reminder — 7:00 AM</p>
             <p className="mt-1 text-sm text-muted-foreground">

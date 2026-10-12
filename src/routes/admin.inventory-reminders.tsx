@@ -93,7 +93,7 @@ function InventoryRemindersPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[
           { label: "Admin", to: "/admin" },
@@ -111,7 +111,7 @@ function InventoryRemindersPage() {
       />
 
       {error ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 sm:p-4 text-sm text-destructive">
           {error}
         </div>
       ) : null}
@@ -137,7 +137,7 @@ function InventoryRemindersPage() {
 
         <CardContent className="space-y-4">
           {inventoryReminders.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-8 text-center">
+            <div className="rounded-xl border border-dashed p-6 sm:p-8 text-center">
               <BellOff className="mx-auto size-8 text-muted-foreground" />
               <p className="mt-3 font-medium">No inventory reminders configured</p>
               <p className="mt-1 text-sm text-muted-foreground">
@@ -150,7 +150,7 @@ function InventoryRemindersPage() {
               const busy = busyId === reminder.id;
 
               return (
-                <div key={reminder.id} className="rounded-2xl border p-5">
+                <div key={reminder.id} className="rounded-2xl border p-3 sm:p-5">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
@@ -169,20 +169,20 @@ function InventoryRemindersPage() {
                     </Badge>
                   </div>
 
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl bg-muted/50 p-4">
+                  <div className="mt-4 sm:mt-5 grid gap-3 sm:grid-cols-2">
+                    <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
                         Current stock
                       </p>
-                      <p className="mt-1 text-xl font-bold">
+                      <p className="mt-1 text-lg sm:text-xl font-bold">
                         {item.quantity} {item.unit}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-muted/50 p-4">
+                    <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
                       <p className="text-xs uppercase tracking-wide text-muted-foreground">
                         Minimum stock
                       </p>
-                      <p className="mt-1 text-xl font-bold">
+                      <p className="mt-1 text-lg sm:text-xl font-bold">
                         {item.minStockLevel} {item.unit}
                       </p>
                     </div>

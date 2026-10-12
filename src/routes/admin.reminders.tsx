@@ -265,7 +265,7 @@ function RemindersPage() {
       </div>
 
       {result ? (
-        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-soft">
+        <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-3 sm:p-4 shadow-soft">
           {result.ok ? (
             <CheckCircle2 className="mt-0.5 size-5 text-emerald-600" />
           ) : (
@@ -287,7 +287,7 @@ function RemindersPage() {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="send" className="space-y-5">
+        <TabsContent value="send" className="space-y-4 sm:space-y-5">
           <Card className="shadow-soft">
             <CardHeader className="pb-3">
               <CardTitle>What do you want to share?</CardTitle>
@@ -322,7 +322,7 @@ function RemindersPage() {
                 before selecting customers.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
                 <div className="relative xl:col-span-2">
                   <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
@@ -441,7 +441,7 @@ function RemindersPage() {
                   key={customer.id}
                   className={selected ? "border-primary shadow-soft" : "shadow-soft"}
                 >
-                  <CardContent className="flex items-center gap-3 p-4">
+                  <CardContent className="flex items-center gap-3 p-3 sm:p-4">
                     <Button
                       size="sm"
                       variant={selected ? "default" : "outline"}
@@ -489,14 +489,14 @@ function RemindersPage() {
                 {"{lastPurchase}"}. Use blank lines to keep the WhatsApp message easy to read.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-3 sm:space-y-4">
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                className="min-h-48 w-full rounded-2xl border border-input bg-background p-4 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="min-h-48 w-full rounded-2xl border border-input bg-background p-3 sm:p-4 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
               />
               {selectedCustomers[0] ? (
-                <div className="rounded-2xl border bg-muted/30 p-5">
+                <div className="rounded-2xl border bg-muted/30 p-3 sm:p-5">
                   <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
                     Preview for {selectedCustomers[0].name}
                   </p>
@@ -537,7 +537,7 @@ function RemindersPage() {
               ) : (
                 <div className="space-y-3">
                   {logs.map((log) => (
-                    <div key={log.id} className="flex items-center gap-3 rounded-xl border p-4">
+                    <div key={log.id} className="flex items-center gap-3 rounded-xl border p-3 sm:p-4">
                       <BellRing className="size-4 text-primary" />
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">{log.reminderTitle}</p>
@@ -685,8 +685,8 @@ function CustomerPreviewDialog({
         <div className="space-y-3">
           <h3 className="font-semibold">Current purchase</h3>
           {latestPurchase ? (
-            <div className="rounded-2xl border p-5">
-              <div className="grid gap-4 sm:grid-cols-4">
+            <div className="rounded-2xl border p-3 sm:p-5">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-4">
                 <Info label="Date" value={formatDate(latestPurchase.date)} />
                 <Info label="Purchase" value={formatCurrency(latestPurchase.amount)} />
                 <Info label="Advance / paid" value={formatCurrency(latestPurchase.payment)} />
@@ -740,14 +740,14 @@ function CustomerPreviewDialog({
             ))}
           </div>
         </div>
-        <div className="space-y-3 rounded-2xl border bg-muted/20 p-4">
+        <div className="space-y-3 rounded-2xl border bg-muted/20 p-3 sm:p-4">
           <h3 className="font-semibold">Message to share</h3>
           <textarea
             value={message}
             onChange={(event) => onMessageChange(event.target.value)}
-            className="min-h-44 w-full rounded-xl border border-input bg-background p-4 text-sm leading-6"
+            className="min-h-44 w-full rounded-xl border border-input bg-background p-3 sm:p-4 text-sm leading-6"
           />
-          <div className="rounded-xl bg-muted/60 p-4">
+          <div className="rounded-xl bg-muted/60 p-3 sm:p-4">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Preview
             </p>
@@ -771,9 +771,9 @@ function CustomerPreviewDialog({
 function Metric({ label, value, helper }: { label: string; value: string; helper: string }) {
   return (
     <Card className="shadow-soft">
-      <CardContent className="p-5">
+      <CardContent className="p-3 sm:p-5">
         <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="mt-2 text-2xl font-semibold">{value}</p>
+        <p className="mt-2 text-xl sm:text-2xl font-semibold">{value}</p>
         <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
       </CardContent>
     </Card>

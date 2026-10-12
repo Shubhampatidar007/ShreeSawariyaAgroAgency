@@ -105,7 +105,7 @@ function ProfilePage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[{ label: "Admin", to: "/admin" }, { label: "Profile" }]}
         eyebrow="Account"
@@ -113,16 +113,16 @@ function ProfilePage() {
         description="Keep your operator details current. These values are stored in the Supabase profile record used by the admin panel."
       />
 
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="space-y-5">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_360px]">
+        <div className="space-y-4 sm:space-y-5">
           <Card className="shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <UserRound className="size-5 text-primary" /> Personal details
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
-              <div className="grid gap-4 sm:grid-cols-2">
+            <CardContent className="space-y-4 sm:space-y-5">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="profile-name">Full name</Label>
                   <Input
@@ -173,11 +173,11 @@ function ProfilePage() {
             <CardHeader>
               <CardTitle>Public business stats</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-5">
+            <CardContent className="space-y-4 sm:space-y-5">
               <p className="text-sm text-muted-foreground">
                 These values are shown publicly in the About section of the storefront.
               </p>
-              <div className="grid gap-4 sm:grid-cols-3">
+              <div className="grid gap-3 sm:gap-4 sm:grid-cols-3">
                 <div className="space-y-2">
                   <Label htmlFor="years-in-business">Years in business</Label>
                   <Input
@@ -220,7 +220,7 @@ function ProfilePage() {
           </Card>
         </div>
 
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           <Card className="shadow-soft">
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

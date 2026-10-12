@@ -321,7 +321,7 @@ function TestimonialsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[{ label: "Admin", to: "/admin" }, { label: "Testimonials" }]}
         eyebrow="Storefront"
@@ -356,7 +356,7 @@ function TestimonialsPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-5">
+        <div className="space-y-4 sm:space-y-5">
           {items.map((item) => {
             const preview = imagePreviews[item.id] || item.imageUrl;
             const saving = savingId === item.id;
@@ -383,7 +383,7 @@ function TestimonialsPage() {
                   </div>
                 </CardHeader>
 
-                <CardContent className="grid gap-6 p-6 lg:grid-cols-[220px_1fr]">
+                <CardContent className="grid gap-4 sm:gap-6 p-4 sm:p-6 lg:grid-cols-[220px_1fr]">
                   <div className="space-y-3">
                     <Label>Farmer photo</Label>
                     <div className="overflow-hidden rounded-3xl border border-border bg-muted/30">
@@ -404,7 +404,7 @@ function TestimonialsPage() {
                     <p className="text-xs text-muted-foreground">JPG, PNG or WebP · stored in testimonial-images · max 200 KB after compression.</p>
                   </div>
 
-                  <div className="grid gap-5 sm:grid-cols-2">
+                  <div className="grid gap-4 sm:gap-5 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label>Farmer name</Label>
                       <Input value={item.farmerName} onChange={(event) => update(item.id, { farmerName: event.target.value })} placeholder="Real farmer name" />

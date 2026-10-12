@@ -248,7 +248,7 @@ function AnalyticsPage() {
   }, [filteredOrders, store.customers, store.customerLedger, range, custom]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.analytics") }]}
         eyebrow={t("common.insights")}
@@ -283,7 +283,7 @@ function AnalyticsPage() {
           { label: t("analytics.activeCustomers"), value: String(activeCustomers), icon: Users },
         ]}
       />
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-2">
         <ChartCard
           title={t("analytics.revenueVsPurchases")}
           description="Sales and supplier purchases from live records."
@@ -389,7 +389,7 @@ function AnalyticsPage() {
           </div>
         </ChartCard>
       </div>
-      <div className="grid gap-5 xl:grid-cols-2">
+      <div className="grid gap-4 sm:gap-5 xl:grid-cols-2">
         <Card className="shadow-soft">
           <CardContent className="overflow-x-auto p-0">
             <Table>

@@ -262,7 +262,7 @@ function SupplierLedgerPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <DetailHeader
         crumbs={[
           { label: "Admin", to: "/admin" },
@@ -323,8 +323,8 @@ function SupplierLedgerPage() {
               Compose the account update that will be sent to {supplier.name || supplier.company} on WhatsApp.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-5">
-            <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
               <p className="font-semibold">{supplier.company}</p>
               <p className="text-sm text-muted-foreground">{supplier.name} · {supplier.mobile}</p>
@@ -332,7 +332,7 @@ function SupplierLedgerPage() {
                 {totalRecords} {totalRecords === 1 ? "record" : "records"} in this ledger view
               </p>
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="supplier-reminder-advance-pay">Advance Pay</Label>
                 <Input
@@ -397,8 +397,8 @@ function SupplierLedgerPage() {
             <DialogTitle>Pay Supplier</DialogTitle>
             <DialogDescription>Record a payment made to {supplier.company}.</DialogDescription>
           </DialogHeader>
-          <div className="space-y-5">
-            <div className="rounded-lg border bg-muted/30 p-4">
+          <div className="space-y-4 sm:space-y-5">
+            <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
               <p className="font-semibold">{supplier.company}</p>
               <p className="text-sm text-muted-foreground">{supplier.name}</p>
@@ -440,7 +440,7 @@ function SupplierLedgerPage() {
               <Label htmlFor="supplier-payment-remarks">Remarks <span className="ml-1 text-muted-foreground">(optional)</span></Label>
               <Input id="supplier-payment-remarks" value={paymentRemarks} onChange={(e) => setPaymentRemarks(e.target.value)} placeholder="Payment notes" />
             </div>
-            <div className="rounded-lg border p-4 space-y-2">
+            <div className="rounded-lg border p-3 sm:p-4 space-y-2">
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Current due</span><span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span></div>
               <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span></div>
               <div className="border-t pt-2 flex justify-between"><span className="font-medium">Remaining due</span><span className="font-bold">{formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}</span></div>

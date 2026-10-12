@@ -131,7 +131,7 @@ function ReportsPage() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <ModulePageHeader
         crumbs={[{ label: t("common.admin"), to: "/admin" }, { label: t("common.reports") }]}
         eyebrow={t("common.insights")}
