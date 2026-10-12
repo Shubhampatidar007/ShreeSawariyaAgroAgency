@@ -200,8 +200,8 @@ Deno.serve(async (req) => {
     return json({ ok: false, error: "Invalid JSON payload." }, 400);
   }
 
-  if (!payload.orderId) {
-    return json({ ok: false, error: "orderId is required." }, 400);
+  if (!payload.orderId || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.orderId)) {
+    return json({ ok: false, error: "A valid orderId UUID is required." }, 400);
   }
 
   const admin = createClient(supabaseUrl, serviceRoleKey);
