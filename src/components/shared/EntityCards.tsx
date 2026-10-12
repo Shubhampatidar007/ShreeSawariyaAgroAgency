@@ -1,6 +1,15 @@
 import type { ReactNode } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Bell, BookOpen, Eye, Pencil } from "lucide-react";
+import {
+  AlertTriangle,
+  Bell,
+  BookOpen,
+  CheckCircle2,
+  Eye,
+  Pencil,
+  Upload,
+  XCircle,
+} from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -137,8 +146,44 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
   );
 }
 
+// Stock status helpers — derived from quantity vs minStockLevel (no fake data)
+type StockStatus = "in-stock" | "low-stock" | "out-of-stock";
+
+function getStockStatus(quantity: number, minStockLevel: number): StockStatus {
+  if (quantity <= 0) return "out-of-stock";
+  if (quantity <= minStockLevel) return "low-stock";
+  return "in-stock";
+}
+
+const stockStatusConfig: Record<StockStatus, { label: string; className: string; Icon: typeof CheckCircle2 }> = {
+  "in-stock": {
+    label: "In Stock",
+    className: "bg-emerald-100 text-emerald-700",
+    Icon: CheckCircle2,
+  },
+  "low-stock": {
+    label: "Low Stock",
+    className: "bg-amber-100 text-amber-700",
+    Icon: AlertTriangle,
+  },
+  "out-of-stock": {
+    label: "Out of Stock",
+    className: "bg-red-100 text-red-700",
+    Icon: XCircle,
+  },
+};
+
+// Margin % — calculated from sellingPrice vs purchasePrice (no fake data)
+function getMargin(item: InventoryItem): number | null {
+  if (!item.sellingPrice || item.purchasePrice <= 0) return null;
+  return ((item.sellingPrice - item.purchasePrice) / item.purchasePrice) * 100;
+}
+
 export function InventoryCard({ item }: { item: InventoryItem }) {
   const navigate = useNavigate();
+  const status = getStockStatus(item.quantity, item.minStockLevel);
+  const statusCfg = stockStatusConfig[status];
+  const margin = getMargin(item);
 
   const configureReminder = async () => {
     const { data: existing, error: lookupError } = await supabase
@@ -181,51 +226,78 @@ export function InventoryCard({ item }: { item: InventoryItem }) {
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
       <CardContent className="space-y-3 p-4">
-        <div className="space-y-2">
-          <div className="flex items-start justify-between gap-3">
-            <p className="font-display text-sm font-semibold leading-5">{item.productName}</p>
-            <span className="shrink-0 rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
-              {item.unit}
-            </span>
+        {/* Row 1: Product identity + status badge */}
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="font-display text-base font-bold leading-5">{item.productName}</p>
+            {item.supplierId ? (
+              <Link
+                to="/admin/suppliers/$supplierId"
+                params={{ supplierId: item.supplierId }}
+                className="mt-1 inline-flex text-xs text-muted-foreground underline-offset-4 hover:underline"
+              >
+                {item.supplierName}
+              </Link>
+            ) : (
+              <p className="mt-1 text-xs text-muted-foreground">{item.supplierName}</p>
+            )}
           </div>
-          {item.supplierId ? (
-            <Link
-              to="/admin/suppliers/$supplierId"
-              params={{ supplierId: item.supplierId }}
-              className="inline-flex text-xs font-medium text-foreground underline-offset-4 hover:underline"
-            >
-              Supplier: {item.supplierName}
+          <span
+            className={`inline-flex shrink-0 items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold ${statusCfg.className}`}
+          >
+            <statusCfg.Icon className="size-3" />
+            {statusCfg.label}
+          </span>
+        </div>
+
+        {/* Row 2: 5-column data grid — Stock / Buy / Sell / Min / Margin */}
+        <div className="grid grid-cols-5 gap-2 border-t border-border pt-3">
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Stock</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums">{item.quantity} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span></p>
+          </div>
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Buy</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums">{formatCurrency(item.purchasePrice)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Sell</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums">{item.sellingPrice === undefined ? "—" : formatCurrency(item.sellingPrice)}</p>
+          </div>
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Min</p>
+            <p className="mt-0.5 text-sm font-bold tabular-nums">{item.minStockLevel} <span className="text-[10px] font-normal text-muted-foreground">{item.unit}</span></p>
+          </div>
+          <div>
+            <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">Margin</p>
+            {margin === null ? (
+              <p className="mt-0.5 text-sm text-muted-foreground">—</p>
+            ) : (
+              <p className="mt-0.5 text-sm font-bold tabular-nums text-emerald-600">
+                {margin.toFixed(0)}%
+              </p>
+            )}
+          </div>
+        </div>
+
+        {/* Row 3: Actions — Configure reminder + Publish */}
+        <div className="flex gap-2 border-t border-border pt-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="flex-1 rounded-full text-xs"
+            onClick={() => void configureReminder()}
+          >
+            <Bell className="size-3.5" />
+            Reminder
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1 rounded-full text-xs" asChild>
+            <Link to="/admin/products/publish">
+              <Upload className="size-3.5" />
+              Publish
             </Link>
-          ) : (
-            <p className="text-xs text-muted-foreground">Supplier: {item.supplierName}</p>
-          )}
+          </Button>
         </div>
-        <div className="grid grid-cols-2 gap-2 rounded-xl bg-muted/50 p-3">
-          <div className="rounded-lg border border-border/70 bg-background p-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Quantity</p>
-            <p className="mt-1 text-lg font-bold tabular-nums">{item.quantity}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background p-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Purchase price</p>
-            <p className="mt-1 font-semibold">{formatCurrency(item.purchasePrice)}</p>
-          </div>
-          <div className="rounded-lg border border-border/70 bg-background p-2.5">
-            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Selling price</p>
-            <p className="mt-1 font-semibold">{item.sellingPrice === undefined ? "-" : formatCurrency(item.sellingPrice)}</p>
-          </div>
-          <div className="col-span-2 flex items-center justify-between rounded-lg border border-border/70 bg-background px-2.5 py-2">
-            <span className="text-xs text-muted-foreground">Minimum stock</span>
-            <span className="text-xs font-semibold">{item.minStockLevel} {item.unit}</span>
-          </div>
-        </div>
-        <Button
-          className="w-full rounded-full"
-          variant="outline"
-          onClick={() => void configureReminder()}
-        >
-          <Bell className="size-4" />
-          Configure reminder
-        </Button>
       </CardContent>
     </Card>
   );
