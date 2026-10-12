@@ -156,55 +156,104 @@ function PaymentsPage() {
           description={t("payments.noPaymentsDescription")}
         />
       ) : (
-        <Card className="overflow-hidden shadow-soft">
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{t("payments.reference")}</TableHead>
-                    <TableHead>{t("payments.party")}</TableHead>
-                    <TableHead>{t("payments.date")}</TableHead>
-                    <TableHead>{t("payments.type")}</TableHead>
-                    <TableHead>{t("payments.method")}</TableHead>
-                    <TableHead className="text-right">{t("payments.amount")}</TableHead>
-                    <TableHead>{t("payments.status")}</TableHead>
-                    <TableHead>{t("payments.remarks")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filtered.map((payment) => (
-                    <TableRow key={payment.id}>
-                      <TableCell className="font-medium">{payment.reference}</TableCell>
-                      <TableCell>
-                        <p className="font-medium">{payment.partyName}</p>
-                        <p className="text-xs text-muted-foreground">{payment.orderCode ?? "—"}</p>
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
+        <>
+          {/* Desktop: full table (hidden on mobile) */}
+          <div className="hidden lg:block">
+            <Card className="overflow-hidden shadow-soft">
+              <CardContent className="p-0">
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>{t("payments.reference")}</TableHead>
+                        <TableHead>{t("payments.party")}</TableHead>
+                        <TableHead>{t("payments.date")}</TableHead>
+                        <TableHead>{t("payments.type")}</TableHead>
+                        <TableHead>{t("payments.method")}</TableHead>
+                        <TableHead className="text-right">{t("payments.amount")}</TableHead>
+                        <TableHead>{t("payments.status")}</TableHead>
+                        <TableHead>{t("payments.remarks")}</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {filtered.map((payment) => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-medium">{payment.reference}</TableCell>
+                          <TableCell>
+                            <p className="font-medium">{payment.partyName}</p>
+                            <p className="text-xs text-muted-foreground">{payment.orderCode ?? "—"}</p>
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {formatDate(payment.date)}
+                          </TableCell>
+                          <TableCell className="capitalize">{payment.direction}</TableCell>
+                          <TableCell className="uppercase text-muted-foreground">
+                            {payment.method}
+                          </TableCell>
+                          <TableCell className="text-right font-semibold">
+                            {formatCurrency(payment.amount)}
+                          </TableCell>
+                          <TableCell>
+                            <StatusBadge
+                              status={payment.status === "success" ? "paid" : payment.status}
+                            />
+                          </TableCell>
+                          <TableCell className="text-muted-foreground">
+                            {payment.remarks ?? "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Mobile: card grid (hidden on desktop) */}
+          <div className="grid gap-3 lg:hidden sm:grid-cols-2">
+            {filtered.map((payment) => (
+              <Card key={payment.id} className="shadow-soft">
+                <CardContent className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="font-semibold">{payment.reference}</p>
+                      <p className="text-xs text-muted-foreground">
                         {formatDate(payment.date)}
-                      </TableCell>
-                      <TableCell className="capitalize">{payment.direction}</TableCell>
-                      <TableCell className="uppercase text-muted-foreground">
+                      </p>
+                    </div>
+                    <StatusBadge
+                      status={payment.status === "success" ? "paid" : payment.status}
+                    />
+                  </div>
+                  <div className="mt-3 space-y-1 text-sm">
+                    <p className="font-medium">{payment.partyName}</p>
+                    {payment.orderCode ? (
+                      <p className="text-xs text-muted-foreground">{payment.orderCode}</p>
+                    ) : null}
+                  </div>
+                  <div className="mt-3 flex items-center justify-between gap-2 border-t border-border pt-3">
+                    <div className="text-xs">
+                      <span className="capitalize text-muted-foreground">
+                        {payment.direction}
+                      </span>
+                      <span className="mx-1 text-muted-foreground/50">·</span>
+                      <span className="uppercase text-muted-foreground">
                         {payment.method}
-                      </TableCell>
-                      <TableCell className="text-right font-semibold">
-                        {formatCurrency(payment.amount)}
-                      </TableCell>
-                      <TableCell>
-                        <StatusBadge
-                          status={payment.status === "success" ? "paid" : payment.status}
-                        />
-                      </TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {payment.remarks ?? "—"}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          </CardContent>
-        </Card>
+                      </span>
+                    </div>
+                    <span className="font-bold">{formatCurrency(payment.amount)}</span>
+                  </div>
+                  {payment.remarks ? (
+                    <p className="mt-2 border-t border-border pt-2 text-xs text-muted-foreground">
+                      {payment.remarks}
+                    </p>
+                  ) : null}
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </>
       )}
     </div>
   );

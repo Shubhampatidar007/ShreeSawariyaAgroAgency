@@ -1,6 +1,6 @@
 import { Clock, ExternalLink, MapPin, Navigation, Phone } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { shopInfo } from "@/data/storefront";
 
 const GOOGLE_MAPS_URL = "https://maps.app.goo.gl/CzHvPWcfpA1WQkca6";
