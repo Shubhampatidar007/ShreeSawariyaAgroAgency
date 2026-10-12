@@ -23,7 +23,7 @@ const getConfig = () => ({
 export async function getBusinessStats(): Promise<BusinessStats> {
   const { url, key } = getConfig();
   const response = await fetch(
-    `${url}/rest/v1/business_stats?id=eq.1&select=years_in_business,customers_served,services_offered`,
+    `${url}/rest/v1/business_stats_public?id=eq.1&select=years_in_business,customers_served,services_offered`,
     {
       headers: {
         apikey: key,
