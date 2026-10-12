@@ -92,7 +92,7 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="space-y-1.5">
             <Label>Amount received</Label>
             <Input

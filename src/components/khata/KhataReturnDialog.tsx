@@ -359,7 +359,7 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
           </div>
         </DialogHeader>
 
-        <div className="max-h-[65vh] space-y-4 overflow-y-auto pr-1">
+        <div className="max-h-[65vh] space-y-3 sm:space-y-4 overflow-y-auto pr-1">
           {items.map((item, index) => {
             const matches = matchingOptions(item);
             const availableUnits = item.selected
@@ -367,7 +367,7 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
               : ["kg", "l", "g"];
 
             return (
-              <div key={item.key} className="rounded-xl border p-4">
+              <div key={item.key} className="rounded-xl border p-3 sm:p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
                     <p className="text-sm font-semibold">Return item {index + 1}</p>
@@ -558,10 +558,10 @@ export function KhataReturnDialog({ customer, trigger, onCreated }: Props) {
             );
           })}
 
-          <div className="grid gap-3 rounded-xl border bg-muted/30 p-4 sm:grid-cols-4">
+          <div className="grid gap-3 rounded-xl border bg-muted/30 p-3 sm:p-4 sm:grid-cols-4">
             <div>
               <p className="text-xs text-muted-foreground">Total return value</p>
-              <p className="mt-1 text-lg font-bold">{formatCurrency(total)}</p>
+              <p className="mt-1 text-base sm:text-lg font-bold">{formatCurrency(total)}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Due before</p>

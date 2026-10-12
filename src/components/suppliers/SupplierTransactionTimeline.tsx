@@ -150,19 +150,19 @@ export function SupplierTransactionTimeline({ entries }: Props) {
   };
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
+    <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
       <Card className="supplier-timeline-full shadow-soft">
         <CardHeader><CardTitle className="text-lg">Purchase timeline</CardTitle></CardHeader>
         <CardContent>
           {groups.length === 0 ? (
             <p className="text-sm text-muted-foreground">No supplier transactions recorded yet.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3 sm:space-y-4">
               {groups.map((group) => {
                 const isOpen = expandedDates.has(group.date);
                 return (
                   <div key={group.date} className="overflow-hidden rounded-xl border bg-background">
-                    <button type="button" className="flex w-full items-center justify-between gap-4 p-4 text-left transition-colors hover:bg-muted/40" onClick={() => toggleDate(group.date)} aria-expanded={isOpen}>
+                    <button type="button" className="flex w-full items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 text-left transition-colors hover:bg-muted/40" onClick={() => toggleDate(group.date)} aria-expanded={isOpen}>
                       <div>
                         <p className="text-base font-semibold">{formatTimelineDate(group.date)}</p>
                         <p className="mt-1 text-sm text-muted-foreground">{group.purchases.length} transaction{group.purchases.length === 1 ? "" : "s"} · {formatCurrency(group.purchaseTotal)}</p>
@@ -173,7 +173,7 @@ export function SupplierTransactionTimeline({ entries }: Props) {
                       </span>
                     </button>
                     {isOpen && (
-                      <div className="border-t p-4">
+                      <div className="border-t p-3 sm:p-4">
                         <div className="space-y-2">
                           {group.purchases.map((rawEntry) => {
                             const entry = rawEntry as SupplierTimelineEntry;
@@ -252,9 +252,9 @@ export function SupplierTransactionTimeline({ entries }: Props) {
           <Wallet className="mt-0.5 size-5 text-muted-foreground" />
         </CardHeader>
         <CardContent>
-          <div className="rounded-xl border bg-muted/20 p-4">
+          <div className="rounded-xl border bg-muted/20 p-3 sm:p-4">
             <div className="flex items-end justify-between gap-4">
-              <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Current due</p><p className="mt-1 font-display text-2xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
+              <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Current due</p><p className="mt-1 font-display text-xl sm:text-2xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
               <CreditCard className="size-6 text-muted-foreground" />
             </div>
             <Button className="mt-4 w-full rounded-full" onClick={openPayment} disabled={!supplier || supplier.dueBalance <= 0}><CreditCard className="mr-2 size-4" /> Pay Supplier</Button>
@@ -279,7 +279,7 @@ export function SupplierTransactionTimeline({ entries }: Props) {
         <DialogContent className="sm:max-w-lg">
           <DialogHeader><DialogTitle>Pay Supplier</DialogTitle><DialogDescription>Record a payment made to {supplier?.company ?? "this supplier"}.</DialogDescription></DialogHeader>
           <div className="space-y-5">
-            <div className="rounded-lg border bg-muted/30 p-4"><p className="text-sm text-muted-foreground">Current due</p><p className="mt-1 text-xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
+            <div className="rounded-lg border bg-muted/30 p-3 sm:p-4"><p className="text-sm text-muted-foreground">Current due</p><p className="mt-1 text-lg sm:text-xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
             <div className="space-y-2"><Label htmlFor="supplier-payment-panel-amount">Payment amount</Label><Input id="supplier-payment-panel-amount" type="number" min="0" step="0.01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} placeholder="Enter amount" /></div>
             <div className="space-y-2"><Label htmlFor="supplier-payment-panel-date">Payment date</Label><Input id="supplier-payment-panel-date" type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} /></div>
             <div className="space-y-2"><Label>Payment method</Label><Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="upi">UPI</SelectItem><SelectItem value="bank">Bank Transfer</SelectItem><SelectItem value="cheque">Cheque</SelectItem></SelectContent></Select></div>

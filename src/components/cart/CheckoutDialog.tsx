@@ -131,7 +131,7 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           <div className="space-y-2 rounded-xl border border-border p-3">
             {items.map((item) => (
               <div key={item.id} className="flex items-center justify-between gap-3 text-sm">
@@ -150,7 +150,7 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
             </div>
           </div>
 
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-3 sm:gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="checkout-name">Name</Label>
               <Input
@@ -187,7 +187,7 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
             <Textarea id="checkout-address" value={address} onChange={(e) => setAddress(e.target.value)} placeholder="House, street, landmark and other delivery details" rows={3} />
           </div>
 
-          <div className="grid gap-4 rounded-2xl border border-border bg-muted/20 p-4 sm:grid-cols-[auto_1fr] sm:items-center">
+          <div className="grid gap-3 sm:gap-4 rounded-2xl border border-border bg-muted/20 p-3 sm:p-4 sm:grid-cols-[auto_1fr] sm:items-center">
             <div className="mx-auto rounded-xl bg-white p-2 shadow-sm">
               <img src={paymentQr} alt="Demo UPI payment QR code" className="size-32 sm:size-36" />
             </div>

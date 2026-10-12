@@ -137,7 +137,7 @@ function AdminSearchPage() {
   }, [query, customers, suppliers, inventory, products, orders]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <PageHeader
         eyebrow="Global"
         title="Search"
@@ -145,7 +145,7 @@ function AdminSearchPage() {
       />
 
       <Card className="shadow-soft">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <Form {...form}>
             <form
               onSubmit={form.handleSubmit((values) => setQuery(values.query))}
@@ -259,14 +259,14 @@ function AdminSearchPage() {
                 <Link
                   key={`${result.type}-${result.id}`}
                   to={result.href}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 p-4 transition-colors hover:bg-muted"
+                  className="flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border bg-muted/40 p-3 sm:p-4 transition-colors hover:bg-muted"
                 >
                   {content}
                 </Link>
               ) : (
                 <div
                   key={`${result.type}-${result.id}`}
-                  className="flex items-center justify-between gap-4 rounded-xl border border-border bg-muted/40 p-4"
+                  className="flex items-center justify-between gap-3 sm:gap-4 rounded-xl border border-border bg-muted/40 p-3 sm:p-4"
                 >
                   {content}
                 </div>

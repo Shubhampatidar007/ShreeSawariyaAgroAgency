@@ -46,7 +46,7 @@ function SupplierDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <DetailHeader
         crumbs={[
           { label: "Admin", to: "/admin" },
@@ -104,7 +104,7 @@ function SupplierDetailPage() {
         <CardHeader>
           <CardTitle className="text-base">Supplier information</CardTitle>
         </CardHeader>
-        <CardContent className="grid gap-4 text-sm sm:grid-cols-2">
+        <CardContent className="grid gap-3 sm:gap-4 text-sm sm:grid-cols-2">
           <Info label="GSTIN" value={supplier.gstin} />
           <Info label="Last order" value={formatDate(supplier.lastOrder)} />
           <Info label="Address" value={supplier.address} />

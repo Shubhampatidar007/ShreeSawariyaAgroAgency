@@ -178,7 +178,7 @@ function CustomerDetailPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <DetailHeader
         crumbs={[
           { label: "Admin", to: "/admin" },
@@ -232,10 +232,10 @@ function CustomerDetailPage() {
         ]}
       />
 
-      <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[0.9fr_1.1fr]">
         <Card className="shadow-soft">
           <CardHeader><CardTitle className="text-base">Personal information</CardTitle></CardHeader>
-          <CardContent className="space-y-4 text-sm">
+          <CardContent className="space-y-3 sm:space-y-4 text-sm">
             <InfoRow icon={Phone} label="Mobile" value={customer.mobile} />
             <Separator />
             <InfoRow icon={MapPin} label="Address" value={customer.address} />
@@ -253,7 +253,7 @@ function CustomerDetailPage() {
             ) : dateGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">No khata entries recorded yet.</p>
             ) : (
-              <ol className="relative space-y-4 border-l border-border pl-6">
+              <ol className="relative space-y-3 sm:space-y-4 border-l border-border pl-4 sm:pl-6">
                 {dateGroups.map(({ date, entries }) => {
                   const isOpen = expandedDates.has(date);
                   const dayAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
