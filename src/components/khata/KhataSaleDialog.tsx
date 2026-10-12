@@ -983,7 +983,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {!customer && (
             <div className="space-y-3 rounded-lg border p-3">
               <div className="flex gap-2">
@@ -1245,10 +1245,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             </div>
           </div>
 
-          {/* Cart Table */}
+          {/* Cart Table — Desktop only (hidden on mobile to prevent overflow) */}
           {items.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border">
-              <Table className="min-w-[980px]">
+            <div className="hidden lg:block">
+              <div className="overflow-x-auto rounded-lg border">
+                <Table className="min-w-[980px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead className="min-w-[210px]">Item</TableHead>
@@ -1474,6 +1475,89 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                   })}
                 </TableBody>
               </Table>
+              </div>
+            </div>
+          )}
+
+          {/* Cart Cards — Mobile only (replaces the table to prevent horizontal overflow) */}
+          {items.length > 0 && (
+            <div className="space-y-2 lg:hidden">
+              {items.map((item) => {
+                const isLoose = Boolean(item.allowLooseSale);
+                const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+                const unitOptions = isLoose
+                  ? getCompatibleUnitOptions(inventoryUnit)
+                  : [inventoryUnit];
+
+                return (
+                  <div key={item.key} className="rounded-lg border p-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-semibold">{item.product}</p>
+                        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">{item.unit}</span>
+                          {isLoose ? (
+                            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">Loose</span>
+                          ) : null}
+                        </div>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">Stock: {item.maxStock !== undefined ? `${item.maxStock} ${inventoryUnit}` : "—"}</p>
+                      </div>
+                      <Button type="button" size="icon" variant="ghost" className="shrink-0" onClick={() => removeItem(item.key)}>
+                        <Trash2 className="size-4 text-destructive" />
+                      </Button>
+                    </div>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Qty</Label>
+                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.quantityInput ?? String(item.quantity)} onFocus={(e) => e.currentTarget.select()} onChange={(e) => {
+                          const raw = e.target.value;
+                          const nextQuantity = Number(raw);
+                          if (!Number.isFinite(nextQuantity) || nextQuantity < 0) { updateItem(item.key, { quantityInput: raw }); return; }
+                          const requestedInventoryQuantity = getInventoryQuantity(item, nextQuantity);
+                          if (item.maxStock !== undefined && requestedInventoryQuantity > item.maxStock) { toast.error(`Only ${item.maxStock} ${inventoryUnit} available`); return; }
+                          const nextCalculatedAmount = roundMoney(requestedInventoryQuantity * (Number(item.rate) || 0));
+                          updateItem(item.key, { quantity: nextQuantity, quantityInput: raw, calculatedAmount: nextCalculatedAmount, finalAmount: item.finalAmountOverridden ? item.finalAmount : nextCalculatedAmount });
+                        }} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Unit</Label>
+                        {isLoose ? (
+                          <Select value={normalizeUnit(item.unit)} onValueChange={(nextUnit) => {
+                            const convertedQuantity = convertQuantity(item.quantity, item.unit, nextUnit);
+                            if (convertedQuantity == null) return;
+                            const nextItem = { ...item, unit: nextUnit };
+                            const nextInventoryQuantity = getInventoryQuantity(nextItem, convertedQuantity);
+                            if (item.maxStock !== undefined && nextInventoryQuantity > item.maxStock) { toast.error(`Only ${item.maxStock} ${inventoryUnit} available`); return; }
+                            const nextCalculatedAmount = roundMoney(nextInventoryQuantity * (Number(item.rate) || 0));
+                            updateItem(item.key, { unit: nextUnit, quantity: convertedQuantity, quantityInput: String(Number(convertedQuantity.toFixed(6))), calculatedAmount: nextCalculatedAmount, finalAmount: item.finalAmountOverridden ? item.finalAmount : nextCalculatedAmount });
+                          }}>
+                            <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
+                            <SelectContent>{unitOptions.map((unit) => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent>
+                          </Select>
+                        ) : (
+                          <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">{item.unit}</div>
+                        )}
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Buy/unit</Label>
+                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.purchaseCost} onFocus={(e) => e.currentTarget.select()} onChange={(e) => { updateItem(item.key, { purchaseCost: Number(e.target.value) || 0 }); }} />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-[10px] text-muted-foreground">Sell/unit</Label>
+                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.rate} disabled aria-label="Selling price per unit" />
+                      </div>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2 border-t pt-2">
+                      <Label className="shrink-0 text-[10px] text-muted-foreground">Total</Label>
+                      <Input type="text" inputMode="decimal" className="h-9 w-full text-right font-semibold" value={getItemAmount(item)} onFocus={(e) => e.currentTarget.select()} onChange={(e) => {
+                        if (!isLoose) return;
+                        const nextTotal = Number(e.target.value) || 0;
+                        updateItem(item.key, { finalAmount: nextTotal, finalAmountOverridden: true });
+                      }} readOnly={!isLoose} aria-label={isLoose ? "Editable total" : "Calculated total"} />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           )}
 
