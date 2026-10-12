@@ -159,7 +159,7 @@ export function AuthDialog({ open, onOpenChange, mode, onModeChange }: AuthDialo
                 </div>
               </div>
               <div className="space-y-1.5">
-                <Label htmlFor="reg-email">{t("auth.email", "Email ")}</Label>
+                <Label htmlFor="reg-email">{t("auth.email", "Email")}</Label>
                 <Input id="reg-email" name="email" type="email" placeholder="you@example.com" />
               </div>
               <div className="space-y-1.5">

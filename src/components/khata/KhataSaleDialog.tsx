@@ -1153,7 +1153,6 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
               <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 ref={productSearchRef}
-                autoFocus
                 className="pr-10 pl-9"
                 placeholder="Search product, variant, category or supplier…"
                 aria-label="Search Khata sale inventory"

@@ -153,11 +153,27 @@ export function CheckoutDialog({ open, onOpenChange, items, subtotal }: Checkout
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="checkout-name">Name</Label>
-              <Input id="checkout-name" value={name} disabled placeholder="Your name" />
+              <Input
+                id="checkout-name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                // Pre-filled from auth profile. Disabled only when the profile
+                // already has a name — prevents spoofing. If missing, allow
+                // the user to enter it here so checkout isn't blocked.
+                disabled={!!user?.name}
+                placeholder="Your name"
+              />
             </div>
             <div className="space-y-2">
               <Label htmlFor="checkout-mobile">Mobile</Label>
-              <Input id="checkout-mobile" value={mobile} disabled placeholder="Mobile number" inputMode="tel" />
+              <Input
+                id="checkout-mobile"
+                value={mobile}
+                onChange={(e) => setMobile(e.target.value)}
+                disabled={!!user?.mobile}
+                placeholder="Mobile number"
+                inputMode="tel"
+              />
             </div>
           </div>
 

@@ -85,12 +85,12 @@ export function LocationSection() {
               </Button>
             </div>
 
-            <CardContent className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
+            <div className="mt-7 rounded-2xl border border-primary/15 bg-primary/5 p-4">
               <p className="text-xs font-semibold uppercase tracking-[0.14em] text-primary">Location information</p>
               <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                The Google Maps link above is the authoritative location destination. No coordinates or distance estimate are shown unless verified store location data is available.
+                The Google Maps link above is the authoritative location destination. We don't show distance estimates until verified location data is available.
               </p>
-            </CardContent>
+            </div>
           </div>
         </div>
       </div>
