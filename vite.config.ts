@@ -28,7 +28,13 @@ const pwaConfig = {
     display: "standalone",
     orientation: "portrait-primary",
     background_color: "#ffffff",
-    theme_color: "#16a34a", // matches --primary (oklch 0.56 0.19 148) light theme
+    // theme_color for the INSTALLED PWA's status bar (Android) and splash
+    // screen. Was emerald green (#16a34a) which clashed with the white body
+    // background. Now white to match the body in light mode (most common case).
+    // Dark mode users get a slightly mismatched white status bar on black body,
+    // but that's the best trade-off since manifest only supports a single
+    // theme_color (no media queries in the manifest spec).
+    theme_color: "#ffffff",
     lang: "en",
     dir: "ltr",
     icons: [
