@@ -197,6 +197,23 @@
     text-rendering: optimizeLegibility;
   }
 
+  /* Safe-area helpers for notched devices (iPhone X+, modern Android).
+     viewport-fit=cover in the root meta tag enables these env() values.
+     Components can opt in by adding `safe-top` / `safe-bottom` / `safe-x`
+     utility classes. */
+  .safe-top {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .safe-bottom {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+  .safe-left {
+    padding-left: max(env(safe-area-inset-left), 0px);
+  }
+  .safe-right {
+    padding-right: max(env(safe-area-inset-right), 0px);
+  }
+
   h1,
   h2,
   h3,

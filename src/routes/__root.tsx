@@ -19,21 +19,27 @@ import { initCart } from "@/lib/cart-store";
 import { initPublicShopData } from "@/lib/public-shop-store";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { registerPWA } from "@/lib/pwa";
+import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { Home, RefreshCw, AlertTriangle, Compass } from "lucide-react";
 
 function NotFoundComponent() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
-        <h1 className="text-7xl font-bold text-foreground">404</h1>
-        <h2 className="mt-4 text-xl font-semibold text-foreground">Page not found</h2>
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 safe-top safe-bottom">
+      <div className="max-w-md w-full rounded-xl border border-border bg-card p-8 text-center shadow-soft">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <Compass className="h-7 w-7" aria-hidden="true" />
+        </div>
+        <h1 className="text-6xl font-bold tracking-tight text-foreground">404</h1>
+        <h2 className="mt-2 text-xl font-semibold text-foreground">Page not found</h2>
         <p className="mt-2 text-sm text-muted-foreground">
           The page you're looking for doesn't exist or has been moved.
         </p>
         <div className="mt-6">
           <Link
             to="/"
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
+            <Home className="h-4 w-4" aria-hidden="true" />
             Go home
           </Link>
         </div>
@@ -46,28 +52,38 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="max-w-md text-center">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 safe-top safe-bottom">
+      <div className="max-w-md w-full rounded-xl border border-border bg-card p-8 text-center shadow-soft">
+        <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10 text-destructive">
+          <AlertTriangle className="h-7 w-7" aria-hidden="true" />
+        </div>
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           Something went wrong on our end. You can try refreshing or head back home.
         </p>
+        {import.meta.env.DEV && error?.message ? (
+          <pre className="mt-3 max-h-32 overflow-auto rounded-md bg-muted p-3 text-left text-xs text-muted-foreground">
+            {error.message}
+          </pre>
+        ) : null}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
               router.invalidate();
               reset();
             }}
-            className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            className="inline-flex items-center justify-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
+            <RefreshCw className="h-4 w-4" aria-hidden="true" />
             Try again
           </button>
           <a
             href="/"
-            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            className="inline-flex items-center justify-center gap-2 rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
+            <Home className="h-4 w-4" aria-hidden="true" />
             Go home
           </a>
         </div>
@@ -80,15 +96,19 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
   head: () => ({
     meta: [
       { charSet: "utf-8" },
-      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      // viewport-fit=cover enables safe-area-inset CSS env vars for notched devices.
+      { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
       { title: "Shree Sanwariya Agro Agency" },
       {
         name: "description",
         content:
           "A storefront and shop management platform for managing Shree Sanwariya Agro Agency.",
       },
-      // PWA / mobile meta
-      { name: "theme-color", content: "#16a34a" },
+      // PWA / mobile meta — theme-color split for light/dark so the status bar
+      // blends with the body background (white in light, black in dark) instead
+      // of clashing with the emerald green brand color.
+      { name: "theme-color", content: "#ffffff", media: "(prefers-color-scheme: light)" },
+      { name: "theme-color", content: "#000000", media: "prefers-color-scheme: dark" },
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Shree Sawariya" },
@@ -161,6 +181,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <SmoothScroll />
       <Outlet />
+      <PWAInstallPrompt />
       <Toaster />
       <Analytics />
       <SpeedInsights />
