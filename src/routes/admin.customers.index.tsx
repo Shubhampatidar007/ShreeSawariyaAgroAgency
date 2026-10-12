@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { toast } from "sonner";
 import {
   ArrowUpDown,
   BookOpen,
@@ -290,7 +291,18 @@ function CustomerListPage() {
                           title={`Delete ${customer.name}?`}
                           description="This removes the customer and their khata records from this view. This action cannot be undone."
                           confirmLabel="Delete"
-                          onConfirm={() => shopStore.deleteCustomer(customer.id)}
+                          onConfirm={async () => {
+                            try {
+                              await shopStore.deleteCustomer(customer.id);
+                              toast.success(`${customer.name} deleted`);
+                            } catch (err) {
+                              toast.error(
+                                err instanceof Error
+                                  ? err.message
+                                  : "Could not delete the customer",
+                              );
+                            }
+                          }}
                         />
                       </div>
                     </TableCell>

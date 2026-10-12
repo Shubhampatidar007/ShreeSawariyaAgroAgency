@@ -52,10 +52,16 @@ function EditCustomerPage() {
         defaultValues={customer}
         submitLabel="Save changes"
         onCancel={() => navigate({ to: "/admin/customers/$customerId", params: { customerId } })}
-        onSubmit={(values) => {
-          shopStore.updateCustomer(customerId, values);
-          toast.success("Customer updated");
-          navigate({ to: "/admin/customers/$customerId", params: { customerId } });
+        onSubmit={async (values) => {
+          try {
+            await shopStore.updateCustomer(customerId, values);
+            toast.success("Customer updated");
+            navigate({ to: "/admin/customers/$customerId", params: { customerId } });
+          } catch (err) {
+            toast.error(
+              err instanceof Error ? err.message : "Could not update the customer",
+            );
+          }
         }}
       />
     </div>

@@ -97,6 +97,11 @@ export const Route = createFileRoute("/admin/testimonials")({
   head: () => ({
     meta: [
       { title: "Testimonials — Admin" },
+      {
+        name: "description",
+        content:
+          "Review, verify, and publish farmer testimonials shown on the homepage.",
+      },
       { name: "robots", content: "noindex" },
     ],
   }),

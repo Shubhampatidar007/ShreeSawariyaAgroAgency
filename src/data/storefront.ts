@@ -55,6 +55,6 @@ export const shopInfo = {
   phone: "9752469028",
   whatsapp: "9752469028",
   email: "Sunilpatidardev@gmail.com",
-  address: "Sitamau , Near Hotel Aadarsh",
+  address: "Sitamau, Near Hotel Aadarsh",
   hours: "8:30 AM - 8:00 PM",
 };

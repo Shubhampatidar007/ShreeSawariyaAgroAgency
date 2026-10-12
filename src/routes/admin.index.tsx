@@ -38,7 +38,20 @@ import { useI18n } from "@/lib/i18n";
 import { buildDailyMetrics } from "@/lib/business-metrics";
 import type { StatItem } from "@/types";
 
-export const Route = createFileRoute("/admin/")({ component: AdminOverview });
+export const Route = createFileRoute("/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Overview — Admin" },
+      {
+        name: "description",
+        content:
+          "Shop dashboard: today's sales, low-stock alerts, recent orders, and quick actions for operators.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: AdminOverview,
+});
 const formatDay = (day: string) =>
   new Date(`${day}T00:00:00`).toLocaleDateString("en-IN", {
     day: "2-digit",

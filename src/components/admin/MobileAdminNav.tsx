@@ -1,6 +1,13 @@
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Menu, Package, Receipt, Users } from "lucide-react";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetTitle,
+  SheetTrigger,
+} from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { cn } from "@/lib/utils";
@@ -14,6 +21,11 @@ const primaryItems = [
 
 export function MobileAdminNav() {
   const pathname = useRouterState({ select: (state) => state.location.pathname });
+  // Controlled sheet state so we can close the drawer when a sidebar link
+  // is tapped. Previously the Sheet was uncontrolled, which meant clicking
+  // a nav link changed the route but left the drawer visually covering
+  // the new page.
+  const [open, setOpen] = useState(false);
 
   const isActive = (to: string) =>
     to === "/admin" ? pathname === "/admin" : pathname.startsWith(to);
@@ -42,7 +54,7 @@ export function MobileAdminNav() {
           );
         })}
 
-        <Sheet>
+        <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
             <Button
               variant="ghost"
@@ -52,6 +64,8 @@ export function MobileAdminNav() {
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
+              aria-label="Open admin navigation"
+              aria-expanded={open}
             >
               <Menu className="size-5" />
               <span>More</span>
@@ -59,7 +73,11 @@ export function MobileAdminNav() {
           </SheetTrigger>
           <SheetContent side="left" className="w-[min(86vw,20rem)] p-0">
             <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-            <AdminSidebar />
+            <SheetDescription className="sr-only">
+              Navigate to admin sections: customers, suppliers, inventory,
+              products, sales, payments, reports, analytics, and settings.
+            </SheetDescription>
+            <AdminSidebar onNavigate={() => setOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>

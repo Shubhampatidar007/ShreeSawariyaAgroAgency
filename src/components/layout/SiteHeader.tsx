@@ -10,7 +10,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
+import { Sheet, SheetContent, SheetDescription, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Logo } from "@/components/layout/Logo";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
@@ -35,7 +35,7 @@ export function SiteHeader() {
   };
 
   return (
-    <header className="site-header sticky top-0 z-40 w-full">
+    <header className="sticky top-0 z-40 w-full safe-top">
       <div className="hidden border-b border-border bg-muted text-muted-foreground md:block">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-6 py-2 text-xs">
           <div className="flex items-center gap-5">
@@ -86,6 +86,9 @@ export function SiteHeader() {
               </SheetTrigger>
               <SheetContent side="right" className="w-[min(20rem,100vw)]">
                 <SheetTitle>Store menu</SheetTitle>
+                <SheetDescription className="sr-only">
+                  Navigate to storefront sections and account actions.
+                </SheetDescription>
                 <nav className="mt-5 flex flex-col gap-1">
                   {storefrontNav.map((item) => (
                     <a

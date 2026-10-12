@@ -14,9 +14,12 @@ const supportLinks: FooterLink[] = [
 
 const companyLinks: FooterLink[] = [
   { label: "About our shop", href: "#about" },
-  { label: "Licences & certifications", href: "#contact" },
-  { label: "Careers", href: "#contact" },
-  { label: "Dealer network", href: "#contact" },
+  // Previously these three all dead-ended on #contact with no matching content
+  // on the page — felt unfinished. Now each opens an actionable channel
+  // (email or phone) so the link delivers on its promise.
+  { label: "Licences & certifications", href: `mailto:${shopInfo.email}?subject=Licence%20verification%20request` },
+  { label: "Careers", href: `mailto:${shopInfo.email}?subject=Job%20application` },
+  { label: "Dealer network", href: `tel:${shopInfo.phone}` },
   { label: "Contact us", href: "#contact" },
 ];
 
