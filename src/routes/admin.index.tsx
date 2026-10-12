@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { ScrollReveal } from "@/components/ui/ScrollReveal";
 import {
   Area,
@@ -12,10 +12,17 @@ import {
 } from "recharts";
 import {
   AlertTriangle,
+  ArrowRight,
+  CalendarDays,
+  ChevronRight,
   ClipboardCheck,
+  FileText,
   IndianRupee,
   Package,
+  Receipt,
+  Sprout,
   TrendingUp,
+  UserPlus,
   Users,
   WalletCards,
 } from "lucide-react";
@@ -283,7 +290,15 @@ function AdminOverview() {
           eyebrow={t("admin.overview.title")}
           title={`${greeting(t)}${user ? `, ${user.name.split(" ")[0]}` : ""}`}
           description={t("admin.overview.description")}
-          actions={<Button variant="outline" className="rounded-full" onClick={() => setDayCloseOpen(true)}><ClipboardCheck className="size-4" />{t("admin.overview.dayCloseSummary")}</Button>}
+          actions={
+            <div className="flex items-center gap-3">
+              <span className="hidden items-center gap-1.5 text-xs text-muted-foreground sm:flex">
+                <CalendarDays className="size-3.5" />
+                {new Date().toLocaleDateString("en-IN", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+              </span>
+              <Button variant="outline" className="rounded-full" onClick={() => setDayCloseOpen(true)}><ClipboardCheck className="size-4" />{t("admin.overview.dayCloseSummary")}</Button>
+            </div>
+          }
         />
       </ScrollReveal>
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
@@ -291,6 +306,72 @@ function AdminOverview() {
           <ScrollReveal key={stat.id} delay={index * 40} direction="up" distance={12} duration={300}><StatCard stat={stat} loading={loading} /></ScrollReveal>
         ))}
       </div>
+
+      {/* Promo banner — emerald gradient with Manage your business CTA */}
+      <ScrollReveal direction="up" distance={20} duration={500}>
+        <Card className="overflow-hidden border-0 bg-gradient-to-br from-primary to-brand-lime text-primary-foreground shadow-soft">
+          <CardContent className="relative p-6 sm:p-8">
+            <div className="relative z-10 max-w-md">
+              <h3 className="font-display text-xl font-semibold">Manage your business with less effort</h3>
+              <p className="mt-2 text-sm text-primary-foreground/80">
+                Track sales, inventory, customer khata, and supplier payments — all in one place.
+              </p>
+              <Button variant="secondary" size="sm" className="mt-4 gap-1.5 rounded-full" asChild>
+                <Link to="/admin/analytics">
+                  Learn more
+                  <ArrowRight className="size-3.5" />
+                </Link>
+              </Button>
+            </div>
+            {/* Decorative leaf shapes — evokes growth / agriculture */}
+            <div className="pointer-events-none absolute right-0 top-0 h-full w-1/2 opacity-20" aria-hidden="true">
+              <Sprout className="absolute -right-4 top-4 size-32" />
+              <Sprout className="absolute right-12 bottom-2 size-24" />
+            </div>
+          </CardContent>
+        </Card>
+      </ScrollReveal>
+
+      {/* Quick actions grid — 4 icon shortcuts */}
+      <ScrollReveal direction="up" distance={20} duration={500}>
+        <div>
+          <h3 className="mb-3 font-display text-sm font-semibold uppercase tracking-wide text-muted-foreground">Quick actions</h3>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+            <Button variant="outline" asChild className="h-auto flex-col gap-2 rounded-xl py-4">
+              <Link to="/admin/sales">
+                <span className="flex size-10 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Receipt className="size-5" />
+                </span>
+                New Sale
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto flex-col gap-2 rounded-xl py-4">
+              <Link to="/admin/inventory/new">
+                <span className="flex size-10 items-center justify-center rounded-full bg-blue-100 text-blue-700">
+                  <Package className="size-5" />
+                </span>
+                Add Stock
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto flex-col gap-2 rounded-xl py-4">
+              <Link to="/admin/customers/new">
+                <span className="flex size-10 items-center justify-center rounded-full bg-purple-100 text-purple-700">
+                  <UserPlus className="size-5" />
+                </span>
+                Add Customer
+              </Link>
+            </Button>
+            <Button variant="outline" asChild className="h-auto flex-col gap-2 rounded-xl py-4">
+              <Link to="/admin/reports">
+                <span className="flex size-10 items-center justify-center rounded-full bg-teal-100 text-teal-700">
+                  <FileText className="size-5" />
+                </span>
+                View Reports
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </ScrollReveal>
       <ScrollReveal direction="up" distance={28} duration={700} scale={0.98} blur={2}>
         <Card className="overflow-hidden border-border/80 shadow-soft">
           <CardHeader className="gap-5 pb-3">
@@ -316,6 +397,46 @@ function AdminOverview() {
           </CardContent>
         </Card>
       </ScrollReveal>
+
+      {/* Recent customers list — top 5 with avatars */}
+      <ScrollReveal direction="up" distance={20} duration={500}>
+        <Card className="shadow-soft">
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="text-base">Recent customers</CardTitle>
+            <Button variant="ghost" size="sm" asChild className="gap-1">
+              <Link to="/admin/customers">
+                View all
+                <ChevronRight className="size-3.5" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent className="p-0">
+            {loading ? (
+              <div className="space-y-2 p-4">
+                {Array.from({ length: 5 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+              </div>
+            ) : customers.length === 0 ? (
+              <div className="px-6 py-10 text-center text-sm text-muted-foreground">No customers yet</div>
+            ) : (
+              <div className="divide-y divide-border">
+                {customers.slice(0, 5).map((customer) => (
+                  <Link key={customer.id} to="/admin/customers/$customerId" params={{ customerId: customer.id }} className="flex items-center gap-3 px-6 py-3 transition-colors hover:bg-muted/50">
+                    <span className="flex size-9 shrink-0 items-center justify-center rounded-full bg-primary/10 text-sm font-semibold text-primary">
+                      {customer.name.split(" ").map((n) => n[0]).join("").slice(0, 2).toUpperCase()}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium">{customer.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{customer.village || "—"} · {customer.mobile || "—"}</span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" />
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </ScrollReveal>
+
       <Dialog open={dayCloseOpen} onOpenChange={setDayCloseOpen}>
         <DialogContent>
           <DialogHeader><DialogTitle>{t("admin.overview.dayCloseSummary")}</DialogTitle><DialogDescription>{new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "long", year: "numeric" })}</DialogDescription></DialogHeader>
