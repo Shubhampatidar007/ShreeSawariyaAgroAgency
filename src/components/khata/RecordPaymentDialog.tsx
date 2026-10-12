@@ -167,4 +167,3 @@ export function RecordPaymentDialog({ customer, trigger, onRecorded }: Props) {
     </Dialog>
   );
 }
-// compact PWA fixes applied

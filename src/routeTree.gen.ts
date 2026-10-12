@@ -31,12 +31,12 @@ import { Route as AdminProductsIndexRouteImport } from './routes/admin.products.
 import { Route as AdminProductsPublishRouteImport } from './routes/admin.products.publish'
 import { Route as AdminSuppliersIndexRouteImport } from './routes/admin.suppliers.index'
 import { Route as AdminSuppliersSupplierIdRouteImport } from './routes/admin.suppliers.$supplierId'
-import { Route as AdminSuppliersSupplierIdEditRouteImport } from './routes/admin.suppliers_.$supplierId.edit'
 import { Route as ApiWhatsappMessagesRouteImport } from './routes/api.whatsapp.messages'
 import { Route as AdminCustomersCustomerIdIndexRouteImport } from './routes/admin.customers.$customerId.index'
 import { Route as AdminCustomersCustomerIdEditRouteImport } from './routes/admin.customers.$customerId.edit'
 import { Route as AdminKhataCustomersCustomerIdRouteImport } from './routes/admin.khata.customers.$customerId'
 import { Route as AdminLedgerSuppliersSupplierIdRouteImport } from './routes/admin.ledger.suppliers.$supplierId'
+import { Route as AdminSuppliersSupplierIdEditRouteImport } from './routes/admin.suppliers_.$supplierId.edit'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -143,9 +143,6 @@ const AdminSuppliersIndexRoute = AdminSuppliersIndexRouteImport.update({
   path: '/suppliers/',
   getParentRoute: () => AdminRoute,
 } as any)
-const AdminSuppliersSupplierIdEditRoute = AdminSuppliersSupplierIdEditRouteImport.update({
-  id: '/suppliers/$supplierId/edit', path: '/suppliers/$supplierId/edit', getParentRoute: () => AdminRoute,
-} as any)
 const AdminSuppliersSupplierIdRoute =
   AdminSuppliersSupplierIdRouteImport.update({
     id: '/suppliers/$supplierId',
@@ -181,6 +178,12 @@ const AdminLedgerSuppliersSupplierIdRoute =
     path: '/ledger/suppliers/$supplierId',
     getParentRoute: () => AdminRoute,
   } as any)
+const AdminSuppliersSupplierIdEditRoute =
+  AdminSuppliersSupplierIdEditRouteImport.update({
+    id: '/suppliers_/$supplierId/edit',
+    path: '/suppliers/$supplierId/edit',
+    getParentRoute: () => AdminRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -201,7 +204,6 @@ export interface FileRoutesByFullPath {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
-  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
@@ -210,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRoutesByTo {
@@ -230,7 +233,6 @@ export interface FileRoutesByTo {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
-  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers': typeof AdminCustomersIndexRoute
   '/admin/inventory': typeof AdminInventoryIndexRoute
@@ -239,6 +241,7 @@ export interface FileRoutesByTo {
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/admin/customers/$customerId': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRoutesById {
@@ -261,7 +264,6 @@ export interface FileRoutesById {
   '/admin/inventory/new': typeof AdminInventoryNewRoute
   '/admin/products/publish': typeof AdminProductsPublishRoute
   '/admin/suppliers/$supplierId': typeof AdminSuppliersSupplierIdRoute
-  '/admin/suppliers/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/api/whatsapp/messages': typeof ApiWhatsappMessagesRoute
   '/admin/customers/': typeof AdminCustomersIndexRoute
   '/admin/inventory/': typeof AdminInventoryIndexRoute
@@ -270,6 +272,7 @@ export interface FileRoutesById {
   '/admin/customers/$customerId/edit': typeof AdminCustomersCustomerIdEditRoute
   '/admin/khata/customers/$customerId': typeof AdminKhataCustomersCustomerIdRoute
   '/admin/ledger/suppliers/$supplierId': typeof AdminLedgerSuppliersSupplierIdRoute
+  '/admin/suppliers_/$supplierId/edit': typeof AdminSuppliersSupplierIdEditRoute
   '/admin/customers/$customerId/': typeof AdminCustomersCustomerIdIndexRoute
 }
 export interface FileRouteTypes {
@@ -293,7 +296,6 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
-    | '/admin/suppliers/$supplierId/edit'
     | '/api/whatsapp/messages'
     | '/admin/customers/'
     | '/admin/inventory/'
@@ -302,6 +304,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/suppliers/$supplierId/edit'
     | '/admin/customers/$customerId/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -322,7 +325,6 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
-    | '/admin/suppliers/$supplierId/edit'
     | '/api/whatsapp/messages'
     | '/admin/customers'
     | '/admin/inventory'
@@ -331,6 +333,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/suppliers/$supplierId/edit'
     | '/admin/customers/$customerId'
   id:
     | '__root__'
@@ -352,7 +355,6 @@ export interface FileRouteTypes {
     | '/admin/inventory/new'
     | '/admin/products/publish'
     | '/admin/suppliers/$supplierId'
-    | '/admin/suppliers/$supplierId/edit'
     | '/api/whatsapp/messages'
     | '/admin/customers/'
     | '/admin/inventory/'
@@ -361,6 +363,7 @@ export interface FileRouteTypes {
     | '/admin/customers/$customerId/edit'
     | '/admin/khata/customers/$customerId'
     | '/admin/ledger/suppliers/$supplierId'
+    | '/admin/suppliers_/$supplierId/edit'
     | '/admin/customers/$customerId/'
   fileRoutesById: FileRoutesById
 }
@@ -520,9 +523,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSuppliersIndexRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/admin/suppliers/$supplierId/edit': {
-      id: '/admin/suppliers/$supplierId/edit', path: '/suppliers/$supplierId/edit', fullPath: '/admin/suppliers/$supplierId/edit', preLoaderRoute: typeof AdminSuppliersSupplierIdEditRouteImport, parentRoute: typeof AdminRoute
-    }
     '/admin/suppliers/$supplierId': {
       id: '/admin/suppliers/$supplierId'
       path: '/suppliers/$supplierId'
@@ -565,6 +565,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLedgerSuppliersSupplierIdRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/suppliers_/$supplierId/edit': {
+      id: '/admin/suppliers_/$supplierId/edit'
+      path: '/suppliers/$supplierId/edit'
+      fullPath: '/admin/suppliers/$supplierId/edit'
+      preLoaderRoute: typeof AdminSuppliersSupplierIdEditRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -584,7 +591,6 @@ interface AdminRouteChildren {
   AdminInventoryNewRoute: typeof AdminInventoryNewRoute
   AdminProductsPublishRoute: typeof AdminProductsPublishRoute
   AdminSuppliersSupplierIdRoute: typeof AdminSuppliersSupplierIdRoute
-  AdminSuppliersSupplierIdEditRoute: typeof AdminSuppliersSupplierIdEditRoute
   AdminCustomersIndexRoute: typeof AdminCustomersIndexRoute
   AdminInventoryIndexRoute: typeof AdminInventoryIndexRoute
   AdminProductsIndexRoute: typeof AdminProductsIndexRoute
@@ -592,6 +598,7 @@ interface AdminRouteChildren {
   AdminCustomersCustomerIdEditRoute: typeof AdminCustomersCustomerIdEditRoute
   AdminKhataCustomersCustomerIdRoute: typeof AdminKhataCustomersCustomerIdRoute
   AdminLedgerSuppliersSupplierIdRoute: typeof AdminLedgerSuppliersSupplierIdRoute
+  AdminSuppliersSupplierIdEditRoute: typeof AdminSuppliersSupplierIdEditRoute
   AdminCustomersCustomerIdIndexRoute: typeof AdminCustomersCustomerIdIndexRoute
 }
 
@@ -611,7 +618,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminInventoryNewRoute: AdminInventoryNewRoute,
   AdminProductsPublishRoute: AdminProductsPublishRoute,
   AdminSuppliersSupplierIdRoute: AdminSuppliersSupplierIdRoute,
-  AdminSuppliersSupplierIdEditRoute: AdminSuppliersSupplierIdEditRoute,
   AdminCustomersIndexRoute: AdminCustomersIndexRoute,
   AdminInventoryIndexRoute: AdminInventoryIndexRoute,
   AdminProductsIndexRoute: AdminProductsIndexRoute,
@@ -619,6 +625,7 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminCustomersCustomerIdEditRoute: AdminCustomersCustomerIdEditRoute,
   AdminKhataCustomersCustomerIdRoute: AdminKhataCustomersCustomerIdRoute,
   AdminLedgerSuppliersSupplierIdRoute: AdminLedgerSuppliersSupplierIdRoute,
+  AdminSuppliersSupplierIdEditRoute: AdminSuppliersSupplierIdEditRoute,
   AdminCustomersCustomerIdIndexRoute: AdminCustomersCustomerIdIndexRoute,
 }
 
