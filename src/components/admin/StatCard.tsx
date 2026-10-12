@@ -4,9 +4,26 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import type { StatItem } from "@/types";
 
+// Per-stat icon color coding. Maps stat.id → Tailwind color classes for the
+// icon container background, text, and ring. Matches the image's visual style
+// where each card type has a distinct color (sales=emerald, stock=blue,
+// due=purple, alerts=amber, supplier=teal, top product=emerald).
+// Falls back to primary green for unknown stat IDs (forward-compatible).
+const colorByStatId: Record<string, string> = {
+  sales: "bg-emerald-100 text-emerald-700 ring-emerald-200",
+  stock: "bg-blue-100 text-blue-700 ring-blue-200",
+  "customer-due": "bg-purple-100 text-purple-700 ring-purple-200",
+  alerts: "bg-amber-100 text-amber-700 ring-amber-200",
+  "supplier-paid": "bg-teal-100 text-teal-700 ring-teal-200",
+  "top-sale-product": "bg-emerald-100 text-emerald-700 ring-emerald-200",
+};
+
+const defaultColor = "bg-primary/10 text-primary ring-primary/10";
+
 export function StatCard({ stat, loading = false }: { stat: StatItem; loading?: boolean }) {
   const TrendIcon =
     stat.trend === "up" ? ArrowUpRight : stat.trend === "down" ? ArrowDownRight : ArrowRight;
+  const colorClass = colorByStatId[stat.id] ?? defaultColor;
 
   return (
     <Card className="group relative overflow-hidden border-border/80 shadow-soft transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg">
@@ -31,7 +48,16 @@ export function StatCard({ stat, loading = false }: { stat: StatItem; loading?: 
               </>
             )}
           </div>
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary ring-1 ring-inset ring-primary/10 transition-transform duration-300 group-hover:scale-105">
+          {/* Icon container: circular (40px, rounded-full) with per-stat color
+              coding. Was: size-11 rounded-2xl bg-primary/10 text-primary
+              (same green for all). Now matches the image's distinct-color
+              per-card-type style. */}
+          <span
+            className={cn(
+              "flex size-10 shrink-0 items-center justify-center rounded-full ring-1 ring-inset transition-transform duration-300 group-hover:scale-105",
+              colorClass,
+            )}
+          >
             <stat.icon className="size-5" />
           </span>
         </div>

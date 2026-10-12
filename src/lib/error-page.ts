@@ -9,7 +9,7 @@ export function renderErrorPage(): string {
     <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)" />
     <style>
       :root { color-scheme: light dark; }
-      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fafafa; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: max(env(safe-area-inset-top), 1.5rem) max(env(safe-area-inset-right), 1.5rem) max(env(safe-area-inset-bottom), 1.5rem) max(env(safe-area-inset-left), 1.5rem); }
+      body { font: 15px/1.5 system-ui, -apple-system, sans-serif; background: #fef9e7; color: #111; display: grid; place-items: center; min-height: 100vh; margin: 0; padding: max(env(safe-area-inset-top), 1.5rem) max(env(safe-area-inset-right), 1.5rem) max(env(safe-area-inset-bottom), 1.5rem) max(env(safe-area-inset-left), 1.5rem); }
       @media (prefers-color-scheme: dark) { body { background: #000; color: #f5f5f5; } .card { background: #171717; border-color: #262626; } p { color: #a3a3a3; } .secondary { background: #171717; color: #f5f5f5; border-color: #262626; } }
       .card { max-width: 28rem; width: 100%; text-align: center; padding: 2rem; border: 1px solid #e5e7eb; border-radius: 0.75rem; background: #fff; }
       .icon { width: 3.5rem; height: 3.5rem; margin: 0 auto 1rem; border-radius: 9999px; display: flex; align-items: center; justify-content: center; background: #fee2e2; color: #dc2626; font-size: 1.5rem; }
