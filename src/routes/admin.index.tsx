@@ -38,7 +38,19 @@ import { useI18n } from "@/lib/i18n";
 import { buildDailyMetrics } from "@/lib/business-metrics";
 import type { StatItem } from "@/types";
 
-export const Route = createFileRoute("/admin/")({ component: AdminOverview });
+export const Route = createFileRoute("/admin/")({
+  head: () => ({
+    meta: [
+      { title: "Overview — Admin | Shree Sanwariya Agro Agency" },
+      {
+        name: "description",
+        content: "Review shop sales, purchases, stock levels, customer dues, and profit summaries.",
+      },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
+  component: AdminOverview,
+});
 const formatDay = (day: string) =>
   new Date(`${day}T00:00:00`).toLocaleDateString("en-IN", {
     day: "2-digit",
