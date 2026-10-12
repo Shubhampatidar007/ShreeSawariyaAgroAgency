@@ -19,7 +19,7 @@ const initials = (name: string) =>
 
 function Row({ label, value }: { label: string; value: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-2 text-xs">
+    <div className="flex items-center justify-between gap-2 text-[10px] sm:text-xs">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
     </div>
@@ -29,28 +29,28 @@ function Row({ label, value }: { label: string; value: ReactNode }) {
 export function CustomerCard({ customer }: { customer: Customer }) {
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
-      <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <Avatar className="size-10">
-              <AvatarFallback className="bg-primary/10 text-xs text-primary">
+      <CardContent className="space-y-2 p-3 sm:space-y-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <Avatar className="size-8 sm:size-10">
+              <AvatarFallback className="bg-primary/10 text-[10px] text-primary sm:text-xs">
                 {initials(customer.name)}
               </AvatarFallback>
             </Avatar>
-            <div>
+            <div className="min-w-0">
               <Link
                 to="/admin/customers/$customerId"
                 params={{ customerId: customer.id }}
-                className="font-display text-sm font-semibold hover:text-primary"
+                className="font-display text-xs font-semibold hover:text-primary sm:text-sm"
               >
                 {customer.name}
               </Link>
-              <p className="text-xs text-muted-foreground">{customer.mobile}</p>
+              <p className="text-[10px] text-muted-foreground sm:text-xs">{customer.mobile}</p>
             </div>
           </div>
           <StatusBadge status={customer.status} />
         </div>
-        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-2 sm:p-3">
           <Row label="Village" value={customer.village} />
           <Row label="Total purchases" value={formatCurrency(customer.totalPurchases)} />
           <Row
@@ -64,16 +64,16 @@ export function CustomerCard({ customer }: { customer: Customer }) {
           <Row label="Last purchase" value={formatDate(customer.lastPurchase)} />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1 rounded-full" asChild>
+          <Button variant="outline" size="sm" className="flex-1 rounded-full text-xs" asChild>
             <Link to="/admin/customers/$customerId" params={{ customerId: customer.id }}>
-              <Eye className="size-3.5" />
-              View details
+              <Eye className="size-3 sm:size-3.5" />
+              View
             </Link>
           </Button>
-          <Button size="sm" className="flex-1 rounded-full" asChild>
+          <Button size="sm" className="flex-1 rounded-full text-xs" asChild>
             <Link to="/admin/khata/customers/$customerId" params={{ customerId: customer.id }}>
-              <BookOpen className="size-3.5" />
-              Open khata
+              <BookOpen className="size-3 sm:size-3.5" />
+              Khata
             </Link>
           </Button>
         </div>
@@ -85,23 +85,23 @@ export function CustomerCard({ customer }: { customer: Customer }) {
 export function SupplierCard({ supplier }: { supplier: Supplier }) {
   return (
     <Card className="shadow-soft transition-shadow hover:shadow-lg">
-      <CardContent className="space-y-3 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <div>
+      <CardContent className="space-y-2 p-3 sm:space-y-3 sm:p-4">
+        <div className="flex items-start justify-between gap-2 sm:gap-3">
+          <div className="min-w-0">
             <Link
               to="/admin/suppliers/$supplierId"
               params={{ supplierId: supplier.id }}
-              className="font-display text-sm font-semibold hover:text-primary"
+              className="font-display text-xs font-semibold hover:text-primary sm:text-sm"
             >
               {supplier.company}
             </Link>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[10px] text-muted-foreground sm:text-xs">
               {supplier.name} · {supplier.mobile}
             </p>
           </div>
           <StatusBadge status={supplier.status} />
         </div>
-        <div className="space-y-1.5 rounded-lg bg-muted/50 p-3">
+        <div className="space-y-1.5 rounded-lg bg-muted/50 p-2 sm:p-3">
           <Row label="Supplies" value={supplier.productsSupplied.slice(0, 2).join(", ")} />
           <Row label="Purchases" value={formatCurrency(supplier.totalPurchases)} />
           <Row
@@ -115,20 +115,20 @@ export function SupplierCard({ supplier }: { supplier: Supplier }) {
           <Row label="Last order" value={formatDate(supplier.lastOrder)} />
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" className="flex-1 rounded-full" asChild>
+          <Button variant="outline" size="sm" className="flex-1 rounded-full text-xs" asChild>
             <Link to="/admin/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
-              <Eye className="size-3.5" />
-              View details
+              <Eye className="size-3 sm:size-3.5" />
+              View
             </Link>
           </Button>
-          <Button size="sm" className="flex-1 rounded-full" asChild>
+          <Button size="sm" className="flex-1 rounded-full text-xs" asChild>
             <Link to="/admin/suppliers/$supplierId/edit" params={{ supplierId: supplier.id }}>
-              <Pencil className="size-3.5" /> Edit
+              <Pencil className="size-3 sm:size-3.5" /> Edit
             </Link>
           </Button>
-          <Button size="sm" className="flex-1 rounded-full" asChild>
+          <Button size="sm" className="flex-1 rounded-full text-xs" asChild>
             <Link to="/admin/ledger/suppliers/$supplierId" params={{ supplierId: supplier.id }}>
-              <BookOpen className="size-3.5" /> Open ledger
+              <BookOpen className="size-3 sm:size-3.5" /> Ledger
             </Link>
           </Button>
         </div>
