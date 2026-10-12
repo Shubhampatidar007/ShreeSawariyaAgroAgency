@@ -228,7 +228,7 @@ async function sendKhataReceiptToEdgeFunction({
       transactionId,
 
       /*
-       * Required for Sup—abase purchase-history query.
+       * Required for Supabase purchase-history query.
        */
       customerId,
 

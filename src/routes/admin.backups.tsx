@@ -27,7 +27,20 @@ import { ModulePageHeader as PageHeader } from "@/components/shared/ModulePageHe
 import { supabase } from "@/integrations/supabase/client";
 import { shopStore, useShopStore } from "@/lib/shop-store";
 
-export const Route = createFileRoute("/admin/backups")({ component: BackupsPage });
+export const Route = createFileRoute("/admin/backups")({
+  head: () => ({
+    meta: [
+      { title: "Backups — Admin" },
+      {
+        name: "description",
+        content:
+          "Download CSV exports of shop data and inspect scheduled backup runs.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: BackupsPage,
+});
 
 const statusStyles: Record<string, string> = {
   completed: "bg-success/15 text-success",

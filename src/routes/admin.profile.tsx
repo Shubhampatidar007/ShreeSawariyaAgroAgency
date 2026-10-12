@@ -18,7 +18,7 @@ export const Route = createFileRoute("/admin/profile")({
       { title: "Profile — Admin" },
       {
         name: "description",
-        content: "Manage your Agrishop account profile and business contact details.",
+        content: "Manage your Shree Sanwariya Agro Agency account profile and business contact details.",
       },
       { name: "robots", content: "noindex" },
     ],

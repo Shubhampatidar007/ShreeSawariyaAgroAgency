@@ -53,7 +53,6 @@ function InventoryListPage() {
   const reminders = useShopStore((s) => s.reminders);
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
-undefined
   const [configuringReminderId, setConfiguringReminderId] = useState<string | null>(null);
   const [reminderError, setReminderError] = useState<string | null>(null);
 
@@ -242,7 +241,7 @@ undefined
                             {configuring
                               ? "Saving…"
                               : configured
-                                ? "Configure reminder"
+                                ? "Manage reminder"
                                 : "Configure reminder"}
                           </Button>
 

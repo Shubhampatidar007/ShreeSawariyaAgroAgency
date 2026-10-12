@@ -22,6 +22,17 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { formatCurrency, useShopStore } from "@/lib/shop-store";
 
 export const Route = createFileRoute("/admin/search")({
+  head: () => ({
+    meta: [
+      { title: "Search — Admin" },
+      {
+        name: "description",
+        content:
+          "Search customers, suppliers, products, invoices, and stock entries by name, id, or invoice number.",
+      },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: AdminSearchPage,
 });
 
