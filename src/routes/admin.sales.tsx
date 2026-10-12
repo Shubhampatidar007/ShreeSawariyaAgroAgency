@@ -304,30 +304,30 @@ function SalesPage() {
           </div>
 
           {/* Mobile: card grid (hidden on desktop) */}
-          <div className="grid gap-3 lg:hidden sm:grid-cols-2">
+          <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:hidden">
             {filtered.map((order) => {
               const due = Math.max(order.total - order.paid, 0);
               return (
                 <Card key={order.id} className="shadow-soft">
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-2">
+                  <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-start justify-between gap-1.5 sm:gap-2">
                       <div className="min-w-0">
-                        <p className="font-semibold">{order.code}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="truncate text-xs font-semibold sm:text-sm">{order.code}</p>
+                        <p className="text-[10px] text-muted-foreground sm:text-xs">
                           {formatDate(order.placedOn)}
                         </p>
                       </div>
-                      <Badge variant="outline" className="rounded-full capitalize">
+                      <Badge variant="outline" className="rounded-full capitalize text-[10px] sm:text-xs">
                         {order.orderStatus}
                       </Badge>
                     </div>
-                    <div className="mt-3 space-y-1 text-sm">
-                      <p className="font-medium">{order.customerName}</p>
-                      <p className="text-xs text-muted-foreground">
+                    <div className="mt-2 space-y-0.5 text-xs sm:mt-3 sm:space-y-1 sm:text-sm">
+                      <p className="truncate font-medium">{order.customerName}</p>
+                      <p className="truncate text-[10px] text-muted-foreground sm:text-xs">
                         {order.mobile} · {order.village}
                       </p>
                     </div>
-                    <div className="mt-3 grid grid-cols-3 gap-2 border-t border-border pt-3 text-xs">
+                    <div className="mt-2 grid grid-cols-3 gap-1 border-t border-border pt-2 text-[10px] sm:mt-3 sm:gap-2 sm:pt-3 sm:text-xs">
                       <div>
                         <p className="text-muted-foreground">Items</p>
                         <p className="font-semibold">{order.items.length}</p>
@@ -343,21 +343,21 @@ function SalesPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center justify-between gap-2">
-                      <span className="text-xs capitalize text-muted-foreground">
+                    <div className="mt-2 flex items-center justify-between gap-2 sm:mt-3">
+                      <span className="text-[10px] capitalize text-muted-foreground sm:text-xs">
                         {order.deliveryStatus.replace(/-/g, " ")}
                       </span>
-                      <span className="text-right font-bold">
+                      <span className="text-right text-xs font-bold sm:text-sm">
                         {formatCurrency(order.total)}
                       </span>
                     </div>
                     <Button
-                      className="mt-3 w-full rounded-full gap-1.5"
+                      className="mt-2 w-full rounded-full gap-1 sm:mt-3"
                       size="sm"
                       onClick={() => setActive(order)}
                     >
-                      <Eye className="size-3.5" />
-                      View order
+                      <Eye className="size-3 sm:size-3.5" />
+                      View
                     </Button>
                   </CardContent>
                 </Card>
