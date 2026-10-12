@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, useRouterState } from "@tanstack/react-router";
 import { LayoutDashboard, Menu, Package, Receipt, Users } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -13,6 +14,7 @@ const primaryItems = [
 ] as const;
 
 export function MobileAdminNav() {
+  const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (state) => state.location.pathname });
 
   const isActive = (to: string) =>
@@ -20,7 +22,10 @@ export function MobileAdminNav() {
   const isMoreActive = !primaryItems.some((item) => isActive(item.to));
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden">
+    <nav
+      aria-label="Admin mobile navigation"
+      className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 px-2 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-8px_30px_rgba(0,0,0,0.08)] backdrop-blur-xl lg:hidden"
+    >
       <div className="mx-auto grid max-w-lg grid-cols-5 gap-1">
         {primaryItems.map((item) => {
           const Icon = item.icon;
@@ -29,37 +34,41 @@ export function MobileAdminNav() {
             <Link
               key={item.to}
               to={item.to}
+              aria-current={active ? "page" : undefined}
               className={cn(
-                "flex min-h-14 flex-col items-center justify-center gap-1 rounded-xl px-2 text-[11px] font-medium transition-colors",
+                "flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl px-1 text-[11px] font-medium transition-colors",
                 active
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
             >
-              <Icon className="size-5" />
-              <span>{item.label}</span>
+              <Icon className="size-5 shrink-0" aria-hidden="true" />
+              <span className="max-w-full truncate">{item.label}</span>
             </Link>
           );
         })}
 
-        <Sheet>
+        <Sheet open={moreOpen} onOpenChange={setMoreOpen}>
           <SheetTrigger asChild>
             <Button
+              type="button"
               variant="ghost"
               className={cn(
-                "h-auto min-h-14 flex-col gap-1 rounded-xl px-2 text-[11px] font-medium",
+                "h-auto min-h-14 min-w-0 flex-col gap-1 rounded-xl px-1 text-[11px] font-medium",
                 isMoreActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground",
               )}
+              aria-label="Open more admin pages"
+              aria-expanded={moreOpen}
             >
-              <Menu className="size-5" />
+              <Menu className="size-5 shrink-0" aria-hidden="true" />
               <span>More</span>
             </Button>
           </SheetTrigger>
-          <SheetContent side="left" className="w-[min(86vw,20rem)] p-0">
+          <SheetContent side="left" className="w-[min(86vw,20rem)] overflow-y-auto p-0">
             <SheetTitle className="sr-only">Admin navigation</SheetTitle>
-            <AdminSidebar />
+            <AdminSidebar onNavigate={() => setMoreOpen(false)} />
           </SheetContent>
         </Sheet>
       </div>
