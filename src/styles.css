@@ -289,3 +289,81 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/*
+ * Cross-page layout guardrails.
+ * Keep accidental fixed-width content from expanding the viewport while
+ * allowing intentional local scroll regions (tables, code, carousels) to work.
+ */
+@layer base {
+  html {
+    min-width: 320px;
+    width: 100%;
+    overflow-x: clip;
+    scroll-padding-top: 5rem;
+  }
+
+  body {
+    min-width: 320px;
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  #root,
+  #app,
+  [data-radix-popper-content-wrapper] {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  img,
+  video,
+  canvas,
+  svg {
+    max-width: 100%;
+  }
+
+  img,
+  video {
+    height: auto;
+  }
+
+  button,
+  [role="button"],
+  a {
+    touch-action: manipulation;
+  }
+
+  :where(a, button, input, select, textarea, [tabindex]):focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Long names, URLs, and generated IDs should wrap rather than widen a page. */
+  :where(p, h1, h2, h3, h4, label, a, button, td, th, li) {
+    overflow-wrap: anywhere;
+  }
+
+  /* Tables remain usable on narrow screens through their own scroll wrappers. */
+  :where([data-slot="card"], [data-slot="dialog-content"], [data-slot="sheet-content"]) {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 640px) {
+  main,
+  [data-page-content],
+  .admin-page-transition {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+}
