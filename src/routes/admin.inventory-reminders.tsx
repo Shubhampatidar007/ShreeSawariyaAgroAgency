@@ -118,7 +118,7 @@ function InventoryRemindersPage() {
 
       <Card className="shadow-soft">
         <CardHeader>
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex items-center justify-between gap-3 sm:gap-4">
             <div>
               <CardTitle className="flex items-center gap-2">
                 <Bell className="size-5" />
@@ -135,7 +135,7 @@ function InventoryRemindersPage() {
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-4">
+        <CardContent className="space-y-3 sm:space-y-4">
           {inventoryReminders.length === 0 ? (
             <div className="rounded-xl border border-dashed p-6 sm:p-8 text-center">
               <BellOff className="mx-auto size-8 text-muted-foreground" />
@@ -151,7 +151,7 @@ function InventoryRemindersPage() {
 
               return (
                 <div key={reminder.id} className="rounded-2xl border p-3 sm:p-5">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-start justify-between gap-3 sm:gap-4">
                     <div className="flex min-w-0 items-start gap-3">
                       <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
                         <Package className="size-5" />
