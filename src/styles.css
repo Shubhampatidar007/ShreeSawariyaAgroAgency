@@ -279,7 +279,63 @@
   will-change: opacity, transform, filter;
 }
 
+/* ── Splash screen animations ─────────────────────────────────────
+   Premium, lightweight CSS-only animation for the PWA splash screen.
+   Phases:
+     1. Logo scales in (0–0.6s)
+     2. Brand name fades in (0.6–1.2s)
+     3. Subtitle fades in (1.2–1.8s)
+     4. Loading bar fills (0–1.8s)
+     5. Entire splash fades out (1.8–2.5s)
+   Total: 2.5s — short, elegant, no unnecessary delay.
+   Reduced-motion users skip all animation (handled in JSX). */
+@keyframes splash-logo-reveal {
+  from { opacity: 0; transform: scale(0.8) translateY(8px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes splash-text-reveal {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes splash-loading-fill {
+  from { transform: scaleX(0); }
+  to   { transform: scaleX(1); }
+}
+
+@keyframes splash-fadeout {
+  0%   { opacity: 1; }
+  72%  { opacity: 1; }  /* hold until 1.8s */
+  100% { opacity: 0; pointer-events: none; }
+}
+
+.splash-logo-reveal {
+  animation: splash-logo-reveal 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-brand-reveal {
+  opacity: 0;
+  animation: splash-text-reveal 600ms ease-out 600ms both;
+}
+
+.splash-subtitle-reveal {
+  opacity: 0;
+  animation: splash-text-reveal 600ms ease-out 1200ms both;
+}
+
+.splash-loading-bar {
+  transform-origin: left;
+  animation: splash-loading-fill 1800ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+.splash-fadeout {
+  animation: splash-fadeout 2500ms ease-in-out both;
+}
+
 @media (prefers-reduced-motion: reduce) {
+  html,
+  html *,
   html,
   html *,
   html *::before,

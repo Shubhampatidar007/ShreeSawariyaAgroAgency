@@ -20,6 +20,7 @@ import { initPublicShopData } from "@/lib/public-shop-store";
 import { SmoothScroll } from "@/components/SmoothScroll";
 import { registerPWA } from "@/lib/pwa";
 import { PWAInstallPrompt } from "@/components/PWAInstallPrompt";
+import { SplashScreen } from "@/components/SplashScreen";
 import { Home, RefreshCw, AlertTriangle, Compass } from "lucide-react";
 
 function NotFoundComponent() {
@@ -163,6 +164,7 @@ function RootShell({ children }: { children: ReactNode }) {
         <HeadContent />
       </head>
       <body>
+        <SplashScreen />
         {children}
         <Scripts />
       </body>
