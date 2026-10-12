@@ -201,7 +201,17 @@ export function SmoothScroll() {
       const horizontalDistance = Math.abs(deltaX);
       const verticalDistance = Math.abs(deltaY);
 
-      if (horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20) return;
+      // Swipe-to-navigate threshold.
+      // Previously: `horizontalDistance < 60 || horizontalDistance <= verticalDistance + 20`
+      // — too permissive, a near-45° diagonal swipe (80px horizontal, 50px vertical)
+      // would trigger because `80 > 50+20 = 70`. Users scrolling vertically with a
+      // slight horizontal drift would accidentally jump sections / admin pages.
+      // Tightened to require: at least 100px horizontal AND at least 2x the
+      // vertical distance — much more deliberate horizontal intent required.
+      // NOTE: admin swipe-to-navigate is still risky (could lose unsaved form
+      // state if an admin swipes mid-edit); consider removing admin swipe-nav
+      // entirely in a future pass.
+      if (horizontalDistance < 100 || horizontalDistance <= verticalDistance * 2) return;
 
       if (pathname.startsWith("/admin")) {
         // Swipe right-to-left to advance: Home -> Sales -> Stock -> Customers -> ... -> Home.
