@@ -11,6 +11,9 @@ import {
   Truck,
   UserRound,
   WalletCards,
+  Save,
+  Eye,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -281,9 +284,10 @@ function SalesPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          className="rounded-full"
+                          className="rounded-full gap-1.5"
                           onClick={() => setActive(order)}
                         >
+                          <Eye className="size-3.5" />
                           View
                         </Button>
                       </TableCell>
@@ -677,12 +681,14 @@ function OrderViewDialog({
           </div>
 
           <DialogFooter>
-            <Button variant="outline" className="rounded-full" onClick={onClose}>
+            <Button variant="outline" className="rounded-full gap-1.5" onClick={onClose}>
+              <X className="size-4" />
               Cancel
             </Button>
 
-            <Button className="rounded-full" onClick={() => void save()} disabled={saving}>
-              {saving ? "Saving..." : "Save order"}
+            <Button className="rounded-full gap-1.5" onClick={() => void save()} disabled={saving}>
+              <Save className="size-4" />
+              {saving ? "Saving…" : "Save order"}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -761,20 +767,22 @@ function OrderViewDialog({
           <DialogFooter>
             <Button
               variant="outline"
-              className="rounded-full"
+              className="rounded-full gap-1.5"
               onClick={() => setPaymentDialogOpen(false)}
               disabled={paymentSaving}
             >
+              <X className="size-4" />
               Cancel
             </Button>
 
             <Button
-              className="rounded-full"
+              className="rounded-full gap-1.5"
               variant="secondary"
               disabled={paymentSaving}
               onClick={() => void handleAddPayment(false)}
             >
-              {paymentSaving && !paymentReceiptSending ? "Saving..." : "Save payment"}
+              <Save className="size-4" />
+              {paymentSaving && !paymentReceiptSending ? "Saving…" : "Save payment"}
             </Button>
 
             <Button

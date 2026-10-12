@@ -2,7 +2,7 @@ import { useState } from "react";
 import type { FormEvent } from "react";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Truck } from "lucide-react";
+import { Save, Truck, X } from "lucide-react";
 import { EmptyState } from "@/components/admin/EmptyState";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { shopStore, useShopStore } from "@/lib/shop-store";
 import type { EntityStatus, Supplier } from "@/types/business";
 
-export const Route = createFileRoute("/admin/suppliers/$supplierId/edit")({
+export const Route = createFileRoute("/admin/suppliers_/$supplierId/edit")({
   head: () => ({ meta: [
     { title: "Edit Supplier — Admin" },
     { name: "description", content: "Update supplier contact details, company information and account status." },
@@ -86,7 +86,7 @@ export function SupplierEditForm({ supplier, onCancel, onSaved }: { supplier: Su
             <Field label="Address" value={address} onChange={setAddress} className="sm:col-span-2" />
             <Field label="Products supplied" value={products} onChange={setProducts} className="sm:col-span-2" placeholder="Comma-separated products" />
           </div>
-          <div className="flex justify-end gap-2"><Button type="button" variant="outline" className="rounded-full" onClick={onCancel} disabled={saving}>Cancel</Button><Button type="submit" className="rounded-full" disabled={saving}>{saving ? "Saving…" : "Save changes"}</Button></div>
+          <div className="flex justify-end gap-2"><Button type="button" variant="outline" className="rounded-full gap-1.5" onClick={onCancel} disabled={saving}><X className="size-4" />Cancel</Button><Button type="submit" className="rounded-full gap-1.5" disabled={saving}><Save className="size-4" />{saving ? "Saving…" : "Save changes"}</Button></div>
         </form>
       </CardContent>
     </Card>

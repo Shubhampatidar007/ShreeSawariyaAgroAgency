@@ -8,6 +8,7 @@ import {
   Truck,
   Wallet,
   CreditCard,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -378,7 +379,8 @@ function SupplierLedgerPage() {
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setWhatsappOpen(false)} disabled={whatsappSending}>
+            <Button variant="outline" className="gap-1.5" onClick={() => setWhatsappOpen(false)} disabled={whatsappSending}>
+              <X className="size-4" />
               Close
             </Button>
             <Button onClick={sendSupplierWhatsApp} disabled={whatsappSending || !supplier.mobile?.trim()}>
@@ -446,12 +448,17 @@ function SupplierLedgerPage() {
             {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={paymentSaving}>Cancel</Button>
+            <Button variant="outline" className="gap-1.5" onClick={() => setPaymentOpen(false)} disabled={paymentSaving}>
+              <X className="size-4" />
+              Cancel
+            </Button>
             <Button
+              className="gap-1.5"
               disabled={paymentSaving || !Number(paymentAmount) || Number(paymentAmount) <= 0 || Number(paymentAmount) > supplier.dueBalance}
               onClick={recordPayment}
             >
-              {paymentSaving ? "Recording..." : "Record Payment"}
+              <CreditCard className="size-4" />
+              {paymentSaving ? "Recording…" : "Record Payment"}
             </Button>
           </DialogFooter>
         </DialogContent>

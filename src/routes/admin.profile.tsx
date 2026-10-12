@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
-import { Building2, KeyRound, Mail, MapPin, Phone, ShieldCheck, UserRound } from "lucide-react";
+import { Building2, KeyRound, Mail, MapPin, Phone, Save, ShieldCheck, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -212,7 +212,8 @@ function ProfilePage() {
                   />
                 </div>
               </div>
-              <Button className="rounded-full" onClick={() => void saveProfile()} disabled={saving}>
+              <Button className="rounded-full gap-1.5" onClick={() => void saveProfile()} disabled={saving}>
+                <Save className="size-4" />
                 {saving ? "Saving…" : "Save profile"}
               </Button>
             </CardContent>
@@ -274,10 +275,11 @@ function ProfilePage() {
           </div>
           <Button
             variant="outline"
-            className="rounded-full"
+            className="rounded-full gap-1.5"
             onClick={() => void updatePassword()}
             disabled={changingPassword}
           >
+            <KeyRound className="size-4" />
             {changingPassword ? "Updating…" : "Update password"}
           </Button>
         </CardContent>
