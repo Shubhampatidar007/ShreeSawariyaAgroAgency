@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
 import { ThemeToggle } from "@/components/layout/ThemeToggle";
+import { Logo } from "@/components/layout/Logo";
 import { CommandPalette, useCommandPalette } from "@/components/shared/CommandPalette";
 import {
   DropdownMenu,
@@ -33,7 +34,14 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
     .toUpperCase();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border bg-card/90 px-3 backdrop-blur-xl sm:px-4 md:gap-3 md:px-6">
+    <header className="sticky top-0 z-30 flex h-16 items-center gap-2 border-b border-border bg-card/90 px-3 backdrop-blur-xl safe-top sm:px-4 md:gap-3 md:px-6">
+      <Link
+        to="/admin"
+        className="flex items-center gap-2 rounded-lg lg:hidden"
+        aria-label="Admin home"
+      >
+        <Logo compactOnMobile subtitle="Admin" />
+      </Link>
       <Button
         variant="ghost"
         size="icon"
@@ -91,9 +99,9 @@ export function AdminHeader({ onToggleSidebar }: AdminHeaderProps) {
             <DropdownMenuLabel>{displayName}</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href="/admin/profile">
+              <Link to="/admin/profile">
                 <UserRound className="size-4" /> Profile
-              </a>
+              </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
               <Link to="/">
