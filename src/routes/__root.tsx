@@ -104,11 +104,11 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         content:
           "A storefront and shop management platform for managing Shree Sanwariya Agro Agency.",
       },
-      // PWA / mobile meta — theme-color split for light/dark so the status bar
-      // blends with the body background (white in light, black in dark) instead
-      // of clashing with the emerald green brand color.
-      { name: "theme-color", content: "#ffffff", media: "(prefers-color-scheme: light)" },
-      { name: "theme-color", content: "#000000", media: "prefers-color-scheme: dark" },
+      // PWA / mobile meta.
+      // NOTE: theme-color is intentionally NOT in this array — TanStack Router's
+      // HeadContent dedupes meta tags by `name`, which strips one of the two
+      // theme-color variants (light vs dark) we need. They are rendered directly
+      // in <head> in RootShell below to bypass the dedupe.
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-status-bar-style", content: "default" },
       { name: "apple-mobile-web-app-title", content: "Shree Sawariya" },
@@ -145,6 +145,21 @@ function RootShell({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
       <head>
+        {/* Theme-color split for light/dark so the Android status bar matches
+            the body background (white in light, black in dark) instead of the
+            emerald green brand color (which clashed with the white body).
+            Rendered directly here (not via TanStack head().meta) to avoid
+            HeadContent's name-based dedupe stripping one of the two tags. */}
+        <meta
+          name="theme-color"
+          content="#ffffff"
+          media="(prefers-color-scheme: light)"
+        />
+        <meta
+          name="theme-color"
+          content="#000000"
+          media="(prefers-color-scheme: dark)"
+        />
         <HeadContent />
       </head>
       <body>
