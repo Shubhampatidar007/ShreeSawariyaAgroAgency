@@ -301,7 +301,7 @@ function AdminOverview() {
           }
         />
       </ScrollReveal>
-      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-6">
+      <div className="grid grid-cols-2 gap-2 sm:gap-3 sm:grid-cols-3 xl:grid-cols-6">
         {stats.map((stat, index) => (
           <ScrollReveal key={stat.id} delay={index * 40} direction="up" distance={12} duration={300}><StatCard stat={stat} loading={loading} /></ScrollReveal>
         ))}
