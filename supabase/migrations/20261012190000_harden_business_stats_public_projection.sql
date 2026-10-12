@@ -6,6 +6,7 @@ SELECT id, years_in_business, customers_served, services_offered
 FROM public.business_stats;
 
 REVOKE SELECT ON TABLE public.business_stats FROM anon;
+REVOKE SELECT (id, years_in_business, customers_served, services_offered, updated_at) ON TABLE public.business_stats FROM anon;
 GRANT SELECT ON TABLE public.business_stats_public TO anon;
 GRANT SELECT ON TABLE public.business_stats_public TO authenticated;
 
