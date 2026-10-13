@@ -250,7 +250,7 @@ function RemindersPage() {
         }
       />
 
-      <div className="grid gap-3 sm:gap-4 md:grid-cols-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <Metric
           label="Customers matched"
           value={String(filteredCustomers.length)}
@@ -259,9 +259,9 @@ function RemindersPage() {
         <Metric
           label="Selected due"
           value={formatCurrency(selectedDue)}
-          helper="Outstanding across selected customers"
+          helper="Outstanding across selected"
         />
-        <Metric label="Message history" value={String(logs.length)} helper="Saved in Supabase" />
+        <Metric label="History" value={String(logs.length)} helper="Saved in Supabase" />
       </div>
 
       {result ? (
@@ -289,17 +289,17 @@ function RemindersPage() {
 
         <TabsContent value="send" className="space-y-4 sm:space-y-5">
           <Card className="shadow-soft">
-            <CardHeader className="pb-3">
-              <CardTitle>What do you want to share?</CardTitle>
+            <CardHeader className="pb-3 pt-4">
+              <CardTitle className="text-sm sm:text-base">What do you want to share?</CardTitle>
             </CardHeader>
 
-            <CardContent className="grid gap-3 md:grid-cols-3">
+            <CardContent className="grid grid-cols-3 gap-2">
               {(Object.keys(messagePresets) as WhatsAppMessageKind[]).map((messageType) => (
                 <button
                   key={messageType}
                   type="button"
                   onClick={() => setKindAndPreset(messageType)}
-                  className={`flex min-h-14 items-center justify-center rounded-xl border px-4 py-3 text-sm font-semibold transition ${
+                  className={`flex min-h-10 items-center justify-center rounded-lg border px-2 py-2 text-center text-[11px] font-semibold leading-tight transition sm:text-xs ${
                     kind === messageType
                       ? "border-primary bg-primary/5 text-primary ring-1 ring-primary/20"
                       : "border-border bg-background hover:border-primary/40 hover:bg-muted/30"
@@ -322,19 +322,19 @@ function RemindersPage() {
                 before selecting customers.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
-              <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-                <div className="relative xl:col-span-2">
-                  <Search className="absolute left-3 top-3 size-4 text-muted-foreground" />
+            <CardContent className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                <div className="relative col-span-2 sm:col-span-3 lg:col-span-2">
+                  <Search className="absolute left-2.5 top-2.5 size-3.5 text-muted-foreground" />
                   <Input
-                    className="pl-9"
+                    className="h-9 pl-8 text-sm"
                     placeholder="Name, mobile or village"
                     value={filters.query}
                     onChange={(e) => setFilters({ ...filters, query: e.target.value })}
                   />
                 </div>
                 <select
-                  className="h-10 rounded-md border border-input bg-background px-3 text-sm"
+                  className="h-9 rounded-md border border-input bg-background px-2 text-sm"
                   value={filters.village}
                   onChange={(e) => setFilters({ ...filters, village: e.target.value })}
                 >
@@ -346,8 +346,9 @@ function RemindersPage() {
                   ))}
                 </select>
                 <Button
+                  size="sm"
                   variant={filters.dueOnly ? "default" : "outline"}
-                  className="rounded-full"
+                  className="h-9 rounded-full"
                   onClick={() => setFilters({ ...filters, dueOnly: !filters.dueOnly })}
                 >
                   Due only: {filters.dueOnly ? "On" : "Off"}
@@ -355,63 +356,71 @@ function RemindersPage() {
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Minimum due"
+                  className="h-9 text-sm"
+                  placeholder="Min due"
                   value={filters.minDue}
                   onChange={(e) => setFilters({ ...filters, minDue: e.target.value })}
                 />
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Maximum due"
+                  className="h-9 text-sm"
+                  placeholder="Max due"
                   value={filters.maxDue}
                   onChange={(e) => setFilters({ ...filters, maxDue: e.target.value })}
                 />
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Minimum purchase"
+                  className="h-9 text-sm"
+                  placeholder="Min purchase"
                   value={filters.minPurchase}
                   onChange={(e) => setFilters({ ...filters, minPurchase: e.target.value })}
                 />
                 <Input
                   type="number"
                   min="0"
-                  placeholder="Maximum purchase"
+                  className="h-9 text-sm"
+                  placeholder="Max purchase"
                   value={filters.maxPurchase}
                   onChange={(e) => setFilters({ ...filters, maxPurchase: e.target.value })}
                 />
                 <Input
                   type="date"
+                  className="h-9 text-sm"
                   value={filters.purchaseFrom}
                   onChange={(e) => setFilters({ ...filters, purchaseFrom: e.target.value })}
                 />
                 <Input
                   type="date"
+                  className="h-9 text-sm"
                   value={filters.purchaseTo}
                   onChange={(e) => setFilters({ ...filters, purchaseTo: e.target.value })}
                 />
                 <Button
+                  size="sm"
                   variant={filters.whatsappOnly ? "default" : "outline"}
-                  className="rounded-full"
+                  className="h-9 rounded-full"
                   onClick={() => setFilters({ ...filters, whatsappOnly: !filters.whatsappOnly })}
                 >
-                  <Smartphone className="size-4" /> WhatsApp only:{" "}
-                  {filters.whatsappOnly ? "On" : "Off"}
+                  <Smartphone className="size-3.5" /> WA only: {filters.whatsappOnly ? "On" : "Off"}
                 </Button>
                 <Button
+                  size="sm"
                   variant="outline"
-                  className="rounded-full"
+                  className="h-9 rounded-full"
                   onClick={() => setFilters(initialFilters)}
                 >
-                  Reset filters
+                  Reset
                 </Button>
               </div>
             </CardContent>
           </Card>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex gap-2">
               <Button
+                size="sm"
                 variant="outline"
                 className="rounded-full"
                 onClick={() =>
@@ -421,6 +430,7 @@ function RemindersPage() {
                 Select all
               </Button>
               <Button
+                size="sm"
                 variant="ghost"
                 className="rounded-full"
                 onClick={() => setSelectedIds(new Set())}
@@ -428,12 +438,12 @@ function RemindersPage() {
                 Clear
               </Button>
             </div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground sm:text-sm">
               {filteredCustomers.length} customers · {selectedCustomers.length} selected
             </p>
           </div>
 
-          <div className="grid gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-3">
             {filteredCustomers.map((customer) => {
               const selected = selectedIds.has(customer.id);
               return (
@@ -441,11 +451,11 @@ function RemindersPage() {
                   key={customer.id}
                   className={selected ? "border-primary shadow-soft" : "shadow-soft"}
                 >
-                  <CardContent className="flex items-center gap-3 p-3 sm:p-4">
+                  <CardContent className="flex items-start gap-2.5 p-2.5 sm:p-3">
                     <Button
                       size="sm"
                       variant={selected ? "default" : "outline"}
-                      className="size-9 rounded-full p-0"
+                      className="size-8 shrink-0 rounded-full p-0"
                       onClick={() =>
                         setSelectedIds((current) => {
                           const next = new Set(current);
@@ -458,11 +468,21 @@ function RemindersPage() {
                       {selected ? "✓" : ""}
                     </Button>
                     <div className="min-w-0 flex-1">
-                      <p className="truncate font-semibold">{customer.name}</p>
-                      <p className="truncate text-xs text-muted-foreground">
-                        {customer.mobile} · {customer.village || "No village"}
+                      <p className="truncate text-sm font-semibold leading-tight">
+                        {customer.name}
                       </p>
-                      <p className="mt-1 text-xs">
+                      <p className="mt-0.5 flex items-center gap-1 truncate text-[11px] text-muted-foreground">
+                        <Smartphone className="size-3 shrink-0" />
+                        <span className="truncate">{customer.mobile || "No mobile"}</span>
+                        {customer.village ? (
+                          <>
+                            <span className="text-muted-foreground/40">·</span>
+                            <MapPin className="size-3 shrink-0" />
+                            <span className="truncate">{customer.village}</span>
+                          </>
+                        ) : null}
+                      </p>
+                      <p className="mt-1 text-[11px] leading-snug">
                         Purchase {formatCurrency(customer.totalPurchases)} · Due{" "}
                         <span className="font-semibold">{formatCurrency(customer.currentDue)}</span>
                       </p>
@@ -470,10 +490,11 @@ function RemindersPage() {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="rounded-full"
+                      className="h-8 shrink-0 rounded-full px-2.5 text-xs"
                       onClick={() => setPreviewCustomer(customer)}
                     >
-                      <Eye className="size-4" /> Preview
+                      <Eye className="size-3.5" />
+                      Preview
                     </Button>
                   </CardContent>
                 </Card>
@@ -482,41 +503,41 @@ function RemindersPage() {
           </div>
 
           <Card className="shadow-soft">
-            <CardHeader className="space-y-1.5">
-              <CardTitle>Edit message</CardTitle>
-              <CardDescription>
-                Supported placeholders: {"{name}"}, {"{due}"}, {"{totalPurchase}"}, {"{totalPaid}"},{" "}
-                {"{lastPurchase}"}. Use blank lines to keep the WhatsApp message easy to read.
+            <CardHeader className="space-y-1.5 pt-4">
+              <CardTitle className="text-sm sm:text-base">Edit message</CardTitle>
+              <CardDescription className="text-xs">
+                Placeholders: {"{name}"}, {"{due}"}, {"{totalPurchase}"}, {"{totalPaid}"},{" "}
+                {"{lastPurchase}"}.
               </CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 sm:space-y-4">
+            <CardContent className="space-y-3">
               <textarea
                 value={message}
                 onChange={(event) => setMessage(event.target.value)}
-                className="min-h-48 w-full rounded-2xl border border-input bg-background p-3 sm:p-4 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10"
+                className="min-h-36 w-full rounded-xl border border-input bg-background p-2.5 text-sm leading-6 outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/10 sm:p-3"
               />
               {selectedCustomers[0] ? (
-                <div className="rounded-2xl border bg-muted/30 p-3 sm:p-5">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <div className="rounded-xl border bg-muted/30 p-2.5 sm:p-3">
+                  <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground sm:text-xs">
                     Preview for {selectedCustomers[0].name}
                   </p>
-                  <p className="mt-3 whitespace-pre-wrap text-sm leading-6">
+                  <p className="mt-2 whitespace-pre-wrap text-xs leading-5 sm:text-sm sm:leading-6">
                     {previewText(selectedCustomers[0])}
                   </p>
                 </div>
               ) : null}
-              <div className="flex flex-col gap-3 border-t pt-4 sm:flex-row sm:items-center sm:justify-between">
-                <p className="text-xs leading-5 text-muted-foreground">
-                  The reminder uses the live Meta WhatsApp connection and your selected customer
-                  records.
+              <div className="flex flex-col gap-2 border-t pt-3 sm:flex-row sm:items-center sm:justify-between">
+                <p className="text-[11px] leading-5 text-muted-foreground">
+                  Uses the live Meta WhatsApp connection and your selected customer records.
                 </p>
                 <Button
+                  size="sm"
                   className="rounded-full"
                   disabled={selectedCustomers.length === 0 || sending}
                   onClick={() => void send()}
                 >
-                  <Send className="size-4" />
-                  {sending ? "Sending…" : `Send selected (${selectedCustomers.length})`}
+                  <Send className="size-3.5" />
+                  {sending ? "Sending…" : `Send (${selectedCustomers.length})`}
                 </Button>
               </div>
             </CardContent>
@@ -537,7 +558,10 @@ function RemindersPage() {
               ) : (
                 <div className="space-y-3">
                   {logs.map((log) => (
-                    <div key={log.id} className="flex items-center gap-3 rounded-xl border p-3 sm:p-4">
+                    <div
+                      key={log.id}
+                      className="flex items-center gap-3 rounded-xl border p-3 sm:p-4"
+                    >
                       <BellRing className="size-4 text-primary" />
                       <div className="min-w-0 flex-1">
                         <p className="font-medium">{log.reminderTitle}</p>
@@ -771,10 +795,12 @@ function CustomerPreviewDialog({
 function Metric({ label, value, helper }: { label: string; value: string; helper: string }) {
   return (
     <Card className="shadow-soft">
-      <CardContent className="p-3 sm:p-5">
-        <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p>
-        <p className="mt-2 text-xl sm:text-2xl font-semibold">{value}</p>
-        <p className="mt-1 text-xs text-muted-foreground">{helper}</p>
+      <CardContent className="p-2.5 sm:p-3.5">
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground sm:text-xs">
+          {label}
+        </p>
+        <p className="mt-1 text-base font-semibold sm:text-lg">{value}</p>
+        <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-xs">{helper}</p>
       </CardContent>
     </Card>
   );

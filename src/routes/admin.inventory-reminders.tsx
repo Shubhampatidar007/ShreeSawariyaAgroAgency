@@ -104,121 +104,129 @@ function InventoryRemindersPage() {
         title="Inventory Reminders"
         description="Control the low-stock reminders already configured from Inventory."
         actions={
-          <Button variant="outline" className="rounded-full" asChild>
+          <Button variant="outline" size="sm" className="rounded-full" asChild>
             <Link to="/admin/reminders">Customer reminders</Link>
           </Button>
         }
       />
 
       {error ? (
-        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 sm:p-4 text-sm text-destructive">
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-xs text-destructive sm:text-sm">
           {error}
         </div>
       ) : null}
 
       <Card className="shadow-soft">
-        <CardHeader>
-          <div className="flex items-center justify-between gap-3 sm:gap-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Bell className="size-5" />
-                Configured reminders
-              </CardTitle>
-              <p className="mt-1 text-sm text-muted-foreground">
-                Configure or disable reminders from the Inventory module. The popup uses these
-                active records.
-              </p>
-            </div>
-            <Badge variant="outline" className="rounded-full">
+        <CardHeader className="py-3 sm:py-4">
+          <div className="flex items-center justify-between gap-2 sm:gap-3">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Bell className="size-4" />
+              Configured reminders
+            </CardTitle>
+            <Badge variant="outline" className="rounded-full px-2.5 py-0.5 text-xs">
               {inventoryReminders.length} configured
             </Badge>
           </div>
         </CardHeader>
 
-        <CardContent className="space-y-3 sm:space-y-4">
+        <CardContent className="p-3 sm:p-4">
           {inventoryReminders.length === 0 ? (
-            <div className="rounded-xl border border-dashed p-6 sm:p-8 text-center">
-              <BellOff className="mx-auto size-8 text-muted-foreground" />
-              <p className="mt-3 font-medium">No inventory reminders configured</p>
-              <p className="mt-1 text-sm text-muted-foreground">
+            <div className="rounded-xl border border-dashed p-6 text-center">
+              <BellOff className="mx-auto size-7 text-muted-foreground" />
+              <p className="mt-2 text-sm font-medium">No inventory reminders configured</p>
+              <p className="mt-1 text-xs text-muted-foreground">
                 Open Inventory and use Configure reminder on a product to add one.
               </p>
             </div>
           ) : (
-            inventoryReminders.map(({ reminder, item }) => {
-              const active = reminder.status === "active";
-              const busy = busyId === reminder.id;
+            /* Multi-column grid so as many reminders as possible fit on one row,
+               especially on PWA / mobile widths. */
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {inventoryReminders.map(({ reminder, item }) => {
+                const active = reminder.status === "active";
+                const busy = busyId === reminder.id;
 
-              return (
-                <div key={reminder.id} className="rounded-2xl border p-3 sm:p-5">
-                  <div className="flex items-start justify-between gap-3 sm:gap-4">
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Package className="size-5" />
+                return (
+                  <div key={reminder.id} className="flex flex-col rounded-xl border p-2.5 sm:p-3">
+                    {/* Compact product header */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 items-start gap-2">
+                        <div className="flex size-7 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                          <Package className="size-3.5" />
+                        </div>
+                        <div className="min-w-0">
+                          <p className="line-clamp-2 text-sm font-semibold leading-tight">
+                            {item.productName}
+                          </p>
+                        </div>
                       </div>
-                      <div className="min-w-0">
-                        <p className="truncate font-semibold">{item.productName}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">
-                          {active ? "Reminder is enabled" : "Reminder is paused"}
+
+                      <Badge
+                        variant={active ? "default" : "secondary"}
+                        className="shrink-0 px-2 py-0.5 text-[10px]"
+                      >
+                        {active ? "Active" : "Paused"}
+                      </Badge>
+                    </div>
+
+                    {/* Quantity boxes — always 2 columns side-by-side, even on
+                       narrow phones, mirroring the Low Stock Warning popup. */}
+                    <div className="mt-2.5 grid grid-cols-2 gap-2">
+                      <div className="rounded-lg bg-muted/50 px-2 py-1.5">
+                        <p className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                          Current
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold sm:text-base">
+                          {item.quantity} {item.unit}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-muted/50 px-2 py-1.5">
+                        <p className="text-[9px] uppercase tracking-wide text-muted-foreground">
+                          Minimum
+                        </p>
+                        <p className="mt-0.5 text-sm font-bold sm:text-base">
+                          {item.minStockLevel} {item.unit}
                         </p>
                       </div>
                     </div>
 
-                    <Badge variant={active ? "default" : "secondary"}>
-                      {active ? "Active" : "Paused"}
-                    </Badge>
-                  </div>
+                    {/* Action buttons — full width, compact, stacked. */}
+                    <div className="mt-2.5 flex flex-col gap-1.5">
+                      <Button
+                        size="sm"
+                        variant={active ? "outline" : "default"}
+                        className="h-8 text-xs"
+                        disabled={busy}
+                        onClick={() => void toggleReminder(reminder.id, active)}
+                      >
+                        {active ? (
+                          <>
+                            <BellOff className="size-3.5" />
+                            Turn off
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="size-3.5" />
+                            Turn on
+                          </>
+                        )}
+                      </Button>
 
-                  <div className="mt-4 sm:mt-5 grid gap-3 sm:grid-cols-2">
-                    <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Current stock
-                      </p>
-                      <p className="mt-1 text-lg sm:text-xl font-bold">
-                        {item.quantity} {item.unit}
-                      </p>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-8 text-xs"
+                        disabled={busy}
+                        onClick={() => void deleteReminder(reminder.id)}
+                      >
+                        <Trash2 className="size-3.5" />
+                        Delete
+                      </Button>
                     </div>
-                    <div className="rounded-xl bg-muted/50 p-3 sm:p-4">
-                      <p className="text-xs uppercase tracking-wide text-muted-foreground">
-                        Minimum stock
-                      </p>
-                      <p className="mt-1 text-lg sm:text-xl font-bold">
-                        {item.minStockLevel} {item.unit}
-                      </p>
-                    </div>
                   </div>
-
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <Button
-                      variant={active ? "outline" : "default"}
-                      disabled={busy}
-                      onClick={() => void toggleReminder(reminder.id, active)}
-                    >
-                      {active ? (
-                        <>
-                          <BellOff className="size-4" />
-                          Turn off reminder
-                        </>
-                      ) : (
-                        <>
-                          <CheckCircle2 className="size-4" />
-                          Turn on reminder
-                        </>
-                      )}
-                    </Button>
-
-                    <Button
-                      variant="destructive"
-                      disabled={busy}
-                      onClick={() => void deleteReminder(reminder.id)}
-                    >
-                      <Trash2 className="size-4" />
-                      Delete reminder
-                    </Button>
-                  </div>
-                </div>
-              );
-            })
+                );
+              })}
+            </div>
           )}
         </CardContent>
       </Card>
