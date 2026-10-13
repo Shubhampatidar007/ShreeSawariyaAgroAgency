@@ -35,15 +35,8 @@ import { EmptyState } from "@/components/admin/EmptyState";
 import { DetailHeader } from "@/components/shared/DetailHeader";
 import { SummaryCards } from "@/components/shared/SummaryCards";
 import { SupplierTransactionTimeline } from "@/components/suppliers/SupplierTransactionTimeline";
-import {
-  formatCurrency,
-  shopStore,
-  useShopStore,
-} from "@/lib/shop-store";
-import {
-  sendWhatsAppBatch,
-  type WhatsAppRecipient,
-} from "@/lib/whatsapp";
+import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import { sendWhatsAppBatch, type WhatsAppRecipient } from "@/lib/whatsapp";
 
 export const Route = createFileRoute("/admin/ledger/suppliers/$supplierId")({
   head: () => ({
@@ -122,10 +115,7 @@ function SupplierLedgerPage() {
     s.supplierLedger.filter((entry) => entry.supplierId === supplierId),
   );
 
-  const sorted = useMemo(
-    () => [...ledger].sort((a, b) => b.date.localeCompare(a.date)),
-    [ledger],
-  );
+  const sorted = useMemo(() => [...ledger].sort((a, b) => b.date.localeCompare(a.date)), [ledger]);
 
   const totalRecords = sorted.length;
 
@@ -238,7 +228,9 @@ function SupplierLedgerPage() {
       return;
     }
     if (amount > supplier.dueBalance) {
-      setPaymentError(`Payment cannot exceed the current due of ${formatCurrency(supplier.dueBalance)}.`);
+      setPaymentError(
+        `Payment cannot exceed the current due of ${formatCurrency(supplier.dueBalance)}.`,
+      );
       return;
     }
 
@@ -273,26 +265,35 @@ function SupplierLedgerPage() {
         title={`${supplier.company} — Ledger`}
         subtitle={`${supplier.name} · ${supplier.mobile} · GSTIN ${supplier.gstin}`}
         actions={
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2">
             <Button
+              size="sm"
               className="rounded-full"
               variant="outline"
               onClick={openWhatsAppReminder}
               disabled={!supplier.mobile?.trim() || whatsappSending}
             >
-              <MessageCircle className="mr-2 h-4 w-4" />
-              Send via WhatsApp
+              <MessageCircle className="mr-1.5 size-3.5" />
+              <span className="hidden sm:inline">Send via WhatsApp</span>
+              <span className="sm:hidden">WhatsApp</span>
             </Button>
             <Button
+              size="sm"
               className="rounded-full"
               onClick={openPayment}
               disabled={supplier.dueBalance <= 0}
             >
-              <CreditCard className="mr-2 h-4 w-4" />
-              Pay Supplier
+              <CreditCard className="mr-1.5 size-3.5" />
+              <span className="hidden sm:inline">Pay Supplier</span>
+              <span className="sm:hidden">Pay</span>
             </Button>
-            <Button variant="outline" className="rounded-full" onClick={() => window.print()}>
-              <Printer className="mr-2 h-4 w-4" />
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => window.print()}
+            >
+              <Printer className="mr-1.5 size-3.5" />
               Print
             </Button>
           </div>
@@ -301,8 +302,17 @@ function SupplierLedgerPage() {
 
       <SummaryCards
         items={[
-          { label: "Total purchases", value: formatCurrency(supplier.totalPurchases), icon: IndianRupee },
-          { label: "Total paid", value: formatCurrency(supplier.totalPaid), icon: Wallet, tone: "success" },
+          {
+            label: "Total purchases",
+            value: formatCurrency(supplier.totalPurchases),
+            icon: IndianRupee,
+          },
+          {
+            label: "Total paid",
+            value: formatCurrency(supplier.totalPaid),
+            icon: Wallet,
+            tone: "success",
+          },
           { label: "Advance", value: formatCurrency(supplier.advance), icon: Wallet },
           {
             label: "Due balance",
@@ -320,14 +330,17 @@ function SupplierLedgerPage() {
           <DialogHeader>
             <DialogTitle>Send supplier reminder</DialogTitle>
             <DialogDescription>
-              Compose the account update that will be sent to {supplier.name || supplier.company} on WhatsApp.
+              Compose the account update that will be sent to {supplier.name || supplier.company} on
+              WhatsApp.
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 sm:space-y-5">
             <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
               <p className="text-sm text-muted-foreground">Supplier</p>
               <p className="font-semibold">{supplier.company}</p>
-              <p className="text-sm text-muted-foreground">{supplier.name} · {supplier.mobile}</p>
+              <p className="text-sm text-muted-foreground">
+                {supplier.name} · {supplier.mobile}
+              </p>
               <p className="mt-2 text-xs text-muted-foreground">
                 {totalRecords} {totalRecords === 1 ? "record" : "records"} in this ledger view
               </p>
@@ -354,7 +367,10 @@ function SupplierLedgerPage() {
                   id="supplier-reminder-other-important"
                   value={reminderForm.otherImportant}
                   onChange={(event) =>
-                    setReminderForm((current) => ({ ...current, otherImportant: event.target.value }))
+                    setReminderForm((current) => ({
+                      ...current,
+                      otherImportant: event.target.value,
+                    }))
                   }
                   placeholder="Notes for supplier"
                 />
@@ -373,17 +389,27 @@ function SupplierLedgerPage() {
               />
             </div>
             {whatsappResult && (
-              <p className={`text-sm ${whatsappResult.ok ? "text-emerald-600" : "text-destructive"}`}>
+              <p
+                className={`text-sm ${whatsappResult.ok ? "text-emerald-600" : "text-destructive"}`}
+              >
                 {whatsappResult.text}
               </p>
             )}
           </div>
           <DialogFooter>
-            <Button variant="outline" className="gap-1.5" onClick={() => setWhatsappOpen(false)} disabled={whatsappSending}>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setWhatsappOpen(false)}
+              disabled={whatsappSending}
+            >
               <X className="size-4" />
               Close
             </Button>
-            <Button onClick={sendSupplierWhatsApp} disabled={whatsappSending || !supplier.mobile?.trim()}>
+            <Button
+              onClick={sendSupplierWhatsApp}
+              disabled={whatsappSending || !supplier.mobile?.trim()}
+            >
               <Send className="mr-2 h-4 w-4" />
               {whatsappSending ? "Sending…" : "Send via WhatsApp"}
             </Button>
@@ -418,12 +444,22 @@ function SupplierLedgerPage() {
             </div>
             <div className="space-y-2">
               <Label htmlFor="supplier-payment-date">Payment date</Label>
-              <Input id="supplier-payment-date" type="date" value={paymentDate} onChange={(e) => setPaymentDate(e.target.value)} />
+              <Input
+                id="supplier-payment-date"
+                type="date"
+                value={paymentDate}
+                onChange={(e) => setPaymentDate(e.target.value)}
+              />
             </div>
             <div className="space-y-2">
               <Label>Payment method</Label>
-              <Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
+              <Select
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="cash">Cash</SelectItem>
                   <SelectItem value="upi">UPI</SelectItem>
@@ -433,28 +469,64 @@ function SupplierLedgerPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supplier-payment-reference">Transaction ID / Reference <span className="ml-1 text-muted-foreground">(optional)</span></Label>
-              <Input id="supplier-payment-reference" value={paymentReference} onChange={(e) => setPaymentReference(e.target.value)} placeholder="Transaction ID, UTR, cheque no., etc." />
+              <Label htmlFor="supplier-payment-reference">
+                Transaction ID / Reference{" "}
+                <span className="ml-1 text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="supplier-payment-reference"
+                value={paymentReference}
+                onChange={(e) => setPaymentReference(e.target.value)}
+                placeholder="Transaction ID, UTR, cheque no., etc."
+              />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="supplier-payment-remarks">Remarks <span className="ml-1 text-muted-foreground">(optional)</span></Label>
-              <Input id="supplier-payment-remarks" value={paymentRemarks} onChange={(e) => setPaymentRemarks(e.target.value)} placeholder="Payment notes" />
+              <Label htmlFor="supplier-payment-remarks">
+                Remarks <span className="ml-1 text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="supplier-payment-remarks"
+                value={paymentRemarks}
+                onChange={(e) => setPaymentRemarks(e.target.value)}
+                placeholder="Payment notes"
+              />
             </div>
             <div className="rounded-lg border p-3 sm:p-4 space-y-2">
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Current due</span><span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span></div>
-              <div className="flex justify-between text-sm"><span className="text-muted-foreground">Payment</span><span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span></div>
-              <div className="border-t pt-2 flex justify-between"><span className="font-medium">Remaining due</span><span className="font-bold">{formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}</span></div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Current due</span>
+                <span className="font-semibold">{formatCurrency(supplier.dueBalance)}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-muted-foreground">Payment</span>
+                <span className="font-semibold">{formatCurrency(Number(paymentAmount) || 0)}</span>
+              </div>
+              <div className="border-t pt-2 flex justify-between">
+                <span className="font-medium">Remaining due</span>
+                <span className="font-bold">
+                  {formatCurrency(Math.max(0, supplier.dueBalance - (Number(paymentAmount) || 0)))}
+                </span>
+              </div>
             </div>
             {paymentError && <p className="text-sm text-destructive">{paymentError}</p>}
           </div>
           <DialogFooter>
-            <Button variant="outline" className="gap-1.5" onClick={() => setPaymentOpen(false)} disabled={paymentSaving}>
+            <Button
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => setPaymentOpen(false)}
+              disabled={paymentSaving}
+            >
               <X className="size-4" />
               Cancel
             </Button>
             <Button
               className="gap-1.5"
-              disabled={paymentSaving || !Number(paymentAmount) || Number(paymentAmount) <= 0 || Number(paymentAmount) > supplier.dueBalance}
+              disabled={
+                paymentSaving ||
+                !Number(paymentAmount) ||
+                Number(paymentAmount) <= 0 ||
+                Number(paymentAmount) > supplier.dueBalance
+              }
               onClick={recordPayment}
             >
               <CreditCard className="size-4" />

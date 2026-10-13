@@ -121,8 +121,8 @@ function CustomerKhataPage() {
             <RecordPaymentDialog
               customer={{ id: customer.id, name: customer.name, currentDue: customer.currentDue }}
               trigger={
-                <Button variant="outline" className="rounded-full">
-                  <Wallet className="size-4" /> Record payment
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <Wallet className="size-3.5" /> Payment
                 </Button>
               }
             />
@@ -130,24 +130,29 @@ function CustomerKhataPage() {
               customer={{ id: customer.id, name: customer.name, currentDue: customer.currentDue }}
               onCreated={() => setLedgerRefreshKey((value) => value + 1)}
               trigger={
-                <Button variant="outline" className="rounded-full">
-                  <RotateCcw className="size-4" /> Return product
+                <Button variant="outline" size="sm" className="rounded-full">
+                  <RotateCcw className="size-3.5" /> Return
                 </Button>
               }
             />
             <KhataSaleDialog
               customer={{ id: customer.id, name: customer.name }}
               trigger={
-                <Button className="rounded-full">
-                  <ShoppingCart className="size-4" /> New sale
+                <Button size="sm" className="rounded-full">
+                  <ShoppingCart className="size-3.5" /> New sale
                 </Button>
               }
             />
-            <Button variant="outline" className="rounded-full" onClick={() => window.print()}>
-              <Printer className="size-4" /> Print
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-full"
+              onClick={() => window.print()}
+            >
+              <Printer className="size-3.5" /> Print
             </Button>
-            <Button variant="outline" className="rounded-full" disabled>
-              <Download className="size-4" /> Export (soon)
+            <Button variant="outline" size="sm" className="rounded-full" disabled>
+              <Download className="size-3.5" /> Export
             </Button>
           </>
         }
@@ -173,88 +178,160 @@ function CustomerKhataPage() {
       />
 
       <Tabs defaultValue="table">
-        <TabsList>
-          <TabsTrigger value="table">Table view</TabsTrigger>
-          <TabsTrigger value="timeline">Timeline</TabsTrigger>
+        <TabsList className="grid w-full max-w-xs grid-cols-2 rounded-xl p-1 sm:max-w-sm">
+          <TabsTrigger value="table" className="rounded-lg py-2 text-xs sm:text-sm">
+            List view
+          </TabsTrigger>
+          <TabsTrigger value="timeline" className="rounded-lg py-2 text-xs sm:text-sm">
+            Timeline
+          </TabsTrigger>
         </TabsList>
-        <TabsContent value="table" className="mt-4">
+        <TabsContent value="table" className="mt-3 sm:mt-4">
           <Card className="overflow-hidden shadow-soft">
-            <CardHeader>
-              <CardTitle className="text-base">Ledger entries</CardTitle>
+            <CardHeader className="py-3 sm:py-4">
+              <CardTitle className="text-sm sm:text-base">Ledger entries</CardTitle>
             </CardHeader>
             <CardContent className="p-0">
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Actions</TableHead>
-                      <TableHead className="text-right">Qty</TableHead>
-                      <TableHead className="text-right">Amount</TableHead>
-                      <TableHead className="text-right">Payment</TableHead>
-                      <TableHead className="text-right">Remaining due</TableHead>
-                      <TableHead>Method</TableHead>
-                      <TableHead>Remarks</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {ledgerLoading ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                          Loading ledger…
-                        </TableCell>
-                      </TableRow>
-                    ) : ledger.length === 0 ? (
-                      <TableRow>
-                        <TableCell colSpan={8} className="py-10 text-center text-sm text-muted-foreground">
-                          No ledger entries found.
-                        </TableCell>
-                      </TableRow>
-                    ) : (
-                      ledger.map((entry) => (
-                        <TableRow key={entry.id}>
-                          <TableCell className="text-muted-foreground">
-                            {formatDate(entry.date)}
-                          </TableCell>
-                          <TableCell className="font-medium">
-                            {entry.entryType === "purchase" ? (
-                              <Button asChild variant="outline" size="sm" className="rounded-full">
-                                <Link to="/admin/customers/$customerId" params={{ customerId }}>
-                                  <BookOpen className="size-3.5" />
-                                  View full record
-                                </Link>
-                              </Button>
-                            ) : (
-                              <Button asChild variant="outline" size="sm" className="rounded-full">
-                                <Link to="/admin/customers/$customerId" params={{ customerId }}>
-                                  <BookOpen className="size-3.5" />
-                                  View customer
-                                </Link>
-                              </Button>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right">{entry.quantity}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(entry.amount)}
-                          </TableCell>
-                          <TableCell className="text-right text-success">
-                            {formatCurrency(entry.payment)}
-                          </TableCell>
-                          <TableCell className="text-right font-semibold">
-                            {formatCurrency(entry.remainingDue)}
-                          </TableCell>
-                          <TableCell className="uppercase text-muted-foreground">
-                            {entry.method}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">
-                            {entry.remarks ?? "—"}
-                          </TableCell>
+              {ledgerLoading ? (
+                <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  Loading ledger…
+                </p>
+              ) : ledger.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                  No ledger entries found.
+                </p>
+              ) : (
+                <>
+                  {/* Mobile: compact card list (no horizontal scroll). */}
+                  <ul className="space-y-2 p-3 sm:hidden">
+                    {ledger.map((entry) => (
+                      <li key={entry.id} className="rounded-lg border p-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="text-xs text-muted-foreground">
+                              {formatDate(entry.date)}
+                            </p>
+                            <p className="mt-0.5 text-sm font-semibold">
+                              {entry.entryType === "purchase"
+                                ? entry.product || "Purchase"
+                                : "Payment received"}
+                            </p>
+                            <p className="mt-0.5 text-[11px] uppercase text-muted-foreground">
+                              {entry.method}
+                              {entry.remarks ? ` · ${entry.remarks}` : ""}
+                            </p>
+                          </div>
+                          <Button
+                            asChild
+                            variant="outline"
+                            size="sm"
+                            className="h-7 shrink-0 rounded-full px-2.5 text-[11px]"
+                          >
+                            <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                              <BookOpen className="size-3" />
+                              View
+                            </Link>
+                          </Button>
+                        </div>
+                        <div className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
+                          <div className="rounded bg-muted/50 px-2 py-1">
+                            <p className="text-[9px] uppercase text-muted-foreground">Qty</p>
+                            <p className="mt-0.5 font-semibold">{entry.quantity}</p>
+                          </div>
+                          <div className="rounded bg-muted/50 px-2 py-1">
+                            <p className="text-[9px] uppercase text-muted-foreground">Amount</p>
+                            <p className="mt-0.5 font-semibold">{formatCurrency(entry.amount)}</p>
+                          </div>
+                          <div className="rounded bg-muted/50 px-2 py-1">
+                            <p className="text-[9px] uppercase text-muted-foreground">Paid</p>
+                            <p className="mt-0.5 font-semibold text-success">
+                              {formatCurrency(entry.payment)}
+                            </p>
+                          </div>
+                          <div className="col-span-3 rounded bg-muted/50 px-2 py-1">
+                            <p className="text-[9px] uppercase text-muted-foreground">
+                              Remaining due
+                            </p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(entry.remainingDue)}
+                            </p>
+                          </div>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  {/* Desktop: original table. */}
+                  <div className="hidden overflow-x-auto sm:block">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Actions</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Amount</TableHead>
+                          <TableHead className="text-right">Payment</TableHead>
+                          <TableHead className="text-right">Remaining due</TableHead>
+                          <TableHead>Method</TableHead>
+                          <TableHead>Remarks</TableHead>
                         </TableRow>
-                      ))
-                    )}
-                  </TableBody>
-                </Table>
-              </div>
+                      </TableHeader>
+                      <TableBody>
+                        {ledger.map((entry) => (
+                          <TableRow key={entry.id}>
+                            <TableCell className="text-muted-foreground">
+                              {formatDate(entry.date)}
+                            </TableCell>
+                            <TableCell className="font-medium">
+                              {entry.entryType === "purchase" ? (
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-full"
+                                >
+                                  <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                                    <BookOpen className="size-3.5" />
+                                    View full record
+                                  </Link>
+                                </Button>
+                              ) : (
+                                <Button
+                                  asChild
+                                  variant="outline"
+                                  size="sm"
+                                  className="rounded-full"
+                                >
+                                  <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                                    <BookOpen className="size-3.5" />
+                                    View customer
+                                  </Link>
+                                </Button>
+                              )}
+                            </TableCell>
+                            <TableCell className="text-right">{entry.quantity}</TableCell>
+                            <TableCell className="text-right">
+                              {formatCurrency(entry.amount)}
+                            </TableCell>
+                            <TableCell className="text-right text-success">
+                              {formatCurrency(entry.payment)}
+                            </TableCell>
+                            <TableCell className="text-right font-semibold">
+                              {formatCurrency(entry.remainingDue)}
+                            </TableCell>
+                            <TableCell className="uppercase text-muted-foreground">
+                              {entry.method}
+                            </TableCell>
+                            <TableCell className="text-muted-foreground">
+                              {entry.remarks ?? "—"}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </div>
+                </>
+              )}
               {!ledgerLoading && (
                 <TablePagination
                   page={page}
@@ -266,22 +343,27 @@ function CustomerKhataPage() {
             </CardContent>
           </Card>
         </TabsContent>
-        <TabsContent value="timeline" className="mt-4">
+        <TabsContent value="timeline" className="mt-3 sm:mt-4">
           <Card className="shadow-soft">
-            <CardContent className="pt-6">
+            <CardContent className="pt-4 sm:pt-6">
               <Timeline
                 items={ledger.map((entry) => ({
                   id: entry.id,
-                  title: entry.entryType === "payment" ? "Payment received" : entry.product || "Transaction",
+                  title:
+                    entry.entryType === "payment"
+                      ? "Payment received"
+                      : entry.product || "Transaction",
                   meta: `${formatDate(entry.date)} · ${entry.method.toUpperCase()}`,
                   description: `Paid ${formatCurrency(entry.payment)} · Due ${formatCurrency(entry.remainingDue)}`,
-                  amount: formatCurrency(entry.entryType === "payment" ? entry.payment : entry.amount),
+                  amount: formatCurrency(
+                    entry.entryType === "payment" ? entry.payment : entry.amount,
+                  ),
                   tone: entry.remainingDue > 0 ? "warning" : "success",
                 }))}
               />
               {!ledgerLoading && pageCount > 1 ? (
                 <p className="mt-4 text-xs text-muted-foreground">
-                  Timeline shows the current ledger page. Use Table view for pagination.
+                  Timeline shows the current ledger page. Use List view for pagination.
                 </p>
               ) : null}
             </CardContent>

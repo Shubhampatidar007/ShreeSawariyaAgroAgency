@@ -213,8 +213,17 @@ function CustomerDetailPage() {
 
       <SummaryCards
         items={[
-          { label: "Total purchases", value: formatCurrency(customer.totalPurchases), icon: IndianRupee },
-          { label: "Total paid", value: formatCurrency(customer.totalPaid), icon: Wallet, tone: "success" },
+          {
+            label: "Total purchases",
+            value: formatCurrency(customer.totalPurchases),
+            icon: IndianRupee,
+          },
+          {
+            label: "Total paid",
+            value: formatCurrency(customer.totalPaid),
+            icon: Wallet,
+            tone: "success",
+          },
           {
             label: "Customer Profit",
             value: customerProfitLoading ? "—" : formatCurrency(customerProfit),
@@ -228,92 +237,154 @@ function CustomerDetailPage() {
             icon: Receipt,
             tone: customer.currentDue > 0 ? "warning" : "success",
           },
-          { label: "Transactions", value: String(ledger.length), icon: BookOpen, helper: "Khata entries" },
+          {
+            label: "Transactions",
+            value: String(ledger.length),
+            icon: BookOpen,
+            helper: "Khata entries",
+          },
         ]}
       />
 
-      <div className="grid gap-4 sm:gap-6 lg:grid-cols-[0.9fr_1.1fr]">
+      <div className="grid gap-3 sm:gap-4 lg:grid-cols-[0.9fr_1.1fr]">
         <Card className="shadow-soft">
-          <CardHeader><CardTitle className="text-base">Personal information</CardTitle></CardHeader>
-          <CardContent className="space-y-3 sm:space-y-4 text-sm">
+          <CardHeader className="py-3 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">Personal information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2.5 text-sm sm:space-y-3">
             <InfoRow icon={Phone} label="Mobile" value={customer.mobile} />
             <Separator />
             <InfoRow icon={MapPin} label="Address" value={customer.address} />
             <Separator />
             <InfoRow icon={BookOpen} label="Village" value={customer.village} />
-            {customer.notes ? <><Separator /><div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Notes</p><p className="mt-1 text-sm">{customer.notes}</p></div></> : null}
+            {customer.notes ? (
+              <>
+                <Separator />
+                <div>
+                  <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                    Notes
+                  </p>
+                  <p className="mt-1 text-xs sm:text-sm">{customer.notes}</p>
+                </div>
+              </>
+            ) : null}
           </CardContent>
         </Card>
 
         <Card className="shadow-soft">
-          <CardHeader><CardTitle className="text-base">Transaction timeline</CardTitle></CardHeader>
-          <CardContent>
+          <CardHeader className="py-3 sm:py-4">
+            <CardTitle className="text-sm sm:text-base">Transaction timeline</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
             {ledgerLoading ? (
-              <p className="text-sm text-muted-foreground">Loading transaction history…</p>
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                Loading transaction history…
+              </p>
             ) : dateGroups.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No khata entries recorded yet.</p>
+              <p className="text-xs text-muted-foreground sm:text-sm">
+                No khata entries recorded yet.
+              </p>
             ) : (
-              <ol className="relative space-y-3 sm:space-y-4 border-l border-border pl-4 sm:pl-6">
+              <ol className="relative space-y-2.5 border-l border-border pl-3 sm:pl-4">
                 {dateGroups.map(({ date, entries }) => {
                   const isOpen = expandedDates.has(date);
                   const dayAmount = entries.reduce((sum, entry) => sum + entry.amount, 0);
 
                   return (
                     <li key={date} className="relative">
-                      <span className="absolute -left-[27px] top-2 size-3 rounded-full bg-primary ring-4 ring-background" />
-                      <div className="rounded-xl border border-border bg-background/40 p-3">
-                        <div className="flex flex-wrap items-center justify-between gap-3">
+                      <span className="absolute -left-[18px] top-2 size-2.5 rounded-full bg-primary ring-4 ring-background sm:-left-[22px]" />
+                      <div className="rounded-lg border border-border bg-background/40 p-2.5">
+                        <div className="flex flex-wrap items-center justify-between gap-2">
                           <div>
-                            <p className="text-sm font-semibold">{formatDate(date)}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {entries.length} transaction{entries.length === 1 ? "" : "s"} · {formatCurrency(dayAmount)}
+                            <p className="text-xs font-semibold sm:text-sm">{formatDate(date)}</p>
+                            <p className="text-[11px] text-muted-foreground">
+                              {entries.length} txn{entries.length === 1 ? "" : "s"} ·{" "}
+                              {formatCurrency(dayAmount)}
                             </p>
                           </div>
-                          <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => void toggleDate(date, entries)} aria-expanded={isOpen}>
-                            {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />} View details
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="h-7 rounded-full px-2.5 text-[11px]"
+                            onClick={() => void toggleDate(date, entries)}
+                            aria-expanded={isOpen}
+                          >
+                            {isOpen ? (
+                              <ChevronDown className="size-3" />
+                            ) : (
+                              <ChevronRight className="size-3" />
+                            )}
+                            {isOpen ? "Hide" : "View"}
                           </Button>
                         </div>
 
                         {isOpen ? (
-                          <div className="mt-3 space-y-3 border-t border-border pt-3">
+                          <div className="mt-2 space-y-2 border-t border-border pt-2">
                             {entries.map((entry) => {
                               const items = itemsByTx[entry.id];
-                              const displayAmount = entry.entryType === "payment" ? entry.payment : entry.amount;
+                              const displayAmount =
+                                entry.entryType === "payment" ? entry.payment : entry.amount;
 
                               return (
-                                <div key={entry.id} className="rounded-lg bg-muted/40 p-3">
-                                  <div className="flex flex-wrap items-start justify-between gap-3">
+                                <div key={entry.id} className="rounded-lg bg-muted/40 p-2.5">
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
                                     <div className="min-w-0">
-                                      <p className="text-sm font-medium">
-                                        {entry.entryType === "purchase" ? "Purchase" : entry.entryType === "payment" ? "Payment received" : "Transaction"}
+                                      <p className="text-xs font-medium sm:text-sm">
+                                        {entry.entryType === "purchase"
+                                          ? "Purchase"
+                                          : entry.entryType === "payment"
+                                            ? "Payment received"
+                                            : "Transaction"}
                                       </p>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        {entry.quantity} unit{entry.quantity === 1 ? "" : "s"} · {entry.method.toUpperCase()}
+                                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        {entry.quantity} unit{entry.quantity === 1 ? "" : "s"} ·{" "}
+                                        {entry.method.toUpperCase()}
                                       </p>
-                                      <p className="mt-1 text-xs text-muted-foreground">
-                                        Paid {formatCurrency(entry.payment)} · Due {formatCurrency(entry.remainingDue)}
+                                      <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                        Paid {formatCurrency(entry.payment)} · Due{" "}
+                                        {formatCurrency(entry.remainingDue)}
                                       </p>
-                                      {entry.remarks ? <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p> : null}
+                                      {entry.remarks ? (
+                                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                                          {entry.remarks}
+                                        </p>
+                                      ) : null}
                                     </div>
-                                    <p className="shrink-0 font-display text-sm font-semibold">{formatCurrency(displayAmount)}</p>
+                                    <p className="shrink-0 font-display text-xs font-semibold sm:text-sm">
+                                      {formatCurrency(displayAmount)}
+                                    </p>
                                   </div>
 
                                   {entry.entryType === "purchase" ? (
-                                    <div className="mt-3 border-t border-border/70 pt-3">
+                                    <div className="mt-2 border-t border-border/70 pt-2">
                                       {items === "loading" || items === undefined ? (
-                                        <p className="text-xs text-muted-foreground">Loading product details…</p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          Loading product details…
+                                        </p>
                                       ) : items.length === 0 ? (
-                                        <p className="text-xs text-muted-foreground">No product line items recorded for this transaction.</p>
+                                        <p className="text-[11px] text-muted-foreground">
+                                          No product line items recorded.
+                                        </p>
                                       ) : (
-                                        <div className="space-y-2">
+                                        <div className="space-y-1.5">
                                           {items.map((item) => (
-                                            <div key={item.id} className="flex items-center justify-between gap-4 rounded-md border border-border/60 px-3 py-2 text-xs">
+                                            <div
+                                              key={item.id}
+                                              className="flex items-center justify-between gap-2 rounded-md border border-border/60 px-2 py-1.5 text-[11px] sm:text-xs"
+                                            >
                                               <div className="min-w-0">
                                                 <p className="font-medium">{item.product}</p>
-                                                <p className="text-muted-foreground">Quantity: {item.quantity} {item.unit}</p>
-                                                <p className="text-muted-foreground">Rate: {formatCurrency(item.rate)} / {item.unit}</p>
+                                                <p className="text-muted-foreground">
+                                                  Qty: {item.quantity} {item.unit} · Rate:{" "}
+                                                  {formatCurrency(item.rate)}/{item.unit}
+                                                </p>
                                               </div>
-                                              <div className="shrink-0 text-right"><p className="font-semibold">{formatCurrency(item.amount)}</p></div>
+                                              <div className="shrink-0 text-right">
+                                                <p className="font-semibold">
+                                                  {formatCurrency(item.amount)}
+                                                </p>
+                                              </div>
                                             </div>
                                           ))}
                                         </div>
@@ -338,11 +409,26 @@ function CustomerDetailPage() {
   );
 }
 
-function InfoRow({ icon: Icon, label, value }: { icon: typeof Phone; label: string; value: string }) {
+function InfoRow({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: typeof Phone;
+  label: string;
+  value: string;
+}) {
   return (
-    <div className="flex items-start gap-3">
-      <span className="flex size-9 items-center justify-center rounded-lg bg-primary/10 text-primary"><Icon className="size-4" /></span>
-      <div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">{label}</p><p className="text-sm font-medium">{value}</p></div>
+    <div className="flex items-start gap-2">
+      <span className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary sm:size-9">
+        <Icon className="size-3.5 sm:size-4" />
+      </span>
+      <div>
+        <p className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+          {label}
+        </p>
+        <p className="text-xs font-medium sm:text-sm">{value}</p>
+      </div>
     </div>
   );
 }

@@ -55,7 +55,8 @@ export function SupplierTransactionTimeline({ entries }: Props) {
   const [paymentError, setPaymentError] = useState("");
 
   const suppliers = useShopStore((state) => state.suppliers);
-  const supplierId = entries[0]?.supplierId ?? location.pathname.split("/").filter(Boolean).at(-1) ?? "";
+  const supplierId =
+    entries[0]?.supplierId ?? location.pathname.split("/").filter(Boolean).at(-1) ?? "";
   const supplier = suppliers.find((item) => item.id === supplierId);
 
   const groups = useMemo(() => {
@@ -88,9 +89,10 @@ export function SupplierTransactionTimeline({ entries }: Props) {
   }, [entries]);
 
   const payments = useMemo(
-    () => [...entries]
-      .filter((entry) => entry.entryType === "payment")
-      .sort((a, b) => b.date.localeCompare(a.date)),
+    () =>
+      [...entries]
+        .filter((entry) => entry.entryType === "payment")
+        .sort((a, b) => b.date.localeCompare(a.date)),
     [entries],
   );
 
@@ -125,7 +127,9 @@ export function SupplierTransactionTimeline({ entries }: Props) {
       return;
     }
     if (amount > supplier.dueBalance) {
-      setPaymentError(`Payment cannot exceed the current due of ${formatCurrency(supplier.dueBalance)}.`);
+      setPaymentError(
+        `Payment cannot exceed the current due of ${formatCurrency(supplier.dueBalance)}.`,
+      );
       return;
     }
 
@@ -150,78 +154,102 @@ export function SupplierTransactionTimeline({ entries }: Props) {
   };
 
   return (
-    <div className="grid gap-4 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.42fr)]">
+    <div className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(280px,0.42fr)]">
       <Card className="supplier-timeline-full shadow-soft">
-        <CardHeader><CardTitle className="text-lg">Purchase timeline</CardTitle></CardHeader>
-        <CardContent>
+        <CardHeader className="py-3 sm:py-4">
+          <CardTitle className="text-sm sm:text-base">Purchase timeline</CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0">
           {groups.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No supplier transactions recorded yet.</p>
+            <p className="text-xs text-muted-foreground sm:text-sm">
+              No supplier transactions recorded yet.
+            </p>
           ) : (
-            <div className="space-y-3 sm:space-y-4">
+            <div className="space-y-2 sm:space-y-3">
               {groups.map((group) => {
                 const isOpen = expandedDates.has(group.date);
                 return (
-                  <div key={group.date} className="overflow-hidden rounded-xl border bg-background">
-                    <button type="button" className="flex w-full items-center justify-between gap-3 sm:gap-4 p-3 sm:p-4 text-left transition-colors hover:bg-muted/40" onClick={() => toggleDate(group.date)} aria-expanded={isOpen}>
-                      <div>
-                        <p className="text-base font-semibold">{formatTimelineDate(group.date)}</p>
-                        <p className="mt-1 text-sm text-muted-foreground">{group.purchases.length} transaction{group.purchases.length === 1 ? "" : "s"} · {formatCurrency(group.purchaseTotal)}</p>
+                  <div key={group.date} className="overflow-hidden rounded-lg border bg-background">
+                    <button
+                      type="button"
+                      className="flex w-full items-center justify-between gap-2 p-2.5 text-left transition-colors hover:bg-muted/40 sm:gap-3 sm:p-3"
+                      onClick={() => toggleDate(group.date)}
+                      aria-expanded={isOpen}
+                    >
+                      <div className="min-w-0">
+                        <p className="text-sm font-semibold sm:text-base">
+                          {formatTimelineDate(group.date)}
+                        </p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">
+                          {group.purchases.length} txn{group.purchases.length === 1 ? "" : "s"} ·{" "}
+                          {formatCurrency(group.purchaseTotal)}
+                        </p>
                       </div>
-                      <span className="inline-flex items-center gap-1 rounded-full border px-3 py-1.5 text-xs font-medium text-muted-foreground">
-                        {isOpen ? <ChevronDown className="size-3.5" /> : <ChevronRight className="size-3.5" />}
-                        {isOpen ? "Hide details" : "View details"}
+                      <span className="inline-flex shrink-0 items-center gap-1 rounded-full border px-2 py-1 text-[11px] font-medium text-muted-foreground sm:text-xs">
+                        {isOpen ? (
+                          <ChevronDown className="size-3" />
+                        ) : (
+                          <ChevronRight className="size-3" />
+                        )}
+                        {isOpen ? "Hide" : "View"}
                       </span>
                     </button>
                     {isOpen && (
-                      <div className="border-t p-3 sm:p-4">
+                      <div className="border-t p-2.5 sm:p-3">
                         <div className="space-y-2">
                           {group.purchases.map((rawEntry) => {
                             const entry = rawEntry as SupplierTimelineEntry;
                             return (
                               <div
                                 key={entry.id}
-                                className="rounded-xl border bg-background p-3 transition-colors hover:bg-muted/20 sm:p-4"
+                                className="rounded-lg border bg-background p-2.5 transition-colors hover:bg-muted/20 sm:p-3"
                               >
-                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                                   <div className="min-w-0">
-                                    <p className="truncate text-sm font-semibold sm:text-base">
+                                    <p className="truncate text-sm font-semibold">
                                       {entry.productName || entry.reference || "Purchase"}
                                     </p>
-                                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                                      <span className="rounded-full border border-primary/20 bg-primary/5 px-2.5 py-1 text-xs font-semibold text-primary">
-                                        Variant: {entry.unit || "—"}
+                                    <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                                      <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[11px] font-semibold text-primary">
+                                        {entry.unit || "—"}
                                       </span>
-                                      <span className="rounded-full border bg-muted px-2.5 py-1 text-xs font-semibold tabular-nums">
-                                        Quantity: {entry.quantity ?? "—"}
+                                      <span className="rounded-full border bg-muted px-2 py-0.5 text-[11px] font-semibold tabular-nums">
+                                        Qty: {entry.quantity ?? "—"}
                                       </span>
                                     </div>
                                     {entry.remarks ? (
-                                      <p className="mt-2 text-xs text-muted-foreground">{entry.remarks}</p>
+                                      <p className="mt-1.5 text-xs text-muted-foreground">
+                                        {entry.remarks}
+                                      </p>
                                     ) : null}
                                   </div>
 
-                                  <div className="grid grid-cols-2 gap-3 sm:min-w-[360px] sm:grid-cols-3">
-                                    <div className="rounded-lg bg-muted/40 px-3 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {/* Rate / Method / Amount — always 3 cols on mobile+,
+                                       no min-width that forces horizontal scroll. */}
+                                  <div className="grid grid-cols-3 gap-1.5">
+                                    <div className="rounded bg-muted/40 px-2 py-1.5">
+                                      <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                                         Rate
                                       </p>
-                                      <p className="mt-0.5 text-sm font-semibold">
-                                        {entry.unitPrice != null ? formatCurrency(entry.unitPrice) : "—"}
+                                      <p className="mt-0.5 text-xs font-semibold sm:text-sm">
+                                        {entry.unitPrice != null
+                                          ? formatCurrency(entry.unitPrice)
+                                          : "—"}
                                       </p>
                                     </div>
-                                    <div className="rounded-lg bg-muted/40 px-3 py-2">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    <div className="rounded bg-muted/40 px-2 py-1.5">
+                                      <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                                         Method
                                       </p>
-                                      <p className="mt-0.5 text-sm font-semibold uppercase">
+                                      <p className="mt-0.5 text-xs font-semibold uppercase sm:text-sm">
                                         {entry.method || "—"}
                                       </p>
                                     </div>
-                                    <div className="col-span-2 rounded-lg border border-primary/15 bg-primary/5 px-3 py-2 sm:col-span-1">
-                                      <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                                    <div className="rounded border border-primary/15 bg-primary/5 px-2 py-1.5">
+                                      <p className="text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
                                         Amount
                                       </p>
-                                      <p className="mt-0.5 text-sm font-bold text-primary">
+                                      <p className="mt-0.5 text-xs font-bold text-primary sm:text-sm">
                                         {formatCurrency(entry.amount)}
                                       </p>
                                     </div>
@@ -231,10 +259,29 @@ export function SupplierTransactionTimeline({ entries }: Props) {
                             );
                           })}
                         </div>
-                        <div className="mt-4 grid gap-3 border-t pt-4 sm:grid-cols-3">
-                          <div><p className="text-xs text-muted-foreground">Purchase total</p><p className="mt-1 font-semibold">{formatCurrency(group.purchaseTotal)}</p></div>
-                          <div><p className="text-xs text-muted-foreground">Advance / paid</p><p className="mt-1 font-semibold">{formatCurrency(group.paidTotal)}</p></div>
-                          <div className="sm:text-right"><p className="text-xs text-muted-foreground">Due after date</p><p className="mt-1 font-semibold">{formatCurrency(group.due)}</p></div>
+                        <div className="mt-3 grid gap-2 border-t pt-2.5 text-xs sm:grid-cols-3 sm:text-sm">
+                          <div>
+                            <p className="text-[10px] uppercase text-muted-foreground">
+                              Purchase total
+                            </p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(group.purchaseTotal)}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-[10px] uppercase text-muted-foreground">
+                              Advance / paid
+                            </p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(group.paidTotal)}
+                            </p>
+                          </div>
+                          <div className="sm:text-right">
+                            <p className="text-[10px] uppercase text-muted-foreground">
+                              Due after date
+                            </p>
+                            <p className="mt-0.5 font-semibold">{formatCurrency(group.due)}</p>
+                          </div>
                         </div>
                       </div>
                     )}
@@ -247,27 +294,62 @@ export function SupplierTransactionTimeline({ entries }: Props) {
       </Card>
 
       <Card className="h-fit shadow-soft">
-        <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0">
-          <div><CardTitle className="text-lg">Supplier payments</CardTitle><p className="mt-1 text-sm text-muted-foreground">Payments recorded against this supplier.</p></div>
-          <Wallet className="mt-0.5 size-5 text-muted-foreground" />
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-xl border bg-muted/20 p-3 sm:p-4">
-            <div className="flex items-end justify-between gap-4">
-              <div><p className="text-xs uppercase tracking-wide text-muted-foreground">Current due</p><p className="mt-1 font-display text-xl sm:text-2xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
-              <CreditCard className="size-6 text-muted-foreground" />
-            </div>
-            <Button className="mt-4 w-full rounded-full" onClick={openPayment} disabled={!supplier || supplier.dueBalance <= 0}><CreditCard className="mr-2 size-4" /> Pay Supplier</Button>
+        <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 py-3 sm:py-4">
+          <div>
+            <CardTitle className="text-sm sm:text-base">Supplier payments</CardTitle>
+            <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">
+              Payments recorded against this supplier.
+            </p>
           </div>
-          <div className="mt-4 space-y-2">
+          <Wallet className="mt-0.5 size-4 text-muted-foreground sm:size-5" />
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="rounded-lg border bg-muted/20 p-2.5 sm:p-3">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                  Current due
+                </p>
+                <p className="mt-1 font-display text-lg sm:text-xl font-semibold">
+                  {supplier ? formatCurrency(supplier.dueBalance) : "—"}
+                </p>
+              </div>
+              <CreditCard className="size-5 text-muted-foreground sm:size-6" />
+            </div>
+            <Button
+              size="sm"
+              className="mt-3 w-full rounded-full"
+              onClick={openPayment}
+              disabled={!supplier || supplier.dueBalance <= 0}
+            >
+              <CreditCard className="mr-1.5 size-3.5" /> Pay Supplier
+            </Button>
+          </div>
+          <div className="mt-3 space-y-2">
             {payments.length === 0 ? (
-              <p className="rounded-lg border border-dashed px-4 py-6 text-center text-sm text-muted-foreground">No payments recorded yet.</p>
+              <p className="rounded-lg border border-dashed px-3 py-4 text-center text-xs text-muted-foreground sm:text-sm">
+                No payments recorded yet.
+              </p>
             ) : (
               payments.map((entry) => (
-                <div key={entry.id} className="rounded-lg border p-3">
-                  <div className="flex items-start justify-between gap-3"><div><p className="text-sm font-semibold">{formatTimelineDate(entry.date)}</p><p className="mt-1 text-xs uppercase text-muted-foreground">{entry.method}</p></div><p className="text-base font-semibold">{formatCurrency(entry.amount)}</p></div>
-                  {entry.reference ? <p className="mt-2 text-xs text-muted-foreground">Reference: {entry.reference}</p> : null}
-                  {entry.remarks ? <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p> : null}
+                <div key={entry.id} className="rounded-lg border p-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold">{formatTimelineDate(entry.date)}</p>
+                      <p className="mt-0.5 text-[10px] uppercase text-muted-foreground">
+                        {entry.method}
+                      </p>
+                    </div>
+                    <p className="text-sm font-semibold sm:text-base">
+                      {formatCurrency(entry.amount)}
+                    </p>
+                  </div>
+                  {entry.reference ? (
+                    <p className="mt-1.5 text-xs text-muted-foreground">Ref: {entry.reference}</p>
+                  ) : null}
+                  {entry.remarks ? (
+                    <p className="mt-1 text-xs text-muted-foreground">{entry.remarks}</p>
+                  ) : null}
                 </div>
               ))
             )}
@@ -277,17 +359,103 @@ export function SupplierTransactionTimeline({ entries }: Props) {
 
       <Dialog open={paymentOpen} onOpenChange={setPaymentOpen}>
         <DialogContent className="sm:max-w-lg">
-          <DialogHeader><DialogTitle>Pay Supplier</DialogTitle><DialogDescription>Record a payment made to {supplier?.company ?? "this supplier"}.</DialogDescription></DialogHeader>
+          <DialogHeader>
+            <DialogTitle>Pay Supplier</DialogTitle>
+            <DialogDescription>
+              Record a payment made to {supplier?.company ?? "this supplier"}.
+            </DialogDescription>
+          </DialogHeader>
           <div className="space-y-5">
-            <div className="rounded-lg border bg-muted/30 p-3 sm:p-4"><p className="text-sm text-muted-foreground">Current due</p><p className="mt-1 text-lg sm:text-xl font-semibold">{supplier ? formatCurrency(supplier.dueBalance) : "—"}</p></div>
-            <div className="space-y-2"><Label htmlFor="supplier-payment-panel-amount">Payment amount</Label><Input id="supplier-payment-panel-amount" type="number" min="0" step="0.01" value={paymentAmount} onChange={(event) => setPaymentAmount(event.target.value)} placeholder="Enter amount" /></div>
-            <div className="space-y-2"><Label htmlFor="supplier-payment-panel-date">Payment date</Label><Input id="supplier-payment-panel-date" type="date" value={paymentDate} onChange={(event) => setPaymentDate(event.target.value)} /></div>
-            <div className="space-y-2"><Label>Payment method</Label><Select value={paymentMethod} onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="cash">Cash</SelectItem><SelectItem value="upi">UPI</SelectItem><SelectItem value="bank">Bank Transfer</SelectItem><SelectItem value="cheque">Cheque</SelectItem></SelectContent></Select></div>
-            <div className="space-y-2"><Label htmlFor="supplier-payment-panel-reference">Transaction ID / Reference <span className="ml-1 text-muted-foreground">(optional)</span></Label><Input id="supplier-payment-panel-reference" value={paymentReference} onChange={(event) => setPaymentReference(event.target.value)} placeholder="Transaction ID, UTR, cheque no., etc." /></div>
-            <div className="space-y-2"><Label htmlFor="supplier-payment-panel-remarks">Remarks <span className="ml-1 text-muted-foreground">(optional)</span></Label><Input id="supplier-payment-panel-remarks" value={paymentRemarks} onChange={(event) => setPaymentRemarks(event.target.value)} placeholder="Payment notes" /></div>
+            <div className="rounded-lg border bg-muted/30 p-3 sm:p-4">
+              <p className="text-sm text-muted-foreground">Current due</p>
+              <p className="mt-1 text-lg sm:text-xl font-semibold">
+                {supplier ? formatCurrency(supplier.dueBalance) : "—"}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-panel-amount">Payment amount</Label>
+              <Input
+                id="supplier-payment-panel-amount"
+                type="number"
+                min="0"
+                step="0.01"
+                value={paymentAmount}
+                onChange={(event) => setPaymentAmount(event.target.value)}
+                placeholder="Enter amount"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-panel-date">Payment date</Label>
+              <Input
+                id="supplier-payment-panel-date"
+                type="date"
+                value={paymentDate}
+                onChange={(event) => setPaymentDate(event.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Payment method</Label>
+              <Select
+                value={paymentMethod}
+                onValueChange={(value) => setPaymentMethod(value as typeof paymentMethod)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="cash">Cash</SelectItem>
+                  <SelectItem value="upi">UPI</SelectItem>
+                  <SelectItem value="bank">Bank Transfer</SelectItem>
+                  <SelectItem value="cheque">Cheque</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-panel-reference">
+                Transaction ID / Reference{" "}
+                <span className="ml-1 text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="supplier-payment-panel-reference"
+                value={paymentReference}
+                onChange={(event) => setPaymentReference(event.target.value)}
+                placeholder="Transaction ID, UTR, cheque no., etc."
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="supplier-payment-panel-remarks">
+                Remarks <span className="ml-1 text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="supplier-payment-panel-remarks"
+                value={paymentRemarks}
+                onChange={(event) => setPaymentRemarks(event.target.value)}
+                placeholder="Payment notes"
+              />
+            </div>
             {paymentError ? <p className="text-sm text-destructive">{paymentError}</p> : null}
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setPaymentOpen(false)} disabled={paymentSaving}>Cancel</Button><Button onClick={recordPayment} disabled={paymentSaving || !Number(paymentAmount) || Number(paymentAmount) <= 0 || !supplier || Number(paymentAmount) > supplier.dueBalance}>{paymentSaving ? "Recording..." : "Record Payment"}</Button></DialogFooter>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setPaymentOpen(false)}
+              disabled={paymentSaving}
+            >
+              Cancel
+            </Button>
+            <Button
+              onClick={recordPayment}
+              disabled={
+                paymentSaving ||
+                !Number(paymentAmount) ||
+                Number(paymentAmount) <= 0 ||
+                !supplier ||
+                Number(paymentAmount) > supplier.dueBalance
+              }
+            >
+              {paymentSaving ? "Recording..." : "Record Payment"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
