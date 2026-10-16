@@ -22,6 +22,7 @@ import { TablePagination } from "@/components/shared/TablePagination";
 import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
 import { KhataReturnDialog } from "@/components/khata/KhataReturnDialog";
+import { InterestAgreementPanel } from "@/components/interest/InterestAgreementPanel";
 import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
 import { CUSTOMER_KHATA_PAGE_SIZE, loadCustomerKhataPage } from "@/lib/admin-customer-data";
 import type { CustomerLedgerEntry } from "@/types/business";
@@ -176,6 +177,9 @@ function CustomerKhataPage() {
           { label: "Transactions", value: String(totalTransactions), icon: BookOpen },
         ]}
       />
+
+      {/* Phase 3: Interest Agreements panel — only renders if the customer has agreements. */}
+      <InterestAgreementPanel customerId={customer.id} />
 
       <Tabs defaultValue="table">
         <TabsList className="grid w-full max-w-xs grid-cols-2 rounded-xl p-1 sm:max-w-sm">
