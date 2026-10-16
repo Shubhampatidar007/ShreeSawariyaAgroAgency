@@ -1,6 +1,17 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { Check, Loader2, Plus, Search, ShoppingCart, Trash2, X } from "lucide-react";
+import {
+  Check,
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  Percent,
+  Plus,
+  Search,
+  ShoppingCart,
+  Trash2,
+  X,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -75,16 +86,45 @@ const KHATA_RECEIPT_EDGE_FUNCTION =
   import.meta.env["VITE_KHATA_RECEIPT_EDGE_FUNCTION"] || "whatsapp-meta-messages";
 
 const normalizeUnit = (value: string) => {
-  const unit = value.trim().toLowerCase().replace(/^[0-9.\s]+/, "");
+  const unit = value
+    .trim()
+    .toLowerCase()
+    .replace(/^[0-9.\s]+/, "");
   if (unit === "gm" || unit === "gram" || unit === "grams" || unit === "g") return "g";
-  if (unit === "kg" || unit === "kgs" || unit === "kilo" || unit === "kilos" || unit === "kilogram" || unit === "kilograms") return "kg";
+  if (
+    unit === "kg" ||
+    unit === "kgs" ||
+    unit === "kilo" ||
+    unit === "kilos" ||
+    unit === "kilogram" ||
+    unit === "kilograms"
+  )
+    return "kg";
   if (unit === "q" || unit === "quintal" || unit === "quintals") return "quintal";
-  if (unit === "t" || unit === "ton" || unit === "tons" || unit === "tonne" || unit === "tonnes") return "tonne";
-  if (unit === "ml" || unit === "millilitre" || unit === "millilitres" || unit === "milliliter" || unit === "milliliters") return "ml";
-  if (unit === "l" || unit === "lt" || unit === "ltr" || unit === "litre" || unit === "litres" || unit === "liter" || unit === "liters") return "l";
+  if (unit === "t" || unit === "ton" || unit === "tons" || unit === "tonne" || unit === "tonnes")
+    return "tonne";
+  if (
+    unit === "ml" ||
+    unit === "millilitre" ||
+    unit === "millilitres" ||
+    unit === "milliliter" ||
+    unit === "milliliters"
+  )
+    return "ml";
+  if (
+    unit === "l" ||
+    unit === "lt" ||
+    unit === "ltr" ||
+    unit === "litre" ||
+    unit === "litres" ||
+    unit === "liter" ||
+    unit === "liters"
+  )
+    return "l";
   if (unit === "pc" || unit === "pcs" || unit === "piece" || unit === "pieces") return "piece";
   if (unit === "box" || unit === "boxes") return "box";
-  if (unit === "pack" || unit === "packs" || unit === "packet" || unit === "packets") return "packet";
+  if (unit === "pack" || unit === "packs" || unit === "packet" || unit === "packets")
+    return "packet";
   if (unit === "bag" || unit === "bags") return "bag";
   return unit || "unit";
 };
@@ -120,8 +160,7 @@ const convertQuantity = (quantity: number, fromUnit: string, toUnit: string) => 
   return (quantity * from.factor) / to.factor;
 };
 
-const roundMoney = (value: number) =>
-  Math.round((value + Number.EPSILON) * 100) / 100;
+const roundMoney = (value: number) => Math.round((value + Number.EPSILON) * 100) / 100;
 
 const getInventoryQuantity = (item: CartItem, quantity = item.quantity) => {
   if (!item.inventoryId) return quantity;
@@ -135,8 +174,6 @@ const getItemAmount = (item: CartItem) => {
   if (Number.isFinite(amount) && amount >= 0) return amount;
   return roundMoney(getInventoryQuantity(item) * (Number(item.rate) || 0));
 };
-
-
 
 async function sendKhataReceiptToEdgeFunction({
   receiptOption,
@@ -247,20 +284,20 @@ async function sendKhataReceiptToEdgeFunction({
       sale: {
         date: saleDate,
 
-       items: items.map((item) => ({
-  ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-  ...(item.productId ? { productId: item.productId } : {}),
-  ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
-  product: item.product,
-  quantity: getInventoryQuantity(item),
-  unit: normalizeUnit(item.inventoryUnit ?? item.unit),
-  enteredQuantity: item.quantity,
-  enteredUnit: normalizeUnit(item.unit),
-  rate: item.rate,
-  amount: getItemAmount(item),
-  purchaseCost: item.purchaseCost,
-  adminPriceInc: item.rate,
-})),
+        items: items.map((item) => ({
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
+          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+          product: item.product,
+          quantity: getInventoryQuantity(item),
+          unit: normalizeUnit(item.inventoryUnit ?? item.unit),
+          enteredQuantity: item.quantity,
+          enteredUnit: normalizeUnit(item.unit),
+          rate: item.rate,
+          amount: getItemAmount(item),
+          purchaseCost: item.purchaseCost,
+          adminPriceInc: item.rate,
+        })),
         total,
 
         paid,
@@ -356,14 +393,26 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   // receipt choice option: default is 'current'
   const [receiptOption, setReceiptOption] = useState<"current" | "full" | "none">("current");
 
+  // ====================================================================
+  // Phase 2: Interest Settings state (collapsed by default)
+  // ====================================================================
+  const [interestEnabled, setInterestEnabled] = useState(false);
+  const [interestSectionOpen, setInterestSectionOpen] = useState(false);
+  const [interestRate, setInterestRate] = useState("");
+  const [interestRatePeriod, setInterestRatePeriod] = useState<"monthly" | "annual">("annual");
+  const [interestStartDate, setInterestStartDate] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [eligiblePrincipal, setEligiblePrincipal] = useState(""); // empty = use finalTotal - paidNum
+  const [interestNotes, setInterestNotes] = useState("");
+  const [termsConfirmed, setTermsConfirmed] = useState(false);
+
   const customDraftAmount = Number.isFinite(Number(customRate))
     ? Math.max(Number(customRate), 0)
     : 0;
 
   const total = useMemo(
-    () =>
-      items.reduce((sum, item) => sum + getItemAmount(item), 0) +
-      customDraftAmount,
+    () => items.reduce((sum, item) => sum + getItemAmount(item), 0) + customDraftAmount,
     [items, customDraftAmount],
   );
 
@@ -371,6 +420,34 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
   const finalTotal = Math.max(total - bargainingNum, 0);
   const paidNum = Number(paid) || 0;
   const due = Math.max(finalTotal - paidNum, 0);
+
+  // ====================================================================
+  // Phase 2: Interest preview — live computation of accrued interest
+  // for 30/60/90 days so the admin can show the customer before saving.
+  // ====================================================================
+  const interestEligiblePrincipal = useMemo(() => {
+    const explicit = Number(eligiblePrincipal);
+    if (Number.isFinite(explicit) && explicit >= 0) return explicit;
+    return due; // default: outstanding amount after paid
+  }, [eligiblePrincipal, due]);
+
+  const interestRateNum = Number(interestRate) || 0;
+  const annualInterestRate =
+    interestRatePeriod === "monthly" ? interestRateNum * 12 : interestRateNum;
+
+  const interestPreview = useMemo(() => {
+    if (!interestEnabled || interestEligiblePrincipal <= 0 || annualInterestRate <= 0) {
+      return { d30: 0, d60: 0, d90: 0, d365: 0 };
+    }
+    const compute = (days: number) =>
+      interestEligiblePrincipal * (annualInterestRate / 100) * (days / 365);
+    return {
+      d30: Math.round(compute(30)),
+      d60: Math.round(compute(60)),
+      d90: Math.round(compute(90)),
+      d365: Math.round(compute(365)),
+    };
+  }, [interestEnabled, interestEligiblePrincipal, annualInterestRate]);
 
   useEffect(() => {
     if (!open) return;
@@ -414,7 +491,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== "/" || event.ctrlKey || event.metaKey || event.altKey) return;
       const target = event.target as HTMLElement | null;
-      if (target?.isContentEditable || ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")) {
+      if (
+        target?.isContentEditable ||
+        ["INPUT", "TEXTAREA", "SELECT"].includes(target?.tagName ?? "")
+      ) {
         return;
       }
       event.preventDefault();
@@ -493,7 +573,10 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
         return { customer, score };
       })
-      .filter((result): result is { customer: (typeof uniqueCustomers)[number]; score: number } => result !== null)
+      .filter(
+        (result): result is { customer: (typeof uniqueCustomers)[number]; score: number } =>
+          result !== null,
+      )
       .sort((a, b) => b.score - a.score || a.customer.name.localeCompare(b.customer.name))
       .slice(0, 8)
       .map((result) => result.customer);
@@ -544,6 +627,16 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
     setPaymentReference("");
     setRemarks("");
     setReceiptOption("current");
+
+    // Phase 2: reset interest state on dialog open
+    setInterestEnabled(false);
+    setInterestSectionOpen(false);
+    setInterestRate("");
+    setInterestRatePeriod("annual");
+    setInterestStartDate(new Date().toISOString().slice(0, 10));
+    setEligiblePrincipal("");
+    setInterestNotes("");
+    setTermsConfirmed(false);
   };
 
   const addProductToCart = (option: KhataInventoryOption) => {
@@ -567,7 +660,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       quantity: 1,
       quantityInput: "1",
       // For loose sales, maxStock is the total quantity available in the
-            // inventory unit (e.g. 15 packs × 250 g = 3750 g), not the pack count.
+      // inventory unit (e.g. 15 packs × 250 g = 3750 g), not the pack count.
       maxStock: option.availableQuantity,
       allowLooseSale: option.allowLooseSale,
       calculatedAmount: roundMoney(rate),
@@ -604,9 +697,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                 quantity: nextQuantity,
                 quantityInput: String(nextQuantity),
                 calculatedAmount,
-                finalAmount: item.finalAmountOverridden
-                  ? item.finalAmount
-                  : calculatedAmount,
+                finalAmount: item.finalAmountOverridden ? item.finalAmount : calculatedAmount,
               }
             : item,
         );
@@ -712,15 +803,11 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
           enteredUnit !== inventoryUnit ||
           enteredQuantity !== Math.trunc(enteredQuantity)
         ) {
-          return toast.error(
-            `${item.product} must be sold as complete ${inventoryUnit} units`,
-          );
+          return toast.error(`${item.product} must be sold as complete ${inventoryUnit} units`);
         }
 
         if (item.maxStock !== undefined && inventoryQuantity > item.maxStock) {
-          return toast.error(
-            `Only ${item.maxStock} ${inventoryUnit} of ${item.product} in stock`,
-          );
+          return toast.error(`Only ${item.maxStock} ${inventoryUnit} of ${item.product} in stock`);
         }
       }
 
@@ -793,44 +880,88 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
        *
        * The WhatsApp receipt is handled explicitly below
        * through the Edge Function.
+       *
+       * Phase 2: If interest is enabled, we call createKhataSaleWithInterest
+       * which atomically creates the sale + interest_agreements row.
+       * If interest is disabled, behavior is identical to before.
        * ---------------------------------------------------------
        */
 
-      const txId = await shopStore.createKhataSale({
-        customerId,
+      // Interest validation (Phase 2)
+      if (interestEnabled) {
+        if (!termsConfirmed) {
+          toast.error("Please confirm the customer has agreed to the interest terms.");
+          setSubmitting(false);
+          return;
+        }
+        if (!interestRate || Number(interestRate) < 0) {
+          toast.error("Enter a valid interest rate.");
+          setSubmitting(false);
+          return;
+        }
+        if (due <= 0 && !eligiblePrincipal) {
+          // Sale is fully paid AND no explicit eligible principal — skip
+          // interest agreement creation (the RPC also handles this case).
+          toast.info(
+            "Sale is fully paid — no principal to charge interest on. Saving without interest agreement.",
+          );
+        }
+      }
 
-        items: saleItems.map((item) => {
-          const enteredQuantity = Number(item.quantityInput ?? item.quantity);
-          const enteredUnit = normalizeUnit(item.unit);
-          const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
-          const inventoryQuantity = item.inventoryId
-            ? item.allowLooseSale
-              ? convertQuantity(enteredQuantity, enteredUnit, inventoryUnit) ?? enteredQuantity
-              : enteredQuantity
-            : enteredQuantity;
+      const saleItemsInput = saleItems.map((item) => {
+        const enteredQuantity = Number(item.quantityInput ?? item.quantity);
+        const enteredUnit = normalizeUnit(item.unit);
+        const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+        const inventoryQuantity = item.inventoryId
+          ? item.allowLooseSale
+            ? (convertQuantity(enteredQuantity, enteredUnit, inventoryUnit) ?? enteredQuantity)
+            : enteredQuantity
+          : enteredQuantity;
 
-          return {
-            ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
-            ...(item.productId ? { productId: item.productId } : {}),
-            ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
-            product: item.product,
-            quantity: inventoryQuantity,
-            unit: inventoryUnit,
-            rate: item.rate,
-            enteredQuantity,
-            enteredUnit,
-            finalAmount: item.finalAmount,
-          };
-        }),
-
-        paid: paidNum,
-        bargainingAmount: bargainingNum,
-        method,
-        date: entryDate,
-        reference: paymentReference.trim() || undefined,
-
-        ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
+        return {
+          ...(item.inventoryId ? { inventoryId: item.inventoryId } : {}),
+          ...(item.productId ? { productId: item.productId } : {}),
+          ...(item.productVariantId ? { productVariantId: item.productVariantId } : {}),
+          product: item.product,
+          quantity: inventoryQuantity,
+          unit: inventoryUnit,
+          rate: item.rate,
+          enteredQuantity,
+          enteredUnit,
+          finalAmount: item.finalAmount,
+        };
       });
+
+      const txId = interestEnabled
+        ? await shopStore.createKhataSaleWithInterest({
+            customerId,
+            items: saleItemsInput,
+            paid: paidNum,
+            bargainingAmount: bargainingNum,
+            method,
+            date: entryDate,
+            reference: paymentReference.trim() || undefined,
+            ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
+            interestSettings: {
+              interestRate: Number(interestRate),
+              ratePeriod: interestRatePeriod,
+              interestStartDate,
+              eligiblePrincipal: eligiblePrincipal.trim() ? Number(eligiblePrincipal) : undefined,
+              notes: interestNotes.trim() || undefined,
+              termsConfirmed,
+            },
+            idempotencyKey: `khata-sale-${Date.now()}-${customerId}`,
+          })
+        : await shopStore.createKhataSale({
+            customerId,
+            items: saleItemsInput,
+            paid: paidNum,
+            bargainingAmount: bargainingNum,
+            method,
+            date: entryDate,
+            reference: paymentReference.trim() || undefined,
+            ...(remarks.trim() ? { remarks: remarks.trim() } : {}),
+          });
 
       /*
        * The database resolves/creates stable product + variant identities
@@ -1179,7 +1310,9 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                 </div>
               ) : catalogOptions.length === 0 ? (
                 <p className="text-sm text-muted-foreground">
-                  {productQuery.trim() ? "No matching inventory items" : "No inventory items available"}
+                  {productQuery.trim()
+                    ? "No matching inventory items"
+                    : "No inventory items available"}
                 </p>
               ) : (
                 <div className="h-72 space-y-2 overflow-y-auto pr-1">
@@ -1201,7 +1334,8 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                           <span className="font-medium">
-                            Stock: {option.allowLooseSale && option.quantityPerProduct
+                            Stock:{" "}
+                            {option.allowLooseSale && option.quantityPerProduct
                               ? `${option.stock} products • ${option.availableQuantity} ${option.unit} available`
                               : `${option.stock} ${option.unit}`}
                           </span>
@@ -1250,231 +1384,226 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             <div className="hidden lg:block">
               <div className="overflow-x-auto rounded-lg border">
                 <Table className="min-w-[980px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="min-w-[210px]">Item</TableHead>
-                    <TableHead className="w-[100px]">Qty</TableHead>
-                    <TableHead className="w-[92px]">Unit</TableHead>
-                              <TableHead className="w-[140px]">Purchase / unit</TableHead>
-                    <TableHead className="w-[140px]">Selling / unit</TableHead>
-                    <TableHead className="w-[145px] text-right">Total</TableHead>
-                    <TableHead className="w-10" />
-                  </TableRow>
-                </TableHeader>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="min-w-[210px]">Item</TableHead>
+                      <TableHead className="w-[100px]">Qty</TableHead>
+                      <TableHead className="w-[92px]">Unit</TableHead>
+                      <TableHead className="w-[140px]">Purchase / unit</TableHead>
+                      <TableHead className="w-[140px]">Selling / unit</TableHead>
+                      <TableHead className="w-[145px] text-right">Total</TableHead>
+                      <TableHead className="w-10" />
+                    </TableRow>
+                  </TableHeader>
 
-                <TableBody>
-                  {items.map((item) => {
-                    const isLoose = Boolean(item.allowLooseSale);
-                    const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
-                    const unitOptions = isLoose
-                      ? getCompatibleUnitOptions(inventoryUnit)
-                      : [inventoryUnit];
+                  <TableBody>
+                    {items.map((item) => {
+                      const isLoose = Boolean(item.allowLooseSale);
+                      const inventoryUnit = normalizeUnit(item.inventoryUnit ?? item.unit);
+                      const unitOptions = isLoose
+                        ? getCompatibleUnitOptions(inventoryUnit)
+                        : [inventoryUnit];
 
-                    return (
-                      <TableRow key={item.key}>
-                        <TableCell className="min-w-[210px] align-top">
-                          <div className="font-semibold">{item.product}</div>
-                          <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
-                            <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
-                              Variant: {item.unit}
-                            </span>
-                            {isLoose ? (
-                              <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-600 dark:text-amber-400">
-                                Loose sale
+                      return (
+                        <TableRow key={item.key}>
+                          <TableCell className="min-w-[210px] align-top">
+                            <div className="font-semibold">{item.product}</div>
+                            <div className="mt-1 flex flex-wrap items-center gap-2 text-xs">
+                              <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 font-medium text-primary">
+                                Variant: {item.unit}
                               </span>
-                            ) : null}
-                          </div>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            Stock: {item.maxStock !== undefined
-                              ? `${item.maxStock} ${inventoryUnit} available`
-                              : "—"}
-                          </p>
-                        </TableCell>
+                              {isLoose ? (
+                                <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 font-medium text-amber-600 dark:text-amber-400">
+                                  Loose sale
+                                </span>
+                              ) : null}
+                            </div>
+                            <p className="mt-1 text-xs text-muted-foreground">
+                              Stock:{" "}
+                              {item.maxStock !== undefined
+                                ? `${item.maxStock} ${inventoryUnit} available`
+                                : "—"}
+                            </p>
+                          </TableCell>
 
-                        <TableCell className="align-top">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            className="h-9 w-24"
-                            value={item.quantityInput ?? String(item.quantity)}
-                            onFocus={(e) => e.currentTarget.select()}
-                            onChange={(e) => {
-                              const raw = e.target.value;
-                              const nextQuantity = Number(raw);
+                          <TableCell className="align-top">
+                            <Input
+                              type="text"
+                              inputMode="decimal"
+                              className="h-9 w-24"
+                              value={item.quantityInput ?? String(item.quantity)}
+                              onFocus={(e) => e.currentTarget.select()}
+                              onChange={(e) => {
+                                const raw = e.target.value;
+                                const nextQuantity = Number(raw);
 
-                              if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
-                                updateItem(item.key, { quantityInput: raw });
-                                return;
-                              }
+                                if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
+                                  updateItem(item.key, { quantityInput: raw });
+                                  return;
+                                }
 
-                              const requestedInventoryQuantity = getInventoryQuantity(
-                                item,
-                                nextQuantity,
-                              );
-                              if (
-                                item.maxStock !== undefined &&
-                                requestedInventoryQuantity > item.maxStock
-                              ) {
-                                toast.error(
-                                  `Only ${item.maxStock} ${inventoryUnit} available`,
+                                const requestedInventoryQuantity = getInventoryQuantity(
+                                  item,
+                                  nextQuantity,
                                 );
-                                return;
-                              }
-
-                              const nextCalculatedAmount = roundMoney(
-                                requestedInventoryQuantity * (Number(item.rate) || 0),
-                              );
-
-                              updateItem(item.key, {
-                                quantity: nextQuantity,
-                                quantityInput: raw,
-                                calculatedAmount: nextCalculatedAmount,
-                                finalAmount: item.finalAmountOverridden
-                                  ? item.finalAmount
-                                  : nextCalculatedAmount,
-                              });
-                            }}
-                          />
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          {isLoose ? (
-                            <Select
-                              value={normalizeUnit(item.unit)}
-                              onValueChange={(nextUnit) => {
-                                const convertedQuantity = convertQuantity(
-                                  item.quantity,
-                                  item.unit,
-                                  nextUnit,
-                                );
-                                if (convertedQuantity == null) return;
-
-                                const nextItem = { ...item, unit: nextUnit };
-                                const nextInventoryQuantity = getInventoryQuantity(
-                                  nextItem,
-                                  convertedQuantity,
-                                );
-
                                 if (
                                   item.maxStock !== undefined &&
-                                  nextInventoryQuantity > item.maxStock
+                                  requestedInventoryQuantity > item.maxStock
                                 ) {
-                                  toast.error(
-                                    `Only ${item.maxStock} ${inventoryUnit} available`,
-                                  );
+                                  toast.error(`Only ${item.maxStock} ${inventoryUnit} available`);
                                   return;
                                 }
 
                                 const nextCalculatedAmount = roundMoney(
-                                  nextInventoryQuantity * (Number(item.rate) || 0),
+                                  requestedInventoryQuantity * (Number(item.rate) || 0),
                                 );
 
                                 updateItem(item.key, {
-                                  unit: nextUnit,
-                                  quantity: convertedQuantity,
-                                  quantityInput: String(
-                                    Number(convertedQuantity.toFixed(6)),
-                                  ),
+                                  quantity: nextQuantity,
+                                  quantityInput: raw,
                                   calculatedAmount: nextCalculatedAmount,
                                   finalAmount: item.finalAmountOverridden
                                     ? item.finalAmount
                                     : nextCalculatedAmount,
                                 });
                               }}
-                            >
-                              <SelectTrigger className="h-9 w-[88px]">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {unitOptions.map((unit) => (
-                                  <SelectItem key={unit} value={unit}>
-                                    {unit}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          ) : (
-                            <span className="inline-flex h-9 items-center rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
-                              {item.unit}
-                            </span>
-                          )}
-                        </TableCell>
+                            />
+                          </TableCell>
 
-                        <TableCell className="align-top">
-                          <div className="space-y-1">
+                          <TableCell className="align-top">
+                            {isLoose ? (
+                              <Select
+                                value={normalizeUnit(item.unit)}
+                                onValueChange={(nextUnit) => {
+                                  const convertedQuantity = convertQuantity(
+                                    item.quantity,
+                                    item.unit,
+                                    nextUnit,
+                                  );
+                                  if (convertedQuantity == null) return;
+
+                                  const nextItem = { ...item, unit: nextUnit };
+                                  const nextInventoryQuantity = getInventoryQuantity(
+                                    nextItem,
+                                    convertedQuantity,
+                                  );
+
+                                  if (
+                                    item.maxStock !== undefined &&
+                                    nextInventoryQuantity > item.maxStock
+                                  ) {
+                                    toast.error(`Only ${item.maxStock} ${inventoryUnit} available`);
+                                    return;
+                                  }
+
+                                  const nextCalculatedAmount = roundMoney(
+                                    nextInventoryQuantity * (Number(item.rate) || 0),
+                                  );
+
+                                  updateItem(item.key, {
+                                    unit: nextUnit,
+                                    quantity: convertedQuantity,
+                                    quantityInput: String(Number(convertedQuantity.toFixed(6))),
+                                    calculatedAmount: nextCalculatedAmount,
+                                    finalAmount: item.finalAmountOverridden
+                                      ? item.finalAmount
+                                      : nextCalculatedAmount,
+                                  });
+                                }}
+                              >
+                                <SelectTrigger className="h-9 w-[88px]">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {unitOptions.map((unit) => (
+                                    <SelectItem key={unit} value={unit}>
+                                      {unit}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <span className="inline-flex h-9 items-center rounded-md border bg-muted/40 px-3 py-2 text-sm font-medium">
+                                {item.unit}
+                              </span>
+                            )}
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <div className="space-y-1">
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-9 w-[125px]"
+                                value={item.purchaseCost}
+                                onFocus={(e) => e.currentTarget.select()}
+                                onChange={(e) => {
+                                  const nextPurchaseCost = Number(e.target.value) || 0;
+                                  updateItem(item.key, {
+                                    purchaseCost: nextPurchaseCost,
+                                  });
+                                }}
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                per {item.inventoryId ? inventoryUnit : item.unit}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="align-top">
+                            <div className="space-y-1">
+                              <Input
+                                type="text"
+                                inputMode="decimal"
+                                className="h-9 w-[125px]"
+                                value={item.rate}
+                                disabled
+                                aria-label="Selling price per unit"
+                              />
+                              <p className="text-[10px] text-muted-foreground">
+                                per {item.inventoryId ? inventoryUnit : item.unit}
+                              </p>
+                            </div>
+                          </TableCell>
+
+                          <TableCell className="align-top text-right">
                             <Input
                               type="text"
                               inputMode="decimal"
-                              className="h-9 w-[125px]"
-                              value={item.purchaseCost}
+                              className="h-9 w-[125px] text-right font-semibold"
+                              value={getItemAmount(item)}
                               onFocus={(e) => e.currentTarget.select()}
                               onChange={(e) => {
-                                const nextPurchaseCost = Number(e.target.value) || 0;
+                                if (!isLoose) return;
+                                const nextTotal = Number(e.target.value) || 0;
                                 updateItem(item.key, {
-                                  purchaseCost: nextPurchaseCost,
+                                  finalAmount: nextTotal,
+                                  finalAmountOverridden: true,
                                 });
                               }}
+                              readOnly={!isLoose}
+                              aria-label={isLoose ? "Editable total" : "Calculated total"}
                             />
-                            <p className="text-[10px] text-muted-foreground">
-                              per {item.inventoryId ? inventoryUnit : item.unit}
-                            </p>
-                          </div>
-                        </TableCell>
+                            {isLoose ? (
+                              <p className="mt-1 text-[10px] text-muted-foreground">Editable</p>
+                            ) : null}
+                          </TableCell>
 
-                        <TableCell className="align-top">
-                          <div className="space-y-1">
-                            <Input
-                              type="text"
-                              inputMode="decimal"
-                              className="h-9 w-[125px]"
-                              value={item.rate}
-                              disabled
-                              aria-label="Selling price per unit"
-                            />
-                            <p className="text-[10px] text-muted-foreground">
-                              per {item.inventoryId ? inventoryUnit : item.unit}
-                            </p>
-                          </div>
-                        </TableCell>
-
-                        <TableCell className="align-top text-right">
-                          <Input
-                            type="text"
-                            inputMode="decimal"
-                            className="h-9 w-[125px] text-right font-semibold"
-                            value={getItemAmount(item)}
-                            onFocus={(e) => e.currentTarget.select()}
-                            onChange={(e) => {
-                              if (!isLoose) return;
-                              const nextTotal = Number(e.target.value) || 0;
-                              updateItem(item.key, {
-                                finalAmount: nextTotal,
-                                finalAmountOverridden: true,
-                              });
-                            }}
-                            readOnly={!isLoose}
-                            aria-label={isLoose ? "Editable total" : "Calculated total"}
-                          />
-                          {isLoose ? (
-                            <p className="mt-1 text-[10px] text-muted-foreground">Editable</p>
-                          ) : null}
-                        </TableCell>
-
-                        <TableCell className="align-top">
-                          <Button
-                            type="button"
-                            size="icon"
-                            variant="ghost"
-                            onClick={() => removeItem(item.key)}
-                          >
-                            <Trash2 className="size-4 text-destructive" />
-                          </Button>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
-                </TableBody>
-              </Table>
+                          <TableCell className="align-top">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => removeItem(item.key)}
+                            >
+                              <Trash2 className="size-4 text-destructive" />
+                            </Button>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    })}
+                  </TableBody>
+                </Table>
               </div>
             </div>
           )}
@@ -1495,65 +1624,170 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">{item.product}</p>
                         <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">{item.unit}</span>
+                          <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            {item.unit}
+                          </span>
                           {isLoose ? (
-                            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">Loose</span>
+                            <span className="rounded-full border border-amber-500/30 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:text-amber-400">
+                              Loose
+                            </span>
                           ) : null}
                         </div>
-                        <p className="mt-0.5 text-[10px] text-muted-foreground">Stock: {item.maxStock !== undefined ? `${item.maxStock} ${inventoryUnit}` : "—"}</p>
+                        <p className="mt-0.5 text-[10px] text-muted-foreground">
+                          Stock:{" "}
+                          {item.maxStock !== undefined ? `${item.maxStock} ${inventoryUnit}` : "—"}
+                        </p>
                       </div>
-                      <Button type="button" size="icon" variant="ghost" className="shrink-0" onClick={() => removeItem(item.key)}>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="shrink-0"
+                        onClick={() => removeItem(item.key)}
+                      >
                         <Trash2 className="size-4 text-destructive" />
                       </Button>
                     </div>
                     <div className="mt-2 grid grid-cols-2 gap-2">
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Qty</Label>
-                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.quantityInput ?? String(item.quantity)} onFocus={(e) => e.currentTarget.select()} onChange={(e) => {
-                          const raw = e.target.value;
-                          const nextQuantity = Number(raw);
-                          if (!Number.isFinite(nextQuantity) || nextQuantity < 0) { updateItem(item.key, { quantityInput: raw }); return; }
-                          const requestedInventoryQuantity = getInventoryQuantity(item, nextQuantity);
-                          if (item.maxStock !== undefined && requestedInventoryQuantity > item.maxStock) { toast.error(`Only ${item.maxStock} ${inventoryUnit} available`); return; }
-                          const nextCalculatedAmount = roundMoney(requestedInventoryQuantity * (Number(item.rate) || 0));
-                          updateItem(item.key, { quantity: nextQuantity, quantityInput: raw, calculatedAmount: nextCalculatedAmount, finalAmount: item.finalAmountOverridden ? item.finalAmount : nextCalculatedAmount });
-                        }} />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="h-9 w-full"
+                          value={item.quantityInput ?? String(item.quantity)}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => {
+                            const raw = e.target.value;
+                            const nextQuantity = Number(raw);
+                            if (!Number.isFinite(nextQuantity) || nextQuantity < 0) {
+                              updateItem(item.key, { quantityInput: raw });
+                              return;
+                            }
+                            const requestedInventoryQuantity = getInventoryQuantity(
+                              item,
+                              nextQuantity,
+                            );
+                            if (
+                              item.maxStock !== undefined &&
+                              requestedInventoryQuantity > item.maxStock
+                            ) {
+                              toast.error(`Only ${item.maxStock} ${inventoryUnit} available`);
+                              return;
+                            }
+                            const nextCalculatedAmount = roundMoney(
+                              requestedInventoryQuantity * (Number(item.rate) || 0),
+                            );
+                            updateItem(item.key, {
+                              quantity: nextQuantity,
+                              quantityInput: raw,
+                              calculatedAmount: nextCalculatedAmount,
+                              finalAmount: item.finalAmountOverridden
+                                ? item.finalAmount
+                                : nextCalculatedAmount,
+                            });
+                          }}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Unit</Label>
                         {isLoose ? (
-                          <Select value={normalizeUnit(item.unit)} onValueChange={(nextUnit) => {
-                            const convertedQuantity = convertQuantity(item.quantity, item.unit, nextUnit);
-                            if (convertedQuantity == null) return;
-                            const nextItem = { ...item, unit: nextUnit };
-                            const nextInventoryQuantity = getInventoryQuantity(nextItem, convertedQuantity);
-                            if (item.maxStock !== undefined && nextInventoryQuantity > item.maxStock) { toast.error(`Only ${item.maxStock} ${inventoryUnit} available`); return; }
-                            const nextCalculatedAmount = roundMoney(nextInventoryQuantity * (Number(item.rate) || 0));
-                            updateItem(item.key, { unit: nextUnit, quantity: convertedQuantity, quantityInput: String(Number(convertedQuantity.toFixed(6))), calculatedAmount: nextCalculatedAmount, finalAmount: item.finalAmountOverridden ? item.finalAmount : nextCalculatedAmount });
-                          }}>
-                            <SelectTrigger className="h-9 w-full"><SelectValue /></SelectTrigger>
-                            <SelectContent>{unitOptions.map((unit) => <SelectItem key={unit} value={unit}>{unit}</SelectItem>)}</SelectContent>
+                          <Select
+                            value={normalizeUnit(item.unit)}
+                            onValueChange={(nextUnit) => {
+                              const convertedQuantity = convertQuantity(
+                                item.quantity,
+                                item.unit,
+                                nextUnit,
+                              );
+                              if (convertedQuantity == null) return;
+                              const nextItem = { ...item, unit: nextUnit };
+                              const nextInventoryQuantity = getInventoryQuantity(
+                                nextItem,
+                                convertedQuantity,
+                              );
+                              if (
+                                item.maxStock !== undefined &&
+                                nextInventoryQuantity > item.maxStock
+                              ) {
+                                toast.error(`Only ${item.maxStock} ${inventoryUnit} available`);
+                                return;
+                              }
+                              const nextCalculatedAmount = roundMoney(
+                                nextInventoryQuantity * (Number(item.rate) || 0),
+                              );
+                              updateItem(item.key, {
+                                unit: nextUnit,
+                                quantity: convertedQuantity,
+                                quantityInput: String(Number(convertedQuantity.toFixed(6))),
+                                calculatedAmount: nextCalculatedAmount,
+                                finalAmount: item.finalAmountOverridden
+                                  ? item.finalAmount
+                                  : nextCalculatedAmount,
+                              });
+                            }}
+                          >
+                            <SelectTrigger className="h-9 w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {unitOptions.map((unit) => (
+                                <SelectItem key={unit} value={unit}>
+                                  {unit}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
                           </Select>
                         ) : (
-                          <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">{item.unit}</div>
+                          <div className="flex h-9 items-center rounded-md border bg-muted/40 px-3 text-sm font-medium">
+                            {item.unit}
+                          </div>
                         )}
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Buy/unit</Label>
-                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.purchaseCost} onFocus={(e) => e.currentTarget.select()} onChange={(e) => { updateItem(item.key, { purchaseCost: Number(e.target.value) || 0 }); }} />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="h-9 w-full"
+                          value={item.purchaseCost}
+                          onFocus={(e) => e.currentTarget.select()}
+                          onChange={(e) => {
+                            updateItem(item.key, { purchaseCost: Number(e.target.value) || 0 });
+                          }}
+                        />
                       </div>
                       <div className="space-y-1">
                         <Label className="text-[10px] text-muted-foreground">Sell/unit</Label>
-                        <Input type="text" inputMode="decimal" className="h-9 w-full" value={item.rate} disabled aria-label="Selling price per unit" />
+                        <Input
+                          type="text"
+                          inputMode="decimal"
+                          className="h-9 w-full"
+                          value={item.rate}
+                          disabled
+                          aria-label="Selling price per unit"
+                        />
                       </div>
                     </div>
                     <div className="mt-2 flex items-center gap-2 border-t pt-2">
                       <Label className="shrink-0 text-[10px] text-muted-foreground">Total</Label>
-                      <Input type="text" inputMode="decimal" className="h-9 w-full text-right font-semibold" value={getItemAmount(item)} onFocus={(e) => e.currentTarget.select()} onChange={(e) => {
-                        if (!isLoose) return;
-                        const nextTotal = Number(e.target.value) || 0;
-                        updateItem(item.key, { finalAmount: nextTotal, finalAmountOverridden: true });
-                      }} readOnly={!isLoose} aria-label={isLoose ? "Editable total" : "Calculated total"} />
+                      <Input
+                        type="text"
+                        inputMode="decimal"
+                        className="h-9 w-full text-right font-semibold"
+                        value={getItemAmount(item)}
+                        onFocus={(e) => e.currentTarget.select()}
+                        onChange={(e) => {
+                          if (!isLoose) return;
+                          const nextTotal = Number(e.target.value) || 0;
+                          updateItem(item.key, {
+                            finalAmount: nextTotal,
+                            finalAmountOverridden: true,
+                          });
+                        }}
+                        readOnly={!isLoose}
+                        aria-label={isLoose ? "Editable total" : "Calculated total"}
+                      />
                     </div>
                   </div>
                 );
@@ -1653,7 +1887,9 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
 
             {(method === "upi" || method === "bank" || method === "cheque") && (
               <div className="space-y-1.5 sm:col-span-2">
-                <Label htmlFor="khata-payment-proof">Transaction / Proof reference (optional)</Label>
+                <Label htmlFor="khata-payment-proof">
+                  Transaction / Proof reference (optional)
+                </Label>
                 <Input
                   id="khata-payment-proof"
                   value={paymentReference}
@@ -1713,6 +1949,196 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             </div>
           </div>
 
+          {/* ================================================================== */}
+          {/* Phase 2: Interest Settings — collapsed by default.                */}
+          {/* ================================================================== */}
+          <div className="space-y-2 rounded-lg border border-primary/20 p-3">
+            {/* Collapsible header + toggle */}
+            <button
+              type="button"
+              className="flex w-full items-center justify-between gap-2 text-left"
+              onClick={() => setInterestSectionOpen((v) => !v)}
+            >
+              <span className="flex items-center gap-2 text-sm font-medium">
+                <Percent className="size-4 text-primary" />
+                Interest settings
+                {interestEnabled ? (
+                  <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    Enabled
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground">
+                    Optional — charge simple interest on outstanding balance
+                  </span>
+                )}
+              </span>
+              {interestSectionOpen ? (
+                <ChevronDown className="size-4 text-muted-foreground" />
+              ) : (
+                <ChevronRight className="size-4 text-muted-foreground" />
+              )}
+            </button>
+
+            {interestSectionOpen ? (
+              <div className="space-y-3 pt-1">
+                {/* Enable toggle */}
+                <label className="flex items-center justify-between gap-3 rounded-md border bg-background p-2.5">
+                  <span>
+                    <span className="block text-sm font-medium">Charge interest on this sale</span>
+                    <span className="block text-[11px] text-muted-foreground">
+                      Off = existing behavior preserved (no agreement created).
+                    </span>
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setInterestEnabled((v) => !v)}
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                      interestEnabled ? "bg-primary" : "bg-muted"
+                    }`}
+                    aria-pressed={interestEnabled}
+                  >
+                    <span
+                      className={`inline-block size-4 transform rounded-full bg-background shadow transition ${
+                        interestEnabled ? "translate-x-6" : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </label>
+
+                {interestEnabled ? (
+                  <>
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Interest rate (%)</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="h-9 text-sm"
+                          placeholder="e.g. 12"
+                          value={interestRate}
+                          onChange={(e) => setInterestRate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Rate period</Label>
+                        <Select
+                          value={interestRatePeriod}
+                          onValueChange={(v) => setInterestRatePeriod(v as "monthly" | "annual")}
+                        >
+                          <SelectTrigger className="h-9 text-sm">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="annual">Annual</SelectItem>
+                            <SelectItem value="monthly">Monthly</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Interest start date</Label>
+                        <Input
+                          type="date"
+                          className="h-9 text-sm"
+                          value={interestStartDate}
+                          onChange={(e) => setInterestStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">
+                          Eligible principal
+                          <span className="ml-1 text-[10px] text-muted-foreground">
+                            (blank = due)
+                          </span>
+                        </Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          step="0.01"
+                          className="h-9 text-sm"
+                          placeholder={String(Math.round(due))}
+                          value={eligiblePrincipal}
+                          onChange={(e) => setEligiblePrincipal(e.target.value)}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Live interest preview */}
+                    {interestEligiblePrincipal > 0 && annualInterestRate > 0 ? (
+                      <div className="rounded-md border bg-primary/5 p-2.5">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-primary">
+                          Interest preview
+                        </p>
+                        <p className="mt-1 text-[11px] text-muted-foreground">
+                          Simple interest on {formatCurrency(interestEligiblePrincipal)} at{" "}
+                          {interestRateNum}% {interestRatePeriod} (= {annualInterestRate.toFixed(2)}
+                          % annual)
+                        </p>
+                        <div className="mt-2 grid grid-cols-4 gap-2 text-xs">
+                          <div className="rounded bg-background px-2 py-1.5">
+                            <p className="text-[9px] uppercase text-muted-foreground">30 days</p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(interestPreview.d30)}
+                            </p>
+                          </div>
+                          <div className="rounded bg-background px-2 py-1.5">
+                            <p className="text-[9px] uppercase text-muted-foreground">60 days</p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(interestPreview.d60)}
+                            </p>
+                          </div>
+                          <div className="rounded bg-background px-2 py-1.5">
+                            <p className="text-[9px] uppercase text-muted-foreground">90 days</p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(interestPreview.d90)}
+                            </p>
+                          </div>
+                          <div className="rounded bg-background px-2 py-1.5">
+                            <p className="text-[9px] uppercase text-muted-foreground">1 year</p>
+                            <p className="mt-0.5 font-semibold">
+                              {formatCurrency(interestPreview.d365)}
+                            </p>
+                          </div>
+                        </div>
+                        <p className="mt-2 text-[11px] font-medium">
+                          Settlement after 1 year ≈{" "}
+                          <span className="text-primary">
+                            {formatCurrency(interestEligiblePrincipal + interestPreview.d365)}
+                          </span>
+                        </p>
+                      </div>
+                    ) : null}
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Agreement notes (optional)</Label>
+                      <Textarea
+                        rows={2}
+                        className="text-sm"
+                        placeholder="e.g. Customer agreed verbally over phone on YYYY-MM-DD"
+                        value={interestNotes}
+                        onChange={(e) => setInterestNotes(e.target.value)}
+                      />
+                    </div>
+
+                    <label className="flex items-start gap-2.5 rounded-md border bg-background p-2.5">
+                      <input
+                        type="checkbox"
+                        className="mt-0.5 size-4 rounded border-input"
+                        checked={termsConfirmed}
+                        onChange={(e) => setTermsConfirmed(e.target.checked)}
+                      />
+                      <span className="text-xs">
+                        I confirm the customer has agreed to these interest terms, and the rate and
+                        start date are accurate. Saving will create a binding interest agreement
+                        attached to this sale.
+                      </span>
+                    </label>
+                  </>
+                ) : null}
+              </div>
+            ) : null}
+          </div>
+
           {/* Summary */}
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg bg-muted p-3 text-sm">
             <span>
@@ -1751,7 +2177,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
             type="button"
             className="rounded-full"
             onClick={handleSubmit}
-            disabled={submitting || inventoryLoading && items.length === 0}
+            disabled={submitting || (inventoryLoading && items.length === 0)}
           >
             {submitting && <Loader2 className="size-4 animate-spin" />}
             Save sale
