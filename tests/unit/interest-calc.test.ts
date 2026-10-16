@@ -1,12 +1,12 @@
 import { describe, it, expect } from "vitest";
-import {
-  accrueInterestToDate,
-  allocatePayment,
-  type RateSegment,
-} from "@/lib/interest-calc";
+import { accrueInterestToDate, allocatePayment, type RateSegment } from "@/lib/interest-calc";
 
 // Common helper: a single annual rate segment starting at the agreement start.
-function singleSegment(startDate: string, rate: number, period: "monthly" | "annual" = "annual"): RateSegment[] {
+function singleSegment(
+  startDate: string,
+  rate: number,
+  period: "monthly" | "annual" = "annual",
+): RateSegment[] {
   return [{ effectiveDate: startDate, rate, ratePeriod: period }];
 }
 

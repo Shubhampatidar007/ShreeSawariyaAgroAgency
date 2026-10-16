@@ -106,7 +106,9 @@ export function accrueInterestToDate(input: {
   let principalForAccrual = originalPrincipal;
 
   // Sort segments by effective_date ascending (defensive).
-  const sortedSegments = [...segments].sort((a, b) => a.effectiveDate.localeCompare(b.effectiveDate));
+  const sortedSegments = [...segments].sort((a, b) =>
+    a.effectiveDate.localeCompare(b.effectiveDate),
+  );
 
   for (let i = 0; i < sortedSegments.length; i++) {
     const seg = sortedSegments[i]!;
@@ -155,7 +157,10 @@ export function allocatePayment(input: {
 }): { interestPortion: number; principalPortion: number; adjustmentPortion: number } {
   const { paymentAmount, interestOutstanding, principalOutstanding } = input;
   const interestPortion = Math.min(paymentAmount, Math.max(interestOutstanding, 0));
-  const principalPortion = Math.min(paymentAmount - interestPortion, Math.max(principalOutstanding, 0));
+  const principalPortion = Math.min(
+    paymentAmount - interestPortion,
+    Math.max(principalOutstanding, 0),
+  );
   const adjustmentPortion = paymentAmount - interestPortion - principalPortion;
   return {
     interestPortion: round2(interestPortion),
