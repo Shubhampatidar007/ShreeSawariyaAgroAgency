@@ -157,3 +157,128 @@ export type SupplierLedgerEntry = {
   method: PaymentMethod;
   remarks?: string | undefined;
 };
+
+// ============ Interest Management types (Phase 5 + UI Phases 1-4) ============
+
+export type InterestAgreementType = "sale" | "loan";
+export type InterestRatePeriod = "monthly" | "annual";
+export type InterestAgreementStatus = "active" | "paused" | "settled" | "closed";
+export type InterestAdjustmentType = "waiver" | "write_off" | "rate_change" | "other";
+
+export type InterestAgreement = {
+  id: string;
+  customerId: string;
+  agreementType: InterestAgreementType;
+  sourceTransactionId?: string | undefined;
+  loanId?: string | undefined;
+  originalPrincipal: number;
+  outstandingPrincipal: number;
+  interestRate: number;
+  ratePeriod: InterestRatePeriod;
+  interestStartDate: string;
+  method: "simple";
+  status: InterestAgreementStatus;
+  notes?: string | undefined;
+  termsConfirmed: boolean;
+  createdAt: string;
+  closedAt?: string | undefined;
+  closedReason?: string | undefined;
+  // Computed by accrue_interest_to_date (joined in loaders)
+  accruedInterestTotal?: number | undefined;
+  interestPaidTotal?: number | undefined;
+  interestOutstanding?: number | undefined;
+  principalPaidTotal?: number | undefined;
+  totalSettlement?: number | undefined;
+};
+
+export type InterestPayment = {
+  id: string;
+  agreementId: string;
+  paymentDate: string;
+  amount: number;
+  interestPortion: number;
+  principalPortion: number;
+  adjustmentPortion: number;
+  method: PaymentMethod;
+  reference?: string | undefined;
+  notes?: string | undefined;
+  ledgerTransactionId?: string | undefined;
+  createdAt: string;
+};
+
+export type InterestAdjustment = {
+  id: string;
+  agreementId: string;
+  adjustmentDate: string;
+  adjustmentType: InterestAdjustmentType;
+  interestDelta: number;
+  principalDelta: number;
+  reason: string;
+  createdAt: string;
+};
+
+export type Loan = {
+  id: string;
+  customerId: string;
+  principalDisbursed: number;
+  disbursementDate: string;
+  paymentMethod: PaymentMethod;
+  paymentReference?: string | undefined;
+  notes?: string | undefined;
+  createdAt: string;
+};
+
+// Phase 1: Product sales search result row
+export type ProductSaleSearchRow = {
+  itemId: string;
+  transactionId: string;
+  customerId: string;
+  customerName: string;
+  customerMobile: string;
+  customerVillage: string;
+  entryDate: string;
+  product: string;
+  quantity: number;
+  unit: string;
+  rate: number;
+  itemAmount: number;
+  transactionAmount: number;
+  transactionPayment: number;
+  transactionRemainingDue: number;
+  transactionRemarks?: string | undefined;
+  totalCount: number;
+};
+
+export type MostSoldProduct = {
+  product: string;
+  totalQuantity: number;
+  totalAmount: number;
+  transactionCount: number;
+};
+
+// Input shapes for the new RPCs (passed as jsonb)
+export type InterestSettingsInput = {
+  interestRate: number;
+  ratePeriod: InterestRatePeriod;
+  interestStartDate: string;
+  eligiblePrincipal?: number | undefined;
+  notes?: string | undefined;
+  termsConfirmed: boolean;
+};
+
+export type DirectLoanInput = {
+  customerId: string;
+  principal: number;
+  disbursementDate: string;
+  interestRate: number;
+  ratePeriod: InterestRatePeriod;
+  interestStartDate: string;
+  paymentMethod: PaymentMethod;
+  paymentReference?: string | undefined;
+  notes?: string | undefined;
+};
+
+export type InterestPaymentAllocation = {
+  interestPortion?: number | undefined;
+  principalPortion?: number | undefined;
+};

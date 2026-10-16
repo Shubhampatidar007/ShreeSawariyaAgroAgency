@@ -4,20 +4,20 @@ import type {
   Customer,
   CustomerLedgerEntry,
   CustomerSaleItem,
+  DirectLoanInput,
+  InterestAgreement,
+  InterestPaymentAllocation,
+  InterestSettingsInput,
   InventoryItem,
   KhataSaleItemInput,
+  MostSoldProduct,
+  ProductSaleSearchRow,
   ProductVariant,
   PublishedProduct,
   Supplier,
   SupplierLedgerEntry,
 } from "@/types/business";
-import type {
-  Backup,
-  PaymentRecord,
-  Reminder,
-  ReminderLog,
-  AdminNotification,
-} from "@/types";
+import type { Backup, PaymentRecord, Reminder, ReminderLog, AdminNotification } from "@/types";
 import type { Order } from "@/types/operations";
 
 type ShopState = {
@@ -44,9 +44,9 @@ let state: ShopState = {
   suppliers: [],
   inventory: [],
   products: [],
-customerLedger: [],
-customerSaleItems: [],
-supplierLedger: [],
+  customerLedger: [],
+  customerSaleItems: [],
+  supplierLedger: [],
   draftProduct: null,
   orders: [],
   payments: [],
@@ -70,14 +70,8 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => state;
 
-export function usePublicShopStore<T>(
-  selector: (state: typeof state) => T,
-): T {
-  const snapshot = useSyncExternalStore(
-    subscribe,
-    getSnapshot,
-    getSnapshot,
-  );
+export function usePublicShopStore<T>(selector: (state: typeof state) => T): T {
+  const snapshot = useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 
   return selector(snapshot);
 }
@@ -122,8 +116,7 @@ const toInventory = (r: any): InventoryItem => ({
   supplierName: r.supplier_name ?? "",
   quantity: num(r.quantity),
   unit: r.unit ?? "unit",
-  quantityPerProduct:
-    r.quantity_per_product == null ? undefined : num(r.quantity_per_product),
+  quantityPerProduct: r.quantity_per_product == null ? undefined : num(r.quantity_per_product),
   purchasePrice: num(r.purchase_price),
   sellingPrice: r.selling_price == null ? undefined : num(r.selling_price),
   totalPrice: num(r.total_price),
@@ -134,22 +127,17 @@ const toInventory = (r: any): InventoryItem => ({
   productVariantId: r.product_variant_id ?? undefined,
 });
 
-
 const toProductVariant = (r: any): ProductVariant => ({
   id: r.id,
   productId: r.product_id ?? undefined,
   inventoryId: r.inventory_id ?? undefined,
   label: r.label ?? "unit",
   sellingPrice: num(r.selling_price),
-  discountPrice:
-    r.discount_price == null ? undefined : num(r.discount_price),
+  discountPrice: r.discount_price == null ? undefined : num(r.discount_price),
   stock: num(r.stock),
   status: r.status ?? "active",
 });
-const toProduct = (
-  r: any,
-  variants: ProductVariant[] = [],
-): PublishedProduct => ({
+const toProduct = (r: any, variants: ProductVariant[] = []): PublishedProduct => ({
   id: r.id,
   inventoryId: r.inventory_id ?? "",
   title: r.title,
@@ -191,25 +179,17 @@ const toSaleItem = (r: any): CustomerSaleItem => ({
   rate: num(r.rate),
   amount: num(r.amount),
 
-  purchaseCost:
-    r.purchase_cost == null
-      ? undefined
-      : num(r.purchase_cost),
+  purchaseCost: r.purchase_cost == null ? undefined : num(r.purchase_cost),
 
-  adminPriceInc:
-    r.admin_price_inc == null
-      ? undefined
-      : num(r.admin_price_inc),
+  adminPriceInc: r.admin_price_inc == null ? undefined : num(r.admin_price_inc),
 
-  date:
-    r.customer_transactions?.entry_date ??
-    r.entry_date ??
-    r.date ??
-    undefined,
+  date: r.customer_transactions?.entry_date ?? r.entry_date ?? r.date ?? undefined,
   transactionSubtotal:
     r.customer_transactions?.subtotal == null ? undefined : num(r.customer_transactions.subtotal),
   transactionDiscount:
-    r.customer_transactions?.discount_amount == null ? undefined : num(r.customer_transactions.discount_amount),
+    r.customer_transactions?.discount_amount == null
+      ? undefined
+      : num(r.customer_transactions.discount_amount),
 });
 const toSupplierLedger = (r: any): SupplierLedgerEntry => ({
   id: r.id,
@@ -336,22 +316,22 @@ export async function loadShopData() {
   inFlightLoadPromise = (async () => {
     setState({ loading: true });
     try {
-    const [
-  notifications,
-  customers,
-  suppliers,
-  inventory,
-  products,
-  variants,
-  customerLedger,
-  customerSaleItems,
-  supplierLedger,
-  orders,
-  payments,
-  reminders,
-  reminderLogs,
-  backupRows,
-] = await Promise.all([
+      const [
+        notifications,
+        customers,
+        suppliers,
+        inventory,
+        products,
+        variants,
+        customerLedger,
+        customerSaleItems,
+        supplierLedger,
+        orders,
+        payments,
+        reminders,
+        reminderLogs,
+        backupRows,
+      ] = await Promise.all([
         supabase
           .from("notifications")
           .select("*")
@@ -361,11 +341,15 @@ export async function loadShopData() {
         supabase.from("suppliers").select("*").order("name"),
         supabase.from("inventory_items").select("*").order("product_name"),
         supabase.from("products").select("*").order("published_on", { ascending: false }),
-        supabase.from("product_variants" as any).select("*").eq("status", "active"),
+        supabase
+          .from("product_variants" as any)
+          .select("*")
+          .eq("status", "active"),
         supabase.from("customer_transactions").select("*").order("entry_date"),
         supabase
-  .from("customer_transaction_items")
-  .select(`
+          .from("customer_transaction_items")
+          .select(
+            `
     *,
     customer_transactions!inner(
       entry_date,
@@ -373,11 +357,15 @@ export async function loadShopData() {
       subtotal,
       discount_amount
     )
-  `)
-  .eq("customer_transactions.entry_type", "sale")
-  .order("created_at"),
+  `,
+          )
+          .eq("customer_transactions.entry_type", "sale")
+          .order("created_at"),
         supabase.from("supplier_transactions").select("*").order("entry_date"),
-        supabase.from("orders").select("*, order_items(*)").order("placed_on", { ascending: false }),
+        supabase
+          .from("orders")
+          .select("*, order_items(*)")
+          .order("placed_on", { ascending: false }),
         supabase.from("payments").select("*").order("entry_date", { ascending: false }),
         supabase.from("reminders").select("*").order("created_at", { ascending: false }),
         supabase.from("reminder_logs").select("*").order("sent_at", { ascending: false }),
@@ -403,7 +391,7 @@ export async function loadShopData() {
         customerLedger,
         supplierLedger,
 
-customerSaleItems,
+        customerSaleItems,
         orders,
         payments,
         reminders,
@@ -518,21 +506,18 @@ export const shopStore = {
     payment: number;
     method: CustomerLedgerEntry["method"];
     remarks?: string;
-    
   }) {
-    const { error } = await supabase
-      .from("customer_transactions")
-      .insert({
-        customer_id: entry.customerId,
-        entry_date: entry.date,
-        entry_type: entry.entryType,
-        product: entry.product,
-        quantity: entry.quantity,
-        amount: entry.amount,
-        payment: entry.payment,
-        method: entry.method,
-        remarks: entry.remarks ?? null,
-      });
+    const { error } = await supabase.from("customer_transactions").insert({
+      customer_id: entry.customerId,
+      entry_date: entry.date,
+      entry_type: entry.entryType,
+      product: entry.product,
+      quantity: entry.quantity,
+      amount: entry.amount,
+      payment: entry.payment,
+      method: entry.method,
+      remarks: entry.remarks ?? null,
+    });
     if (error) throw error;
     return after(undefined);
   },
@@ -564,7 +549,8 @@ export const shopStore = {
       _bargaining_amount: input.bargainingAmount ?? 0,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
-      _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
+      _remarks:
+        [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
     });
     if (error) throw error;
     return after(data as string);
@@ -601,14 +587,16 @@ export const shopStore = {
     });
 
     if (error) throw error;
-    return after(data as {
-      transaction_id: string;
-      total: number;
-      due_before: number;
-      due_reduced: number;
-      due_after: number;
-      advance_added: number;
-    });
+    return after(
+      data as {
+        transaction_id: string;
+        total: number;
+        due_before: number;
+        due_reduced: number;
+        due_after: number;
+        advance_added: number;
+      },
+    );
   },
   async recordKhataPayment(input: {
     customerId: string;
@@ -623,7 +611,8 @@ export const shopStore = {
       _amount: input.amount,
       _method: input.method,
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
-      _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
+      _remarks:
+        [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
     });
     if (error) throw error;
     return after(data as string);
@@ -746,24 +735,22 @@ export const shopStore = {
     setState({ draftProduct: draft });
   },
   async publishProduct(product: PublishedProduct) {
-    const { error } = await supabase
-      .from("products")
-      .insert({
-        inventory_id: product.inventoryId || null,
-        title: product.title,
-        category: product.category,
-        selling_price: product.sellingPrice,
-        discount_price: product.discountPrice ?? null,
-        stock: product.stock,
-        description: product.description,
-        tags: product.tags,
-        images: product.images,
-        emoji: product.emoji,
-        visibility: product.visibility,
-        featured: product.featured,
-        status: product.status,
-        published_on: product.publishedOn,
-      });
+    const { error } = await supabase.from("products").insert({
+      inventory_id: product.inventoryId || null,
+      title: product.title,
+      category: product.category,
+      selling_price: product.sellingPrice,
+      discount_price: product.discountPrice ?? null,
+      stock: product.stock,
+      description: product.description,
+      tags: product.tags,
+      images: product.images,
+      emoji: product.emoji,
+      visibility: product.visibility,
+      featured: product.featured,
+      status: product.status,
+      published_on: product.publishedOn,
+    });
     if (error) throw error;
     if (product.inventoryId)
       await supabase
@@ -792,104 +779,95 @@ export const shopStore = {
     await supabase.from("products").delete().eq("id", id);
     return after(undefined);
   },
- async addOrder(order: Omit<Order, "id">) {
-  const payload: any = {
-    delivery_address: order.deliveryAddress,
-    pincode: order.pincode,
-    package_sent_on: order.packageSentOn ?? null,
-    payment_due_on: order.paymentDueOn ?? null,
+  async addOrder(order: Omit<Order, "id">) {
+    const payload: any = {
+      delivery_address: order.deliveryAddress,
+      pincode: order.pincode,
+      package_sent_on: order.packageSentOn ?? null,
+      payment_due_on: order.paymentDueOn ?? null,
 
-    code: order.code,
-    channel: order.channel,
-    customer_id: order.customerId ?? null,
-    customer_name: order.customerName,
-    customer_type: order.customerType,
-    village: order.village,
-    mobile: order.mobile,
-    placed_on: order.placedOn,
-    subtotal: order.subtotal,
-    discount: order.discount,
-    tax: order.tax,
-    total: order.total,
-    paid: order.paid,
-    payment_method: order.paymentMethod,
-    payment_status: order.paymentStatus,
-    delivery_status: order.deliveryStatus,
-    order_status: order.orderStatus,
-    invoice_status: order.invoiceStatus,
-    remarks: order.remarks ?? null,
-    timeline: order.timeline,
-  };
+      code: order.code,
+      channel: order.channel,
+      customer_id: order.customerId ?? null,
+      customer_name: order.customerName,
+      customer_type: order.customerType,
+      village: order.village,
+      mobile: order.mobile,
+      placed_on: order.placedOn,
+      subtotal: order.subtotal,
+      discount: order.discount,
+      tax: order.tax,
+      total: order.total,
+      paid: order.paid,
+      payment_method: order.paymentMethod,
+      payment_status: order.paymentStatus,
+      delivery_status: order.deliveryStatus,
+      order_status: order.orderStatus,
+      invoice_status: order.invoiceStatus,
+      remarks: order.remarks ?? null,
+      timeline: order.timeline,
+    };
 
-  const { data, error } = await supabase
-    .from("orders")
-    .insert(payload)
-    .select()
-    .single();
+    const { data, error } = await supabase.from("orders").insert(payload).select().single();
     if (error) throw error;
     if (order.items.length)
-      await supabase
-        .from("order_items")
-        .insert(
-          order.items.map((item: any) => ({
-            order_id: data.id,
-            product: item.product,
-            quantity: item.quantity,
-            unit: item.unit,
-            rate: item.rate,
-            amount: item.amount,
-          })),
-        );
+      await supabase.from("order_items").insert(
+        order.items.map((item: any) => ({
+          order_id: data.id,
+          product: item.product,
+          quantity: item.quantity,
+          unit: item.unit,
+          rate: item.rate,
+          amount: item.amount,
+        })),
+      );
     return after(toOrder(data));
   },
- async updateOrder(id: string, patch: Partial<Order>) {
-  const payload: any = {};
+  async updateOrder(id: string, patch: Partial<Order>) {
+    const payload: any = {};
 
-  if (patch.orderStatus !== undefined) {
-    payload.order_status = patch.orderStatus;
-  }
+    if (patch.orderStatus !== undefined) {
+      payload.order_status = patch.orderStatus;
+    }
 
-  if (patch.paymentStatus !== undefined) {
-    payload.payment_status = patch.paymentStatus;
-  }
+    if (patch.paymentStatus !== undefined) {
+      payload.payment_status = patch.paymentStatus;
+    }
 
-  if (patch.deliveryStatus !== undefined) {
-    payload.delivery_status = patch.deliveryStatus;
-  }
+    if (patch.deliveryStatus !== undefined) {
+      payload.delivery_status = patch.deliveryStatus;
+    }
 
-  if (patch.invoiceStatus !== undefined) {
-    payload.invoice_status = patch.invoiceStatus;
-  }
+    if (patch.invoiceStatus !== undefined) {
+      payload.invoice_status = patch.invoiceStatus;
+    }
 
-  if (patch.paid !== undefined) {
-    payload.paid = patch.paid;
-  }
+    if (patch.paid !== undefined) {
+      payload.paid = patch.paid;
+    }
 
-  if (patch.packageSentOn !== undefined) {
-    payload.package_sent_on = patch.packageSentOn || null;
-  }
+    if (patch.packageSentOn !== undefined) {
+      payload.package_sent_on = patch.packageSentOn || null;
+    }
 
-  if (patch.paymentDueOn !== undefined) {
-    payload.payment_due_on = patch.paymentDueOn || null;
-  }
+    if (patch.paymentDueOn !== undefined) {
+      payload.payment_due_on = patch.paymentDueOn || null;
+    }
 
-  if (patch.remarks !== undefined) {
-    payload.remarks = patch.remarks || null;
-  }
+    if (patch.remarks !== undefined) {
+      payload.remarks = patch.remarks || null;
+    }
 
-  if (patch.timeline !== undefined) {
-    payload.timeline = patch.timeline;
-  }
+    if (patch.timeline !== undefined) {
+      payload.timeline = patch.timeline;
+    }
 
-  const { error } = await supabase
-    .from("orders")
-    .update(payload)
-    .eq("id", id);
+    const { error } = await supabase.from("orders").update(payload).eq("id", id);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return after(undefined);
-},
+    return after(undefined);
+  },
   async addOnlineOrderPayment(input: {
     orderId: string;
     amount: number;
@@ -897,43 +875,39 @@ export const shopStore = {
     remarks?: string;
     reference?: string;
   }) {
-    const { data, error } = await supabase.rpc(
-      "add_online_order_payment",
-      {
-        _order_id: input.orderId,
-        _amount: input.amount,
-        _method: input.method,
-        _remarks: [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
-      },
-    );
+    const { data, error } = await supabase.rpc("add_online_order_payment", {
+      _order_id: input.orderId,
+      _amount: input.amount,
+      _method: input.method,
+      _remarks:
+        [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
+    });
 
     if (error) throw error;
 
     return after(data);
   },
- async addPayment(payment: Omit<PaymentRecord, "id">) {
-  const p = payment as any;
+  async addPayment(payment: Omit<PaymentRecord, "id">) {
+    const p = payment as any;
 
-  const payload: any = {
-    reference: p.reference,
-    direction: p.direction,
-    party_name: p.partyName,
-    entry_date: p.date,
-    amount: p.amount,
-    method: p.method,
-    status: p.status,
-    order_code: p.orderCode ?? null,
-    remarks: p.remarks ?? null,
-  };
+    const payload: any = {
+      reference: p.reference,
+      direction: p.direction,
+      party_name: p.partyName,
+      entry_date: p.date,
+      amount: p.amount,
+      method: p.method,
+      status: p.status,
+      order_code: p.orderCode ?? null,
+      remarks: p.remarks ?? null,
+    };
 
-  const { error } = await supabase
-    .from("payments")
-    .insert(payload);
+    const { error } = await supabase.from("payments").insert(payload);
 
-  if (error) throw error;
+    if (error) throw error;
 
-  return after(undefined);
-},
+    return after(undefined);
+  },
   async updateReminder(id: string, patch: Partial<Reminder>) {
     const payload: any = {};
     if (patch.status !== undefined) payload.status = patch.status;
@@ -979,6 +953,234 @@ export const shopStore = {
     await supabase.from("backups").delete().eq("id", id);
     return after(undefined);
   },
+
+  // ====================================================================
+  // Phase 1: Product Sales History RPCs
+  // ====================================================================
+  async searchProductSales(input: {
+    product?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    rate?: number;
+    quantity?: number;
+    page?: number;
+    pageSize?: number;
+    sortBy?: "date" | "amount" | "customer_name";
+    sortDir?: "asc" | "desc";
+  }) {
+    const { data, error } = await supabase.rpc("search_product_sales" as any, {
+      _product: input.product?.trim() || null,
+      _date_from: input.dateFrom || null,
+      _date_to: input.dateTo || null,
+      _rate: input.rate ?? null,
+      _quantity: input.quantity ?? null,
+      _page: input.page ?? 1,
+      _page_size: input.pageSize ?? 25,
+      _sort_by: input.sortBy ?? "date",
+      _sort_dir: input.sortDir ?? "desc",
+    });
+    if (error) throw error;
+    return (data ?? []) as ProductSaleSearchRow[];
+  },
+
+  async aggregateMostSoldProducts(input: { dateFrom?: string; dateTo?: string; limit?: number }) {
+    const { data, error } = await supabase.rpc("aggregate_most_sold_products" as any, {
+      _date_from: input.dateFrom || null,
+      _date_to: input.dateTo || null,
+      _limit: input.limit ?? 5,
+    });
+    if (error) throw error;
+    return (data ?? []) as MostSoldProduct[];
+  },
+
+  // ====================================================================
+  // Phase 2: Khata sale with interest
+  // ====================================================================
+  async createKhataSaleWithInterest(input: {
+    customerId: string;
+    items: KhataSaleItemInput[];
+    paid: number;
+    bargainingAmount?: number;
+    method: CustomerLedgerEntry["method"];
+    date?: string;
+    remarks?: string;
+    reference?: string;
+    interestSettings?: InterestSettingsInput | null;
+    idempotencyKey?: string;
+  }) {
+    const { data, error } = await supabase.rpc("create_khata_sale_with_interest" as any, {
+      _customer_id: input.customerId,
+      _items: input.items.map((item) => ({
+        inventory_id: item.inventoryId ?? null,
+        product_id: item.productId ?? null,
+        product_variant_id: item.productVariantId ?? null,
+        product: item.product,
+        quantity: item.quantity,
+        unit: item.unit,
+        rate: item.rate,
+        entered_quantity: item.enteredQuantity ?? null,
+        entered_unit: item.enteredUnit ?? null,
+        final_amount: item.finalAmount ?? null,
+      })),
+      _paid: input.paid,
+      _bargaining_amount: input.bargainingAmount ?? 0,
+      _method: input.method,
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _remarks:
+        [input.reference?.trim(), input.remarks?.trim()].filter(Boolean).join(" · ") || null,
+      _interest_settings: input.interestSettings
+        ? {
+            interest_rate: input.interestSettings.interestRate,
+            rate_period: input.interestSettings.ratePeriod,
+            interest_start_date: input.interestSettings.interestStartDate,
+            eligible_principal: input.interestSettings.eligiblePrincipal ?? null,
+            notes: input.interestSettings.notes ?? null,
+            terms_confirmed: input.interestSettings.termsConfirmed,
+          }
+        : null,
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
+
+  // ====================================================================
+  // Phase 3: Khata interest panel — per-customer agreement list + actions
+  // ====================================================================
+  async loadCustomerInterestAgreements(customerId: string) {
+    const { data, error } = await supabase.rpc("load_customer_interest_agreements" as any, {
+      _customer_id: customerId,
+    });
+    if (error) throw error;
+    return (data ?? []) as InterestAgreement[];
+  },
+
+  async recordInterestPayment(input: {
+    agreementId: string;
+    amount: number;
+    method: "cash" | "upi" | "bank" | "cheque" | "credit";
+    date?: string;
+    allocation?: InterestPaymentAllocation | null;
+    reference?: string;
+    notes?: string;
+    idempotencyKey?: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_interest_payment" as any, {
+      _agreement_id: input.agreementId,
+      _amount: input.amount,
+      _method: input.method,
+      _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
+      _allocation: input.allocation
+        ? {
+            interest_portion: input.allocation.interestPortion ?? 0,
+            principal_portion: input.allocation.principalPortion ?? 0,
+          }
+        : null,
+      _reference: input.reference?.trim() || null,
+      _notes: input.notes?.trim() || null,
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
+
+  async reviseInterestRate(input: {
+    agreementId: string;
+    newRate: number;
+    newRatePeriod: "monthly" | "annual";
+    effectiveDate?: string;
+    reason: string;
+    idempotencyKey?: string;
+  }) {
+    const { data, error } = await supabase.rpc("revise_interest_rate" as any, {
+      _agreement_id: input.agreementId,
+      _new_rate: input.newRate,
+      _new_rate_period: input.newRatePeriod,
+      _effective_date: input.effectiveDate ?? new Date().toISOString().slice(0, 10),
+      _reason: input.reason.trim(),
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
+
+  async recordInterestAdjustment(input: {
+    agreementId: string;
+    adjustmentType: "waiver" | "write_off" | "rate_change" | "other";
+    interestDelta?: number;
+    principalDelta?: number;
+    reason: string;
+    adjustmentDate?: string;
+    idempotencyKey?: string;
+  }) {
+    const { data, error } = await supabase.rpc("record_interest_adjustment" as any, {
+      _agreement_id: input.agreementId,
+      _adjustment_type: input.adjustmentType,
+      _interest_delta: input.interestDelta ?? 0,
+      _principal_delta: input.principalDelta ?? 0,
+      _reason: input.reason.trim(),
+      _adjustment_date: input.adjustmentDate ?? new Date().toISOString().slice(0, 10),
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
+
+  async settleInterestAgreement(input: {
+    agreementId: string;
+    settlementDate?: string;
+    reason?: string;
+    idempotencyKey?: string;
+  }) {
+    const { data, error } = await supabase.rpc("settle_interest_agreement" as any, {
+      _agreement_id: input.agreementId,
+      _settlement_date: input.settlementDate ?? new Date().toISOString().slice(0, 10),
+      _reason: input.reason?.trim() || "Settled in full",
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as boolean);
+  },
+
+  // ====================================================================
+  // Phase 4: Central Interest Management — list active agreements + direct loans
+  // ====================================================================
+  async loadActiveInterestAgreements(input: {
+    search?: string;
+    village?: string;
+    dateFrom?: string;
+    dateTo?: string;
+    page?: number;
+    pageSize?: number;
+  }) {
+    const { data, error } = await supabase.rpc("load_active_interest_agreements" as any, {
+      _search: input.search?.trim() || null,
+      _village: input.village || null,
+      _date_from: input.dateFrom || null,
+      _date_to: input.dateTo || null,
+      _page: input.page ?? 1,
+      _page_size: input.pageSize ?? 25,
+    });
+    if (error) throw error;
+    return (data ?? []) as InterestAgreement[];
+  },
+
+  async createDirectLoan(input: DirectLoanInput & { idempotencyKey?: string }) {
+    const { data, error } = await supabase.rpc("create_direct_loan" as any, {
+      _customer_id: input.customerId,
+      _principal: input.principal,
+      _disbursement_date: input.disbursementDate,
+      _interest_rate: input.interestRate,
+      _rate_period: input.ratePeriod,
+      _interest_start_date: input.interestStartDate,
+      _payment_method: input.paymentMethod,
+      _payment_reference: input.paymentReference?.trim() || null,
+      _notes: input.notes?.trim() || null,
+      _idempotency_key: input.idempotencyKey ?? null,
+    });
+    if (error) throw error;
+    return after(data as string);
+  },
 };
 
 export const formatCurrency = (value: number) => `₹${Math.round(value).toLocaleString("en-IN")}`;
@@ -988,11 +1190,7 @@ export const formatDate = (value: string) => {
   // Parsing YYYY-MM-DD with new Date() treats them as UTC midnight and
   // shifts them to the previous day in India and other positive-offset zones.
   const dateOnly = /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
-    ? new Date(
-        Number(value.slice(0, 4)),
-        Number(value.slice(5, 7)) - 1,
-        Number(value.slice(8, 10)),
-      )
+    ? new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10)))
     : new Date(value);
 
   return Number.isNaN(dateOnly.getTime())

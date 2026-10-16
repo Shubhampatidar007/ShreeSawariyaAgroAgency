@@ -12,6 +12,8 @@ import {
   BellRing,
   DatabaseBackup,
   Search,
+  ShoppingCart,
+  Percent,
 } from "lucide-react";
 import type { NavSection } from "@/types";
 
@@ -27,6 +29,7 @@ export const adminNavSections: NavSection[] = [
       { label: "Products", labelKey: "nav.products", to: "/admin/products", icon: Package },
       { label: "Orders & Sales", labelKey: "nav.sales", to: "/admin/sales", icon: ReceiptText },
       { label: "Payments", labelKey: "nav.payments", to: "/admin/payments", icon: Wallet },
+      { label: "Product Sales History", to: "/admin/product-sales", icon: ShoppingCart },
     ],
   },
   {
@@ -44,6 +47,7 @@ export const adminNavSections: NavSection[] = [
     items: [
       { label: "Reminders", labelKey: "nav.reminders", to: "/admin/reminders", icon: BellRing },
       { label: "Inventory Reminders", to: "/admin/inventory-reminders", icon: BellRing },
+      { label: "Interest Management", to: "/admin/interest-management", icon: Percent },
       { label: "Backups", labelKey: "nav.backups", to: "/admin/backups", icon: DatabaseBackup },
       { label: "Search", labelKey: "nav.search", to: "/admin/search", icon: Search },
     ],
