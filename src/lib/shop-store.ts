@@ -569,6 +569,11 @@ export const shopStore = {
     }>;
     date?: string;
     remarks?: string;
+    // Optional: the original sale's customer_transactions.id. When provided,
+    // the return-reconciliation trigger will use it to attribute the return
+    // to the exact interest agreement attached to that sale (avoids the
+    // ambiguous 'most-recent' fallback). Migration 20261016200000.
+    sourceTransactionId?: string;
   }) {
     const { data, error } = await supabase.rpc("record_customer_product_return" as any, {
       _customer_id: input.customerId,
@@ -584,6 +589,7 @@ export const shopStore = {
       })),
       _entry_date: input.date ?? new Date().toISOString().slice(0, 10),
       _remarks: input.remarks?.trim() || null,
+      _source_transaction_id: input.sourceTransactionId ?? null,
     });
 
     if (error) throw error;
