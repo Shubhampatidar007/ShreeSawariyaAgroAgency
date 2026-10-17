@@ -980,7 +980,17 @@ export const shopStore = {
       _sort_dir: input.sortDir ?? "desc",
     });
     if (error) throw error;
-    return (data ?? []) as ProductSaleSearchRow[];
+    return (data ?? []).map((row: any): ProductSaleSearchRow => ({
+      itemId: row.item_id, transactionId: row.transaction_id, customerId: row.customer_id,
+      customerName: row.customer_name, customerMobile: row.customer_mobile,
+      customerVillage: row.customer_village ?? "", entryDate: row.entry_date,
+      product: row.product, quantity: Number(row.quantity ?? 0), unit: row.unit,
+      rate: Number(row.rate ?? 0), itemAmount: Number(row.item_amount ?? 0),
+      transactionAmount: Number(row.transaction_amount ?? 0),
+      transactionPayment: Number(row.transaction_payment ?? 0),
+      transactionRemainingDue: Number(row.transaction_remaining_due ?? 0),
+      transactionRemarks: row.transaction_remarks ?? undefined, totalCount: Number(row.total_count ?? 0),
+    }));
   },
 
   async aggregateMostSoldProducts(input: { dateFrom?: string; dateTo?: string; limit?: number }) {
@@ -990,7 +1000,10 @@ export const shopStore = {
       _limit: input.limit ?? 5,
     });
     if (error) throw error;
-    return (data ?? []) as MostSoldProduct[];
+    return (data ?? []).map((row: any): MostSoldProduct => ({
+      product: row.product, totalQuantity: Number(row.total_quantity ?? 0),
+      totalAmount: Number(row.total_amount ?? 0), transactionCount: Number(row.transaction_count ?? 0),
+    }));
   },
 
   // ====================================================================
@@ -1052,7 +1065,16 @@ export const shopStore = {
       _customer_id: customerId,
     });
     if (error) throw error;
-    return (data ?? []) as InterestAgreement[];
+    return (data ?? []).map((row: any): InterestAgreement => ({
+      id: row.agreement_id, customerId: row.customer_id, agreementType: row.agreement_type,
+      sourceTransactionId: row.source_transaction_id ?? undefined, loanId: row.loan_id ?? undefined,
+      originalPrincipal: Number(row.original_principal ?? 0), outstandingPrincipal: Number(row.outstanding_principal ?? 0),
+      interestRate: Number(row.interest_rate ?? 0), ratePeriod: row.rate_period,
+      interestStartDate: row.interest_start_date, method: "simple", status: row.status,
+      notes: row.notes ?? undefined, termsConfirmed: Boolean(row.terms_confirmed), createdAt: row.created_at,
+      interestPaidTotal: Number(row.interest_paid_total ?? 0), principalPaidTotal: Number(row.principal_paid_total ?? 0),
+      interestOutstanding: Number(row.interest_outstanding ?? 0), totalSettlement: Number(row.total_settlement ?? 0),
+    }));
   },
 
   async recordInterestPayment(input: {
@@ -1208,7 +1230,7 @@ export const formatDate = (value: string) => {
   // PostgreSQL DATE values are calendar dates, not UTC timestamps.
   // Parsing YYYY-MM-DD with new Date() treats them as UTC midnight and
   // shifts them to the previous day in India and other positive-offset zones.
-  const dateOnly = /^\\d{4}-\\d{2}-\\d{2}$/.test(value)
+  const dateOnly = /^\d{4}-\d{2}-\d{2}$/.test(value)
     ? new Date(Number(value.slice(0, 4)), Number(value.slice(5, 7)) - 1, Number(value.slice(8, 10)))
     : new Date(value);
 
