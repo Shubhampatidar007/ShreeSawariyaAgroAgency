@@ -58,7 +58,7 @@ const RPCS = [
   "load_customer_interest_agreements",
 ] as const;
 
-type ProbeStatus = "pending" | "exists" | "missing" | "needs-auth" | "error";
+type ProbeStatus = "pending" | "exists" | "missing" | "needs-auth" | "unknown" | "error";
 
 type Probe = {
   name: string;
@@ -133,24 +133,18 @@ function InterestSetupPage() {
             return { ...probe, status: "error", detail: message };
           }
 
-          // RPC probe: call with empty args. The function existing but
-          // rejecting the args (PGRST202 with parameter mismatch) still
-          // means it exists; "not found" means it's missing.
+          // Empty-argument probes cannot distinguish a missing RPC from a
+          // required-argument/signature mismatch (both may return PGRST202).
           const { error } = await supabase.rpc(probe.name, {} as never);
-
           if (!error) return { ...probe, status: "exists" };
           const code = (error as { code?: string }).code ?? "";
           const message = error.message ?? "Unknown error";
-
           if (code === "PGRST202" || /could not find the function/i.test(message)) {
-            return { ...probe, status: "missing", detail: message };
+            return { ...probe, status: "unknown", detail: "Empty-call check is inconclusive for RPCs with required arguments." };
           }
-          // 42501 = permission denied = function exists but not granted
           if (code === "42501" || /permission denied/i.test(message)) {
-            return { ...probe, status: "exists", detail: "Permission denied — needs auth login" };
+            return { ...probe, status: "needs-auth", detail: "Function requires authorized staff access." };
           }
-          // Other errors (e.g. "Not authorized" raised by the function
-          // body, or parameter mismatch) — function exists.
           return { ...probe, status: "exists", detail: message };
         } catch (err) {
           return {
@@ -174,12 +168,10 @@ function InterestSetupPage() {
   const rpcProbes = probes.filter((p) => p.kind === "rpc");
   const tableExistsCount = tableProbes.filter((p) => p.status === "exists").length;
   const rpcExistsCount = rpcProbes.filter((p) => p.status === "exists").length;
+  const unknownCount = probes.filter((p) => p.status === "unknown" || p.status === "needs-auth").length;
   const missingCount = probes.filter((p) => p.status === "missing").length;
-  const allOk =
-    !loading &&
-    missingCount === 0 &&
-    tableExistsCount === TABLES.length &&
-    rpcExistsCount === RPCS.length;
+  const allOk = !loading && missingCount === 0 && unknownCount === 0 &&
+    tableExistsCount === TABLES.length && rpcExistsCount === RPCS.length;
 
   function copyToClipboard(text: string) {
     void navigator.clipboard.writeText(text).then(() => {
@@ -244,6 +236,10 @@ function InterestSetupPage() {
               <p className="mt-0.5 text-lg font-semibold text-destructive">{missingCount}</p>
             </div>
             <div className="rounded-lg border p-2.5">
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Needs check</p>
+              <p className="mt-0.5 text-lg font-semibold text-warning">{unknownCount}</p>
+            </div>
+            <div className="rounded-lg border p-2.5">
               <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Status</p>
               <p className="mt-0.5 text-sm font-semibold">
                 {loading ? "Checking…" : allOk ? "Ready" : "Action needed"}
@@ -266,10 +262,8 @@ function InterestSetupPage() {
                 Supabase project.
               </p>
               <p className="mt-1 text-muted-foreground">
-                Open the Supabase SQL Editor and run the migration files listed below in order. Each
-                file uses{" "}
-                <code className="rounded bg-muted px-1 text-[11px]">CREATE OR REPLACE</code> so
-                re-running is safe.
+                Open the Supabase SQL Editor and apply only the missing migration listed below.
+                Review table and policy changes before re-running any migration.
               </p>
               <a
                 href="https://supabase.com/dashboard/project/cmfqlpcrnkswgxrszoog/sql/new"
