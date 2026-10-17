@@ -92,6 +92,43 @@ const MIGRATION_HINTS: Record<string, string> = {
     "Migration 9 of 9: 20261016180000_interest_list_rpcs_recon.sql",
 };
 
+// Map of required parameters (those without DEFAULT) for each RPC, used to
+// call the function with null values for required args so the function body
+// actually executes (instead of returning PGRST202 "function not found" for
+// an empty-args call to a function with required params).
+//
+// When the function body executes against an unauthenticated request:
+//   - GRANT EXECUTE TO authenticated: anon gets 42501 "permission denied for function"
+//   - For authenticated staff: function body runs, is_staff() returns true, may raise
+//     a domain-specific error (e.g. "Interest agreement X not found") which is also
+//     a valid signal that the function exists.
+//
+// Either way, this distinguishes "function exists" from "function missing".
+const RPC_REQUIRED_PARAMS: Record<string, Record<string, null>> = {
+  // Required params (no DEFAULT in the function signature):
+  accrue_interest_to_date: { _agreement_id: null },
+  create_khata_sale_with_interest: { _customer_id: null, _items: null },
+  create_direct_loan: { _customer_id: null, _principal: null, _interest_rate: null },
+  record_interest_adjustment: {
+    _agreement_id: null,
+    _adjustment_type: null,
+    _reason: null,
+  },
+  record_interest_payment: { _agreement_id: null, _amount: null },
+  revise_interest_rate: {
+    _agreement_id: null,
+    _new_rate: null,
+    _new_rate_period: null,
+    _reason: null,
+  },
+  settle_interest_agreement: { _agreement_id: null },
+  load_customer_interest_agreements: { _customer_id: null },
+  // All-default-param RPCs: pass empty args (existing behavior works).
+  search_product_sales: {},
+  aggregate_most_sold_products: {},
+  load_active_interest_agreements: {},
+};
+
 function InterestSetupPage() {
   const [probes, setProbes] = useState<Probe[]>([]);
   const [loading, setLoading] = useState(true);
@@ -109,10 +146,13 @@ function InterestSetupPage() {
       initial.map(async (probe): Promise<Probe> => {
         try {
           if (probe.kind === "table") {
-            // Try a SELECT limit 0 — fastest way to check existence + permission.
+            // Use GET (not HEAD) so PostgREST returns the error body
+            // with code/message when permission is denied. With HEAD,
+            // the body is suppressed and we can't classify the error.
             const { error } = await supabase
-              .from(probe.name)
-              .select("id", { count: "exact", head: true });
+              .from(probe.name as never)
+              .select("id")
+              .limit(1);
 
             if (!error) return { ...probe, status: "exists" };
             const code = (error as { code?: string }).code ?? "";
@@ -133,18 +173,33 @@ function InterestSetupPage() {
             return { ...probe, status: "error", detail: message };
           }
 
-          // Empty-argument probes cannot distinguish a missing RPC from a
-          // required-argument/signature mismatch (both may return PGRST202).
-          const { error } = await supabase.rpc(probe.name, {} as never);
+          // RPC probe: call with null values for required params (so the
+          // function body executes) instead of empty {} (which PostgREST
+          // rejects with PGRST202 for functions with required args).
+          const requiredArgs = RPC_REQUIRED_PARAMS[probe.name] ?? {};
+          const { error } = await supabase.rpc(probe.name as never, requiredArgs as never);
           if (!error) return { ...probe, status: "exists" };
           const code = (error as { code?: string }).code ?? "";
           const message = error.message ?? "Unknown error";
+          // PGRST202 = function not found in the schema cache (with the
+          // args we sent). Since we send the correct required params,
+          // this means the function genuinely doesn't exist.
           if (code === "PGRST202" || /could not find the function/i.test(message)) {
-            return { ...probe, status: "unknown", detail: "Empty-call check is inconclusive for RPCs with required arguments." };
+            return { ...probe, status: "missing", detail: message };
           }
+          // 42501 = permission denied (anon lacks EXECUTE on the function).
+          // The function EXISTS — anon just can't call it.
           if (code === "42501" || /permission denied/i.test(message)) {
-            return { ...probe, status: "needs-auth", detail: "Function requires authorized staff access." };
+            return {
+              ...probe,
+              status: "exists",
+              detail: "Permission denied — needs auth login",
+            };
           }
+          // Any other error means the function body executed and raised
+          // an exception (e.g. "Not authorized" raised by the is_staff
+          // check, or "Interest agreement X not found"). The function
+          // EXISTS.
           return { ...probe, status: "exists", detail: message };
         } catch (err) {
           return {
@@ -168,10 +223,16 @@ function InterestSetupPage() {
   const rpcProbes = probes.filter((p) => p.kind === "rpc");
   const tableExistsCount = tableProbes.filter((p) => p.status === "exists").length;
   const rpcExistsCount = rpcProbes.filter((p) => p.status === "exists").length;
-  const unknownCount = probes.filter((p) => p.status === "unknown" || p.status === "needs-auth").length;
+  const unknownCount = probes.filter(
+    (p) => p.status === "unknown" || p.status === "needs-auth",
+  ).length;
   const missingCount = probes.filter((p) => p.status === "missing").length;
-  const allOk = !loading && missingCount === 0 && unknownCount === 0 &&
-    tableExistsCount === TABLES.length && rpcExistsCount === RPCS.length;
+  const allOk =
+    !loading &&
+    missingCount === 0 &&
+    unknownCount === 0 &&
+    tableExistsCount === TABLES.length &&
+    rpcExistsCount === RPCS.length;
 
   function copyToClipboard(text: string) {
     void navigator.clipboard.writeText(text).then(() => {
@@ -236,7 +297,9 @@ function InterestSetupPage() {
               <p className="mt-0.5 text-lg font-semibold text-destructive">{missingCount}</p>
             </div>
             <div className="rounded-lg border p-2.5">
-              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Needs check</p>
+              <p className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Needs check
+              </p>
               <p className="mt-0.5 text-lg font-semibold text-warning">{unknownCount}</p>
             </div>
             <div className="rounded-lg border p-2.5">
