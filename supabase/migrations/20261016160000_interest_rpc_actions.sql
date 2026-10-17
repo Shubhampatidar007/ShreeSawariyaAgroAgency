@@ -10,8 +10,8 @@
 CREATE OR REPLACE FUNCTION public.create_direct_loan(
   _customer_id uuid,
   _principal numeric(14,2),
-  _disbursement_date date DEFAULT current_date,
   _interest_rate numeric(8,4),
+  _disbursement_date date DEFAULT current_date,
   _rate_period text DEFAULT 'annual',
   _interest_start_date date DEFAULT current_date,
   _payment_method text DEFAULT 'cash',
@@ -134,8 +134,8 @@ BEGIN
   RETURN v_loan_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.create_direct_loan(uuid, numeric, date, numeric, text, date, text, text, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.create_direct_loan(uuid, numeric, date, numeric, text, date, text, text, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.create_direct_loan(uuid, numeric, numeric, date, text, date, text, text, text, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.create_direct_loan(uuid, numeric, numeric, date, text, date, text, text, text, text) TO authenticated;
 
 -- =====================================================================
 -- record_interest_payment()
@@ -309,8 +309,8 @@ CREATE OR REPLACE FUNCTION public.revise_interest_rate(
   _agreement_id uuid,
   _new_rate numeric(8,4),
   _new_rate_period text,
-  _effective_date date DEFAULT current_date,
   _reason text,
+  _effective_date date DEFAULT current_date,
   _idempotency_key text DEFAULT NULL
 )
 RETURNS uuid
@@ -378,8 +378,8 @@ BEGIN
   RETURN v_history_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.revise_interest_rate(uuid, numeric, text, date, text, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.revise_interest_rate(uuid, numeric, text, date, text, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.revise_interest_rate(uuid, numeric, text, text, date, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.revise_interest_rate(uuid, numeric, text, text, date, text) TO authenticated;
 
 -- =====================================================================
 -- record_interest_adjustment()
@@ -391,9 +391,9 @@ GRANT EXECUTE ON FUNCTION public.revise_interest_rate(uuid, numeric, text, date,
 CREATE OR REPLACE FUNCTION public.record_interest_adjustment(
   _agreement_id uuid,
   _adjustment_type text,
+  _reason text,
   _interest_delta numeric(14,2) DEFAULT 0,
   _principal_delta numeric(14,2) DEFAULT 0,
-  _reason text,
   _adjustment_date date DEFAULT current_date,
   _idempotency_key text DEFAULT NULL
 )
@@ -470,8 +470,8 @@ BEGIN
   RETURN v_adjustment_id;
 END;
 $$;
-REVOKE ALL ON FUNCTION public.record_interest_adjustment(uuid, text, numeric, numeric, text, date, text) FROM PUBLIC, anon;
-GRANT EXECUTE ON FUNCTION public.record_interest_adjustment(uuid, text, numeric, numeric, text, date, text) TO authenticated;
+REVOKE ALL ON FUNCTION public.record_interest_adjustment(uuid, text, text, numeric, numeric, date, text) FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_interest_adjustment(uuid, text, text, numeric, numeric, date, text) TO authenticated;
 
 -- =====================================================================
 -- settle_interest_agreement()
