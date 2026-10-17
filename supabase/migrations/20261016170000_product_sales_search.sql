@@ -99,7 +99,7 @@ BEGIN
     JOIN public.customer_transactions ct ON ct.id = cti.transaction_id
     JOIN public.customers c ON c.id = ct.customer_id
     WHERE ct.entry_type IN ('purchase', 'sale')
-      AND (_product_pattern IS NULL OR LOWER(cti.product) LIKE v_product_pattern)
+      AND (v_product_pattern IS NULL OR LOWER(cti.product) LIKE v_product_pattern)
       AND (_date_from IS NULL OR ct.entry_date >= _date_from)
       AND (_date_to IS NULL OR ct.entry_date <= _date_to)
       AND (_rate IS NULL OR cti.rate = _rate)
