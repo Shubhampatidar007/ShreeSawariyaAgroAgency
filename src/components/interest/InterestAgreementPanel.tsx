@@ -35,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { extractErrorMessage } from "@/lib/error-extract";
 import { shopStore, formatCurrency, formatDate } from "@/lib/shop-store";
 import type { InterestAgreement } from "@/types/business";
 
@@ -92,7 +93,7 @@ function RecordInterestPaymentDialog({
       onOpenChange(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to record payment");
+      toast.error(extractErrorMessage(err, "Failed to record payment"));
     } finally {
       setSaving(false);
     }
@@ -246,7 +247,7 @@ function ReviseInterestRateDialog({
       onOpenChange(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to revise rate");
+      toast.error(extractErrorMessage(err, "Failed to revise rate"));
     } finally {
       setSaving(false);
     }
@@ -393,7 +394,7 @@ function InterestAdjustmentDialog({
       onOpenChange(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to record adjustment");
+      toast.error(extractErrorMessage(err, "Failed to record adjustment"));
     } finally {
       setSaving(false);
     }
@@ -524,7 +525,7 @@ function SettleAgreementDialog({
       onOpenChange(false);
       onSaved();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to settle agreement");
+      toast.error(extractErrorMessage(err, "Failed to settle agreement"));
     } finally {
       setSaving(false);
     }
@@ -818,7 +819,7 @@ export function InterestAgreementPanel({ customerId }: { customerId: string }) {
       const result = await shopStore.loadCustomerInterestAgreements(customerId);
       setAgreements(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load interest agreements");
+      setError(extractErrorMessage(err, "Failed to load interest agreements"));
       setAgreements([]);
     } finally {
       setLoading(false);

@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { extractErrorMessage } from "@/lib/error-extract";
 import { shopStore, useShopStore, formatCurrency, formatDate } from "@/lib/shop-store";
 import type { MostSoldProduct, ProductSaleSearchRow } from "@/types/business";
 
@@ -93,7 +94,7 @@ function ProductSalesPage() {
       });
       setRows(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Search failed.");
+      setError(extractErrorMessage(err, "Search failed."));
       setRows([]);
     } finally {
       setLoading(false);

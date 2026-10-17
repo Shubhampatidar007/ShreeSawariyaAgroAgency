@@ -35,6 +35,7 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ModulePageHeader } from "@/components/shared/ModulePageHeader";
 import { TablePagination } from "@/components/shared/TablePagination";
+import { extractErrorMessage } from "@/lib/error-extract";
 import { shopStore, useShopStore, formatCurrency, formatDate } from "@/lib/shop-store";
 import type { InterestAgreement } from "@/types/business";
 
@@ -87,7 +88,7 @@ function InterestManagementPage() {
       });
       setActiveAgreements(result);
     } catch (err) {
-      setActiveError(err instanceof Error ? err.message : "Failed to load active agreements");
+      setActiveError(extractErrorMessage(err, "Failed to load active agreements"));
       setActiveAgreements([]);
     } finally {
       setLoadingActive(false);
@@ -179,7 +180,7 @@ function InterestManagementPage() {
       // Refresh active agreements so the new loan appears.
       void loadActive();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Failed to record loan");
+      toast.error(extractErrorMessage(err, "Failed to record loan"));
     } finally {
       setSaving(false);
     }

@@ -43,6 +43,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatCurrency, shopStore, useShopStore } from "@/lib/shop-store";
+import { extractErrorMessage } from "@/lib/error-extract";
 import {
   KHATA_INVENTORY_PAGE_SIZE,
   loadKhataInventoryPage,
@@ -528,7 +529,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       setInventoryHasMore(result.hasMore);
     } catch (error) {
       if (requestId === inventoryRequestRef.current) {
-        toast.error(error instanceof Error ? error.message : "Could not load more inventory");
+        toast.error(extractErrorMessage(error, "Could not load more inventory"));
       }
     } finally {
       if (requestId === inventoryRequestRef.current) {
@@ -1066,9 +1067,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
          */
 
         toast.error(
-          receiptError instanceof Error
-            ? `Sale saved, but receipt failed: ${receiptError.message}`
-            : "Sale saved, but WhatsApp receipt could not be sent",
+          `Sale saved, but receipt failed: ${extractErrorMessage(receiptError, "WhatsApp receipt could not be sent")}`,
         );
       }
 
@@ -1082,7 +1081,7 @@ export function KhataSaleDialog({ customer, trigger, onCreated }: Props) {
       setOpen(false);
       reset();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not record the sale");
+      toast.error(extractErrorMessage(err, "Could not record the sale"));
     } finally {
       setSubmitting(false);
     }
