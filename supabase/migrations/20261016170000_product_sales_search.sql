@@ -116,12 +116,23 @@ BEGIN
     c.transaction_remarks, c.total_count
   FROM counted c
   ORDER BY
-    CASE WHEN v_sort_clause = 'entry_date' THEN c.entry_date END
-      || ' ' || v_sort_dir || ', c.item_id ' || v_sort_dir,
-    CASE WHEN v_sort_clause = 'item_amount' THEN c.item_amount END
-      || ' ' || v_sort_dir,
-    CASE WHEN v_sort_clause = 'customer_name' THEN c.customer_name END
-      || ' ' || v_sort_dir
+    CASE WHEN v_sort_dir = 'asc'
+         THEN CASE v_sort_clause
+                WHEN 'amount'        THEN c.item_amount
+                WHEN 'customer_name' THEN c.customer_name
+                ELSE c.entry_date
+              END
+    END ASC NULLS LAST,
+    CASE WHEN v_sort_dir = 'desc'
+         THEN CASE v_sort_clause
+                WHEN 'amount'        THEN c.item_amount
+                WHEN 'customer_name' THEN c.customer_name
+                ELSE c.entry_date
+              END
+    END DESC NULLS LAST,
+    -- Stable tiebreaker: item_id (always secondary sort, same direction as primary)
+    CASE WHEN v_sort_dir = 'asc'  THEN c.item_id END ASC NULLS LAST,
+    CASE WHEN v_sort_dir = 'desc' THEN c.item_id END DESC NULLS LAST
   LIMIT LEAST(GREATEST(_page_size, 1), 100)
   OFFSET v_offset;
 END;

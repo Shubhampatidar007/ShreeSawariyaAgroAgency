@@ -57,7 +57,7 @@ CREATE POLICY "ip_staff" ON public.interest_payments FOR ALL TO authenticated
   USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
 CREATE POLICY "ip_own_read" ON public.interest_payments FOR SELECT TO authenticated
   USING (agreement_id IN (
-    SELECT id FROM public.interest_agreements ia
+    SELECT ia.id FROM public.interest_agreements ia
     JOIN public.customers c ON c.id = ia.customer_id
     WHERE c.user_id = auth.uid()
   ));

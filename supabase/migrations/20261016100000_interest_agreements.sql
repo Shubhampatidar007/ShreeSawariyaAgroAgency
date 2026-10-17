@@ -99,7 +99,7 @@ CREATE POLICY "iarh_staff" ON public.interest_agreement_rate_history FOR ALL TO 
   USING (public.is_staff(auth.uid())) WITH CHECK (public.is_staff(auth.uid()));
 CREATE POLICY "iarh_own_read" ON public.interest_agreement_rate_history FOR SELECT TO authenticated
   USING (agreement_id IN (
-    SELECT id FROM public.interest_agreements ia
+    SELECT ia.id FROM public.interest_agreements ia
     JOIN public.customers c ON c.id = ia.customer_id
     WHERE c.user_id = auth.uid()
   ));
