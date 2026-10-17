@@ -4,6 +4,7 @@ import {
   BookOpen,
   Download,
   IndianRupee,
+  Percent,
   Printer,
   Receipt,
   ShoppingCart,
@@ -11,6 +12,7 @@ import {
   UserX,
   Wallet,
 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -23,7 +25,7 @@ import { KhataSaleDialog } from "@/components/khata/KhataSaleDialog";
 import { RecordPaymentDialog } from "@/components/khata/RecordPaymentDialog";
 import { KhataReturnDialog } from "@/components/khata/KhataReturnDialog";
 import { InterestAgreementPanel } from "@/components/interest/InterestAgreementPanel";
-import { formatCurrency, formatDate, useShopStore } from "@/lib/shop-store";
+import { formatCurrency, formatDate, shopStore, useShopStore } from "@/lib/shop-store";
 import { CUSTOMER_KHATA_PAGE_SIZE, loadCustomerKhataPage } from "@/lib/admin-customer-data";
 import type { CustomerLedgerEntry } from "@/types/business";
 import {
@@ -82,6 +84,41 @@ function CustomerKhataPage() {
       cancelled = true;
     };
   }, [customerId, page, ledgerRefreshKey]);
+
+  // ====================================================================
+  // Phase 3 enhancement: load this customer's interest agreements so we can
+  // (a) render the InterestAgreementPanel below, and (b) mark ledger rows
+  // that have an attached agreement with a small "Interest" badge.
+  //
+  // We only need the source_transaction_id set for the badges; the panel
+  // does its own loading (and handles its own errors) so this hook is
+  // best-effort and silently fails (no UI break) when the RPC is missing
+  // during initial setup.
+  // ====================================================================
+  const [agreementTxIds, setAgreementTxIds] = useState<Set<string>>(new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+    void shopStore
+      .loadCustomerInterestAgreements(customerId)
+      .then((rows) => {
+        if (cancelled) return;
+        const ids = new Set<string>();
+        for (const r of rows) {
+          if (r.sourceTransactionId) ids.add(r.sourceTransactionId);
+          if (r.loanId) ids.add(`loan:${r.loanId}`);
+        }
+        setAgreementTxIds(ids);
+      })
+      .catch(() => {
+        // Silent: the InterestAgreementPanel itself surfaces a helpful
+        // "feature not configured" banner when the RPC is missing.
+        if (!cancelled) setAgreementTxIds(new Set());
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [customerId, ledgerRefreshKey]);
 
   const totals = useMemo(
     () => ({
@@ -208,61 +245,73 @@ function CustomerKhataPage() {
                 <>
                   {/* Mobile: compact card list (no horizontal scroll). */}
                   <ul className="space-y-2 p-3 sm:hidden">
-                    {ledger.map((entry) => (
-                      <li key={entry.id} className="rounded-lg border p-2.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="text-xs text-muted-foreground">
-                              {formatDate(entry.date)}
-                            </p>
-                            <p className="mt-0.5 text-sm font-semibold">
-                              {entry.entryType === "purchase"
-                                ? entry.product || "Purchase"
-                                : "Payment received"}
-                            </p>
-                            <p className="mt-0.5 text-[11px] uppercase text-muted-foreground">
-                              {entry.method}
-                              {entry.remarks ? ` · ${entry.remarks}` : ""}
-                            </p>
+                    {ledger.map((entry) => {
+                      const hasAgreement = agreementTxIds.has(entry.id);
+                      return (
+                        <li key={entry.id} className="rounded-lg border p-2.5">
+                          <div className="flex items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                                {formatDate(entry.date)}
+                                {hasAgreement ? (
+                                  <Badge
+                                    variant="outline"
+                                    className="rounded-full px-1.5 py-0 text-[9px] font-semibold text-primary"
+                                  >
+                                    <Percent className="mr-0.5 size-2.5" />
+                                    Interest
+                                  </Badge>
+                                ) : null}
+                              </p>
+                              <p className="mt-0.5 text-sm font-semibold">
+                                {entry.entryType === "purchase"
+                                  ? entry.product || "Purchase"
+                                  : "Payment received"}
+                              </p>
+                              <p className="mt-0.5 text-[11px] uppercase text-muted-foreground">
+                                {entry.method}
+                                {entry.remarks ? ` · ${entry.remarks}` : ""}
+                              </p>
+                            </div>
+                            <Button
+                              asChild
+                              variant="outline"
+                              size="sm"
+                              className="h-7 shrink-0 rounded-full px-2.5 text-[11px]"
+                            >
+                              <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                                <BookOpen className="size-3" />
+                                View
+                              </Link>
+                            </Button>
                           </div>
-                          <Button
-                            asChild
-                            variant="outline"
-                            size="sm"
-                            className="h-7 shrink-0 rounded-full px-2.5 text-[11px]"
-                          >
-                            <Link to="/admin/customers/$customerId" params={{ customerId }}>
-                              <BookOpen className="size-3" />
-                              View
-                            </Link>
-                          </Button>
-                        </div>
-                        <div className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
-                          <div className="rounded bg-muted/50 px-2 py-1">
-                            <p className="text-[9px] uppercase text-muted-foreground">Qty</p>
-                            <p className="mt-0.5 font-semibold">{entry.quantity}</p>
+                          <div className="mt-2 grid grid-cols-3 gap-1.5 text-xs">
+                            <div className="rounded bg-muted/50 px-2 py-1">
+                              <p className="text-[9px] uppercase text-muted-foreground">Qty</p>
+                              <p className="mt-0.5 font-semibold">{entry.quantity}</p>
+                            </div>
+                            <div className="rounded bg-muted/50 px-2 py-1">
+                              <p className="text-[9px] uppercase text-muted-foreground">Amount</p>
+                              <p className="mt-0.5 font-semibold">{formatCurrency(entry.amount)}</p>
+                            </div>
+                            <div className="rounded bg-muted/50 px-2 py-1">
+                              <p className="text-[9px] uppercase text-muted-foreground">Paid</p>
+                              <p className="mt-0.5 font-semibold text-success">
+                                {formatCurrency(entry.payment)}
+                              </p>
+                            </div>
+                            <div className="col-span-3 rounded bg-muted/50 px-2 py-1">
+                              <p className="text-[9px] uppercase text-muted-foreground">
+                                Remaining due
+                              </p>
+                              <p className="mt-0.5 font-semibold">
+                                {formatCurrency(entry.remainingDue)}
+                              </p>
+                            </div>
                           </div>
-                          <div className="rounded bg-muted/50 px-2 py-1">
-                            <p className="text-[9px] uppercase text-muted-foreground">Amount</p>
-                            <p className="mt-0.5 font-semibold">{formatCurrency(entry.amount)}</p>
-                          </div>
-                          <div className="rounded bg-muted/50 px-2 py-1">
-                            <p className="text-[9px] uppercase text-muted-foreground">Paid</p>
-                            <p className="mt-0.5 font-semibold text-success">
-                              {formatCurrency(entry.payment)}
-                            </p>
-                          </div>
-                          <div className="col-span-3 rounded bg-muted/50 px-2 py-1">
-                            <p className="text-[9px] uppercase text-muted-foreground">
-                              Remaining due
-                            </p>
-                            <p className="mt-0.5 font-semibold">
-                              {formatCurrency(entry.remainingDue)}
-                            </p>
-                          </div>
-                        </div>
-                      </li>
-                    ))}
+                        </li>
+                      );
+                    })}
                   </ul>
 
                   {/* Desktop: original table. */}
@@ -281,56 +330,70 @@ function CustomerKhataPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {ledger.map((entry) => (
-                          <TableRow key={entry.id}>
-                            <TableCell className="text-muted-foreground">
-                              {formatDate(entry.date)}
-                            </TableCell>
-                            <TableCell className="font-medium">
-                              {entry.entryType === "purchase" ? (
-                                <Button
-                                  asChild
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-full"
-                                >
-                                  <Link to="/admin/customers/$customerId" params={{ customerId }}>
-                                    <BookOpen className="size-3.5" />
-                                    View full record
-                                  </Link>
-                                </Button>
-                              ) : (
-                                <Button
-                                  asChild
-                                  variant="outline"
-                                  size="sm"
-                                  className="rounded-full"
-                                >
-                                  <Link to="/admin/customers/$customerId" params={{ customerId }}>
-                                    <BookOpen className="size-3.5" />
-                                    View customer
-                                  </Link>
-                                </Button>
-                              )}
-                            </TableCell>
-                            <TableCell className="text-right">{entry.quantity}</TableCell>
-                            <TableCell className="text-right">
-                              {formatCurrency(entry.amount)}
-                            </TableCell>
-                            <TableCell className="text-right text-success">
-                              {formatCurrency(entry.payment)}
-                            </TableCell>
-                            <TableCell className="text-right font-semibold">
-                              {formatCurrency(entry.remainingDue)}
-                            </TableCell>
-                            <TableCell className="uppercase text-muted-foreground">
-                              {entry.method}
-                            </TableCell>
-                            <TableCell className="text-muted-foreground">
-                              {entry.remarks ?? "—"}
-                            </TableCell>
-                          </TableRow>
-                        ))}
+                        {ledger.map((entry) => {
+                          const hasAgreement = agreementTxIds.has(entry.id);
+                          return (
+                            <TableRow key={entry.id}>
+                              <TableCell className="text-muted-foreground">
+                                <span className="flex items-center gap-1.5">
+                                  {formatDate(entry.date)}
+                                  {hasAgreement ? (
+                                    <Badge
+                                      variant="outline"
+                                      className="rounded-full px-1.5 py-0 text-[9px] font-semibold text-primary"
+                                    >
+                                      <Percent className="mr-0.5 size-2.5" />
+                                      Interest
+                                    </Badge>
+                                  ) : null}
+                                </span>
+                              </TableCell>
+                              <TableCell className="font-medium">
+                                {entry.entryType === "purchase" ? (
+                                  <Button
+                                    asChild
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full"
+                                  >
+                                    <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                                      <BookOpen className="size-3.5" />
+                                      View full record
+                                    </Link>
+                                  </Button>
+                                ) : (
+                                  <Button
+                                    asChild
+                                    variant="outline"
+                                    size="sm"
+                                    className="rounded-full"
+                                  >
+                                    <Link to="/admin/customers/$customerId" params={{ customerId }}>
+                                      <BookOpen className="size-3.5" />
+                                      View customer
+                                    </Link>
+                                  </Button>
+                                )}
+                              </TableCell>
+                              <TableCell className="text-right">{entry.quantity}</TableCell>
+                              <TableCell className="text-right">
+                                {formatCurrency(entry.amount)}
+                              </TableCell>
+                              <TableCell className="text-right text-success">
+                                {formatCurrency(entry.payment)}
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">
+                                {formatCurrency(entry.remainingDue)}
+                              </TableCell>
+                              <TableCell className="uppercase text-muted-foreground">
+                                {entry.method}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {entry.remarks ?? "—"}
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
                       </TableBody>
                     </Table>
                   </div>

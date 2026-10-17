@@ -841,6 +841,60 @@ export function InterestAgreementPanel({ customerId }: { customerId: string }) {
   }
 
   if (error) {
+    // Detect whether the error is a "DB function missing" error (PGRST202)
+    // vs a real runtime error. If the function is missing, we show a helpful
+    // banner pointing the user to the migration SQL; otherwise show the raw
+    // error message.
+    const looksLikeMissingFunction = /could not find the function|PGRST202/i.test(error);
+
+    if (looksLikeMissingFunction) {
+      return (
+        <Card className="border-warning/40 bg-warning/5 shadow-soft">
+          <CardHeader className="py-3 sm:py-4">
+            <CardTitle className="flex items-center gap-2 text-sm sm:text-base">
+              <Percent className="size-4 text-warning" />
+              Interest feature not fully configured
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2 pt-0 text-xs text-muted-foreground sm:text-sm">
+            <p>
+              The customer's interest agreements cannot be loaded because the database RPC{" "}
+              <code className="rounded bg-muted px-1 py-0.5 text-[11px]">
+                load_customer_interest_agreements
+              </code>{" "}
+              is not installed on your Supabase project yet.
+            </p>
+            <p>
+              Apply the interest feature migrations in the Supabase SQL Editor to enable this
+              section. Once applied, this panel will show the customer's active and settled interest
+              agreements with principal, accrued interest, and settlement totals.
+            </p>
+            <div className="flex items-center gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="rounded-full"
+                onClick={() => void load()}
+              >
+                Retry
+              </Button>
+              <a
+                href="https://supabase.com/dashboard/project/cmfqlpcrnkswgxrszoog/sql/new"
+                target="_blank"
+                rel="noreferrer"
+                className="text-xs text-primary underline sm:text-sm"
+              >
+                Open Supabase SQL Editor →
+              </a>
+            </div>
+            <p className="pt-2 text-[11px] text-muted-foreground">
+              Raw error: <span className="font-mono">{error}</span>
+            </p>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
       <Card className="border-destructive/30 shadow-soft">
         <CardContent className="py-4 text-sm text-destructive">

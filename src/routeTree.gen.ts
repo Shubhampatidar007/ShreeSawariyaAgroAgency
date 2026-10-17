@@ -15,8 +15,11 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
+import { Route as AdminInterestManagementRouteImport } from './routes/admin.interest-management'
+import { Route as AdminInterestSetupRouteImport } from './routes/admin.interest-setup'
 import { Route as AdminInventoryRemindersRouteImport } from './routes/admin.inventory-reminders'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
+import { Route as AdminProductSalesRouteImport } from './routes/admin.product-sales'
 import { Route as AdminProfileRouteImport } from './routes/admin.profile'
 import { Route as AdminRemindersRouteImport } from './routes/admin.reminders'
 import { Route as AdminReportsRouteImport } from './routes/admin.reports'
@@ -68,6 +71,16 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
   path: '/backups',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminInterestManagementRoute = AdminInterestManagementRouteImport.update({
+  id: '/interest-management',
+  path: '/interest-management',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminInterestSetupRoute = AdminInterestSetupRouteImport.update({
+  id: '/interest-setup',
+  path: '/interest-setup',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminInventoryRemindersRoute = AdminInventoryRemindersRouteImport.update({
   id: '/inventory-reminders',
   path: '/inventory-reminders',
@@ -76,6 +89,11 @@ const AdminInventoryRemindersRoute = AdminInventoryRemindersRouteImport.update({
 const AdminPaymentsRoute = AdminPaymentsRouteImport.update({
   id: '/payments',
   path: '/payments',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminProductSalesRoute = AdminProductSalesRouteImport.update({
+  id: '/product-sales',
+  path: '/product-sales',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminProfileRoute = AdminProfileRouteImport.update({
@@ -191,8 +209,11 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/interest-management': typeof AdminInterestManagementRoute
+  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-sales': typeof AdminProductSalesRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -220,8 +241,11 @@ export interface FileRoutesByTo {
   '/about': typeof AboutRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/interest-management': typeof AdminInterestManagementRoute
+  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-sales': typeof AdminProductSalesRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -251,8 +275,11 @@ export interface FileRoutesById {
   '/admin': typeof AdminRouteWithChildren
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
+  '/admin/interest-management': typeof AdminInterestManagementRoute
+  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
+  '/admin/product-sales': typeof AdminProductSalesRoute
   '/admin/profile': typeof AdminProfileRoute
   '/admin/reminders': typeof AdminRemindersRoute
   '/admin/reports': typeof AdminReportsRoute
@@ -283,8 +310,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/analytics'
     | '/admin/backups'
+    | '/admin/interest-management'
+    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
+    | '/admin/product-sales'
     | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
@@ -312,8 +342,11 @@ export interface FileRouteTypes {
     | '/about'
     | '/admin/analytics'
     | '/admin/backups'
+    | '/admin/interest-management'
+    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
+    | '/admin/product-sales'
     | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
@@ -342,8 +375,11 @@ export interface FileRouteTypes {
     | '/admin'
     | '/admin/analytics'
     | '/admin/backups'
+    | '/admin/interest-management'
+    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
+    | '/admin/product-sales'
     | '/admin/profile'
     | '/admin/reminders'
     | '/admin/reports'
@@ -418,6 +454,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBackupsRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/interest-management': {
+      id: '/admin/interest-management'
+      path: '/interest-management'
+      fullPath: '/admin/interest-management'
+      preLoaderRoute: typeof AdminInterestManagementRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/interest-setup': {
+      id: '/admin/interest-setup'
+      path: '/interest-setup'
+      fullPath: '/admin/interest-setup'
+      preLoaderRoute: typeof AdminInterestSetupRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/inventory-reminders': {
       id: '/admin/inventory-reminders'
       path: '/inventory-reminders'
@@ -430,6 +480,13 @@ declare module '@tanstack/react-router' {
       path: '/payments'
       fullPath: '/admin/payments'
       preLoaderRoute: typeof AdminPaymentsRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/product-sales': {
+      id: '/admin/product-sales'
+      path: '/product-sales'
+      fullPath: '/admin/product-sales'
+      preLoaderRoute: typeof AdminProductSalesRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/profile': {
@@ -578,8 +635,11 @@ declare module '@tanstack/react-router' {
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
+  AdminInterestManagementRoute: typeof AdminInterestManagementRoute
+  AdminInterestSetupRoute: typeof AdminInterestSetupRoute
   AdminInventoryRemindersRoute: typeof AdminInventoryRemindersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
+  AdminProductSalesRoute: typeof AdminProductSalesRoute
   AdminProfileRoute: typeof AdminProfileRoute
   AdminRemindersRoute: typeof AdminRemindersRoute
   AdminReportsRoute: typeof AdminReportsRoute
@@ -605,8 +665,11 @@ interface AdminRouteChildren {
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
+  AdminInterestManagementRoute: AdminInterestManagementRoute,
+  AdminInterestSetupRoute: AdminInterestSetupRoute,
   AdminInventoryRemindersRoute: AdminInventoryRemindersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
+  AdminProductSalesRoute: AdminProductSalesRoute,
   AdminProfileRoute: AdminProfileRoute,
   AdminRemindersRoute: AdminRemindersRoute,
   AdminReportsRoute: AdminReportsRoute,

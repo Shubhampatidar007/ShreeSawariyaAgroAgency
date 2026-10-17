@@ -99,11 +99,15 @@ function InterestManagementPage() {
     void loadActive();
   }, [loadActive]);
 
-  // The load_active_interest_agreements RPC returns rows but not a
-  // separate total_count. Use the returned page size as an approximation
-  // for pagination; full count support can be added to the RPC later.
-  const totalCount = activeAgreements.length;
-  const pageCount = activeAgreements.length === 25 ? page + 1 : page;
+  // The load_active_interest_agreements RPC returns a total_count column
+  // (added in migration 20261016190000). Each row carries the same total.
+  // If the migration hasn't been applied yet (older DB), fall back to
+  // activeAgreements.length so pagination at least doesn't crash.
+  const totalCount =
+    activeAgreements.length > 0
+      ? Number(activeAgreements[0].totalCount ?? activeAgreements.length)
+      : 0;
+  const pageCount = Math.max(1, Math.ceil(totalCount / 25));
 
   // ===== Give Money / Direct Loan tab state =====
   const [loanOpen, setLoanOpen] = useState(false);

@@ -189,6 +189,9 @@ export type InterestAgreement = {
   interestOutstanding?: number | undefined;
   principalPaidTotal?: number | undefined;
   totalSettlement?: number | undefined;
+  // Returned only by load_active_interest_agreements (paginated list RPC).
+  // Per-customer loaders leave this undefined.
+  totalCount?: number | undefined;
 };
 
 export type InterestPayment = {
