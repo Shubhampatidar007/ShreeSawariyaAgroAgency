@@ -67,9 +67,7 @@ BEGIN
     WHEN 'customer_name' THEN 'customer_name'
     ELSE 'entry_date'
   END;
-  IF _sort_dir NOT IN ('asc', 'desc') THEN
-    v_sort_dir := 'desc';
-  END IF;
+  v_sort_dir := CASE WHEN LOWER(_sort_dir) IN ('asc', 'desc') THEN LOWER(_sort_dir) ELSE 'desc' END;
 
   v_product_pattern := CASE
     WHEN _product IS NULL OR BTRIM(_product) = '' THEN NULL
@@ -116,22 +114,13 @@ BEGIN
     c.transaction_remarks, c.total_count
   FROM counted c
   ORDER BY
-    CASE WHEN v_sort_dir = 'asc'
-         THEN CASE v_sort_clause
-                WHEN 'amount'        THEN c.item_amount
-                WHEN 'customer_name' THEN c.customer_name
-                ELSE c.entry_date
-              END
-    END ASC NULLS LAST,
-    CASE WHEN v_sort_dir = 'desc'
-         THEN CASE v_sort_clause
-                WHEN 'amount'        THEN c.item_amount
-                WHEN 'customer_name' THEN c.customer_name
-                ELSE c.entry_date
-              END
-    END DESC NULLS LAST,
-    -- Stable tiebreaker: item_id (always secondary sort, same direction as primary)
-    CASE WHEN v_sort_dir = 'asc'  THEN c.item_id END ASC NULLS LAST,
+    CASE WHEN v_sort_clause = 'amount' AND v_sort_dir = 'asc' THEN c.item_amount END ASC NULLS LAST,
+    CASE WHEN v_sort_clause = 'amount' AND v_sort_dir = 'desc' THEN c.item_amount END DESC NULLS LAST,
+    CASE WHEN v_sort_clause = 'customer_name' AND v_sort_dir = 'asc' THEN c.customer_name END ASC NULLS LAST,
+    CASE WHEN v_sort_clause = 'customer_name' AND v_sort_dir = 'desc' THEN c.customer_name END DESC NULLS LAST,
+    CASE WHEN v_sort_clause = 'entry_date' AND v_sort_dir = 'asc' THEN c.entry_date END ASC NULLS LAST,
+    CASE WHEN v_sort_clause = 'entry_date' AND v_sort_dir = 'desc' THEN c.entry_date END DESC NULLS LAST,
+    CASE WHEN v_sort_dir = 'asc' THEN c.item_id END ASC NULLS LAST,
     CASE WHEN v_sort_dir = 'desc' THEN c.item_id END DESC NULLS LAST
   LIMIT LEAST(GREATEST(_page_size, 1), 100)
   OFFSET v_offset;
