@@ -1153,7 +1153,7 @@ export const shopStore = {
     page?: number;
     pageSize?: number;
   }) {
-    const { data, error } = await supabase.rpc("load_active_interest_agreements" as any, {
+    const { data, error } = await supabase.rpc("load_active_interest_agreements_v2" as any, {
       _search: input.search?.trim() || null,
       _village: input.village || null,
       _date_from: input.dateFrom || null,
@@ -1162,7 +1162,26 @@ export const shopStore = {
       _page_size: input.pageSize ?? 25,
     });
     if (error) throw error;
-    return (data ?? []) as InterestAgreement[];
+    return (data ?? []).map((row: any): InterestAgreement => ({
+      id: row.agreement_id,
+      customerId: row.customer_id,
+      customerName: row.customer_name,
+      customerMobile: row.customer_mobile,
+      customerVillage: row.customer_village ?? "",
+      agreementType: row.agreement_type,
+      originalPrincipal: Number(row.original_principal ?? 0),
+      outstandingPrincipal: Number(row.outstanding_principal ?? 0),
+      interestRate: Number(row.interest_rate ?? 0),
+      ratePeriod: row.rate_period,
+      interestStartDate: row.interest_start_date,
+      method: "simple",
+      status: row.status,
+      termsConfirmed: true,
+      createdAt: "",
+      interestOutstanding: Number(row.interest_outstanding ?? 0),
+      totalSettlement: Number(row.total_settlement ?? 0),
+      totalCount: Number(row.total_count ?? 0),
+    }));
   },
 
   async createDirectLoan(input: DirectLoanInput & { idempotencyKey?: string }) {
