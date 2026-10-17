@@ -53,6 +53,7 @@ AS $$
 DECLARE
   v_offset integer;
   v_sort_clause text;
+  v_sort_dir text;
   v_product_pattern text;
 BEGIN
   IF NOT public.is_staff(auth.uid()) THEN
