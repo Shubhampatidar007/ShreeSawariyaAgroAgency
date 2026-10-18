@@ -16,7 +16,6 @@ import { Route as AdminIndexRouteImport } from './routes/admin.index'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 import { Route as AdminBackupsRouteImport } from './routes/admin.backups'
 import { Route as AdminInterestManagementRouteImport } from './routes/admin.interest-management'
-import { Route as AdminInterestSetupRouteImport } from './routes/admin.interest-setup'
 import { Route as AdminInventoryRemindersRouteImport } from './routes/admin.inventory-reminders'
 import { Route as AdminPaymentsRouteImport } from './routes/admin.payments'
 import { Route as AdminProductSalesRouteImport } from './routes/admin.product-sales'
@@ -74,11 +73,6 @@ const AdminBackupsRoute = AdminBackupsRouteImport.update({
 const AdminInterestManagementRoute = AdminInterestManagementRouteImport.update({
   id: '/interest-management',
   path: '/interest-management',
-  getParentRoute: () => AdminRoute,
-} as any)
-const AdminInterestSetupRoute = AdminInterestSetupRouteImport.update({
-  id: '/interest-setup',
-  path: '/interest-setup',
   getParentRoute: () => AdminRoute,
 } as any)
 const AdminInventoryRemindersRoute = AdminInventoryRemindersRouteImport.update({
@@ -210,7 +204,6 @@ export interface FileRoutesByFullPath {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/interest-management': typeof AdminInterestManagementRoute
-  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/product-sales': typeof AdminProductSalesRoute
@@ -242,7 +235,6 @@ export interface FileRoutesByTo {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/interest-management': typeof AdminInterestManagementRoute
-  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/product-sales': typeof AdminProductSalesRoute
@@ -276,7 +268,6 @@ export interface FileRoutesById {
   '/admin/analytics': typeof AdminAnalyticsRoute
   '/admin/backups': typeof AdminBackupsRoute
   '/admin/interest-management': typeof AdminInterestManagementRoute
-  '/admin/interest-setup': typeof AdminInterestSetupRoute
   '/admin/inventory-reminders': typeof AdminInventoryRemindersRoute
   '/admin/payments': typeof AdminPaymentsRoute
   '/admin/product-sales': typeof AdminProductSalesRoute
@@ -311,7 +302,6 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/interest-management'
-    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/product-sales'
@@ -343,7 +333,6 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/interest-management'
-    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/product-sales'
@@ -376,7 +365,6 @@ export interface FileRouteTypes {
     | '/admin/analytics'
     | '/admin/backups'
     | '/admin/interest-management'
-    | '/admin/interest-setup'
     | '/admin/inventory-reminders'
     | '/admin/payments'
     | '/admin/product-sales'
@@ -459,13 +447,6 @@ declare module '@tanstack/react-router' {
       path: '/interest-management'
       fullPath: '/admin/interest-management'
       preLoaderRoute: typeof AdminInterestManagementRouteImport
-      parentRoute: typeof AdminRoute
-    }
-    '/admin/interest-setup': {
-      id: '/admin/interest-setup'
-      path: '/interest-setup'
-      fullPath: '/admin/interest-setup'
-      preLoaderRoute: typeof AdminInterestSetupRouteImport
       parentRoute: typeof AdminRoute
     }
     '/admin/inventory-reminders': {
@@ -636,7 +617,6 @@ interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
   AdminBackupsRoute: typeof AdminBackupsRoute
   AdminInterestManagementRoute: typeof AdminInterestManagementRoute
-  AdminInterestSetupRoute: typeof AdminInterestSetupRoute
   AdminInventoryRemindersRoute: typeof AdminInventoryRemindersRoute
   AdminPaymentsRoute: typeof AdminPaymentsRoute
   AdminProductSalesRoute: typeof AdminProductSalesRoute
@@ -666,7 +646,6 @@ const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
   AdminBackupsRoute: AdminBackupsRoute,
   AdminInterestManagementRoute: AdminInterestManagementRoute,
-  AdminInterestSetupRoute: AdminInterestSetupRoute,
   AdminInventoryRemindersRoute: AdminInventoryRemindersRoute,
   AdminPaymentsRoute: AdminPaymentsRoute,
   AdminProductSalesRoute: AdminProductSalesRoute,
